@@ -1,2 +1,2 @@
 # Alien-Worlds-NFT-Index
-With calculations for Planetary Defense stats on all cards
+Includes tables of Alien Worlds' NFT Stats, With calculations for Planetary Defense stats on all cards.
