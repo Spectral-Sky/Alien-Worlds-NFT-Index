@@ -705,6 +705,20 @@ Made by Shade
                     link.innerHTML = `<img src="${ICON_URL}" class="market-icon buy-icon">`;
                     link.title = "BUY NOW"; link.style.textDecoration = "none";
                 }
+
+       // --- IMAGE CONVERSION ---
+if (cells.length > 1) {
+    let imgCell = cells[1];
+    let rawLink = imgCell.innerText.trim();
+    if(rawLink.includes("http")) {
+        imgCell.innerHTML = ""; 
+        imgCell.style.width = "60px"; imgCell.style.minWidth = "60px"; imgCell.style.padding = "0"; imgCell.style.textAlign = "center";
+        let newImg = document.createElement("img");
+        newImg.src = rawLink; newImg.style.height = "52px"; newImg.style.width = "auto"; newImg.style.cursor = "pointer";
+        newImg.onclick = (e) => { e.stopPropagation(); showPreview(templateId, rawLink); };
+        imgCell.appendChild(newImg);
+    }
+}
             });
         }
 // --- WALLET STATE MANAGEMENT ---
@@ -721,7 +735,7 @@ Made by Shade
                 btn.innerText = `[ ${savedWallet} ]`;
                 btn.classList.add("logged-in");
             } else {
-                btn.innerText = "[ CONNECT WAX WALLET ]";
+                btn.innerText = "[ WAX WALLET Link Disabled ]";
                 btn.classList.remove("logged-in");
             }
         }
