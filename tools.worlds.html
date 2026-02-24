@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tools.Worlds // Live Database</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <script src="https://unpkg.com/@waxio/waxjs/dist-web/waxjs.js"></script>
+    
+    <style>
+       /* --- FOUC PREVENTION --- */
+        table { opacity: 0; visibility: hidden; transition: opacity 0.6s ease-in; background-color: transparent !important; }
+        tr, td, th, tbody { background-color: transparent !important; }
+        table.system-ready { opacity: 1; visibility: visible; }   
+       
+       /* --- DYNAMIC THEME ENGINE (Safety Orange Default) --- */
+        :root {
+            --theme-color: #ff9900;        
+            --theme-shadow: 0 0 15px rgba(255, 153, 0, 0.4); 
+            --theme-dark: #1a1005;        
+            --theme-hover: #33200a;        
+            --theme-border: 1px solid #4d300f;
+        }
+
+        /* --- SYSTEM CORE --- */
+        body { 
+            cursor: crosshair; background-color: #050510; 
+            background-image: radial-gradient(circle at 50% 50%, var(--theme-dark) 0%, #050510 80%);
+            color: #d0d0d0; font-family: 'Courier New', Courier, monospace; 
+            margin: 0; padding: 20px; overflow-x: auto; 
+        }
+
+        ::-webkit-scrollbar { height: 12px; width: 12px; }
+        ::-webkit-scrollbar-track { background: #050510; }
+        ::-webkit-scrollbar-thumb { background: #333; border: 1px solid var(--theme-color); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--theme-color); }
+        
+        body::before { content: " "; position: fixed; top: 0; left: 0; width: 1px; height: 1px; z-index: -1; box-shadow: 10vw 10vh #FFF, 85vw 5vh #FFF, 45vw 15vh rgba(255,255,255,0.6), 70vw 25vh #FFF, 30vw 50vh #FFF, 60vw 65vh rgba(255,255,255,0.7); opacity: 0.8; }
+        body::after { content: " "; position: fixed; top: 0; left: 0; width: 2px; height: 2px; z-index: -1; background: transparent; box-shadow: 15vw 20vh #FFF, 40vw 60vh #FFF, 70vw 30vh #FFF, 90vw 80vh #FFF; opacity: 0.5; }
+
+        a, button, th, td { cursor: crosshair !important; }
+
+        .click-effect {
+            position: fixed; pointer-events: none; width: 40px; height: 40px;
+            border: 2px solid var(--theme-color); border-radius: 50%;
+            transform: translate(-50%, -50%); animation: clickPulse 0.4s ease-out forwards;
+            z-index: 2147483647; box-shadow: 0 0 10px var(--theme-color);
+        }
+        @keyframes clickPulse { 0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; border-width: 5px; } 100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; border-width: 0px; } }
+
+        /* --- GLOBAL HEADER BAR --- */
+        .global-header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #020a08; border-bottom: 2px solid var(--theme-color);
+            padding: 15px 30px; position: relative; z-index: 6000; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.9);
+        }
+        .logo-section h1 { color: var(--theme-color); margin: 0; font-size: 1.8em; letter-spacing: 4px; text-transform: uppercase; text-shadow: 0 0 10px var(--theme-color); }
+        .nav-links { display: flex; gap: 10px; }
+        .nav-links .nav-btn.active { color: #000; background: var(--theme-color); border-color: var(--theme-color); box-shadow: var(--theme-shadow); }
+        
+        .wallet-btn { background: #111; color: var(--theme-color); border: 1px dashed var(--theme-color); padding: 10px 20px; font-family: monospace; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+        .wallet-btn:hover { background: var(--theme-hover); box-shadow: var(--theme-shadow); }
+        .wallet-btn.logged-in { background: var(--theme-color); color: #000; border: 1px solid #fff; }
+
+        /* --- UI BAR (STICKY) --- */
+        .top-bar { 
+            display: flex; justify-content: space-between; align-items: flex-start; 
+            padding-bottom: 15px; padding-top: 10px;
+            background: #050510; border-bottom: 2px solid var(--theme-color); 
+            position: sticky; top: 0; z-index: 5000; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.8); margin-bottom: 0; flex-wrap: wrap; gap:10px;
+        }
+        h1 { color: var(--theme-color); letter-spacing: 3px; margin: 0; text-transform: uppercase; font-size: 1.5em; line-height: 1; text-shadow: 0 0 10px var(--theme-color); transition: color 0.5s, text-shadow 0.5s; }
+        .nav-btn { padding: 10px 16px; background: rgba(0,0,0,0.5); border: 1px solid var(--theme-color); color: var(--theme-color); text-decoration: none; font-weight: bold; font-size: 0.8em; transition: all 0.3s; }
+        .nav-btn:hover { background: var(--theme-color); color: #000; }
+
+        #searchInput { background: #000; border: 1px solid var(--theme-color); color: var(--theme-color); padding: 10px; font-family: 'Courier New', monospace; font-weight: bold; width: 200px; text-transform: uppercase; }
+        .cyber-btn { background: var(--theme-dark); color: var(--theme-color); border: 2px solid var(--theme-color); padding: 10px 14px; font-family: 'Courier New', Courier, monospace; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s; }
+        .cyber-btn:hover { background: var(--theme-color); color: #000; box-shadow: var(--theme-shadow); }
+
+        #theme-panel { position: absolute; top: 60px; left: 20px; background: #0a0a0a; border: 1px solid var(--theme-color); padding: 10px; display: none; grid-template-columns: repeat(6, 1fr); gap: 8px; box-shadow: 0 10px 30px #000; z-index: 6000; }
+        .theme-opt { width: 25px; height: 25px; border-radius: 50%; border: 2px solid #333; cursor: pointer; transition: transform 0.2s; }
+        .theme-opt:hover { transform: scale(1.3); border-color: #fff; }
+
+        /* --- PREVIEW DECKS --- */
+        #preview-frame { 
+            position: fixed; top: 240px; left: 20px; width: 350px; height: 400px; 
+            right: auto !important; border: 2px solid var(--theme-color); background: var(--theme-dark); 
+            box-shadow: var(--theme-shadow); z-index: 3000; box-sizing: border-box;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            transition: transform 0.4s, opacity 0.4s; transform: translateX(0); opacity: 1; pointer-events: none; 
+        }
+        #preview-frame.minimized { transform: translateX(-400px); opacity: 0; } 
+        #preview-img { width: 90%; height: auto; max-height: 80%; object-fit: contain; border: 1px solid #333; display: none; }
+        #preview-status { color: var(--theme-color); font-size: 0.8em; letter-spacing: 1px; display:none; }
+        #preview-label { margin-top: 10px; color: #fff; font-weight: bold; font-size: 0.9em; text-align: center; letter-spacing: 1px; width: 90%; border-top: 1px dashed #333; padding-top: 5px; }
+
+        #market-frame { 
+            position: fixed; top: 655px; left: 20px; width: 350px; height: auto; 
+            border: 2px solid var(--theme-color); background: #000; box-sizing: border-box;
+            box-shadow: var(--theme-shadow); z-index: 3000; padding: 10px; display: none; 
+            transition: transform 0.4s, opacity 0.4s; transform: translateX(0); opacity: 1; 
+        }
+        #market-frame.minimized { transform: translateX(-400px); opacity: 0; }
+        .intel-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #333; padding: 6px 0; font-size: 0.9em; }
+        .intel-label { color: #888; }
+        .intel-val { color: #fff; font-weight: bold; font-family: monospace; }
+        #intel-header { color:var(--theme-color); font-weight:bold; border-bottom:1px solid #333; margin-bottom:10px; text-transform: uppercase; font-size: 0.85em; letter-spacing: 1px; }
+
+        .market-links { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; pointer-events: auto; }
+        .market-link-btn { background: #111; border: 1px solid #444; color: #aaa; text-align: center; font-size: 0.7em; padding: 5px; cursor: pointer; text-decoration: none; display: block; transition: all 0.2s; font-family: monospace; }
+        .market-link-btn:hover { background: var(--theme-color); color: #000; border-color: #fff; }
+
+        /* --- MOBILE MODAL --- */
+        #mobile-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 2900; backdrop-filter: blur(3px); }
+        #mobile-backdrop.active { display: block; }
+        .close-btn { display: none; position: absolute; top: -15px; right: -15px; background: var(--theme-color); color: #000; pointer-events: auto; border: 1px solid #fff; padding: 5px 10px; font-weight: bold; cursor: pointer; z-index: 4000; box-shadow: var(--theme-shadow); }
+
+        /* --- GOOGLE SHEETS TEXT & WRAP OVERRIDE --- */
+        body .ritz .waffle td { color: #d0d0d0 !important; }
+        body .ritz .waffle td * { color: inherit !important; }
+        .softmerge-inner { position: static !important; width: auto !important; max-width: 100%; white-space: normal !important; display: inline-block; left: auto !important; }
+
+        /* --- TABLE --- */
+        .freezebar-cell, .row-header-wrapper, .row-headers-background, .column-headers-background { display: none !important; }
+        .grid-container { background: transparent !important; border: none !important; box-shadow: none !important; height: auto !important; overflow: visible !important; width: 100% !important; max-width: none !important; }
+        .waffle { border-collapse: collapse; margin: 0 auto; background: var(--theme-dark); width: auto !important; transition: background-color 0.5s; }
+        
+        /* HEADER STYLING */
+        .live-header { 
+            position: sticky !important; top: 125px !important; z-index: 1900 !important;
+            background-color: var(--theme-dark) !important; color: var(--theme-color) !important; 
+            border-bottom: 2px solid var(--theme-color) !important; 
+            font-weight: bold !important; text-align: center !important; 
+            box-shadow: 0 0 15px var(--theme-color) !important; 
+            text-transform: uppercase !important; letter-spacing: 1px !important; padding: 8px !important;
+        }
+        .live-header:hover { z-index: 2000 !important; }
+        
+        td { border-bottom: var(--theme-border) !important; padding: 4px 10px !important; vertical-align: middle; max-width: 140px; white-space: normal !important; word-wrap: break-word !important; font-family: 'Courier New', Courier, monospace !important; font-size: 0.9em !important; }
+
+        .waffle tr { height: 68px !important; }
+        .waffle td:nth-of-type(2) { width: 62px !important; min-width: 62px !important; padding: 0 !important; text-align: center !important; }
+
+        tr:hover td { background-color: var(--theme-hover) !important; color: #fff !important; transition: background-color 0.1s; }
+        .live-cell { text-align: center; font-weight: bold; color: #666; border-bottom: var(--theme-border); padding: 5px; font-family: monospace; }
+
+        .scan-trigger { cursor: pointer; color: #fff !important; background: var(--theme-color); padding: 2px 8px; border-radius: 4px; font-size: 0.8em; display: inline-block; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; text-shadow: 0 0 5px #fff; } 100% { opacity: 0.8; } }
+
+        /* HUD TAGS */
+        [class*="tag-"] { text-align: center !important; font-weight: bold !important; border: 1px solid transparent !important; }
+        .tag-stone { box-shadow: inset 4px 0 0 #777, inset -4px 0 0 #777 !important; color: #aaa !important; }
+        .tag-gold { box-shadow: inset 4px 0 0 #ffd700, inset -4px 0 0 #ffd700 !important; color: #ffe44d !important; }
+        .tag-stardust { box-shadow: inset 4px 0 0 #da70d6, inset -4px 0 0 #da70d6 !important; color: #ee82ee !important; }
+        .tag-antimatter { box-shadow: inset 4px 0 0 #4b0082, inset -4px 0 0 #4b0082 !important; color: #9370db !important; }
+        .tag-xdimension { box-shadow: inset 4px 0 0 #800080, inset -4px 0 0 #800080 !important; color: #c760c7 !important; }
+        .tag-abundant { box-shadow: inset 4px 0 0 #555, inset -4px 0 0 #555 !important; color: #999 !important; }
+        .tag-common { box-shadow: inset 4px 0 0 #333, inset -4px 0 0 #333 !important; color: #ccc !important; }
+        .tag-rare { box-shadow: inset 4px 0 0 #0088ff, inset -4px 0 0 #0088ff !important; color: #4da6ff !important; }
+        .tag-epic { box-shadow: inset 4px 0 0 #bc13fe, inset -4px 0 0 #bc13fe !important; color: #d67aff !important; }
+        .tag-legendary { box-shadow: inset 4px 0 0 #ffaa00, inset -4px 0 0 #ffaa00 !important; color: #ffcc00 !important; }
+        .tag-mythical { box-shadow: inset 4px 0 0 #ff0055, inset -4px 0 0 #ff0055 !important; color: #ff6688 !important; }
+        .tag-extractor { box-shadow: inset 4px 0 0 #00cc44, inset -4px 0 0 #00cc44 !important; color: #66ff99 !important; }
+        .tag-manipulator { box-shadow: inset 4px 0 0 #4488ff, inset -4px 0 0 #4488ff !important; color: #88bbff !important; }
+        .tag-explosive { box-shadow: inset 4px 0 0 #ff4500, inset -4px 0 0 #ff4500 !important; color: #ff7733 !important; }
+        .tag-exotool { box-shadow: inset 4px 0 0 #9933ff, inset -4px 0 0 #9933ff !important; color: #cc99ff !important; }
+
+        @media screen and (max-width: 800px) {
+            #preview-frame, #market-frame { display: none; }
+            #preview-frame.mobile-active { display: flex !important; left: 50%; transform: translateX(-50%); width: 90%; top: 120px; z-index:3000; pointer-events: auto; }
+            #market-frame.mobile-active { display: block !important; left: 50%; transform: translateX(-50%); width: 90%; top: 540px; z-index:3000; }
+            .close-btn { display: block; }
+            .top-bar { flex-direction: column; align-items: stretch; position: static; } 
+            #searchInput { width: 100%; margin-bottom: 10px; }
+        }
+    </style>
+</head>
+<body>
+    
+    <div id="mobile-backdrop" onclick="closeDeckMobile()"></div>
+
+    <div id="preview-frame">
+        <div class="close-btn" onclick="closeDeckMobile()">[ X CLOSE ]</div>
+        <div id="preview-status">AWAITING TARGET</div>
+        <img id="preview-img" src="" alt="PREVIEW">
+        <div id="preview-label">
+            <span id="label-name" style="display:block;">TAP TO SCAN</span>
+            <span id="label-shine" class="label-shine"></span>
+            <span id="label-id" style="font-size:0.7em; color:#666;"></span>
+        </div>
+    </div>
+
+    <div id="market-frame">
+        <div id="intel-header">MARKET INTEL</div>
+        <div class="intel-row"><span class="intel-label">LOWEST PRICE:</span><span id="intel-floor" class="intel-val">---</span></div>
+        <div class="intel-row"><span class="intel-label">LAST SOLD:</span><span id="intel-last" class="intel-val">---</span></div>
+        <div class="intel-row"><span class="intel-label">SUGGESTED:</span><span id="intel-sugg" class="intel-val" style="color:var(--theme-color);">---</span></div>
+        
+        <div class="market-links">
+            <a id="lnk-atomic" target="_blank" class="market-link-btn">ATOMIC HUB</a>
+            <a id="lnk-nefty" target="_blank" class="market-link-btn">NEFTY BLOCKS</a>
+            <a id="lnk-hive" target="_blank" class="market-link-btn">NFT HIVE</a>
+            <a id="lnk-f12" target="_blank" class="market-link-btn">F12 KEY</a>
+        </div>
+    </div>
+
+    <header class="global-header">
+        <div class="logo-section">
+            <h1>NARON CODEX</h1>
+        </div>
+        
+        <nav class="nav-links">
+            <a href="index.html" class="nav-btn">HUB</a>
+            <a href="crew.worlds.html" class="nav-btn">CREW</a>
+            <a href="arms.worlds.html" class="nav-btn">ARMS</a>
+            <a href="tools.worlds.html" class="nav-btn active">TOOLS</a>
+        </nav>
+
+        <div class="wallet-section">
+            <button id="wallet-connect-btn" class="wallet-btn" onclick="toggleWallet()">[ CONNECT WAX WALLET ]</button>
+        </div>
+    </header>
+
+    <div class="top-bar">
+        <div style="flex-grow: 1;">
+            <div style="display:flex; align-items:center; gap: 10px; flex-wrap:wrap;">
+                <a href="index.html" class="nav-btn">< BACK</a>
+                <button class="cyber-btn" onclick="toggleThemePanel()">[ COLOUR ]</button>
+                <button class="cyber-btn" onclick="resetSort()">[ RESET ]</button>
+                <button class="cyber-btn" onclick="adjustFont(1)">A+</button>
+                <button class="cyber-btn" onclick="adjustFont(-1)">A-</button>
+                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="SEARCH...">
+            </div>
+            
+            <div style="margin-top: 8px;">
+                <button class="cyber-btn" onclick="toggleDeck()">[ TOGGLE DECK ]</button>
+            </div>
+
+            <div id="theme-panel">
+                <div class="theme-opt" style="background:#ff9900;" onclick="setTheme('#ff9900', '#1a1005')" title="Safety Orange"></div>
+                <div class="theme-opt" style="background:#00ff41;" onclick="setTheme('#00ff41', '#051a05')" title="Matrix Green"></div>
+                <div class="theme-opt" style="background:#ff4d4d;" onclick="setTheme('#ff4d4d', '#1a0505')" title="Crimson Red"></div>
+                <div class="theme-opt" style="background:#0088ff;" onclick="setTheme('#0088ff', '#050f1a')" title="Cyber Blue"></div>
+                <div class="theme-opt" style="background:#ffd700;" onclick="setTheme('#ffd700', '#1a1a05')" title="Gold"></div>
+                <div class="theme-opt" style="background:#bf00ff;" onclick="setTheme('#bf00ff', '#12051a')" title="Neon Purple"></div>
+            </div>
+
+            <div id="progress-container" style="display:none; width:100%; background:#222; height:4px; margin-top:10px;">
+                <div id="progress-bar" style="height:100%; width:0%; background:var(--theme-color); transition:width 0.2s;"></div>
+            </div>
+        </div>
+
+        <div style="text-align:right; min-width: 200px;">
+            <button id="fetchBtn" class="cyber-btn" onclick="startScan(this)" style="margin-bottom:10px; display:block; width:100%; border-color:#fff; color:#fff;">[ SCAN MINTED / BURNED ]</button>
+            <h1>TOOLS.WORLDS</h1>
+            <div id="status" style="font-size:0.7em; color:#666; margin-top:5px;">STANDBY</div>
+        </div>
+    </div>
+
+Made by Shade
+
+    <style type="text/css">.ritz .waffle a { color: inherit; }.ritz .waffle .s11{background-color:#cfe2f3;text-align:center;font-weight:bold;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s12{background-color:#46bdc6;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s0{border-bottom:2px SOLID #000000;background-color:#ffffff;text-align:center;font-weight:bold;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s2{background-color:#f3f3f3;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s5{background-color:#cccccc;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s13{background-color:#4c0348;text-align:center;color:#ffffff;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s16{background-color:#fce5cd;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s18{background-color:#f4cccc;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s15{background-color:#b4a7d6;text-align:center;font-weight:bold;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s17{background-color:#fce5cd;text-align:center;font-weight:bold;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s6{background-color:#fffaba;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s14{background-color:#b4a7d6;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s4{background-color:#f3f3f3;text-align:center;font-weight:bold;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s10{background-color:#cfe2f3;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s1{border-bottom:2px SOLID #000000;border-right:2px SOLID #000000;background-color:#ffffff;text-align:center;font-weight:bold;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s7{background-color:#d9d9d9;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s8{background-color:#d9d9d9;text-align:center;font-weight:bold;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s9{background-color:#351c75;text-align:center;color:#ffffff;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s3{background-color:#ffffff;text-align:left;color:#000000;font-family:Arial;font-size:10pt;vertical-align:bottom;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s19{background-color:#f4cccc;text-align:center;font-weight:bold;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}</style><div class="ritz grid-container" dir="ltr"><table class="waffle" cellspacing="0" cellpadding="0"><thead><tr><th class="row-header freezebar-origin-ltr"></th><th id="1704901039C0" style="width:100px;" class="column-headers-background">A</th><th id="1704901039C1" style="width:100px;" class="column-headers-background">B</th><th id="1704901039C2" style="width:158px;" class="column-headers-background">C</th><th id="1704901039C3" style="width:79px;" class="column-headers-background">D</th><th id="1704901039C4" style="width:100px;" class="column-headers-background">E</th><th id="1704901039C5" style="width:171px;" class="column-headers-background">F</th><th id="1704901039C6" style="width:193px;" class="column-headers-background">G</th><th id="1704901039C7" style="width:157px;" class="column-headers-background">H</th><th id="1704901039C8" style="width:63px;" class="column-headers-background">I</th><th id="1704901039C9" style="width:103px;" class="column-headers-background">J</th></tr></thead><tbody><tr style="height: 68px"><th id="1704901039R0" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">1</div></th><td class="s0" dir="ltr">Template ID</td><td class="s0" dir="ltr">Image</td><td class="s0" dir="ltr">Name</td><td class="s0" dir="ltr">Rarity</td><td class="s0" dir="ltr">Shine</td><td class="s0" dir="ltr">Type</td><td class="s0" dir="ltr">Ease / Mine Power</td><td class="s0" dir="ltr">Luck / NFT Points</td><td class="s0" dir="ltr">Delay</td><td class="s1" dir="ltr">Difficulty</td></tr><tr style="height: 68px"><th id="1704901039R1" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">2</div></th><td class="s2" dir="ltr">19558</td><td class="s3">https://ipfs.io/ipfs/QmaFe19mLD911BfZWn2tvEN7Ea8xjdirnQQRisUGGBzBPb</td><td class="s4" dir="ltr">Standard Capacitor</td><td class="s2" dir="ltr">Abundant</td><td class="s5" dir="ltr">Stone</td><td class="s2" dir="ltr">Manipulator</td><td class="s2" dir="ltr">10</td><td class="s2" dir="ltr">5</td><td class="s2" dir="ltr">75</td><td class="s2" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R2" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">3</div></th><td class="s2" dir="ltr">48159</td><td class="s3">https://ipfs.io/ipfs/QmbqUN8cANRvdkM7g9FTEGf4jzVtYf3WPaADgxb6dru8e5</td><td class="s4" dir="ltr">Standard Capacitor</td><td class="s2" dir="ltr">Abundant</td><td class="s6" dir="ltr">Gold</td><td class="s2" dir="ltr">Manipulator</td><td class="s2" dir="ltr">10</td><td class="s2" dir="ltr">5</td><td class="s2" dir="ltr">70</td><td class="s2" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R3" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">4</div></th><td class="s2" dir="ltr">19553</td><td class="s3">https://ipfs.io/ipfs/QmVUZHpUkc3PuLkJ7BDvJ3S3AgDySjsqWQib1sVKziHCbS</td><td class="s4" dir="ltr">Standard Drill</td><td class="s2" dir="ltr">Abundant</td><td class="s5" dir="ltr">Stone</td><td class="s2" dir="ltr">Extractor</td><td class="s2" dir="ltr">20</td><td class="s2" dir="ltr">7</td><td class="s2" dir="ltr">120</td><td class="s2" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R4" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">5</div></th><td class="s2" dir="ltr">48154</td><td class="s3">https://ipfs.io/ipfs/QmRG8qeqB4PdQiV4pkVCGLP78HKS9uus5iV6fckysnkcrn</td><td class="s4" dir="ltr">Standard Drill</td><td class="s2" dir="ltr">Abundant</td><td class="s6" dir="ltr">Gold</td><td class="s2" dir="ltr">Extractor</td><td class="s2" dir="ltr">20</td><td class="s2" dir="ltr">7</td><td class="s2" dir="ltr">115</td><td class="s2" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R5" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">6</div></th><td class="s2" dir="ltr">19552</td><td class="s3">https://ipfs.io/ipfs/QmeFeDuobVKxgxyASKsYVKB3UoNjULyqS3VS7tuXsAuLoW</td><td class="s4" dir="ltr">Standard Shovel</td><td class="s2" dir="ltr">Abundant</td><td class="s5" dir="ltr">Stone</td><td class="s2" dir="ltr">Extractor</td><td class="s2" dir="ltr">10</td><td class="s2" dir="ltr">5</td><td class="s2" dir="ltr">80</td><td class="s2" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R6" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">7</div></th><td class="s2" dir="ltr">48153</td><td class="s3">https://ipfs.io/ipfs/QmeFeDuobVKxgxyASKsYVKB3UoNjULyqS3VS7tuXsAuLoW</td><td class="s4" dir="ltr">Standard Shovel</td><td class="s2" dir="ltr">Abundant</td><td class="s6" dir="ltr">Gold</td><td class="s2" dir="ltr">Extractor</td><td class="s2" dir="ltr">10</td><td class="s2" dir="ltr">5</td><td class="s2" dir="ltr">75</td><td class="s2" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R7" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">8</div></th><td class="s7" dir="ltr">56039</td><td class="s3">https://ipfs.io/ipfs/Qmat8TPicX9b4rr3m3KEbCXvXHQYU1DDjSfmjEbcw6xCk7</td><td class="s8" dir="ltr">Bananominer</td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">15</td><td class="s7" dir="ltr">10</td><td class="s7" dir="ltr">120</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R8" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">9</div></th><td class="s7" dir="ltr">56040</td><td class="s3">https://ipfs.io/ipfs/QmRbZ68ueFgpdbmJsRUTBSGiNK9cuHVKkjRPww9xSG8vqQ</td><td class="s8" dir="ltr">Bananominer</td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">15</td><td class="s7" dir="ltr">10</td><td class="s7" dir="ltr">112</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R9" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">10</div></th><td class="s7" dir="ltr">56041</td><td class="s3">https://ipfs.io/ipfs/QmRCppLq7eBLrVmyFKuaXBQoV5ewUWaAAj9U3nmsS6dkfH</td><td class="s8" dir="ltr">Bananominer</td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">15</td><td class="s7" dir="ltr">10</td><td class="s7" dir="ltr">104</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R10" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">11</div></th><td class="s7" dir="ltr">19557</td><td class="s3">https://ipfs.io/ipfs/QmUAPb7pV7hEyS1VEvKSZS3wfNvLcDvPx1khAX1p5z77Kx</td><td class="s8" dir="ltr">Basic Explosive</td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">Explosive</td><td class="s7" dir="ltr">180</td><td class="s7" dir="ltr">10</td><td class="s7" dir="ltr">1200</td><td class="s7" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R11" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">12</div></th><td class="s7" dir="ltr">48158</td><td class="s3">https://ipfs.io/ipfs/Qmf3mTvBmW2gaJ3rsbajpxuYVtK8xsNKxBi9Rr7Jw2qhZD</td><td class="s8" dir="ltr">Basic Explosive</td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">Explosive</td><td class="s7" dir="ltr">180</td><td class="s7" dir="ltr">10</td><td class="s7" dir="ltr">1100</td><td class="s7" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R12" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">13</div></th><td class="s7" dir="ltr">48186</td><td class="s3">https://ipfs.io/ipfs/QmaVhqTfuKHe6yLiv9Dx2Fq6eCpvuYQmet6t42EvkXysXW</td><td class="s8" dir="ltr">Basic Explosive</td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">Explosive</td><td class="s7" dir="ltr">190</td><td class="s7" dir="ltr">10</td><td class="s7" dir="ltr">1100</td><td class="s7" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R13" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">14</div></th><td class="s7" dir="ltr">19559</td><td class="s3">https://ipfs.io/ipfs/QmTY7qLossCEC9ypDqyCtsHhzLPVy742Fp2mqsdDg8KKNt</td><td class="s8" dir="ltr">Basic Trilium Detector</td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">Manipulator</td><td class="s7" dir="ltr">40</td><td class="s7"></td><td class="s7" dir="ltr">170</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R14" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">15</div></th><td class="s7" dir="ltr">48160</td><td class="s3">https://ipfs.io/ipfs/QmQ4vBwVdn4bJJSK3XQPYXAiM2SWXaRMWdekvcHZwrt2Jp</td><td class="s8" dir="ltr">Basic Trilium Detector</td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">Manipulator</td><td class="s7" dir="ltr">40</td><td class="s7" dir="ltr">5</td><td class="s7" dir="ltr">160</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R15" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">16</div></th><td class="s7" dir="ltr">48187</td><td class="s3">https://ipfs.io/ipfs/Qmb8Zi3FUpJmhq2GTTHDrPe8QBuW5XuB2aZESZwDZAZLX8</td><td class="s8" dir="ltr">Basic Trilium Detector</td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">Manipulator</td><td class="s7" dir="ltr">40</td><td class="s7" dir="ltr">5</td><td class="s7" dir="ltr">140</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R16" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">17</div></th><td class="s7" dir="ltr">741844</td><td class="s3">https://ipfs.io/ipfs/QmTHBxMWNfXSw6tBqeUzYWdQs1x1KZrjhsfpkGtKzLu9c7</td><td class="s8" dir="ltr">Certified Kol Digger</td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">30</td><td class="s7" dir="ltr">30</td><td class="s7" dir="ltr">250</td><td class="s7" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R17" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">18</div></th><td class="s7" dir="ltr">741845</td><td class="s3">https://ipfs.io/ipfs/QmQWT9HGTB12nsBvZU2UvAAQJL1LE6JXQqk7BU8YCJyWnt</td><td class="s8" dir="ltr">Certified Kol Digger</td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">33</td><td class="s7" dir="ltr">30</td><td class="s7" dir="ltr">225</td><td class="s7" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R18" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">19</div></th><td class="s7" dir="ltr">741846</td><td class="s3">https://ipfs.io/ipfs/QmavhvWjoU7YYAstpqBD76QSicPTJWWyN468UVw4vDH7pR</td><td class="s8" dir="ltr">Certified Kol Digger</td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">33</td><td class="s7" dir="ltr">33</td><td class="s7" dir="ltr">200</td><td class="s7" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R19" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">20</div></th><td class="s7" dir="ltr">741847</td><td class="s3">https://ipfs.io/ipfs/QmZGmXzwDnmsE3UiYwioZFDHTDT3782WiFxHEGQV6zYHP8</td><td class="s8" dir="ltr">Cymatic Saw</td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">Manipulator</td><td class="s7" dir="ltr">100</td><td class="s7" dir="ltr">40</td><td class="s7" dir="ltr">500</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R20" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">21</div></th><td class="s7" dir="ltr">741848</td><td class="s3">https://ipfs.io/ipfs/QmQ3PfSq9WhjyguM9aehQ87P1yh1ZXifnV5V4xxmT154nF</td><td class="s8" dir="ltr">Cymatic Saw</td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">Manipulator</td><td class="s7" dir="ltr">120</td><td class="s7" dir="ltr">40</td><td class="s7" dir="ltr">500</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R21" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">22</div></th><td class="s7" dir="ltr">741849</td><td class="s3">https://ipfs.io/ipfs/QmPSxbdibAunpKb99ukDgjg6vST7tUwVte6yjrKviPTJXK</td><td class="s8" dir="ltr">Cymatic Saw</td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">Manipulator</td><td class="s7" dir="ltr">130</td><td class="s7" dir="ltr">50</td><td class="s7" dir="ltr">500</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R22" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">23</div></th><td class="s7" dir="ltr">741850</td><td class="s3">https://ipfs.io/ipfs/QmNoYZLhdxte1DJW27SEVxvQ8BbAUR4bah3oKQR3jjGmrw</td><td class="s8" dir="ltr">Dusty Extractor</td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">50</td><td class="s7" dir="ltr">50</td><td class="s7" dir="ltr">700</td><td class="s7" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R23" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">24</div></th><td class="s7" dir="ltr">741851</td><td class="s3">https://ipfs.io/ipfs/QmQxr9zCmzLzMvgNwWA8ftsnEMUZcrKHdwd45eMPQBvL1h</td><td class="s8" dir="ltr">Dusty Extractor</td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">50</td><td class="s7" dir="ltr">60</td><td class="s7" dir="ltr">700</td><td class="s7" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R24" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">25</div></th><td class="s7" dir="ltr">741852</td><td class="s3">https://ipfs.io/ipfs/QmdSvpyGpYjNGkHEpLuisqkHGdBUYqhpZrDJpxfcHmYXvr</td><td class="s8" dir="ltr">Dusty Extractor</td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">50</td><td class="s7" dir="ltr">70</td><td class="s7" dir="ltr">700</td><td class="s7" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R25" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">26</div></th><td class="s7" dir="ltr">741741</td><td class="s3">https://ipfs.io/ipfs/QmXVCZpJLtcoJPrmzQfNsZu2uWyjGMm4mqoDLjnKAxZqCh</td><td class="s8" dir="ltr">Exo Claws</td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">ExoTool</td><td class="s7" dir="ltr">1</td><td class="s7" dir="ltr">10</td><td class="s7" dir="ltr">130</td><td class="s7" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R26" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">27</div></th><td class="s7" dir="ltr">741742</td><td class="s3">https://ipfs.io/ipfs/QmRBJpJ8BMKChFQAD6w91u3LVbUzJXw6EttyirZiHyqJ2W</td><td class="s8" dir="ltr">Exo Claws</td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">ExoTool</td><td class="s7" dir="ltr">1</td><td class="s7" dir="ltr">20</td><td class="s7" dir="ltr">210</td><td class="s7" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R27" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">28</div></th><td class="s7" dir="ltr">741743</td><td class="s3">https://ipfs.io/ipfs/QmdLyX8P8d4XebprW2U8Ech5bEFSnZ35meefySjMvSYUBD</td><td class="s8" dir="ltr">Exo Claws</td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">ExoTool</td><td class="s7" dir="ltr">1</td><td class="s7" dir="ltr">20</td><td class="s7" dir="ltr">170</td><td class="s7" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R28" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">29</div></th><td class="s7" dir="ltr">19560</td><td class="s3">https://ipfs.io/ipfs/QmcobwNfMmSvewRsnS358br7Cz3qxM6rr5cusUgqN2326Y</td><td class="s8" dir="ltr">ExoGloves</td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">ExoTool</td><td class="s7" dir="ltr">10</td><td class="s7"></td><td class="s7" dir="ltr">40</td><td class="s7" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R29" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">30</div></th><td class="s7" dir="ltr">48161</td><td class="s3">https://ipfs.io/ipfs/Qmd7JUv8ESFyMqxg4eQPgG5JDztVJz6wysRk6KKzPDhJFA</td><td class="s8" dir="ltr">ExoGloves</td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">ExoTool</td><td class="s7" dir="ltr">10</td><td class="s7"></td><td class="s7" dir="ltr">36</td><td class="s7" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R30" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">31</div></th><td class="s7" dir="ltr">48188</td><td class="s3">https://ipfs.io/ipfs/Qmay1hj3JxjD8BmpDRkgvfaX16N9brgABbnEJFqESkUng4</td><td class="s8" dir="ltr">ExoGloves</td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">ExoTool</td><td class="s7" dir="ltr">10</td><td class="s7"></td><td class="s7" dir="ltr">32</td><td class="s7" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R31" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">32</div></th><td class="s7" dir="ltr">741853</td><td class="s3">https://ipfs.io/ipfs/QmWwp9jEwedcXsziGLW9JdKUQtQT8jH2Uq7DTbHJMSB2Qt</td><td class="s8" dir="ltr">Extreme Extractor</td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">80</td><td class="s7" dir="ltr">10</td><td class="s7" dir="ltr">350</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R32" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">33</div></th><td class="s7" dir="ltr">741854</td><td class="s3">https://ipfs.io/ipfs/QmeZ4YxtvrhyyFfFMaJKgqaGzib2yQjuszNLALWP3FJ5Mw</td><td class="s8" dir="ltr">Extreme Extractor</td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">100</td><td class="s7" dir="ltr">10</td><td class="s7" dir="ltr">350</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R33" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">34</div></th><td class="s7" dir="ltr">741855</td><td class="s3">https://ipfs.io/ipfs/QmVoFUZUp29g7EwbViZx4uXqPPG3iftwSXEDLXnqNLaLTT</td><td class="s8" dir="ltr">Extreme Extractor</td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">125</td><td class="s7" dir="ltr">10</td><td class="s7" dir="ltr">350</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R34" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">35</div></th><td class="s7" dir="ltr">19555</td><td class="s3">https://ipfs.io/ipfs/QmZZZgWWhqxabJuncZrWRzs79DpKraXxum35u2TJga8C6G</td><td class="s8" dir="ltr">Gasrigged Extractor</td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">90</td><td class="s7" dir="ltr">20</td><td class="s7" dir="ltr">540</td><td class="s7" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R35" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">36</div></th><td class="s7" dir="ltr">48156</td><td class="s3">https://ipfs.io/ipfs/QmVPYHHRDjM62smW2k3fJ9ECdZgyxcqaPTUdH3kFvqk4cS</td><td class="s8" dir="ltr">Gasrigged Extractor</td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">90</td><td class="s7" dir="ltr">20</td><td class="s7" dir="ltr">500</td><td class="s7" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R36" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">37</div></th><td class="s7" dir="ltr">48184</td><td class="s3">https://ipfs.io/ipfs/QmPtUcAkeb7RSS5TBisi9qmPLcnrCb2zMpprf4C3VQsaTS</td><td class="s8" dir="ltr">Gasrigged Extractor</td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">90</td><td class="s7" dir="ltr">20</td><td class="s7" dir="ltr">420</td><td class="s7" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R37" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">38</div></th><td class="s7" dir="ltr">19556</td><td class="s3">https://ipfs.io/ipfs/QmaZjaHxcBNYLT2Ba6v3noSZEi3ubNPgCGZm8h8KHekMpr</td><td class="s8" dir="ltr">Infused Extractor</td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">80</td><td class="s7"></td><td class="s7" dir="ltr">360</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R38" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">39</div></th><td class="s7" dir="ltr">48157</td><td class="s3">https://ipfs.io/ipfs/QmTiQr8aQT6y8ZjeKat1s5WJRZnvbbDNfqkUfXbjucGhiy</td><td class="s8" dir="ltr">Infused Extractor</td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">80</td><td class="s7" dir="ltr">10</td><td class="s7" dir="ltr">360</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R39" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">40</div></th><td class="s7" dir="ltr">48185</td><td class="s3">https://ipfs.io/ipfs/QmbjK3JXNTCqHa12skXWKPYmiUJrJzMCLmDfSTEsEAtATQ</td><td class="s8" dir="ltr">Infused Extractor</td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">80</td><td class="s7" dir="ltr">10</td><td class="s7" dir="ltr">330</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R40" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">41</div></th><td class="s7" dir="ltr">741856</td><td class="s3">https://ipfs.io/ipfs/QmPY29U9Mu8NN7pKUj8VAttmenGhNRzmjugY9tLrazjJtN</td><td class="s8" dir="ltr">Plasmatic Extractor</td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">100</td><td class="s7"></td><td class="s7" dir="ltr">400</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R41" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">42</div></th><td class="s7" dir="ltr">741857</td><td class="s3">https://ipfs.io/ipfs/QmauNUwHXqVcKQsWKd3AUu98ewitr4aYP1xhdq8wYRBCb2</td><td class="s8" dir="ltr">Plasmatic Extractor</td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">120</td><td class="s7"></td><td class="s7" dir="ltr">400</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R42" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">43</div></th><td class="s7" dir="ltr">741858</td><td class="s3">https://ipfs.io/ipfs/QmNRE5smEM8cpHwauFM3mei26gHvXmMyGonEs86eyC9yGg</td><td class="s8" dir="ltr">Plasmatic Extractor</td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">150</td><td class="s7"></td><td class="s7" dir="ltr">400</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R43" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">44</div></th><td class="s7" dir="ltr">19554</td><td class="s3">https://ipfs.io/ipfs/QmdpDgCRsYPFXpvNN6PzBnNEx28RiuLgkHLkcR1Djedb8K</td><td class="s8" dir="ltr">Power Extractor</td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">50</td><td class="s7" dir="ltr">10</td><td class="s7" dir="ltr">270</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R44" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">45</div></th><td class="s7" dir="ltr">48155</td><td class="s3">https://ipfs.io/ipfs/QmaubpqjLAVMDHx2imZsPjLpGiPSSBxfRb38rpmB5G7JtS</td><td class="s8" dir="ltr">Power Extractor</td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">50</td><td class="s7" dir="ltr">10</td><td class="s7" dir="ltr">250</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R45" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">46</div></th><td class="s7" dir="ltr">48183</td><td class="s3">https://ipfs.io/ipfs/QmSzUMVBp2G9mzmgnPnWQyLmmUCbkpY3wDPZ3iaobbq4z1</td><td class="s8" dir="ltr">Power Extractor</td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">50</td><td class="s7" dir="ltr">10</td><td class="s7" dir="ltr">220</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R46" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">47</div></th><td class="s7" dir="ltr">19561</td><td class="s3">https://ipfs.io/ipfs/QmbJvB1ZDGQ9vYyN5kNaqKFqQy9G7K657B5wsGWQ64cA6V</td><td class="s8" dir="ltr">Power Saw </td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">Manipulator</td><td class="s7" dir="ltr">60</td><td class="s7" dir="ltr">20</td><td class="s7" dir="ltr">360</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R47" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">48</div></th><td class="s7" dir="ltr">48162</td><td class="s3">https://ipfs.io/ipfs/QmNcBUbqbEzX1SLn8ZpWLHdiBfciaC47ardZA27Q1MxcfD</td><td class="s8" dir="ltr">Power Saw </td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">Manipulator</td><td class="s7" dir="ltr">70</td><td class="s7" dir="ltr">22</td><td class="s7" dir="ltr">360</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R48" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">49</div></th><td class="s7" dir="ltr">48189</td><td class="s3">https://ipfs.io/ipfs/QmRfaa5my1rNTBYr8Te283X2AxVz3oBp1iHzPLX7SM3bFr</td><td class="s8" dir="ltr">Power Saw </td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">Manipulator</td><td class="s7" dir="ltr">70</td><td class="s7" dir="ltr">22</td><td class="s7" dir="ltr">330</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R49" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">50</div></th><td class="s7" dir="ltr">741859</td><td class="s3">https://ipfs.io/ipfs/QmUgdw44MGDShVdWpPoTmbHw2ShcDgkBBvNxhubKmoyNiK</td><td class="s8" dir="ltr">Rookie Treasure Locator</td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">Manipulator</td><td class="s7" dir="ltr">0</td><td class="s7" dir="ltr">20</td><td class="s7" dir="ltr">200</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R50" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">51</div></th><td class="s7" dir="ltr">741860</td><td class="s3">https://ipfs.io/ipfs/QmUvrMirxJ8NMf8yfd9VcybuH8rxFjpwYq4mas1eHpVHfR</td><td class="s8" dir="ltr">Rookie Treasure Locator</td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">Manipulator</td><td class="s7" dir="ltr">0</td><td class="s7" dir="ltr">30</td><td class="s7" dir="ltr">250</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R51" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">52</div></th><td class="s7" dir="ltr">741861</td><td class="s3">https://ipfs.io/ipfs/QmZbRwpaYXiMs3J3VFNAiGLXXegRhnWaUHuEtYPY1edZHd</td><td class="s8" dir="ltr">Rookie Treasure Locator</td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">Extractor</td><td class="s7" dir="ltr">0</td><td class="s7" dir="ltr">40</td><td class="s7" dir="ltr">270</td><td class="s7" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R52" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">53</div></th><td class="s7" dir="ltr">741837</td><td class="s3">https://ipfs.io/ipfs/Qmf5KBMBWo5e8qAQwaancq9UqSB4zuVE4jU259yGXRSMzR</td><td class="s8" dir="ltr">Shiny Explosive</td><td class="s7" dir="ltr">Common</td><td class="s5" dir="ltr">Stone</td><td class="s7" dir="ltr">Explosive</td><td class="s7" dir="ltr">100</td><td class="s7" dir="ltr">90</td><td class="s7" dir="ltr">1500</td><td class="s7" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R53" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">54</div></th><td class="s7" dir="ltr">741838</td><td class="s3">https://ipfs.io/ipfs/QmQKoxUY8hfxdn87R4bypaVt1zMEMgqMwkv9c3sagtNVwa</td><td class="s8" dir="ltr">Shiny Explosive</td><td class="s7" dir="ltr">Common</td><td class="s6" dir="ltr">Gold</td><td class="s7" dir="ltr">Explosive</td><td class="s7" dir="ltr">100</td><td class="s7" dir="ltr">110</td><td class="s7" dir="ltr">1500</td><td class="s7" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R54" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">55</div></th><td class="s7" dir="ltr">741839</td><td class="s3">https://ipfs.io/ipfs/QmZNtg1zaaVbV97EBvuSELyW4F2v4nwi73Pet9uQMz3i2U</td><td class="s8" dir="ltr">Shiny Explosive</td><td class="s7" dir="ltr">Common</td><td class="s9" dir="ltr">Stardust</td><td class="s7" dir="ltr">Explosive</td><td class="s7" dir="ltr">100</td><td class="s7" dir="ltr">130</td><td class="s7" dir="ltr">1500</td><td class="s7" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R55" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">56</div></th><td class="s10" dir="ltr">19566</td><td class="s3">https://ipfs.io/ipfs/QmWQcurYpmVDaq4wpzY1FreSXX1DvZq6A7KDc2GfS8hBaF</td><td class="s11" dir="ltr">Artunian Shovel</td><td class="s10" dir="ltr">Rare</td><td class="s5" dir="ltr">Stone</td><td class="s10" dir="ltr">Extractor</td><td class="s10" dir="ltr">100</td><td class="s10" dir="ltr">50</td><td class="s10" dir="ltr">750</td><td class="s10" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R56" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">57</div></th><td class="s10" dir="ltr">48167</td><td class="s3">https://ipfs.io/ipfs/QmYC4ENMzMC9kmfEhsenHJt7FYiSX27jr49iypaNukmdnm</td><td class="s11" dir="ltr">Artunian Shovel</td><td class="s10" dir="ltr">Rare</td><td class="s6" dir="ltr">Gold</td><td class="s10" dir="ltr">Extractor</td><td class="s10" dir="ltr">100</td><td class="s10" dir="ltr">60</td><td class="s10" dir="ltr">660</td><td class="s10" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R57" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">58</div></th><td class="s10" dir="ltr">48194</td><td class="s3">https://ipfs.io/ipfs/QmeJaaScpdXJ1RmRFX61eHpTSWVxFrEJH26C8uHHxsccJK</td><td class="s11" dir="ltr">Artunian Shovel</td><td class="s10" dir="ltr">Rare</td><td class="s9" dir="ltr">Stardust</td><td class="s10" dir="ltr">Extractor</td><td class="s10" dir="ltr">100</td><td class="s10" dir="ltr">60</td><td class="s10" dir="ltr">600</td><td class="s10" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R58" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">59</div></th><td class="s10" dir="ltr">48214</td><td class="s3">https://ipfs.io/ipfs/QmVg6shaynrgb4nuCeANUjze3b55eHdVUN81jHnureNkDZ</td><td class="s11" dir="ltr">Artunian Shovel</td><td class="s10" dir="ltr">Rare</td><td class="s12" dir="ltr">Antimatter</td><td class="s10" dir="ltr">Extractor</td><td class="s10" dir="ltr">120</td><td class="s10" dir="ltr">60</td><td class="s10" dir="ltr">499</td><td class="s10" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R59" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">60</div></th><td class="s10" dir="ltr">20970</td><td class="s3">https://ipfs.io/ipfs/QmfBcpGXyQKc6RktzbqP2xNrbXBVC9nrfZEMYgPMairM6Z</td><td class="s11" dir="ltr">Artunian Shovel</td><td class="s10" dir="ltr">Rare</td><td class="s13" dir="ltr">XDimension</td><td class="s10" dir="ltr">Extractor</td><td class="s10" dir="ltr">100</td><td class="s10" dir="ltr">50</td><td class="s10" dir="ltr">600</td><td class="s10" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R60" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">61</div></th><td class="s10" dir="ltr">19568</td><td class="s3">https://ipfs.io/ipfs/QmfSDH7q3dcFe8YHr5YixNx8mmhnzvw5DzfbUmYmoK7Hkf</td><td class="s11" dir="ltr">Barrel Digger</td><td class="s10" dir="ltr">Rare</td><td class="s5" dir="ltr">Stone</td><td class="s10" dir="ltr">Extractor</td><td class="s10" dir="ltr">70</td><td class="s10" dir="ltr">70</td><td class="s10" dir="ltr">700</td><td class="s10" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R61" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">62</div></th><td class="s10" dir="ltr">48169</td><td class="s3">https://ipfs.io/ipfs/QmdCBAN6PZJWFrpUcEmhE56kCCHxUUY5FHUXXYib2QLR9z</td><td class="s11" dir="ltr">Barrel Digger</td><td class="s10" dir="ltr">Rare</td><td class="s6" dir="ltr">Gold</td><td class="s10" dir="ltr">Extractor</td><td class="s10" dir="ltr">80</td><td class="s10" dir="ltr">80</td><td class="s10" dir="ltr">660</td><td class="s10" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R62" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">63</div></th><td class="s10" dir="ltr">48196</td><td class="s3">https://ipfs.io/ipfs/Qma5Mcp2eTn6dUNXMHeRiw9bg1hhcWiTYqu142pGgLXxqh</td><td class="s11" dir="ltr">Barrel Digger</td><td class="s10" dir="ltr">Rare</td><td class="s9" dir="ltr">Stardust</td><td class="s10" dir="ltr">Extractor</td><td class="s10" dir="ltr">90</td><td class="s10" dir="ltr">80</td><td class="s10" dir="ltr">580</td><td class="s10" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R63" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">64</div></th><td class="s10" dir="ltr">48216</td><td class="s3">https://ipfs.io/ipfs/QmNi71jorZVLsSGqBfduRpnD3JeKLKiDNrvQY2ajKzGwXZ</td><td class="s11" dir="ltr">Barrel Digger</td><td class="s10" dir="ltr">Rare</td><td class="s12" dir="ltr">Antimatter</td><td class="s10" dir="ltr">Extractor</td><td class="s10" dir="ltr">90</td><td class="s10" dir="ltr">80</td><td class="s10" dir="ltr">499</td><td class="s10" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R64" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">65</div></th><td class="s10" dir="ltr">20972</td><td class="s3">https://ipfs.io/ipfs/QmbdU11FpT4wjW4TGnFzj6otuipVAWt5gWs88W8mp8cgKx</td><td class="s11" dir="ltr">Barrel Digger</td><td class="s10" dir="ltr">Rare</td><td class="s13" dir="ltr">XDimension</td><td class="s10" dir="ltr">Extractor</td><td class="s10" dir="ltr">80</td><td class="s10" dir="ltr">80</td><td class="s10" dir="ltr">660</td><td class="s10" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R65" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">66</div></th><td class="s10" dir="ltr">19562</td><td class="s3">https://ipfs.io/ipfs/QmQqrAX7jNBdCWzLdgjM5xB8Yw81nhXPusrMBQibRCQ9LQ</td><td class="s11" dir="ltr">Draxos Axe</td><td class="s10" dir="ltr">Rare</td><td class="s5" dir="ltr">Stone</td><td class="s10" dir="ltr">ExoTool</td><td class="s10" dir="ltr">10</td><td class="s10" dir="ltr">60</td><td class="s10" dir="ltr">420</td><td class="s10" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R66" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">67</div></th><td class="s10" dir="ltr">48163</td><td class="s3">https://ipfs.io/ipfs/QmT6pG6dhwTi82wQ4xDfhDssEav27dtAwDZTfeEn3QsyVn</td><td class="s11" dir="ltr">Draxos Axe</td><td class="s10" dir="ltr">Rare</td><td class="s6" dir="ltr">Gold</td><td class="s10" dir="ltr">ExoTool</td><td class="s10" dir="ltr">20</td><td class="s10" dir="ltr">60</td><td class="s10" dir="ltr">400</td><td class="s10" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R67" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">68</div></th><td class="s10" dir="ltr">48190</td><td class="s3">https://ipfs.io/ipfs/QmcMrXA5mRn1Yg3qHix6AFGjaWvmMpqJPxojAmeshzwrzc</td><td class="s11" dir="ltr">Draxos Axe</td><td class="s10" dir="ltr">Rare</td><td class="s9" dir="ltr">Stardust</td><td class="s10" dir="ltr">ExoTool</td><td class="s10" dir="ltr">30</td><td class="s10" dir="ltr">70</td><td class="s10" dir="ltr">400</td><td class="s10" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R68" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">69</div></th><td class="s10" dir="ltr">48210</td><td class="s3">https://ipfs.io/ipfs/QmayoCTyPn3G2We1JL3n6Aajikjm5rBfNVWnitR9rKHsQg</td><td class="s11" dir="ltr">Draxos Axe</td><td class="s10" dir="ltr">Rare</td><td class="s12" dir="ltr">Antimatter</td><td class="s10" dir="ltr">ExoTool</td><td class="s10" dir="ltr">30</td><td class="s10" dir="ltr">70</td><td class="s10" dir="ltr">349</td><td class="s10" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R69" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">70</div></th><td class="s10" dir="ltr">20966</td><td class="s3">https://ipfs.io/ipfs/QmeMJtz6DcAVyX6CJMnq4eSuPJ7isMkkGRhVFK3mhpzJ27</td><td class="s11" dir="ltr">Draxos Axe</td><td class="s10" dir="ltr">Rare</td><td class="s13" dir="ltr">XDimension</td><td class="s10" dir="ltr">ExoTool</td><td class="s10" dir="ltr">15</td><td class="s10" dir="ltr">70</td><td class="s10" dir="ltr">420</td><td class="s10" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R70" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">71</div></th><td class="s10" dir="ltr">741737</td><td class="s3">https://ipfs.io/ipfs/QmYNz9tyRFM9xoE2mN5CR4QsdVLAnNgRhKRMjV32YJ4ncQ</td><td class="s11" dir="ltr">Draxos Hammer</td><td class="s10" dir="ltr">Rare</td><td class="s5" dir="ltr">Stone</td><td class="s10" dir="ltr">ExoTool</td><td class="s10" dir="ltr">120</td><td class="s10" dir="ltr">20</td><td class="s10" dir="ltr">520</td><td class="s10" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R71" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">72</div></th><td class="s10" dir="ltr">741738</td><td class="s3">https://ipfs.io/ipfs/QmaQPZVbTJw2ERxT9DpJHHYJQZVyWCpi2m4SDrARMDbPih</td><td class="s11" dir="ltr">Draxos Hammer</td><td class="s10" dir="ltr">Rare</td><td class="s6" dir="ltr">Gold</td><td class="s10" dir="ltr">ExoTool</td><td class="s10" dir="ltr">150</td><td class="s10" dir="ltr">20</td><td class="s10" dir="ltr">520</td><td class="s10" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R72" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">73</div></th><td class="s10" dir="ltr">741739</td><td class="s3">https://ipfs.io/ipfs/QmQP5wKRHtLHZncDCMiUUc2dDjk98dFaho9snrkdaQ8BE9</td><td class="s11" dir="ltr">Draxos Hammer</td><td class="s10" dir="ltr">Rare</td><td class="s9" dir="ltr">Stardust</td><td class="s10" dir="ltr">ExoTool</td><td class="s10" dir="ltr">190</td><td class="s10" dir="ltr">20</td><td class="s10" dir="ltr">520</td><td class="s10" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R73" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">74</div></th><td class="s10" dir="ltr">741740</td><td class="s3">https://ipfs.io/ipfs/QmZ2DrXb7DnmxX1ef7iPP42WEofZanDo6uxycd7EoK4Usi</td><td class="s11" dir="ltr">Draxos Hammer</td><td class="s10" dir="ltr">Rare</td><td class="s12" dir="ltr">Antimatter</td><td class="s10" dir="ltr">ExoTool</td><td class="s10" dir="ltr">240</td><td class="s10" dir="ltr">20</td><td class="s10" dir="ltr">520</td><td class="s10" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R74" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">75</div></th><td class="s10" dir="ltr">19565</td><td class="s3">https://ipfs.io/ipfs/QmcH6nEoZGtu4CJpEZL54MQunhRANf6tLYrHkmxDdaNbad</td><td class="s11" dir="ltr">Glavor Disc</td><td class="s10" dir="ltr">Rare</td><td class="s5" dir="ltr">Stone</td><td class="s10" dir="ltr">Manipulator</td><td class="s10" dir="ltr">10</td><td class="s10" dir="ltr">40</td><td class="s10" dir="ltr">300</td><td class="s10" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R75" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">76</div></th><td class="s10" dir="ltr">48166</td><td class="s3">https://ipfs.io/ipfs/Qmf6xuyLcNBktzRQAMKSo1E7QMdrq7joUoprd1S8nusrbt</td><td class="s11" dir="ltr">Glavor Disc</td><td class="s10" dir="ltr">Rare</td><td class="s6" dir="ltr">Gold</td><td class="s10" dir="ltr">Manipulator</td><td class="s10" dir="ltr">10</td><td class="s10" dir="ltr">40</td><td class="s10" dir="ltr">300</td><td class="s10" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R76" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">77</div></th><td class="s10" dir="ltr">48193</td><td class="s3">https://ipfs.io/ipfs/QmSdQjK33WvJGXgH1UnV7rGXvWVkoEkvSAeJwngvL7Y1ZR</td><td class="s11" dir="ltr">Glavor Disc</td><td class="s10" dir="ltr">Rare</td><td class="s9" dir="ltr">Stardust</td><td class="s10" dir="ltr">Manipulator</td><td class="s10" dir="ltr">10</td><td class="s10" dir="ltr">40</td><td class="s10" dir="ltr">260</td><td class="s10" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R77" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">78</div></th><td class="s10" dir="ltr">48213</td><td class="s3">https://ipfs.io/ipfs/QmaEUQZrzYRVHLPPAU7FJSiBKSZ9PdF5tUug635ddaziQE</td><td class="s11" dir="ltr">Glavor Disc</td><td class="s10" dir="ltr">Rare</td><td class="s12" dir="ltr">Antimatter</td><td class="s10" dir="ltr">Manipulator</td><td class="s10" dir="ltr">20</td><td class="s10" dir="ltr">50</td><td class="s10" dir="ltr">249</td><td class="s10" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R78" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">79</div></th><td class="s10" dir="ltr">20969</td><td class="s3">https://ipfs.io/ipfs/QmcdVjtkH4mqe64nL1oQfvwbhGtNqPbmtz82SKsvAth4GW</td><td class="s11" dir="ltr">Glavor Disc</td><td class="s10" dir="ltr">Rare</td><td class="s13" dir="ltr">XDimension</td><td class="s10" dir="ltr">Manipulator</td><td class="s10" dir="ltr">20</td><td class="s10" dir="ltr">40</td><td class="s10" dir="ltr">300</td><td class="s10" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R79" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">80</div></th><td class="s10" dir="ltr">19563</td><td class="s3">https://ipfs.io/ipfs/QmXVUtxQffRC8mHfhFhq5k2QpyGvitE5k2cFCC5cHRpJq2</td><td class="s11" dir="ltr">Large Capacitor</td><td class="s10" dir="ltr">Rare</td><td class="s5" dir="ltr">Stone</td><td class="s10" dir="ltr">Manipulator</td><td class="s10" dir="ltr">200</td><td class="s10" dir="ltr">30</td><td class="s10" dir="ltr">1440</td><td class="s10" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R80" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">81</div></th><td class="s10" dir="ltr">48164</td><td class="s3">https://ipfs.io/ipfs/QmYKwmpca3jM5oXpPL7C3QQh6Ygiy35av9B5GgU3gHCHZj</td><td class="s11" dir="ltr">Large Capacitor</td><td class="s10" dir="ltr">Rare</td><td class="s6" dir="ltr">Gold</td><td class="s10" dir="ltr">Manipulator</td><td class="s10" dir="ltr">210</td><td class="s10" dir="ltr">40</td><td class="s10" dir="ltr">1440</td><td class="s10" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R81" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">82</div></th><td class="s10" dir="ltr">48191</td><td class="s3">https://ipfs.io/ipfs/QmWs3WxVXBsMFsY8gqmvKuL5u1Z4qgszRafkkDq6mVJWQN</td><td class="s11" dir="ltr">Large Capacitor</td><td class="s10" dir="ltr">Rare</td><td class="s9" dir="ltr">Stardust</td><td class="s10" dir="ltr">Manipulator</td><td class="s10" dir="ltr">220</td><td class="s10" dir="ltr">40</td><td class="s10" dir="ltr">1350</td><td class="s10" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R82" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">83</div></th><td class="s10" dir="ltr">48211</td><td class="s3">https://ipfs.io/ipfs/QmXnNSdDz8gA3GoXoTDFauWnVHVWneiJVymeg87rFZWxHm</td><td class="s11" dir="ltr">Large Capacitor</td><td class="s10" dir="ltr">Rare</td><td class="s12" dir="ltr">Antimatter</td><td class="s10" dir="ltr">Manipulator</td><td class="s10" dir="ltr">220</td><td class="s10" dir="ltr">40</td><td class="s10" dir="ltr">1111</td><td class="s10" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R83" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">84</div></th><td class="s10" dir="ltr">20967</td><td class="s3">https://ipfs.io/ipfs/QmSD7PnmWqQ5Tqsa9vHqqRMYg2ZVcrQw5CPvMn6koRCLth</td><td class="s11" dir="ltr">Large Capacitor</td><td class="s10" dir="ltr">Rare</td><td class="s13" dir="ltr">XDimension</td><td class="s10" dir="ltr">Manipulator</td><td class="s10" dir="ltr">240</td><td class="s10" dir="ltr">40</td><td class="s10" dir="ltr">1440</td><td class="s10" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R84" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">85</div></th><td class="s10" dir="ltr">19567</td><td class="s3">https://ipfs.io/ipfs/QmbXtPVwKMV3MGzJAetUC4jpK5ZzG2WpUE4QMFBXH7vizT</td><td class="s11" dir="ltr">Large Explosive</td><td class="s10" dir="ltr">Rare</td><td class="s5" dir="ltr">Stone</td><td class="s10" dir="ltr">Explosive</td><td class="s10" dir="ltr">300</td><td class="s10" dir="ltr">100</td><td class="s10" dir="ltr">3600</td><td class="s10" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R85" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">86</div></th><td class="s10" dir="ltr">48168</td><td class="s3">https://ipfs.io/ipfs/QmbUeiMbDcN8fHwsrkWBVBrNZUwPPNp173W8ZLm5nUPvLb</td><td class="s11" dir="ltr">Large Explosive</td><td class="s10" dir="ltr">Rare</td><td class="s6" dir="ltr">Gold</td><td class="s10" dir="ltr">Explosive</td><td class="s10" dir="ltr">300</td><td class="s10" dir="ltr">100</td><td class="s10" dir="ltr">3300</td><td class="s10" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R86" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">87</div></th><td class="s10" dir="ltr">48195</td><td class="s3">https://ipfs.io/ipfs/QmVi798rU4TvtJbZZcjg5rDvsuZXPWRS3hpARDAnvJYaaK</td><td class="s11" dir="ltr">Large Explosive</td><td class="s10" dir="ltr">Rare</td><td class="s9" dir="ltr">Stardust</td><td class="s10" dir="ltr">Explosive</td><td class="s10" dir="ltr">310</td><td class="s10" dir="ltr">100</td><td class="s10" dir="ltr">3150</td><td class="s10" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R87" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">88</div></th><td class="s10" dir="ltr">48215</td><td class="s3">https://ipfs.io/ipfs/QmZRESrhohn2K3WkT69idKLTL3ZDH1BocsEz4h3NeCoLH2</td><td class="s11" dir="ltr">Large Explosive</td><td class="s10" dir="ltr">Rare</td><td class="s12" dir="ltr">Antimatter</td><td class="s10" dir="ltr">Explosive</td><td class="s10" dir="ltr">320</td><td class="s10" dir="ltr">110</td><td class="s10" dir="ltr">2999</td><td class="s10" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R88" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">89</div></th><td class="s10" dir="ltr">20971</td><td class="s3">https://ipfs.io/ipfs/Qmae6U7nnkkZa58Cwvu3LQaZDLrVSp128xZ7pnzjcw7uBe</td><td class="s11" dir="ltr">Large Explosive</td><td class="s10" dir="ltr">Rare</td><td class="s13" dir="ltr">XDimension</td><td class="s10" dir="ltr">Explosive</td><td class="s10" dir="ltr">300</td><td class="s10" dir="ltr">100</td><td class="s10" dir="ltr">3000</td><td class="s10" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R89" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">90</div></th><td class="s10" dir="ltr">19564</td><td class="s3">https://ipfs.io/ipfs/QmYYEGokAs2LfwG4mWoi74pd9ckzZoF9LThaiqmw18t49w</td><td class="s11" dir="ltr">Processing Ring</td><td class="s10" dir="ltr">Rare</td><td class="s5" dir="ltr">Stone</td><td class="s10" dir="ltr">Manipulator</td><td class="s10" dir="ltr">10</td><td class="s10" dir="ltr">80</td><td class="s10" dir="ltr">600</td><td class="s10" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R90" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">91</div></th><td class="s10" dir="ltr">48165</td><td class="s3">https://ipfs.io/ipfs/QmcySPsxr9mTYa4Q6tpw573vptAg6hymMuv6VzkGiyxNWa</td><td class="s11" dir="ltr">Processing Ring</td><td class="s10" dir="ltr">Rare</td><td class="s6" dir="ltr">Gold</td><td class="s10" dir="ltr">Manipulator</td><td class="s10" dir="ltr">10</td><td class="s10" dir="ltr">80</td><td class="s10" dir="ltr">500</td><td class="s10" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R91" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">92</div></th><td class="s10" dir="ltr">48192</td><td class="s3">https://ipfs.io/ipfs/QmbSCm5gQ3x741tf3kL2QWws8mQB2SjyWZoGFWYqHqm6PQ</td><td class="s11" dir="ltr">Processing Ring</td><td class="s10" dir="ltr">Rare</td><td class="s9" dir="ltr">Stardust</td><td class="s10" dir="ltr">Manipulator</td><td class="s10" dir="ltr">10</td><td class="s10" dir="ltr">80</td><td class="s10" dir="ltr">440</td><td class="s10" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R92" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">93</div></th><td class="s10" dir="ltr">48212</td><td class="s3">https://ipfs.io/ipfs/QmbaAzMAm8BZrg2QLUep7GEfyxkLxW2VBKhrPmu3eCuzCN</td><td class="s11" dir="ltr">Processing Ring</td><td class="s10" dir="ltr">Rare</td><td class="s12" dir="ltr">Antimatter</td><td class="s10" dir="ltr">Manipulator</td><td class="s10" dir="ltr">10</td><td class="s10" dir="ltr">80</td><td class="s10" dir="ltr">349</td><td class="s10" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R93" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">94</div></th><td class="s10" dir="ltr">20968</td><td class="s3">https://ipfs.io/ipfs/Qmd3gtqV5JSaFubDYdQ4pNeZsQSbYtSQWbLogXFNizWCfX</td><td class="s11" dir="ltr">Processing Ring</td><td class="s10" dir="ltr">Rare</td><td class="s13" dir="ltr">XDimension</td><td class="s10" dir="ltr">Manipulator</td><td class="s10" dir="ltr">22</td><td class="s10" dir="ltr">100</td><td class="s10" dir="ltr">600</td><td class="s10" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R94" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">95</div></th><td class="s14" dir="ltr">19571</td><td class="s3">https://ipfs.io/ipfs/QmWxZGX8fJ3zC4cmyNGiQqS4kAZRpzsJKPsCeKNiGEuEhx</td><td class="s15" dir="ltr">Advanced TD</td><td class="s14" dir="ltr">Epic</td><td class="s5" dir="ltr">Stone</td><td class="s14" dir="ltr">Manipulator</td><td class="s14" dir="ltr">25</td><td class="s14"></td><td class="s14" dir="ltr">80</td><td class="s14" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R95" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">96</div></th><td class="s14" dir="ltr">48172</td><td class="s3">https://ipfs.io/ipfs/QmPV2vHPcbennZQtMcJmby4biootiqeHuaUbbaiREfrErW</td><td class="s15" dir="ltr">Advanced TD</td><td class="s14" dir="ltr">Epic</td><td class="s6" dir="ltr">Gold</td><td class="s14" dir="ltr">Manipulator</td><td class="s14" dir="ltr">25</td><td class="s14" dir="ltr">5</td><td class="s14" dir="ltr">80</td><td class="s14" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R96" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">97</div></th><td class="s14" dir="ltr">48199</td><td class="s3">https://ipfs.io/ipfs/QmdpukXP7C4No9sS7mnn71StejAEh9dCHBTdTtyry3gKSe</td><td class="s15" dir="ltr">Advanced TD</td><td class="s14" dir="ltr">Epic</td><td class="s9" dir="ltr">Stardust</td><td class="s14" dir="ltr">Manipulator</td><td class="s14" dir="ltr">25</td><td class="s14" dir="ltr">10</td><td class="s14" dir="ltr">75</td><td class="s14" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R97" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">98</div></th><td class="s14" dir="ltr">48219</td><td class="s3">https://ipfs.io/ipfs/QmPpRq2iJnUf2tSbGf65CpJEzEGhus56CpzgbbsZCf1jBA</td><td class="s15" dir="ltr">Advanced TD</td><td class="s14" dir="ltr">Epic</td><td class="s12" dir="ltr">Antimatter</td><td class="s14" dir="ltr">Manipulator</td><td class="s14" dir="ltr">25</td><td class="s14" dir="ltr">10</td><td class="s14" dir="ltr">69</td><td class="s14" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R98" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">99</div></th><td class="s14" dir="ltr">19569</td><td class="s3">https://ipfs.io/ipfs/QmcBLkQibsKtyihhTS75Uy5arpeKRXAJbFH6VkBomkt3yg</td><td class="s15" dir="ltr">Causian Attractor</td><td class="s14" dir="ltr">Epic</td><td class="s5" dir="ltr">Stone</td><td class="s14" dir="ltr">Manipulator</td><td class="s14" dir="ltr">0</td><td class="s14" dir="ltr">100</td><td class="s14" dir="ltr">660</td><td class="s14" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R99" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">100</div></th><td class="s14" dir="ltr">48170</td><td class="s3">https://ipfs.io/ipfs/QmQsk8phGC8w68nt47KMvi9pNR2SczQqsGW4X9eLUdyjZk</td><td class="s15" dir="ltr">Causian Attractor</td><td class="s14" dir="ltr">Epic</td><td class="s6" dir="ltr">Gold</td><td class="s14" dir="ltr">Manipulator</td><td class="s14" dir="ltr">0</td><td class="s14" dir="ltr">100</td><td class="s14" dir="ltr">660</td><td class="s14" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R100" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">101</div></th><td class="s14" dir="ltr">48197</td><td class="s3">https://ipfs.io/ipfs/Qme4pkoHNgN7p9EujsarDdUnqhq5KmjGgttToWjP4hPqvs</td><td class="s15" dir="ltr">Causian Attractor</td><td class="s14" dir="ltr">Epic</td><td class="s9" dir="ltr">Stardust</td><td class="s14" dir="ltr">Manipulator</td><td class="s14" dir="ltr">0</td><td class="s14" dir="ltr">120</td><td class="s14" dir="ltr">600</td><td class="s14" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R101" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">102</div></th><td class="s14" dir="ltr">48217</td><td class="s3">https://ipfs.io/ipfs/QmPkdh4X6Gjn1nfL9Dkf6ZPXio28uKR7Z4zTHrQimezViB</td><td class="s15" dir="ltr">Causian Attractor</td><td class="s14" dir="ltr">Epic</td><td class="s12" dir="ltr">Antimatter</td><td class="s14" dir="ltr">Manipulator</td><td class="s14" dir="ltr">0</td><td class="s14" dir="ltr">120</td><td class="s14" dir="ltr">499</td><td class="s14" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R102" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">103</div></th><td class="s14" dir="ltr">19581</td><td class="s3">https://ipfs.io/ipfs/QmYJ2fNN1XC8CiAXMaNztwKejTwGMpyHXakiA4gVFLGRZ5</td><td class="s15" dir="ltr">Dacalizer</td><td class="s14" dir="ltr">Epic</td><td class="s5" dir="ltr">Stone</td><td class="s14" dir="ltr">Explosive</td><td class="s14" dir="ltr">360</td><td class="s14" dir="ltr">150</td><td class="s14" dir="ltr">4000</td><td class="s14" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R103" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">104</div></th><td class="s14" dir="ltr">48182</td><td class="s3">https://ipfs.io/ipfs/QmPjycNhApPMqAsQhsMNXZuTSGy1PtqszYSH7NzQstrJPp</td><td class="s15" dir="ltr">Dacalizer</td><td class="s14" dir="ltr">Epic</td><td class="s6" dir="ltr">Gold</td><td class="s14" dir="ltr">Explosive</td><td class="s14" dir="ltr">360</td><td class="s14" dir="ltr">150</td><td class="s14" dir="ltr">3600</td><td class="s14" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R104" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">105</div></th><td class="s14" dir="ltr">48209</td><td class="s3">https://ipfs.io/ipfs/QmQSdJpTLRnsBEzR1cE3jKZDRJvNgdhpwzCxgi4W37pfCg</td><td class="s15" dir="ltr">Dacalizer</td><td class="s14" dir="ltr">Epic</td><td class="s9" dir="ltr">Stardust</td><td class="s14" dir="ltr">Explosive</td><td class="s14" dir="ltr">360</td><td class="s14" dir="ltr">150</td><td class="s14" dir="ltr">3300</td><td class="s14" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R105" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">106</div></th><td class="s14" dir="ltr">48229</td><td class="s3">https://ipfs.io/ipfs/QmRpVKMkvuaSDGhkKfGLGJ4ZNAPXSE7vf7YrLErrP12dkB</td><td class="s15" dir="ltr">Dacalizer</td><td class="s14" dir="ltr">Epic</td><td class="s12" dir="ltr">Antimatter</td><td class="s14" dir="ltr">Explosive</td><td class="s14" dir="ltr">380</td><td class="s14" dir="ltr">160</td><td class="s14" dir="ltr">2899</td><td class="s14" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R106" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">107</div></th><td class="s14" dir="ltr">19573</td><td class="s3">https://ipfs.io/ipfs/Qmd1d1sN5r8dtC4fMo4Vs6ZAdH5BbR2vqJKk5VbcPiJVkF</td><td class="s15" dir="ltr">Localised Attractor</td><td class="s14" dir="ltr">Epic</td><td class="s5" dir="ltr">Stone</td><td class="s14" dir="ltr">Manipulator</td><td class="s14" dir="ltr">60</td><td class="s14" dir="ltr">50</td><td class="s14" dir="ltr">450</td><td class="s14" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R107" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">108</div></th><td class="s14" dir="ltr">48174</td><td class="s3">https://ipfs.io/ipfs/QmZBj1xEe35wYQdGxmY3E6cweSQgiKoP3txnASHxnDWhjg</td><td class="s15" dir="ltr">Localised Attractor</td><td class="s14" dir="ltr">Epic</td><td class="s6" dir="ltr">Gold</td><td class="s14" dir="ltr">Manipulator</td><td class="s14" dir="ltr">70</td><td class="s14" dir="ltr">60</td><td class="s14" dir="ltr">450</td><td class="s14" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R108" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">109</div></th><td class="s14" dir="ltr">48201</td><td class="s3">https://ipfs.io/ipfs/QmZ3U2h88UcZKqkVuuMQcrZZ2jAKWeNzM3DpBhCsVYWTzp</td><td class="s15" dir="ltr">Localised Attractor</td><td class="s14" dir="ltr">Epic</td><td class="s9" dir="ltr">Stardust</td><td class="s14" dir="ltr">Manipulator</td><td class="s14" dir="ltr">70</td><td class="s14" dir="ltr">60</td><td class="s14" dir="ltr">420</td><td class="s14" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R109" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">110</div></th><td class="s14" dir="ltr">48221</td><td class="s3">https://ipfs.io/ipfs/QmeKZ6fD7cfVqEovBCsfJP5n7pssgR8YPoK7acbWXvhKn8</td><td class="s15" dir="ltr">Localised Attractor</td><td class="s14" dir="ltr">Epic</td><td class="s12" dir="ltr">Antimatter</td><td class="s14" dir="ltr">Manipulator</td><td class="s14" dir="ltr">80</td><td class="s14" dir="ltr">60</td><td class="s14" dir="ltr">399</td><td class="s14" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R110" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">111</div></th><td class="s14" dir="ltr">19574</td><td class="s3">https://ipfs.io/ipfs/QmdXWyZJHyvvkMnx9Eh64bgncQYnSp4rCK3puUpeYU9zpo</td><td class="s15" dir="ltr">Nanominer</td><td class="s14" dir="ltr">Epic</td><td class="s5" dir="ltr">Stone</td><td class="s14" dir="ltr">Exotool</td><td class="s14" dir="ltr">40</td><td class="s14" dir="ltr">10</td><td class="s14" dir="ltr">150</td><td class="s14" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R111" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">112</div></th><td class="s14" dir="ltr">48175</td><td class="s3">https://ipfs.io/ipfs/QmcMAVyvU7sZSoivUMqsT2as6NY52TKtfodKPxe15h87dn</td><td class="s15" dir="ltr">Nanominer</td><td class="s14" dir="ltr">Epic</td><td class="s6" dir="ltr">Gold</td><td class="s14" dir="ltr">Exotool</td><td class="s14" dir="ltr">40</td><td class="s14" dir="ltr">10</td><td class="s14" dir="ltr">140</td><td class="s14" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R112" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">113</div></th><td class="s14" dir="ltr">48202</td><td class="s3">https://ipfs.io/ipfs/QmUEMZRbCD9pcfcime45m3TQ7LsNTXutvJmJmWoJyX8rmt</td><td class="s15" dir="ltr">Nanominer</td><td class="s14" dir="ltr">Epic</td><td class="s9" dir="ltr">Stardust</td><td class="s14" dir="ltr">Exotool</td><td class="s14" dir="ltr">40</td><td class="s14" dir="ltr">10</td><td class="s14" dir="ltr">120</td><td class="s14" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R113" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">114</div></th><td class="s14" dir="ltr">48222</td><td class="s3">https://ipfs.io/ipfs/QmSehcxdhMW6FK7tYhuoMmwxx2mAi6qRUvUWV3X59hekUv</td><td class="s15" dir="ltr">Nanominer</td><td class="s14" dir="ltr">Epic</td><td class="s12" dir="ltr">Antimatter</td><td class="s14" dir="ltr">Exotool</td><td class="s14" dir="ltr">40</td><td class="s14" dir="ltr">10</td><td class="s14" dir="ltr">99</td><td class="s14" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R114" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">115</div></th><td class="s14" dir="ltr">19570</td><td class="s3">https://ipfs.io/ipfs/QmT4EnH66BLU1J9LgQWqh1V2RqNzNzAQJNyucC8ZyA4fBh</td><td class="s15" dir="ltr">Quark Separator</td><td class="s14" dir="ltr">Epic</td><td class="s5" dir="ltr">Stone</td><td class="s14" dir="ltr">Explosive</td><td class="s14" dir="ltr">350</td><td class="s14" dir="ltr">120</td><td class="s14" dir="ltr">4500</td><td class="s14" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R115" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">116</div></th><td class="s14" dir="ltr">48171</td><td class="s3">https://ipfs.io/ipfs/QmTyqVHspoywJsCHbakBQfRLUoNH7ZPFpuqTE7mW5G8BhF</td><td class="s15" dir="ltr">Quark Separator</td><td class="s14" dir="ltr">Epic</td><td class="s6" dir="ltr">Gold</td><td class="s14" dir="ltr">Explosive</td><td class="s14" dir="ltr">350</td><td class="s14" dir="ltr">140</td><td class="s14" dir="ltr">4300</td><td class="s14" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R116" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">117</div></th><td class="s14" dir="ltr">48198</td><td class="s3">https://ipfs.io/ipfs/QmX71mR1DysnCFKa6WjGPLGA4QDWgqJNf9QSzArEXTK8EK</td><td class="s15" dir="ltr">Quark Separator</td><td class="s14" dir="ltr">Epic</td><td class="s9" dir="ltr">Stardust</td><td class="s14" dir="ltr">Explosive</td><td class="s14" dir="ltr">350</td><td class="s14" dir="ltr">140</td><td class="s14" dir="ltr">3600</td><td class="s14" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R117" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">118</div></th><td class="s14" dir="ltr">48218</td><td class="s3">https://ipfs.io/ipfs/QmXZETfXPiXQDZakJfc3eRfFgj3GtMvYV5D5kSMrEuo5Hy</td><td class="s15" dir="ltr">Quark Separator</td><td class="s14" dir="ltr">Epic</td><td class="s12" dir="ltr">Antimatter</td><td class="s14" dir="ltr">Explosive</td><td class="s14" dir="ltr">350</td><td class="s14" dir="ltr">150</td><td class="s14" dir="ltr">2999</td><td class="s14" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R118" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">119</div></th><td class="s14" dir="ltr">19572</td><td class="s3">https://ipfs.io/ipfs/QmbeKDCDXXo12CKRd6wzofZiJhJjr3KsFh6eUWqfdh6UkR</td><td class="s15" dir="ltr">RD9000 Excavator</td><td class="s14" dir="ltr">Epic</td><td class="s5" dir="ltr">Stone</td><td class="s14" dir="ltr">Extractor</td><td class="s14" dir="ltr">70</td><td class="s14"></td><td class="s14" dir="ltr">240</td><td class="s14" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R119" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">120</div></th><td class="s14" dir="ltr">48173</td><td class="s3">https://ipfs.io/ipfs/QmRoRHseWKpaFju295qafBCVohg84j6WRubkHZEVooqiC5</td><td class="s15" dir="ltr">RD9000 Excavator</td><td class="s14" dir="ltr">Epic</td><td class="s6" dir="ltr">Gold</td><td class="s14" dir="ltr">Extractor</td><td class="s14" dir="ltr">70</td><td class="s14" dir="ltr">10</td><td class="s14" dir="ltr">240</td><td class="s14" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R120" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">121</div></th><td class="s14" dir="ltr">48200</td><td class="s3">https://ipfs.io/ipfs/QmaYPWBriRsLeYMjwexvcYE5pKqw22SxgaF6AgLjoNnooH</td><td class="s15" dir="ltr">RD9000 Excavator</td><td class="s14" dir="ltr">Epic</td><td class="s9" dir="ltr">Stardust</td><td class="s14" dir="ltr">Extractor</td><td class="s14" dir="ltr">70</td><td class="s14" dir="ltr">10</td><td class="s14" dir="ltr">220</td><td class="s14" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R121" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">122</div></th><td class="s14" dir="ltr">48220</td><td class="s3">https://ipfs.io/ipfs/QmTxCsd5dcTT3qZhA7Zo68iKjCvG2F7kRVe67jxBKMrSpY</td><td class="s15" dir="ltr">RD9000 Excavator</td><td class="s14" dir="ltr">Epic</td><td class="s12" dir="ltr">Antimatter</td><td class="s14" dir="ltr">Extractor</td><td class="s14" dir="ltr">70</td><td class="s14" dir="ltr">10</td><td class="s14" dir="ltr">199</td><td class="s14" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R122" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">123</div></th><td class="s16" dir="ltr">741840</td><td class="s3">https://ipfs.io/ipfs/QmZwD45d4rThdVoA3GkXGJkP448kMbcQsYTU8MM27q68hB</td><td class="s17" dir="ltr">Ether Converter</td><td class="s16" dir="ltr">Legendary</td><td class="s5" dir="ltr">Stone</td><td class="s16" dir="ltr">Manipulator</td><td class="s16" dir="ltr">420</td><td class="s16" dir="ltr">280</td><td class="s16" dir="ltr">2000</td><td class="s16" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R123" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">124</div></th><td class="s16" dir="ltr">741841</td><td class="s3">https://ipfs.io/ipfs/QmbSiZThecTkMuNuY1JzX8nx8PrRxufibXT7jhKp7k2FbF</td><td class="s17" dir="ltr">Ether Converter</td><td class="s16" dir="ltr">Legendary</td><td class="s6" dir="ltr">Gold</td><td class="s16" dir="ltr">Manipulator</td><td class="s16" dir="ltr">420</td><td class="s16" dir="ltr">280</td><td class="s16" dir="ltr">1500</td><td class="s16" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R124" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">125</div></th><td class="s16" dir="ltr">741842</td><td class="s3">https://ipfs.io/ipfs/QmdV5NB3gav2H9iHtdBCQZWuCQvLY646NVh7ZRui43uvuQ</td><td class="s17" dir="ltr">Ether Converter</td><td class="s16" dir="ltr">Legendary</td><td class="s9" dir="ltr">Stardust</td><td class="s16" dir="ltr">Manipulator</td><td class="s16" dir="ltr">420</td><td class="s16" dir="ltr">350</td><td class="s16" dir="ltr">1500</td><td class="s16" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R125" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">126</div></th><td class="s16" dir="ltr">741843</td><td class="s3">https://ipfs.io/ipfs/QmZtzzY4Ceh7bFsaZQXrDyE8yaNU4Qor3du6XEZAnoaWRo</td><td class="s17" dir="ltr">Ether Converter</td><td class="s16" dir="ltr">Legendary</td><td class="s12" dir="ltr">Antimatter</td><td class="s16" dir="ltr">Manipulator</td><td class="s16" dir="ltr">420</td><td class="s16" dir="ltr">360</td><td class="s16" dir="ltr">1150</td><td class="s16" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R126" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">127</div></th><td class="s16" dir="ltr">19575</td><td class="s3">https://ipfs.io/ipfs/QmeRu83EHcg3uv3kCuZrHbVQGB1xYq4Zu9qXae2LNoNLNE</td><td class="s17" dir="ltr">Exlian Staff</td><td class="s16" dir="ltr">Legendary</td><td class="s5" dir="ltr">Stone</td><td class="s16" dir="ltr">Exotool</td><td class="s16" dir="ltr">100</td><td class="s16" dir="ltr">60</td><td class="s16" dir="ltr">720</td><td class="s16" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R127" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">128</div></th><td class="s16" dir="ltr">48176</td><td class="s3">https://ipfs.io/ipfs/QmPPkFd8vAG2BnHAjCvi8JLMAuejHkGxCUm7SF9YDnqGLN</td><td class="s17" dir="ltr">Exlian Staff</td><td class="s16" dir="ltr">Legendary</td><td class="s6" dir="ltr">Gold</td><td class="s16" dir="ltr">Exotool</td><td class="s16" dir="ltr">100</td><td class="s16" dir="ltr">60</td><td class="s16" dir="ltr">650</td><td class="s16" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R128" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">129</div></th><td class="s16" dir="ltr">48203</td><td class="s3">https://ipfs.io/ipfs/QmNZe18igCJ4k9gypqnrkidSGUtjKxJoWs2MPPnAFqwgRq</td><td class="s17" dir="ltr">Exlian Staff</td><td class="s16" dir="ltr">Legendary</td><td class="s9" dir="ltr">Stardust</td><td class="s16" dir="ltr">Exotool</td><td class="s16" dir="ltr">110</td><td class="s16" dir="ltr">60</td><td class="s16" dir="ltr">600</td><td class="s16" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R129" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">130</div></th><td class="s16" dir="ltr">48223</td><td class="s3">https://ipfs.io/ipfs/QmcABBqFwAomv5NtqKPq3A4HDi6yNz1JGbRXFCnBc3QUjX</td><td class="s17" dir="ltr">Exlian Staff</td><td class="s16" dir="ltr">Legendary</td><td class="s12" dir="ltr">Antimatter</td><td class="s16" dir="ltr">Exotool</td><td class="s16" dir="ltr">110</td><td class="s16" dir="ltr">60</td><td class="s16" dir="ltr">499</td><td class="s16" dir="ltr">3</td></tr><tr style="height: 68px"><th id="1704901039R130" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">131</div></th><td class="s16" dir="ltr">19578</td><td class="s3">https://ipfs.io/ipfs/QmQxmdaGP9zTMMSMgwC8YVEd9J7kxgAkzfprw5LY8bQovE</td><td class="s17" dir="ltr">Lucky Drill</td><td class="s16" dir="ltr">Legendary</td><td class="s5" dir="ltr">Stone</td><td class="s16" dir="ltr">Extractor</td><td class="s16" dir="ltr">50</td><td class="s16" dir="ltr">10</td><td class="s16" dir="ltr">160</td><td class="s16" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R131" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">132</div></th><td class="s16" dir="ltr">48179</td><td class="s3">https://ipfs.io/ipfs/QmWqXgxUvFcRhimgJPxPvtd1X2t3J4MqedzfWhFNvmahNX</td><td class="s17" dir="ltr">Lucky Drill</td><td class="s16" dir="ltr">Legendary</td><td class="s6" dir="ltr">Gold</td><td class="s16" dir="ltr">Extractor</td><td class="s16" dir="ltr">50</td><td class="s16" dir="ltr">15</td><td class="s16" dir="ltr">150</td><td class="s16" dir="ltr">0</td></tr><tr style="height: 68px"><th id="1704901039R132" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">133</div></th><td class="s16" dir="ltr">48206</td><td class="s3">https://ipfs.io/ipfs/Qmd1MJN7x91nqdVZ8Fm5U2J13yPjb1j6RutaXwNnG68KHT</td><td class="s17" dir="ltr">Lucky Drill</td><td class="s16" dir="ltr">Legendary</td><td class="s9" dir="ltr">Stardust</td><td class="s16" dir="ltr">Extractor</td><td class="s16" dir="ltr">50</td><td class="s16" dir="ltr">20</td><td class="s16" dir="ltr">150</td><td class="s16" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R133" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">134</div></th><td class="s16" dir="ltr">48226</td><td class="s3">https://ipfs.io/ipfs/QmdF3aYa1NvtUcsJLYxQPNDj1vaMS3GWnmaEk9jh8EMMEx</td><td class="s17" dir="ltr">Lucky Drill</td><td class="s16" dir="ltr">Legendary</td><td class="s12" dir="ltr">Antimatter</td><td class="s16" dir="ltr">Extractor</td><td class="s16" dir="ltr">50</td><td class="s16" dir="ltr">20</td><td class="s16" dir="ltr">133</td><td class="s16" dir="ltr">2</td></tr><tr style="height: 68px"><th id="1704901039R134" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">135</div></th><td class="s16" dir="ltr">19577</td><td class="s3">https://ipfs.io/ipfs/QmZJDRyTpCk6BWey5dXfhrGuN5TwVVDX5So7qjGZvdTzH6</td><td class="s17" dir="ltr">Particle Beam Collider</td><td class="s16" dir="ltr">Legendary</td><td class="s5" dir="ltr">Stone</td><td class="s16" dir="ltr">Manipulator</td><td class="s16" dir="ltr">150</td><td class="s16" dir="ltr">80</td><td class="s16" dir="ltr">1300</td><td class="s16" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R135" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">136</div></th><td class="s16" dir="ltr">48178</td><td class="s3">https://ipfs.io/ipfs/QmfVcjrkkFhQ3bmsCuFUiHKYcHVn7RPs2vR1LVWfrEJhWN</td><td class="s17" dir="ltr">Particle Beam Collider</td><td class="s16" dir="ltr">Legendary</td><td class="s6" dir="ltr">Gold</td><td class="s16" dir="ltr">Manipulator</td><td class="s16" dir="ltr">160</td><td class="s16" dir="ltr">80</td><td class="s16" dir="ltr">1200</td><td class="s16" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R136" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">137</div></th><td class="s16" dir="ltr">48205</td><td class="s3">https://ipfs.io/ipfs/QmS7BXL9DkXTFjTNamyZMv4KmnxSjXvwqF6FtF2Y2UUAoB</td><td class="s17" dir="ltr">Particle Beam Collider</td><td class="s16" dir="ltr">Legendary</td><td class="s9" dir="ltr">Stardust</td><td class="s16" dir="ltr">Manipulator</td><td class="s16" dir="ltr">170</td><td class="s16" dir="ltr">80</td><td class="s16" dir="ltr">1100</td><td class="s16" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R137" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">138</div></th><td class="s16" dir="ltr">48225</td><td class="s3">https://ipfs.io/ipfs/QmbtTDsPkmqt7Vc6H7xLNHJugVaeStjJPhTH7AS85aikzL</td><td class="s17" dir="ltr">Particle Beam Collider</td><td class="s16" dir="ltr">Legendary</td><td class="s12" dir="ltr">Antimatter</td><td class="s16" dir="ltr">Manipulator</td><td class="s16" dir="ltr">160</td><td class="s16" dir="ltr">80</td><td class="s16" dir="ltr">999</td><td class="s16" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R138" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">139</div></th><td class="s16" dir="ltr">19576</td><td class="s3">https://ipfs.io/ipfs/QmakMLVmWQGb4dwqMEYpA5CFGBDbTza5FNsrYDcLUgKHQo</td><td class="s17" dir="ltr">Quantum Drill</td><td class="s16" dir="ltr">Legendary</td><td class="s5" dir="ltr">Stone</td><td class="s16" dir="ltr">Extractor</td><td class="s16" dir="ltr">400</td><td class="s16" dir="ltr">50</td><td class="s16" dir="ltr">4500</td><td class="s16" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R139" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">140</div></th><td class="s16" dir="ltr">48177</td><td class="s3">https://ipfs.io/ipfs/QmU8TR5QX9HqUawEHEAadQKPYpgBA1Cssm5cU7oPhatbkX</td><td class="s17" dir="ltr">Quantum Drill</td><td class="s16" dir="ltr">Legendary</td><td class="s6" dir="ltr">Gold</td><td class="s16" dir="ltr">Extractor</td><td class="s16" dir="ltr">400</td><td class="s16" dir="ltr">50</td><td class="s16" dir="ltr">4200</td><td class="s16" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R140" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">141</div></th><td class="s16" dir="ltr">48204</td><td class="s3">https://ipfs.io/ipfs/QmdWQ42V2ppzLaKGZhGLK35HKCdr91nK56WNLpRgxgRQ6G</td><td class="s17" dir="ltr">Quantum Drill</td><td class="s16" dir="ltr">Legendary</td><td class="s9" dir="ltr">Stardust</td><td class="s16" dir="ltr">Extractor</td><td class="s16" dir="ltr">400</td><td class="s16" dir="ltr">100</td><td class="s16" dir="ltr">3600</td><td class="s16" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R141" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">142</div></th><td class="s16" dir="ltr">48224</td><td class="s3">https://ipfs.io/ipfs/QmQTJBeJmUshBMcJgRopioQgUJ8cdahUixjvzPv2B9UHhc</td><td class="s17" dir="ltr">Quantum Drill</td><td class="s16" dir="ltr">Legendary</td><td class="s12" dir="ltr">Antimatter</td><td class="s16" dir="ltr">Extractor</td><td class="s16" dir="ltr">400</td><td class="s16" dir="ltr">100</td><td class="s16" dir="ltr">2999</td><td class="s16" dir="ltr">4</td></tr><tr style="height: 68px"><th id="1704901039R142" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">143</div></th><td class="s18" dir="ltr">19579</td><td class="s3">https://ipfs.io/ipfs/QmcZvRUemTKrKSz5WvcLietGbQTqtJtpjpRnub6Q1HpuEW</td><td class="s19" dir="ltr">AI Excavator</td><td class="s18" dir="ltr">Mythical</td><td class="s5" dir="ltr">Stone</td><td class="s18" dir="ltr">Extractor</td><td class="s18" dir="ltr">50</td><td class="s18" dir="ltr">50</td><td class="s18" dir="ltr">300</td><td class="s18" dir="ltr">6</td></tr><tr style="height: 68px"><th id="1704901039R143" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">144</div></th><td class="s18" dir="ltr">48180</td><td class="s3">https://ipfs.io/ipfs/QmPp1vQHHJ8kZyVDL8ZYGfZs4BBdGnMNT5DbFi87hkCcGS</td><td class="s19" dir="ltr">AI Excavator</td><td class="s18" dir="ltr">Mythical</td><td class="s6" dir="ltr">Gold</td><td class="s18" dir="ltr">Extractor</td><td class="s18" dir="ltr">60</td><td class="s18" dir="ltr">60</td><td class="s18" dir="ltr">270</td><td class="s18" dir="ltr">6</td></tr><tr style="height: 68px"><th id="1704901039R144" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">145</div></th><td class="s18" dir="ltr">48207</td><td class="s3">https://ipfs.io/ipfs/QmY7CehWYJYw3xwPHFXbkqdYDHjK5sWJdHbkXv78wzyi7F</td><td class="s19" dir="ltr">AI Excavator</td><td class="s18" dir="ltr">Mythical</td><td class="s9" dir="ltr">Stardust</td><td class="s18" dir="ltr">Extractor</td><td class="s18" dir="ltr">70</td><td class="s18" dir="ltr">70</td><td class="s18" dir="ltr">240</td><td class="s18" dir="ltr">6</td></tr><tr style="height: 68px"><th id="1704901039R145" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">146</div></th><td class="s18" dir="ltr">48227</td><td class="s3">https://ipfs.io/ipfs/QmPN7QsXu1YUnNeigRHQkWzN7xPJCVce3pSsrVmfHBNEpY</td><td class="s19" dir="ltr">AI Excavator</td><td class="s18" dir="ltr">Mythical</td><td class="s12" dir="ltr">Antimatter</td><td class="s18" dir="ltr">Extractor</td><td class="s18" dir="ltr">70</td><td class="s18" dir="ltr">70</td><td class="s18" dir="ltr">199</td><td class="s18" dir="ltr">6</td></tr><tr style="height: 68px"><th id="1704901039R146" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">147</div></th><td class="s18" dir="ltr">19580</td><td class="s3">https://ipfs.io/ipfs/QmX5qi1HrUoX63Q8CEoXX8CDhCZEaxkAgqxwxafnBnUEbq</td><td class="s19" dir="ltr">Waxtural Processor</td><td class="s18" dir="ltr">Mythical</td><td class="s5" dir="ltr">Stone</td><td class="s18" dir="ltr">Manipulator</td><td class="s18" dir="ltr">200</td><td class="s18" dir="ltr">250</td><td class="s18" dir="ltr">2400</td><td class="s18" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R147" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">148</div></th><td class="s18" dir="ltr">48181</td><td class="s3">https://ipfs.io/ipfs/QmWTyHoPCD9YXvZp4GdB6mxLU1QZ43bT95wksD5wKJZqGj</td><td class="s19" dir="ltr">Waxtural Processor</td><td class="s18" dir="ltr">Mythical</td><td class="s6" dir="ltr">Gold</td><td class="s18" dir="ltr">Manipulator</td><td class="s18" dir="ltr">250</td><td class="s18" dir="ltr">280</td><td class="s18" dir="ltr">2100</td><td class="s18" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R148" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">149</div></th><td class="s18" dir="ltr">48208</td><td class="s3">https://ipfs.io/ipfs/QmQMNte6eT81m8jMdsRKjoQJ3136chrvr2JPcH4azMPHzF</td><td class="s19" dir="ltr">Waxtural Processor</td><td class="s18" dir="ltr">Mythical</td><td class="s9" dir="ltr">Stardust</td><td class="s18" dir="ltr">Manipulator</td><td class="s18" dir="ltr">250</td><td class="s18" dir="ltr">280</td><td class="s18" dir="ltr">1750</td><td class="s18" dir="ltr">1</td></tr><tr style="height: 68px"><th id="1704901039R149" style="height: 68px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 68px">150</div></th><td class="s18" dir="ltr">48228</td><td class="s3">https://ipfs.io/ipfs/QmQU9L8HXgTwUX4GFTgira4fCFqt5tCaCyS8DuT2sEnEmF</td><td class="s19" dir="ltr">Waxtural Processor</td><td class="s18" dir="ltr">Mythical</td><td class="s12" dir="ltr">Antimatter</td><td class="s18" dir="ltr">Manipulator</td><td class="s18" dir="ltr">250</td><td class="s18" dir="ltr">280</td><td class="s18" dir="ltr">1499</td><td class="s18" dir="ltr">3</td></tr></tbody></table></div>
+
+Made by Shade
+
+<script>
+        // --- CONFIGURATION ---
+        const API_STATS = "https://aa.wax.blacklusion.io/atomicassets/v1"; 
+        const API_SALES = "https://wax.eosusa.io/atomicmarket/v1/sales/templates";
+        const API_HISTORY = "https://wax.api.atomicassets.io/atomicmarket/v2/sales"; 
+        
+        const rarityWeights = { "Abundant": 1, "Common": 2, "Rare": 3, "Epic": 4, "Legendary": 5, "Mythical": 6 };
+        
+        const BASE_URLS = {
+            atomic: "https://wax.atomichub.io/market?collection_name=alien.worlds&order=asc&sort=price&symbol=WAX&template_id=",
+            nefty: "https://neftyblocks.com/templates/alien.worlds/",
+            hive: "https://nfthive.io/market?collection=alien.worlds&order=asc&sort=price&template_id=",
+            f12: "https://f12key.eu/collection/alien.worlds/templates/"
+        };
+
+        let dataRows = [];
+        let cardData = {}; 
+        let isDeckOpen = true;
+        let sortDirection = {}; 
+        window.deckHoverTimer = null;
+
+        // --- CLICK EFFECT ---
+        document.addEventListener('click', (e) => {
+            const clicker = document.createElement('div');
+            clicker.className = 'click-effect';
+            clicker.style.left = `${e.clientX}px`; clicker.style.top = `${e.clientY}px`;
+            document.body.appendChild(clicker);
+            setTimeout(() => clicker.remove(), 500);
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            checkWalletState();
+            
+            const table = document.querySelector("table");
+            if(!table) { document.getElementById("status").innerText = "ERROR: TABLE NOT FOUND"; return; }
+
+            // STRIP GOOGLE SHEETS HTML GARBAGE
+            table.querySelectorAll('.softmerge').forEach(el => el.classList.remove('softmerge'));
+            
+            const allRows = Array.from(table.querySelectorAll("tr"));
+            allRows.forEach(r => {
+                if(r.textContent.includes("freezebar") || r.style.height === "3px") r.style.display = 'none';
+            });
+            table.querySelectorAll(".row-headers-background, .column-headers-background").forEach(e => e.style.display = 'none');
+
+            // 1. FIND THE HEADER ROW (Using textContent to bypass visibility:hidden)
+            let headerRow = null;
+            for(let i = 0; i < Math.min(10, allRows.length); i++) {
+                if(allRows[i].textContent.toLowerCase().includes("template id")) { 
+                    headerRow = allRows[i]; 
+                    break; 
+                }
+            }
+
+            // Columns layout for Tools sheets: 0:ID, 1:Img, 2:Name, 3:Rarity, 4:Shine
+            let nameIdx = 2; 
+            let shineIdx = 4; 
+
+            // 2. SETUP HEADER
+            if (headerRow) {
+                headerRow.style.display = "table-row";
+                const headerCells = Array.from(headerRow.querySelectorAll('th, td'));
+                
+                headerCells.forEach(c => {
+                    c.className = "live-header";
+                    c.style.backgroundColor = ""; // Strip Google inline backgrounds
+                    c.style.color = "";           // Strip Google inline text colors
+                });
+
+                // INJECT THE 5 NEW COLUMNS INTO THE HEADER
+                addHead(headerRow, "Lowest Price");
+                addHead(headerRow, "Last Sold");
+                addHead(headerRow, "Suggested");
+                addHead(headerRow, "Minted");
+                addHead(headerRow, "Burned");
+
+                Array.from(headerRow.querySelectorAll('th, td')).forEach((c, i) => {
+                    let txt = c.textContent.toLowerCase().trim();
+                    if(txt.includes("name")) nameIdx = i;
+                    if(txt.includes("shine")) shineIdx = i;
+                    c.title = "Sort"; c.onclick = () => fastSort(i);
+                });
+            }
+
+            // 3. PROCESS DATA ROWS
+            const dataRowsDom = Array.from(table.querySelectorAll("tr"));
+            dataRowsDom.forEach(row => {
+                if (row === headerRow || row.style.display === "none") return;
+
+                const cells = Array.from(row.querySelectorAll('td'));
+                if(cells.length === 0) return;
+
+                let idCell = cells[0];
+                
+                // Get textContent and strip anything that isn't a digit
+                let templateId = idCell.textContent.replace(/\D/g, '').trim();
+                if(!templateId) return; 
+
+                row.setAttribute("data-id", templateId);
+
+                let name = (cells[nameIdx]) ? cells[nameIdx].textContent.trim() : "Unknown";
+                let shine = (cells[shineIdx]) ? cells[shineIdx].textContent.trim() : "";
+                cardData[templateId] = { name: name, shine: shine };
+
+                // IMAGE PARSING
+                let highResImg = "";
+                if (cells.length > 1) {
+                    let imgCell = cells[1];
+                    highResImg = imgCell.textContent.trim();
+
+                    imgCell.innerHTML = ""; 
+                    imgCell.style.width = "60px"; imgCell.style.minWidth = "60px"; imgCell.style.padding = "0"; imgCell.style.textAlign = "center";
+                    
+                    if(highResImg && highResImg.includes("http")) {
+                        let newImg = document.createElement("img");
+                        
+                        newImg.src = highResImg; // Raw URL allows IPFS natively 
+                        newImg.loading = "lazy"; 
+                        newImg.style.height = "52px"; 
+                        newImg.style.width = "auto"; 
+                        imgCell.appendChild(newImg);
+                    }
+                }
+
+                // INJECT THE 5 NEW COLUMNS INTO THE BODY
+                let cLow = row.insertCell(-1); cLow.className = "live-cell"; cLow.innerText = "-";
+                let cLast = row.insertCell(-1); cLast.className = "live-cell"; cLast.innerText = "-";
+                let cSugg = row.insertCell(-1); cSugg.className = "live-cell"; cSugg.innerText = "-";
+                let cMint = row.insertCell(-1); cMint.className = "live-cell"; cMint.innerText = "-";
+                let cBurn = row.insertCell(-1); cBurn.className = "live-cell"; cBurn.innerText = "-";
+
+                dataRows.push({ id: templateId, cMint: cMint, cBurn: cBurn, cLow: cLow, cLast: cLast, cSugg: cSugg, element: row });
+
+                row.style.cursor = "pointer";
+                
+                row.addEventListener("click", (e) => {
+                    e.stopPropagation(); 
+                    if(window.deckHoverTimer) clearTimeout(window.deckHoverTimer);
+                    
+                    showPreview(templateId, highResImg); 
+                    fetchRowPrices(templateId, cLow, cLast, cSugg); 
+                    updateMarketLinks(templateId);
+                    
+                    if(window.innerWidth <= 800) {
+                        document.getElementById("preview-frame").classList.add("mobile-active");
+                        document.getElementById("market-frame").classList.add("mobile-active");
+                        document.getElementById("mobile-backdrop").classList.add("active");
+                    } else {
+                        document.getElementById("market-frame").style.display = "block";
+                    }
+                }, true);
+                
+                row.addEventListener("mouseenter", (e) => { 
+                    if(window.innerWidth <= 800) return; 
+                    e.stopPropagation(); 
+                    if(window.deckHoverTimer) clearTimeout(window.deckHoverTimer);
+                    
+                    window.deckHoverTimer = setTimeout(() => {
+                        if(isDeckOpen) showPreview(templateId, highResImg);
+                    }, 150);
+                }, true);
+
+                cells.forEach((cell, idx) => {
+                    let text = cell.textContent.trim().toLowerCase();
+
+                    // HUD TAGGING
+                    if (text === "stone") cell.className += " tag-stone";
+                    else if (text === "gold") cell.className += " tag-gold";
+                    else if (text === "stardust") cell.className += " tag-stardust";
+                    else if (text === "antimatter") cell.className += " tag-antimatter";
+                    else if (text === "xdimension") cell.className += " tag-xdimension";
+                    else if (text === "abundant") cell.className += " tag-abundant";
+                    else if (text === "common") cell.className += " tag-common";
+                    else if (text === "rare") cell.className += " tag-rare";
+                    else if (text === "epic") cell.className += " tag-epic";
+                    else if (text === "legendary") cell.className += " tag-legendary";
+                    else if (text === "mythical") cell.className += " tag-mythical";
+                    
+                    // TOOLS SPECIFIC TAGS
+                    else if (text === "extractor") cell.className += " tag-extractor";
+                    else if (text === "manipulator") cell.className += " tag-manipulator";
+                    else if (text === "explosive") cell.className += " tag-explosive";
+                    else if (text === "exotool") cell.className += " tag-exotool";
+                    
+                    cell.style.backgroundColor = "transparent";
+                });
+            });
+            
+            document.getElementById("status").innerText = `READY: ${dataRows.length} ASSETS`;
+            document.querySelector("table").classList.add("system-ready"); 
+        });
+
+        function closeDeckMobile() {
+            document.getElementById("preview-frame").classList.remove("mobile-active");
+            document.getElementById("market-frame").classList.remove("mobile-active");
+            document.getElementById("mobile-backdrop").classList.remove("active");
+        }
+
+        function showPreview(id, imgSrc) {
+            const previewImg = document.getElementById("preview-img");
+            const nameLabel = document.getElementById("label-name");
+            const shineLabel = document.getElementById("label-shine");
+            const idLabel = document.getElementById("label-id");
+            const status = document.getElementById("preview-status");
+
+            if(cardData[id]) {
+                nameLabel.innerText = cardData[id].name;
+                shineLabel.innerText = cardData[id].shine || "";
+            } else { nameLabel.innerText = "UNKNOWN ASSET"; }
+            idLabel.innerText = "ID: " + id;
+
+            if (imgSrc) {
+                if (previewImg.getAttribute("data-current-src") !== imgSrc) {
+                    previewImg.src = imgSrc; 
+                    previewImg.setAttribute("data-current-src", imgSrc);
+                }
+                previewImg.style.display = "block"; 
+                status.style.display = "none";
+            } else {
+                status.innerText = "NO IMAGE LINKED"; 
+                status.style.display = "block"; 
+                previewImg.style.display = "none";
+            }
+        }
+
+        function updateMarketLinks(id) {
+            document.getElementById("lnk-atomic").href = BASE_URLS.atomic + id;
+            document.getElementById("lnk-nefty").href = BASE_URLS.nefty + id;
+            document.getElementById("lnk-hive").href = BASE_URLS.hive + id;
+            document.getElementById("lnk-f12").href = BASE_URLS.f12 + id;
+        }
+
+        function addHead(r, t) {
+            let h = document.createElement("td"); h.innerText = t; h.className = "live-header"; h.onclick = () => fastSort(r.cells.length - 1); r.appendChild(h);
+        }
+
+        async function fetchRowPrices(id, cellLow, cellLast, cellSugg) {
+            const deckFloor = document.getElementById("intel-floor");
+            const deckLast = document.getElementById("intel-last");
+            const deckSugg = document.getElementById("intel-sugg");
+            const header = document.getElementById("intel-header");
+            
+            if(cardData[id]) header.innerText = `MARKET INTEL: ${cardData[id].name} [${cardData[id].shine}]`.toUpperCase();
+            
+            cellLow.innerText = "..."; 
+            deckFloor.innerText = "SCANNING...";
+            deckFloor.style.color = "#fff"; 
+            cellLow.style.textShadow = "none";
+            
+            if (cellLast) cellLast.innerText = "...";
+            deckLast.innerText = "SCANNING...";
+            if (cellSugg) cellSugg.innerText = "-"; 
+            deckSugg.innerText = "---";
+
+            const urlFloor = `${API_SALES}?symbol=WAX&state=1&template_id=${id}&_ts=${Date.now()}`;
+            
+            try {
+                const res = await fetch(urlFloor, { cache: 'no-store' });
+                const floorData = await res.json();
+
+                if (floorData.success && floorData.data && floorData.data.length > 0) {
+                    const sale = floorData.data[0];
+                    const price = sale.price;
+                    
+                    let floorValNum = parseInt(price.amount) / Math.pow(10, price.token_precision);
+                    cellLow.innerText = floorValNum.toFixed(2); 
+                    cellLow.style.color = "#00ff00";
+                    deckFloor.innerText = floorValNum.toFixed(2) + " WAX";
+
+                    let suggValNum = 0;
+                    try {
+                        if (sale.assets && sale.assets.length > 0 && sale.assets[0].prices && sale.assets[0].prices.length > 0) {
+                            let s = sale.assets[0].prices[0].suggested_median;
+                            if (s) {
+                                suggValNum = parseInt(s) / Math.pow(10, price.token_precision);
+                                if (cellSugg) cellSugg.innerText = suggValNum.toFixed(2);
+                                deckSugg.innerText = suggValNum.toFixed(2) + " WAX";
+                            }
+                        }
+                    } catch(e) {}
+
+                    if(floorValNum > 0 && suggValNum > 0) {
+                        if (floorValNum < (suggValNum * 0.80)) {
+                             deckFloor.innerHTML += " <span style='color:#00ff00; font-weight:bold; animation:pulse 1s infinite'>[ DEAL! ]</span>";
+                             cellLow.style.textShadow = "0 0 10px #00ff00";
+                        }
+                    }
+                } else { 
+                    cellLow.innerText = "-"; deckFloor.innerText = "NONE"; 
+                }
+            } catch (e) { cellLow.innerText = "Err"; deckFloor.innerText = "ERROR"; }
+
+            try {
+                const soldRes = await fetch(`${API_HISTORY}?state=3&template_id=${id}&page=1&limit=1&order=desc&sort=updated&symbol=WAX&_ts=${Date.now()}`, { cache: 'no-store' });
+                const soldData = await soldRes.json();
+                
+                if (soldData.data && soldData.data.length > 0) {
+                    const price = soldData.data[0].price;
+                    let val = parseInt(price.amount) / Math.pow(10, price.token_precision);
+                    if(cellLast) cellLast.innerText = val.toFixed(2); 
+                    if(cellLast) cellLast.style.color = "#ffff00";
+                    deckLast.innerText = val.toFixed(2) + " WAX";
+                } else { 
+                    if(cellLast) cellLast.innerText = "-"; 
+                    deckLast.innerText = "NONE"; 
+                }
+            } catch (e) { if(cellLast) cellLast.innerText = "Err"; }
+        }
+
+        async function startScan(btnElement) {
+            if(btnElement) { btnElement.innerText = "SCANNING..."; btnElement.style.color = "#ffff00"; }
+            const barContainer = document.getElementById("progress-container");
+            const bar = document.getElementById("progress-bar");
+            barContainer.style.display = "block";
+
+            let queue = dataRows.filter(r => r.cMint.innerText === "-" || r.cMint.innerText === "Err");
+            let processed = 0; let batchSize = 5; 
+
+            for (let i = 0; i < queue.length; i += batchSize) {
+                const batch = queue.slice(i, i + batchSize);
+                await Promise.all(batch.map(async (item) => {
+                    item.cMint.style.color = "#555"; item.cMint.innerText = "...";
+                    try {
+                        const res = await fetch(`${API_STATS}/templates/alien.worlds/${item.id}/stats`);
+                        const d = await res.json();
+                        if(d.success) {
+                            let burned = parseInt(d.data.burned);
+                            let total = parseInt(d.data.assets) + burned;
+                            item.cMint.innerText = total.toLocaleString();
+                            item.cBurn.innerText = burned.toLocaleString();
+                            item.cMint.style.color = "var(--theme-color)";
+                            item.cBurn.style.color = "var(--theme-color)";
+                        }
+                    } catch(e) { item.cMint.innerText = "Err"; item.cBurn.innerText = "Err"; }
+                }));
+                processed += batch.length; 
+                let pct = (processed / queue.length) * 100; 
+                bar.style.width = pct + "%"; 
+                await new Promise(r => setTimeout(r, 100)); 
+            }
+            if(btnElement) { btnElement.innerText = "DATA ACQUIRED"; btnElement.style.color = "#00ff00"; }
+            document.getElementById("status").innerText = "IDLE";
+        }
+
+        function toggleDeck() {
+            const frame = document.getElementById("preview-frame");
+            const marketFrame = document.getElementById("market-frame");
+            const btn = document.querySelector(".top-bar button[onclick='toggleDeck()']"); 
+            isDeckOpen = !isDeckOpen;
+            if (isDeckOpen) {
+                frame.classList.remove("minimized"); marketFrame.classList.remove("minimized");
+                if(btn) btn.innerText = "[ MINIMIZE DECK ]";
+            } else {
+                frame.classList.add("minimized"); marketFrame.classList.add("minimized");
+                if(btn) btn.innerText = "[ OPEN DECK ]";
+            }
+        }
+
+        function resetSort() { sortDirection = {}; sortDirection[3] = 'desc'; fastSort(3); document.getElementById("searchInput").value = ""; filterTable(); }
+
+        function fastSort(colIndex) {
+            const table = document.querySelector("table");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+            const dataRows = rows.filter(r => r.hasAttribute("data-id"));
+            const otherRows = rows.filter(r => !r.hasAttribute("data-id"));
+            let dir = sortDirection[colIndex] === 'asc' ? 'desc' : 'asc';
+            sortDirection[colIndex] = dir;
+            
+            dataRows.sort((a, b) => {
+                const cellsA = Array.from(a.querySelectorAll('td'));
+                const cellsB = Array.from(b.querySelectorAll('td'));
+                let valA = cellsA[colIndex] ? cellsA[colIndex].textContent.replace(/,/g,'').trim() : "";
+                let valB = cellsB[colIndex] ? cellsB[colIndex].textContent.replace(/,/g,'').trim() : "";
+                
+                if (rarityWeights[valA] !== undefined) {
+                    let weightA = rarityWeights[valA] || 0; let weightB = rarityWeights[valB] || 0;
+                    return dir === 'asc' ? weightA - weightB : weightB - weightA;
+                }
+                let numA = parseFloat(valA); let numB = parseFloat(valB);
+                if (!isNaN(numA) && !isNaN(numB) && valA!=="" && valB!=="") { return dir === 'asc' ? numA - numB : numB - numA; }
+                return dir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            });
+            otherRows.forEach(r => tbody.appendChild(r)); dataRows.forEach(r => tbody.appendChild(r));
+        }
+
+        function toggleThemePanel() { document.getElementById("theme-panel").style.display = document.getElementById("theme-panel").style.display === "grid" ? "none" : "grid"; }
+        
+        function setTheme(color, dark) {
+            document.documentElement.style.setProperty('--theme-color', color);
+            document.documentElement.style.setProperty('--theme-dark', dark);
+            document.documentElement.style.setProperty('--theme-hover', hexToRgba(color, 0.2));
+            document.documentElement.style.setProperty('--theme-shadow', `0 0 15px ${hexToRgba(color, 0.4)}`);
+            document.documentElement.style.setProperty('--theme-border', `1px solid ${hexToRgba(color, 0.3)}`);
+            document.getElementById("theme-panel").style.display = "none";
+        }
+        
+        function hexToRgba(hex, alpha) {
+            let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+        
+        function adjustFont(delta) {
+            let currentFontSize = parseFloat(document.querySelector('td').style.fontSize) || 0.9;
+            currentFontSize += (delta * 0.1);
+            if(currentFontSize < 0.6) currentFontSize = 0.6;
+            if(currentFontSize > 1.5) currentFontSize = 1.5;
+            document.querySelectorAll('td, th').forEach(c => c.style.setProperty('font-size', `${currentFontSize}em`, 'important'));
+        }
+        
+        function filterTable() {
+            const filter = document.getElementById("searchInput").value.toUpperCase();
+            dataRows.forEach(row => {
+                if (row.element.textContent.toUpperCase().indexOf(filter) > -1) row.element.style.display = "";
+                else row.element.style.display = "none";
+            });
+        }
+
+        const wax = new waxjs.WaxJS({ rpcEndpoint: 'https://wax.greymass.com' });
+
+        function checkWalletState() {
+            const savedWallet = localStorage.getItem("naron_wallet");
+            const btn = document.getElementById("wallet-connect-btn");
+            
+            if(savedWallet) {
+                btn.innerText = `[ ${savedWallet} ]`;
+                btn.classList.add("logged-in");
+            } else {
+                btn.innerText = "[ CONNECT WAX WALLET ]";
+                btn.classList.remove("logged-in");
+            }
+        }
+
+        async function toggleWallet() {
+            const currentWallet = localStorage.getItem("naron_wallet");
+            if(currentWallet) {
+                localStorage.removeItem("naron_wallet");
+                checkWalletState();
+                return;
+            } 
+            try {
+                const userAccount = await wax.login(); 
+                localStorage.setItem("naron_wallet", userAccount);
+                checkWalletState();
+            } catch (e) { console.error("WAX Login Error"); }
+        }
+    </script>
+</body>
+</html>
