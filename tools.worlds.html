@@ -124,26 +124,39 @@
         /* --- TABLE --- */
         .freezebar-cell, .row-header-wrapper, .row-headers-background, .column-headers-background { display: none !important; }
         .grid-container { background: transparent !important; border: none !important; box-shadow: none !important; height: auto !important; overflow: visible !important; width: 100% !important; max-width: none !important; }
-        .waffle { border-collapse: collapse; margin: 0 auto; background: var(--theme-dark); width: auto !important; transition: background-color 0.5s; }
+        
+        /* THE SILVER BULLET FOR BORDER BLEEDING: border-collapse: separate + border-spacing: 0 */
+        .waffle { border-collapse: separate !important; border-spacing: 0 !important; margin: 0 auto; background: var(--theme-dark); width: auto !important; transition: background-color 0.5s; }
         
         /* HEADER STYLING */
         .live-header { 
             position: sticky !important; top: 125px !important; z-index: 1900 !important;
-            background-color: var(--theme-dark) !important; color: var(--theme-color) !important; 
+            background-color: var(--theme-dark) !important; /* Solid background */
+            color: var(--theme-color) !important; 
             border-bottom: 2px solid var(--theme-color) !important; 
+            border-right: 2px solid var(--theme-color) !important; /* Thick header dividers */
             font-weight: bold !important; text-align: center !important; 
-            box-shadow: 0 0 15px var(--theme-color) !important; 
+            box-shadow: 0 0 15px var(--theme-color) !important; /* Restored your preferred glow! */
             text-transform: uppercase !important; letter-spacing: 1px !important; padding: 8px !important;
         }
-        .live-header:hover { z-index: 2000 !important; }
+        .live-header:hover { z-index: 2000 !important; background-color: #000 !important; }
+        .live-header:first-child { border-left: 2px solid var(--theme-color) !important; } /* Caps the left side of the header */
         
-        td { border-bottom: var(--theme-border) !important; padding: 4px 10px !important; vertical-align: middle; max-width: 140px; white-space: normal !important; word-wrap: break-word !important; font-family: 'Courier New', Courier, monospace !important; font-size: 0.9em !important; }
+        /* DATA CELLS */
+        td { 
+            border-bottom: var(--theme-border) !important; 
+            border-right: var(--theme-border) !important; /* Thin vertical borders for ALL columns */
+            padding: 4px 10px !important; vertical-align: middle; max-width: 140px; 
+            white-space: normal !important; word-wrap: break-word !important; 
+            font-family: 'Courier New', Courier, monospace !important; font-size: 0.9em !important; 
+        }
+        td:first-child { border-left: var(--theme-border) !important; } /* Caps the left side of the table */
 
         .waffle tr { height: 68px !important; }
         .waffle td:nth-of-type(2) { width: 62px !important; min-width: 62px !important; padding: 0 !important; text-align: center !important; }
 
         tr:hover td { background-color: var(--theme-hover) !important; color: #fff !important; transition: background-color 0.1s; }
-        .live-cell { text-align: center; font-weight: bold; color: #666; border-bottom: var(--theme-border); padding: 5px; font-family: monospace; }
+        .live-cell { text-align: center; font-weight: bold; color: #666; font-family: monospace; }
 
         .scan-trigger { cursor: pointer; color: #fff !important; background: var(--theme-color); padding: 2px 8px; border-radius: 4px; font-size: 0.8em; display: inline-block; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; text-shadow: 0 0 5px #fff; } 100% { opacity: 0.8; } }
@@ -329,12 +342,15 @@ Made by Shade
             // 2. SETUP HEADER
             if (headerRow) {
                 headerRow.style.display = "table-row";
-                const headerCells = Array.from(headerRow.querySelectorAll('th, td'));
+                
+                // FIXED: Querying ONLY 'td' bypasses hidden row-numbers 
+                const headerCells = Array.from(headerRow.querySelectorAll('td'));
                 
                 headerCells.forEach(c => {
                     c.className = "live-header";
-                    c.style.backgroundColor = ""; // Strip Google inline backgrounds
-                    c.style.color = "";           // Strip Google inline text colors
+                    c.style.backgroundColor = ""; 
+                    c.style.color = "";           
+                    c.style.borderRight = "2px solid var(--theme-color)"; // Adds the separator line!
                 });
 
                 // INJECT THE 5 NEW COLUMNS INTO THE HEADER
@@ -344,11 +360,13 @@ Made by Shade
                 addHead(headerRow, "Minted");
                 addHead(headerRow, "Burned");
 
-                Array.from(headerRow.querySelectorAll('th, td')).forEach((c, i) => {
+                // Re-query 'td' so the newly appended headers get sorted into correct index array
+                Array.from(headerRow.querySelectorAll('td')).forEach((c, i) => {
                     let txt = c.textContent.toLowerCase().trim();
                     if(txt.includes("name")) nameIdx = i;
                     if(txt.includes("shine")) shineIdx = i;
-                    c.title = "Sort"; c.onclick = () => fastSort(i);
+                    c.title = "Sort"; 
+                    c.onclick = () => fastSort(i); 
                 });
             }
 
@@ -369,6 +387,16 @@ Made by Shade
                 let name = (cells[nameIdx]) ? cells[nameIdx].textContent.trim() : "Unknown";
                 let shine = (cells[shineIdx]) ? cells[shineIdx].textContent.trim() : "";
                 cardData[templateId] = { name: name, shine: shine };
+
+                // --- MATH MODIFIER: Divide Ease & Luck by 10 ---
+                if (cells[6] && cells[6].textContent.trim() !== "") {
+                    let val = parseFloat(cells[6].textContent.replace(/,/g,''));
+                    if (!isNaN(val)) cells[6].textContent = (val / 10).toString();
+                }
+                if (cells[7] && cells[7].textContent.trim() !== "") {
+                    let val = parseFloat(cells[7].textContent.replace(/,/g,''));
+                    if (!isNaN(val)) cells[7].textContent = (val / 10).toString();
+                }
 
                 // IMAGE PARSING
                 let highResImg = "";
@@ -509,7 +537,12 @@ Made by Shade
         }
 
         function addHead(r, t) {
-            let h = document.createElement("td"); h.innerText = t; h.className = "live-header"; h.onclick = () => fastSort(r.cells.length - 1); r.appendChild(h);
+            let h = document.createElement("td"); 
+            h.innerText = t; 
+            h.className = "live-header"; 
+            h.style.borderRight = "2px solid var(--theme-color)"; // Applies separator to the appended market columns
+            r.appendChild(h);
+            // Note: We removed the inline h.onclick here because it is now handled flawlessly in the array loop in Step 1!
         }
 
         async function fetchRowPrices(id, cellLow, cellLast, cellSugg) {
