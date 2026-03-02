@@ -116,9 +116,9 @@
 
         /* --- PREVIEW DECKS --- */
         #preview-frame { 
-            position: fixed; top: 240px; left: 20px; width: 350px; height: 400px; 
+            position: fixed; top: 240px; left: 20px; width: 280px; height: 400px; /* Changed from 350px */
             right: auto !important; border: 2px solid var(--theme-color); background: var(--theme-dark); 
-            box-shadow: var(--theme-shadow); z-index: 1000; box-sizing: border-box;
+            box-shadow: var(--theme-shadow); z-index: 3000; box-sizing: border-box;
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             transition: transform 0.4s, opacity 0.4s; transform: translateX(0); opacity: 1; pointer-events: none; 
         }
@@ -127,11 +127,10 @@
         #preview-status { color: var(--theme-color); font-size: 0.8em; letter-spacing: 1px; display:none; }
         #preview-label { margin-top: 10px; color: #fff; font-weight: bold; font-size: 0.9em; text-align: center; letter-spacing: 1px; width: 90%; border-top: 1px dashed #333; padding-top: 5px; }
 
-        /* MARKET INTEL DECK */
         #market-frame { 
-            position: fixed; top: 655px; left: 20px; width: 350px; height: auto; 
+            position: fixed; top: 655px; left: 20px; width: 280px; height: auto; /* Changed from 350px */
             border: 2px solid var(--theme-color); background: #000; box-sizing: border-box;
-            box-shadow: var(--theme-shadow); z-index: 1000; padding: 10px; display: none; 
+            box-shadow: var(--theme-shadow); z-index: 3000; padding: 10px; display: none; 
             transition: transform 0.4s, opacity 0.4s; transform: translateX(0); opacity: 1; 
         }
         #market-frame.minimized { transform: translateX(-400px); opacity: 0; }
@@ -248,8 +247,10 @@
         
         <nav class="nav-links">
             <a href="index.html" class="nav-btn">HUB</a>
-            <a href="crew.worlds.html" class="nav-btn active">CREW</a>
+            <a href="crew.worlds.html" class="nav-btn">CREW</a>
             <a href="arms.worlds.html" class="nav-btn">ARMS</a>
+            <a href="tools.worlds.html" class="nav-btn">TOOLS</a>
+            <a href="faces.worlds.html" class="nav-btn active">FACES</a>
         </nav>
 
         <div class="wallet-section">
