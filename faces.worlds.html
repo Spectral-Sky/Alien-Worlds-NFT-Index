@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Faces.Worlds // Live Database</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <script src="https://unpkg.com/@waxio/waxjs/dist-web/waxjs.js"></script>
+    
+    <style>
+       /* --- FOUC PREVENTION --- */
+        table { opacity: 0; visibility: hidden; transition: opacity 0.6s ease-in; background-color: transparent !important; }
+        tr, td, th, tbody { background-color: transparent !important; }
+        table.system-ready { opacity: 1; visibility: visible; }   
+       
+       /* --- DYNAMIC THEME ENGINE (Neon Purple Default for Faces) --- */
+        :root {
+            --theme-color: #bf00ff;        
+            --theme-shadow: 0 0 15px rgba(191, 0, 255, 0.4); 
+            --theme-dark: #12051a;        
+            --theme-hover: #260a33;        
+            --theme-border: 1px solid #390f4d;
+        }
+
+        /* --- SYSTEM CORE --- */
+        body { 
+            cursor: crosshair; background-color: #050510; 
+            background-image: radial-gradient(circle at 50% 50%, var(--theme-dark) 0%, #050510 80%);
+            color: #d0d0d0; font-family: 'Courier New', Courier, monospace; 
+            margin: 0; padding: 20px; overflow-x: auto; 
+        }
+
+        ::-webkit-scrollbar { height: 12px; width: 12px; }
+        ::-webkit-scrollbar-track { background: #050510; }
+        ::-webkit-scrollbar-thumb { background: #333; border: 1px solid var(--theme-color); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--theme-color); }
+        
+        body::before { content: " "; position: fixed; top: 0; left: 0; width: 1px; height: 1px; z-index: -1; box-shadow: 10vw 10vh #FFF, 85vw 5vh #FFF, 45vw 15vh rgba(255,255,255,0.6), 70vw 25vh #FFF, 30vw 50vh #FFF, 60vw 65vh rgba(255,255,255,0.7); opacity: 0.8; }
+        body::after { content: " "; position: fixed; top: 0; left: 0; width: 2px; height: 2px; z-index: -1; background: transparent; box-shadow: 15vw 20vh #FFF, 40vw 60vh #FFF, 70vw 30vh #FFF, 90vw 80vh #FFF; opacity: 0.5; }
+
+        a, button, th, td { cursor: crosshair !important; }
+
+        .click-effect {
+            position: fixed; pointer-events: none; width: 40px; height: 40px;
+            border: 2px solid var(--theme-color); border-radius: 50%;
+            transform: translate(-50%, -50%); animation: clickPulse 0.4s ease-out forwards;
+            z-index: 2147483647; box-shadow: 0 0 10px var(--theme-color);
+        }
+        @keyframes clickPulse { 0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; border-width: 5px; } 100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; border-width: 0px; } }
+
+        /* --- GLOBAL HEADER BAR --- */
+        .global-header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #020a08; border-bottom: 2px solid var(--theme-color);
+            padding: 15px 30px; position: relative; z-index: 6000; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.9);
+        }
+        .logo-section h1 { color: var(--theme-color); margin: 0; font-size: 1.8em; letter-spacing: 4px; text-transform: uppercase; text-shadow: 0 0 10px var(--theme-color); }
+        .nav-links { display: flex; gap: 10px; }
+        .nav-links .nav-btn.active { color: #000; background: var(--theme-color); border-color: var(--theme-color); box-shadow: var(--theme-shadow); }
+        
+        .wallet-btn { background: #111; color: var(--theme-color); border: 1px dashed var(--theme-color); padding: 10px 20px; font-family: monospace; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+        .wallet-btn:hover { background: var(--theme-hover); box-shadow: var(--theme-shadow); }
+        .wallet-btn.logged-in { background: var(--theme-color); color: #000; border: 1px solid #fff; }
+
+        /* --- UI BAR (STICKY) --- */
+        .top-bar { 
+            display: flex; justify-content: space-between; align-items: flex-start; 
+            padding-bottom: 15px; padding-top: 10px;
+            background: #050510; border-bottom: 2px solid var(--theme-color); 
+            position: sticky; top: 0; z-index: 5000; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.8); margin-bottom: 0; flex-wrap: wrap; gap:10px;
+        }
+        h1 { color: var(--theme-color); letter-spacing: 3px; margin: 0; text-transform: uppercase; font-size: 1.5em; line-height: 1; text-shadow: 0 0 10px var(--theme-color); transition: color 0.5s, text-shadow 0.5s; }
+        .nav-btn { padding: 10px 16px; background: rgba(0,0,0,0.5); border: 1px solid var(--theme-color); color: var(--theme-color); text-decoration: none; font-weight: bold; font-size: 0.8em; transition: all 0.3s; }
+        .nav-btn:hover { background: var(--theme-color); color: #000; }
+
+        #searchInput { background: #000; border: 1px solid var(--theme-color); color: var(--theme-color); padding: 10px; font-family: 'Courier New', monospace; font-weight: bold; width: 200px; text-transform: uppercase; }
+        .cyber-btn { background: var(--theme-dark); color: var(--theme-color); border: 2px solid var(--theme-color); padding: 10px 14px; font-family: 'Courier New', Courier, monospace; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s; }
+        .cyber-btn:hover { background: var(--theme-color); color: #000; box-shadow: var(--theme-shadow); }
+
+        #theme-panel { position: absolute; top: 60px; left: 20px; background: #0a0a0a; border: 1px solid var(--theme-color); padding: 10px; display: none; grid-template-columns: repeat(6, 1fr); gap: 8px; box-shadow: 0 10px 30px #000; z-index: 6000; }
+        .theme-opt { width: 25px; height: 25px; border-radius: 50%; border: 2px solid #333; cursor: pointer; transition: transform 0.2s; }
+        .theme-opt:hover { transform: scale(1.3); border-color: #fff; }
+
+        /* --- PREVIEW DECKS --- */
+        #preview-frame { 
+            position: fixed; top: 240px; left: 20px; width: 350px; height: 400px; 
+            right: auto !important; border: 2px solid var(--theme-color); background: var(--theme-dark); 
+            box-shadow: var(--theme-shadow); z-index: 3000; box-sizing: border-box;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            transition: transform 0.4s, opacity 0.4s; transform: translateX(0); opacity: 1; pointer-events: none; 
+        }
+        #preview-frame.minimized { transform: translateX(-400px); opacity: 0; } 
+        #preview-img { width: 90%; height: auto; max-height: 80%; object-fit: contain; border: 1px solid #333; display: none; }
+        #preview-status { color: var(--theme-color); font-size: 0.8em; letter-spacing: 1px; display:none; }
+        #preview-label { margin-top: 10px; color: #fff; font-weight: bold; font-size: 0.9em; text-align: center; letter-spacing: 1px; width: 90%; border-top: 1px dashed #333; padding-top: 5px; }
+
+        #market-frame { 
+            position: fixed; top: 655px; left: 20px; width: 350px; height: auto; 
+            border: 2px solid var(--theme-color); background: #000; box-sizing: border-box;
+            box-shadow: var(--theme-shadow); z-index: 3000; padding: 10px; display: none; 
+            transition: transform 0.4s, opacity 0.4s; transform: translateX(0); opacity: 1; 
+        }
+        #market-frame.minimized { transform: translateX(-400px); opacity: 0; }
+        .intel-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #333; padding: 6px 0; font-size: 0.9em; }
+        .intel-label { color: #888; }
+        .intel-val { color: #fff; font-weight: bold; font-family: monospace; }
+        #intel-header { color:var(--theme-color); font-weight:bold; border-bottom:1px solid #333; margin-bottom:10px; text-transform: uppercase; font-size: 0.85em; letter-spacing: 1px; }
+
+        .market-links { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; pointer-events: auto; }
+        .market-link-btn { background: #111; border: 1px solid #444; color: #aaa; text-align: center; font-size: 0.7em; padding: 5px; cursor: pointer; text-decoration: none; display: block; transition: all 0.2s; font-family: monospace; }
+        .market-link-btn:hover { background: var(--theme-color); color: #000; border-color: #fff; }
+
+        /* --- MOBILE MODAL --- */
+        #mobile-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 2900; backdrop-filter: blur(3px); }
+        #mobile-backdrop.active { display: block; }
+        .close-btn { display: none; position: absolute; top: -15px; right: -15px; background: var(--theme-color); color: #000; pointer-events: auto; border: 1px solid #fff; padding: 5px 10px; font-weight: bold; cursor: pointer; z-index: 4000; box-shadow: var(--theme-shadow); }
+
+        /* --- GOOGLE SHEETS TEXT OVERRIDE --- */
+        body .ritz .waffle td { color: #d0d0d0 !important; }
+        body .ritz .waffle td * { color: inherit !important; }
+        .softmerge-inner { position: static !important; width: auto !important; max-width: 100%; white-space: normal !important; display: inline-block; left: auto !important; }
+
+        /* --- TABLE --- */
+        .freezebar-cell, .row-header-wrapper, .row-headers-background, .column-headers-background { display: none !important; }
+        .grid-container { background: transparent !important; border: none !important; box-shadow: none !important; height: auto !important; overflow: visible !important; width: 100% !important; max-width: none !important; }
+        
+        .waffle { border-collapse: separate !important; border-spacing: 0 !important; margin: 0 auto; background: var(--theme-dark); width: auto !important; transition: background-color 0.5s; }
+        
+        .live-header { 
+            position: sticky !important; top: 125px !important; z-index: 1900 !important;
+            background-color: var(--theme-dark) !important; 
+            color: var(--theme-color) !important; 
+            border-bottom: 2px solid var(--theme-color) !important; 
+            border-right: 2px solid var(--theme-color) !important; 
+            font-weight: bold !important; text-align: center !important; 
+            box-shadow: 0 0 15px var(--theme-color) !important; 
+            text-transform: uppercase !important; letter-spacing: 1px !important; padding: 8px !important;
+        }
+        .live-header:hover { z-index: 2000 !important; background-color: #000 !important; }
+        .live-header:first-child { border-left: 2px solid var(--theme-color) !important; }
+        
+        td { 
+            border-bottom: var(--theme-border) !important; 
+            border-right: var(--theme-border) !important; 
+            padding: 4px 10px !important; vertical-align: middle; max-width: 140px; 
+            white-space: normal !important; word-wrap: break-word !important; 
+            font-family: 'Courier New', Courier, monospace !important; font-size: 0.9em !important; 
+        }
+        td:first-child { border-left: var(--theme-border) !important; } 
+
+        .waffle tr { height: 68px !important; }
+        .waffle td:nth-of-type(2) { width: 62px !important; min-width: 62px !important; padding: 0 !important; text-align: center !important; }
+
+        tr:hover td { background-color: var(--theme-hover) !important; color: #fff !important; transition: background-color 0.1s; }
+        .live-cell { text-align: center; font-weight: bold; color: #666; font-family: monospace; }
+
+        .scan-trigger { cursor: pointer; color: #fff !important; background: var(--theme-color); padding: 2px 8px; border-radius: 4px; font-size: 0.8em; display: inline-block; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; text-shadow: 0 0 5px #fff; } 100% { opacity: 0.8; } }
+
+        /* HUD TAGS */
+        [class*="tag-"] { text-align: center !important; font-weight: bold !important; border: 1px solid transparent !important; }
+        .tag-stone { box-shadow: inset 4px 0 0 #777, inset -4px 0 0 #777 !important; color: #aaa !important; }
+        .tag-gold { box-shadow: inset 4px 0 0 #ffd700, inset -4px 0 0 #ffd700 !important; color: #ffe44d !important; }
+        .tag-stardust { box-shadow: inset 4px 0 0 #da70d6, inset -4px 0 0 #da70d6 !important; color: #ee82ee !important; }
+        .tag-antimatter { box-shadow: inset 4px 0 0 #4b0082, inset -4px 0 0 #4b0082 !important; color: #9370db !important; }
+        .tag-xdimension { box-shadow: inset 4px 0 0 #800080, inset -4px 0 0 #800080 !important; color: #c760c7 !important; }
+        
+        .tag-abundant { box-shadow: inset 4px 0 0 #555, inset -4px 0 0 #555 !important; color: #999 !important; }
+        .tag-common { box-shadow: inset 4px 0 0 #333, inset -4px 0 0 #333 !important; color: #ccc !important; }
+        .tag-rare { box-shadow: inset 4px 0 0 #0088ff, inset -4px 0 0 #0088ff !important; color: #4da6ff !important; }
+        .tag-epic { box-shadow: inset 4px 0 0 #bc13fe, inset -4px 0 0 #bc13fe !important; color: #d67aff !important; }
+        .tag-legendary { box-shadow: inset 4px 0 0 #ffaa00, inset -4px 0 0 #ffaa00 !important; color: #ffcc00 !important; }
+        .tag-mythical { box-shadow: inset 4px 0 0 #ff0055, inset -4px 0 0 #ff0055 !important; color: #ff6688 !important; }
+        
+        /* FACES SPECIFIC TAGS */
+        .tag-human { box-shadow: inset 4px 0 0 #0088ff, inset -4px 0 0 #0088ff !important; color: #4da6ff !important; }
+        .tag-nordic { box-shadow: inset 4px 0 0 #ddd, inset -4px 0 0 #ddd !important; color: #fff !important; }
+        .tag-grey { box-shadow: inset 4px 0 0 #888, inset -4px 0 0 #888 !important; color: #aaa !important; }
+        .tag-lgp { box-shadow: inset 4px 0 0 #00ff00, inset -4px 0 0 #00ff00 !important; color: #66ff66 !important; }
+        .tag-reptiloid { box-shadow: inset 4px 0 0 #cc0000, inset -4px 0 0 #cc0000 !important; color: #ff4d4d !important; }
+        .tag-cyborg { box-shadow: inset 4px 0 0 #ffaa00, inset -4px 0 0 #ffaa00 !important; color: #ffcc00 !important; }
+        .tag-robotron { box-shadow: inset 4px 0 0 #bc13fe, inset -4px 0 0 #bc13fe !important; color: #d67aff !important; }
+
+        @media screen and (max-width: 800px) {
+            #preview-frame, #market-frame { display: none; }
+            #preview-frame.mobile-active { display: flex !important; left: 50%; transform: translateX(-50%); width: 90%; top: 120px; z-index:3000; pointer-events: auto; }
+            #market-frame.mobile-active { display: block !important; left: 50%; transform: translateX(-50%); width: 90%; top: 540px; z-index:3000; }
+            .close-btn { display: block; }
+            .top-bar { flex-direction: column; align-items: stretch; position: static; } 
+            #searchInput { width: 100%; margin-bottom: 10px; }
+        }
+    </style>
+</head>
+<body>
+    
+    <div id="mobile-backdrop" onclick="closeDeckMobile()"></div>
+
+    <div id="preview-frame">
+        <div class="close-btn" onclick="closeDeckMobile()">[ X CLOSE ]</div>
+        <div id="preview-status">AWAITING TARGET</div>
+        <img id="preview-img" src="" alt="PREVIEW">
+        <div id="preview-label">
+            <span id="label-name" style="display:block;">TAP TO SCAN</span>
+            <span id="label-shine" class="label-shine"></span>
+            <span id="label-id" style="font-size:0.7em; color:#666;"></span>
+        </div>
+    </div>
+
+    <div id="market-frame">
+        <div id="intel-header">MARKET INTEL</div>
+        <div class="intel-row"><span class="intel-label">LOWEST PRICE:</span><span id="intel-floor" class="intel-val">---</span></div>
+        <div class="intel-row"><span class="intel-label">LAST SOLD:</span><span id="intel-last" class="intel-val">---</span></div>
+        <div class="intel-row"><span class="intel-label">SUGGESTED:</span><span id="intel-sugg" class="intel-val" style="color:var(--theme-color);">---</span></div>
+        
+        <div class="market-links">
+            <a id="lnk-atomic" target="_blank" class="market-link-btn">ATOMIC HUB</a>
+            <a id="lnk-nefty" target="_blank" class="market-link-btn">NEFTY BLOCKS</a>
+            <a id="lnk-hive" target="_blank" class="market-link-btn">NFT HIVE</a>
+            <a id="lnk-f12" target="_blank" class="market-link-btn">F12 KEY</a>
+        </div>
+    </div>
+
+    <header class="global-header">
+        <div class="logo-section">
+            <h1>NARON CODEX</h1>
+        </div>
+        
+        <nav class="nav-links">
+            <a href="index.html" class="nav-btn">HUB</a>
+            <a href="crew.worlds.html" class="nav-btn">CREW</a>
+            <a href="arms.worlds.html" class="nav-btn">ARMS</a>
+            <a href="tools.worlds.html" class="nav-btn">TOOLS</a>
+            <a href="faces.worlds.html" class="nav-btn active">FACES</a>
+        </nav>
+
+        <div class="wallet-section">
+            <button id="wallet-connect-btn" class="wallet-btn" onclick="toggleWallet()">[ CONNECT WAX WALLET ]</button>
+        </div>
+    </header>
+
+    <div class="top-bar">
+        <div style="flex-grow: 1;">
+            <div style="display:flex; align-items:center; gap: 10px; flex-wrap:wrap;">
+                <a href="index.html" class="nav-btn">< BACK</a>
+                <button class="cyber-btn" onclick="toggleThemePanel()">[ COLOUR ]</button>
+                <button class="cyber-btn" onclick="resetSort()">[ RESET ]</button>
+                <button class="cyber-btn" onclick="adjustFont(1)">A+</button>
+                <button class="cyber-btn" onclick="adjustFont(-1)">A-</button>
+                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="SEARCH...">
+            </div>
+            
+            <div style="margin-top: 8px;">
+                <button class="cyber-btn" onclick="toggleDeck()">[ TOGGLE DECK ]</button>
+            </div>
+
+            <div id="theme-panel">
+                <div class="theme-opt" style="background:#bf00ff;" onclick="setTheme('#bf00ff', '#12051a')" title="Neon Purple"></div>
+                <div class="theme-opt" style="background:#0088ff;" onclick="setTheme('#0088ff', '#050f1a')" title="Cyber Blue"></div>
+                <div class="theme-opt" style="background:#00ff41;" onclick="setTheme('#00ff41', '#051a05')" title="Matrix Green"></div>
+                <div class="theme-opt" style="background:#ff4d4d;" onclick="setTheme('#ff4d4d', '#1a0505')" title="Crimson Red"></div>
+                <div class="theme-opt" style="background:#ffd700;" onclick="setTheme('#ffd700', '#1a1a05')" title="Gold"></div>
+                <div class="theme-opt" style="background:#ff9900;" onclick="setTheme('#ff9900', '#1a1005')" title="Safety Orange"></div>
+            </div>
+
+            <div id="progress-container" style="display:none; width:100%; background:#222; height:4px; margin-top:10px;">
+                <div id="progress-bar" style="height:100%; width:0%; background:var(--theme-color); transition:width 0.2s;"></div>
+            </div>
+        </div>
+
+        <div style="text-align:right; min-width: 200px;">
+            <button id="fetchBtn" class="cyber-btn" onclick="startScan(this)" style="margin-bottom:10px; display:block; width:100%; border-color:#fff; color:#fff;">[ SCAN MINTED / BURNED ]</button>
+            <h1>FACES.WORLDS</h1>
+            <div id="status" style="font-size:0.7em; color:#666; margin-top:5px;">STANDBY</div>
+        </div>
+    </div>
+
+<style type="text/css">.ritz .waffle a { color: inherit; }.ritz .waffle .s13{border-bottom:1px SOLID #000000;border-right:1px SOLID #000000;background-color:#9900ff;text-align:center;color:#ffffff;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s16{border-bottom:1px SOLID #000000;background-color:#ffffff;text-align:right;color:#000000;font-family:Arial;font-size:10pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s8{border-bottom:1px SOLID #000000;border-right:1px SOLID #000000;background-color:#4c68e6;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s0{border-bottom:1px SOLID #000000;border-right:1px SOLID #000000;background-color:#ffffff;text-align:center;font-weight:bold;color:#000000;font-family:"Courier New";font-size:14pt;vertical-align:middle;white-space:normal;overflow:hidden;word-wrap:break-word;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s18{border-bottom:1px SOLID #000000;border-right:1px SOLID #000000;background-color:#ffffff;text-align:right;font-weight:bold;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s12{border-bottom:1px SOLID #000000;border-right:1px SOLID #000000;background-color:#741b47;text-align:center;color:#ffffff;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s9{border-right:none;background-color:#ffffff;text-align:left;color:#000000;font-family:Arial;font-size:10pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s5{border-bottom:1px SOLID #000000;border-right:1px SOLID #000000;background-color:#ffd966;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s1{background-color:#ffffff;text-align:right;color:#000000;font-family:Arial;font-size:10pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s2{border-right:1px SOLID #000000;background-color:#ffffff;text-align:left;color:#000000;font-family:Arial;font-size:10pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s10{border-left:none;border-bottom:1px SOLID #000000;background-color:#ffffff;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s3{border-bottom:1px SOLID #000000;border-right:1px SOLID #000000;background-color:#ffffff;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s15{border-bottom:1px SOLID #000000;border-right:1px SOLID #000000;background-color:#cc0000;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s19{border-bottom:1px SOLID #000000;border-right:1px SOLID #000000;background-color:#ffffff;text-align:center;font-weight:bold;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s11{border-bottom:1px SOLID #000000;border-right:1px SOLID #000000;background-color:#20124d;text-align:center;color:#ffffff;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s6{border-bottom:1px SOLID #000000;border-right:1px SOLID #000000;background-color:#666666;text-align:center;color:#ffffff;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s14{border-bottom:1px SOLID #000000;border-right:1px SOLID #000000;background-color:#f1c232;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s17{border-bottom:1px SOLID #000000;border-right:1px SOLID #000000;background-color:#ffffff;text-align:left;color:#000000;font-family:Arial;font-size:10pt;vertical-align:bottom;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s7{border-bottom:1px SOLID #000000;border-right:1px SOLID #000000;background-color:#674ea7;text-align:center;color:#ffffff;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}.ritz .waffle .s4{border-bottom:1px SOLID #000000;border-right:1px SOLID #000000;background-color:#d9d9d9;text-align:center;color:#000000;font-family:"Courier New";font-size:10pt;vertical-align:middle;white-space:nowrap;direction:ltr;padding:2px 3px 2px 3px;}</style><div class="ritz grid-container" dir="ltr"><table class="waffle" cellspacing="0" cellpadding="0"><thead><tr><th class="row-header freezebar-origin-ltr"></th><th id="947378362C0" style="width:100px;" class="column-headers-background">A</th><th id="947378362C1" style="width:42px;" class="column-headers-background">B</th><th id="947378362C2" style="width:153px;" class="column-headers-background">C</th><th id="947378362C3" style="width:121px;" class="column-headers-background">D</th><th id="947378362C4" style="width:100px;" class="column-headers-background">E</th><th id="947378362C5" style="width:153px;" class="column-headers-background">F</th><th id="947378362C6" style="width:205px;" class="column-headers-background">G</th><th id="947378362C7" style="width:120px;" class="column-headers-background">H</th></tr></thead><tbody><tr style="height: 51px"><th id="947378362R0" style="height: 51px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 51px">1</div></th><td class="s0">Template ID</td><td class="s0">img</td><td class="s0" dir="ltr">Name</td><td class="s0" dir="ltr">Rarity</td><td class="s0" dir="ltr">Shine</td><td class="s0" dir="ltr">Race</td><td class="s0" dir="ltr">Type</td><td class="s0" dir="ltr">Card ID</td></tr><tr style="height: 33px"><th id="947378362R1" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">2</div></th><td class="s1" dir="ltr">19649</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmXa4fjB7AVd8rLvUcBk5uPKVugg2Bfj26PEwVth71T3yn</div></td><td class="s3">Male Human</td><td class="s4" dir="ltr">Abundant</td><td class="s4" dir="ltr">Stone</td><td class="s3">Human</td><td class="s3">Human Male</td><td class="s3">5</td></tr><tr style="height: 33px"><th id="947378362R2" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">3</div></th><td class="s1" dir="ltr">19648</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmQUU3KsrRuPiFgmu9wJWp2f9NJ4WzD3eVjMRJdctf9rtR</div></td><td class="s3">Female Human</td><td class="s4" dir="ltr">Abundant</td><td class="s4" dir="ltr">Stone</td><td class="s3">Human</td><td class="s3">Human Female</td><td class="s3">4</td></tr><tr style="height: 33px"><th id="947378362R3" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">4</div></th><td class="s1" dir="ltr">48120</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmSUWgba8zsZ4iG3xTAY5Byopk1ihgbsgYPfeLY9Lk21qj</div></td><td class="s3">Male Human</td><td class="s4" dir="ltr">Abundant</td><td class="s5" dir="ltr">Gold</td><td class="s3">Human</td><td class="s3">Human Male</td><td class="s3">5</td></tr><tr style="height: 33px"><th id="947378362R4" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">5</div></th><td class="s1" dir="ltr">48119</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmaJR3XRovVwxZ31sEaat2KsrpYBpexhjwUVX6NEptfGVU</div></td><td class="s3">Female Human</td><td class="s4" dir="ltr">Abundant</td><td class="s5" dir="ltr">Gold</td><td class="s3">Human</td><td class="s3">Human Female</td><td class="s3">4</td></tr><tr style="height: 33px"><th id="947378362R5" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">6</div></th><td class="s1" dir="ltr">19657</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmZT6PyREyuivPA7ZtxN1r8gMw128ojTpzMjpZXHj65KiV</div></td><td class="s3" dir="ltr">Male Nordic</td><td class="s6" dir="ltr">Common</td><td class="s4" dir="ltr">Stone</td><td class="s3" dir="ltr">Nordic</td><td class="s3" dir="ltr">Male Nordic</td><td class="s3" dir="ltr">13</td></tr><tr style="height: 33px"><th id="947378362R6" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">7</div></th><td class="s1" dir="ltr">19656</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmPTU9pcseB61Lp2esADYmEvPdJMHZBEiXbc9aCDChZS5m</div></td><td class="s3" dir="ltr">Female Nordic</td><td class="s6" dir="ltr">Common</td><td class="s4" dir="ltr">Stone</td><td class="s3" dir="ltr">Nordic</td><td class="s3" dir="ltr">Female Nordic</td><td class="s3" dir="ltr">12</td></tr><tr style="height: 33px"><th id="947378362R7" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">8</div></th><td class="s1" dir="ltr">19651</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmRnmsAXtdxFiosAC4xTNAirxtACSh8Cua4Nnp367XEZae</div></td><td class="s3">Male Grey</td><td class="s6" dir="ltr">Common</td><td class="s4" dir="ltr">Stone</td><td class="s3">Grey</td><td class="s3">Male Grey</td><td class="s3">7</td></tr><tr style="height: 33px"><th id="947378362R8" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">9</div></th><td class="s1" dir="ltr">19650</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmNSXmTh2uHDY6EwK4CqeQBvB7y23iZNvrfuHmHKogruEt</div></td><td class="s3">Female Grey</td><td class="s6" dir="ltr">Common</td><td class="s4" dir="ltr">Stone</td><td class="s3">Grey</td><td class="s3">Female Grey</td><td class="s3">6</td></tr><tr style="height: 33px"><th id="947378362R9" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">10</div></th><td class="s1" dir="ltr">48128</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmZ8mCLfCv79LnVdyf4duMYi8H6ca5x3nGqnsBNA4xA2W3</div></td><td class="s3" dir="ltr">Male Nordic</td><td class="s6" dir="ltr">Common</td><td class="s5" dir="ltr">Gold</td><td class="s3" dir="ltr">Nordic</td><td class="s3" dir="ltr">Male Nordic</td><td class="s3" dir="ltr">13</td></tr><tr style="height: 33px"><th id="947378362R10" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">11</div></th><td class="s1" dir="ltr">48127</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmUFHJpSfgoMCVqkgPAieS2a1joNWDq1Bf7FfmtiSZxYUD</div></td><td class="s3" dir="ltr">Female Nordic</td><td class="s6" dir="ltr">Common</td><td class="s5" dir="ltr">Gold</td><td class="s3" dir="ltr">Nordic</td><td class="s3" dir="ltr">Female Nordic</td><td class="s3" dir="ltr">12</td></tr><tr style="height: 33px"><th id="947378362R11" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">12</div></th><td class="s1" dir="ltr">48122</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmTwZpGsixrGW5fwvFxaJUM6tRS44W8NNK25tub86DvvzF</div></td><td class="s3">Male Grey</td><td class="s6" dir="ltr">Common</td><td class="s5" dir="ltr">Gold</td><td class="s3">Grey</td><td class="s3">Male Grey</td><td class="s3">7</td></tr><tr style="height: 33px"><th id="947378362R12" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">13</div></th><td class="s1" dir="ltr">48121</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmaZRBMe7kaLrfhVohpcX8eiLQuMxtwbT4VErJSQweyuDX</div></td><td class="s3">Female Grey</td><td class="s6" dir="ltr">Common</td><td class="s5" dir="ltr">Gold</td><td class="s3">Grey</td><td class="s3">Female Grey</td><td class="s3">6</td></tr><tr style="height: 33px"><th id="947378362R13" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">14</div></th><td class="s1" dir="ltr">48141</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmaokVaofHgBGmu1MZi2PEy6WLWEkcRm66wUB2z7XYdeph</div></td><td class="s3" dir="ltr">Male Nordic</td><td class="s6" dir="ltr">Common</td><td class="s7" dir="ltr">Stardust</td><td class="s3" dir="ltr">Nordic</td><td class="s3" dir="ltr">Male Nordic</td><td class="s3" dir="ltr">13</td></tr><tr style="height: 33px"><th id="947378362R14" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">15</div></th><td class="s1" dir="ltr">48140</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmXUja1UiiH2YB893VxdhKTvjfW9qkNN3jm24QdkLzMe1M</div></td><td class="s3" dir="ltr">Female Nordic</td><td class="s6" dir="ltr">Common</td><td class="s7" dir="ltr">Stardust</td><td class="s3" dir="ltr">Nordic</td><td class="s3" dir="ltr">Female Nordic</td><td class="s3" dir="ltr">12</td></tr><tr style="height: 33px"><th id="947378362R15" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">16</div></th><td class="s1" dir="ltr">48135</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmZH63zgtEzoa3c4K2Ah6K8fhjaQRSphSsAJkaUXfEF5LT</div></td><td class="s3" dir="ltr">Male Grey</td><td class="s6" dir="ltr">Common</td><td class="s7" dir="ltr">Stardust</td><td class="s3" dir="ltr">Grey</td><td class="s3" dir="ltr">Male Grey</td><td class="s3" dir="ltr">7</td></tr><tr style="height: 33px"><th id="947378362R16" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">17</div></th><td class="s1" dir="ltr">48134</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/Qmbp6jheyp7utoS2Q3EQ4E21ieo3hzXskAYu9ZLKJpFgAt</div></td><td class="s3" dir="ltr">Female Grey</td><td class="s6" dir="ltr">Common</td><td class="s7" dir="ltr">Stardust</td><td class="s3" dir="ltr">Grey</td><td class="s3" dir="ltr">Female Grey</td><td class="s3" dir="ltr">6</td></tr><tr style="height: 33px"><th id="947378362R17" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">18</div></th><td class="s1" dir="ltr">19655</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmdHLuJf7SmoL9AJ2ScrxfbUQKJgcZsDKa6pdXro7hy3jk</div></td><td class="s3" dir="ltr">Male Little Green Person</td><td class="s8" dir="ltr">Rare</td><td class="s4" dir="ltr">Stone</td><td class="s3" dir="ltr">LGP</td><td class="s3" dir="ltr">Male Little Green Person</td><td class="s3" dir="ltr">11</td></tr><tr style="height: 33px"><th id="947378362R18" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">19</div></th><td class="s1" dir="ltr">19654</td><td class="s9 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmZot4HaFaonY7UYZqGKVqygKYo7yvBSgeh6jCGrcattr1</div></td><td class="s10 softmerge" dir="ltr"><div class="softmerge-inner" style="width:152px;left:-3px">Female Little Green Person</div></td><td class="s8" dir="ltr">Rare</td><td class="s4" dir="ltr">Stone</td><td class="s3" dir="ltr">LGP</td><td class="s3" dir="ltr">Female Little Green Person</td><td class="s3" dir="ltr">10</td></tr><tr style="height: 33px"><th id="947378362R19" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">20</div></th><td class="s1" dir="ltr">19653</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmQGq9X8odfm9B6H5Y1wcau1fc92Z7579qrWbsW5Rdn9TR</div></td><td class="s3" dir="ltr">Male Reptiloid</td><td class="s8" dir="ltr">Rare</td><td class="s4" dir="ltr">Stone</td><td class="s3" dir="ltr">Reptiloid</td><td class="s3" dir="ltr">Male Reptiloid</td><td class="s3" dir="ltr">9</td></tr><tr style="height: 33px"><th id="947378362R20" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">21</div></th><td class="s1" dir="ltr">19652</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmUnBMPBCsjbDNt1itshyqXk2L4BkyFGC5Zgt2UkbYA45A</div></td><td class="s3">Female Reptiloid</td><td class="s8" dir="ltr">Rare</td><td class="s4" dir="ltr">Stone</td><td class="s3">Reptiloid</td><td class="s3">Female Reptiloid</td><td class="s3">8</td></tr><tr style="height: 33px"><th id="947378362R21" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">22</div></th><td class="s1" dir="ltr">17453</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmdNPERi5eFHapErYmYgzZh9VcQGLTjb1N6TTTGKn1C3fk</div></td><td class="s3">Female Cyborg T8</td><td class="s8" dir="ltr">Rare</td><td class="s4" dir="ltr">Stone</td><td class="s3">Human Augmented</td><td class="s3">Female Cyborg T8</td><td class="s3">2</td></tr><tr style="height: 33px"><th id="947378362R22" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">23</div></th><td class="s1" dir="ltr">13728</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmQ1GBDMPRiadFGxRAWSensph8i4dmtfHDj7jcPVrz39UY</div></td><td class="s3">Male Cyborg T15</td><td class="s8" dir="ltr">Rare</td><td class="s4" dir="ltr">Stone</td><td class="s3">Human Augmented</td><td class="s3">Female Cyborg T8</td><td class="s3">2</td></tr><tr style="height: 33px"><th id="947378362R23" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">24</div></th><td class="s1" dir="ltr">48126</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmWj5PBYJJ2Nr9RsKFzDBhcFPJMBT85eJVGXKQdx5vdByB</div></td><td class="s3" dir="ltr">Male Little Green Person</td><td class="s8" dir="ltr">Rare</td><td class="s5" dir="ltr">Gold</td><td class="s3" dir="ltr">LGP</td><td class="s3" dir="ltr">Male Little Green Person</td><td class="s3" dir="ltr">11</td></tr><tr style="height: 33px"><th id="947378362R24" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">25</div></th><td class="s1" dir="ltr">48125</td><td class="s9 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmXXbrRxnwWtZ7nSDmizxYBTAAJEspc8BfVzfHqJ7X5s8u</div></td><td class="s10 softmerge" dir="ltr"><div class="softmerge-inner" style="width:152px;left:-3px">Female Little Green Person</div></td><td class="s8" dir="ltr">Rare</td><td class="s5" dir="ltr">Gold</td><td class="s3" dir="ltr">LGP</td><td class="s3" dir="ltr">Female Little Green Person</td><td class="s3" dir="ltr">10</td></tr><tr style="height: 33px"><th id="947378362R25" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">26</div></th><td class="s1" dir="ltr">48124</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmW3PZQyBA4WL91N3bbeqq2S8883UtZRHQyeJ2YMH7dXL5</div></td><td class="s3" dir="ltr">Male Reptiloid</td><td class="s8" dir="ltr">Rare</td><td class="s5" dir="ltr">Gold</td><td class="s3" dir="ltr">Reptiloid</td><td class="s3" dir="ltr">Male Reptiloid</td><td class="s3" dir="ltr">9</td></tr><tr style="height: 33px"><th id="947378362R26" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">27</div></th><td class="s1" dir="ltr">48123</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmdWgCr3EdK3YNv2LQE5zhBiwTLAkqjELo2Qaj3DxkA1wi</div></td><td class="s3">Female Reptiloid</td><td class="s8" dir="ltr">Rare</td><td class="s5" dir="ltr">Gold</td><td class="s3">Reptiloid</td><td class="s3">Female Reptiloid</td><td class="s3">8</td></tr><tr style="height: 33px"><th id="947378362R27" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">28</div></th><td class="s1" dir="ltr">48118</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/Qmf87Uw5tkUMHUJgC9R8mRBYCD3dc5iLHgWcnnz79HJxbA</div></td><td class="s3">Male Cyborg T15</td><td class="s8">Rare</td><td class="s5">Gold</td><td class="s3">Human Augmented</td><td class="s3">Male Cyborg T15 </td><td class="s3">3</td></tr><tr style="height: 33px"><th id="947378362R28" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">29</div></th><td class="s1" dir="ltr">48117</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmU28G5awtckr3E5Eix37acnqeu5Dzv3Avs3cD29NM9LBE</div></td><td class="s3">Female Cyborg T8</td><td class="s8">Rare</td><td class="s5">Gold</td><td class="s3">Human Augmented</td><td class="s3">Female Cyborg T8</td><td class="s3">2</td></tr><tr style="height: 33px"><th id="947378362R29" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">30</div></th><td class="s1" dir="ltr">48139</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmVMWRDzHqZCsUbhrERiKAdW8aPXbMBYF4noDRdN6gkmHZ</div></td><td class="s3" dir="ltr">Male Little Green Person</td><td class="s8" dir="ltr">Rare</td><td class="s7" dir="ltr">Stardust</td><td class="s3" dir="ltr">LGP</td><td class="s3" dir="ltr">Male Little Green Person</td><td class="s3" dir="ltr">11</td></tr><tr style="height: 33px"><th id="947378362R30" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">31</div></th><td class="s1" dir="ltr">48138</td><td class="s9 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmTgmy2DBV7oSBqE38bkSdyqEpDA9wquUcCAdVE5QW4ZqD</div></td><td class="s10 softmerge" dir="ltr"><div class="softmerge-inner" style="width:152px;left:-3px">Female Little Green Person</div></td><td class="s8" dir="ltr">Rare</td><td class="s7" dir="ltr">Stardust</td><td class="s3" dir="ltr">LGP</td><td class="s3" dir="ltr">Female Little Green Person</td><td class="s3" dir="ltr">10</td></tr><tr style="height: 33px"><th id="947378362R31" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">32</div></th><td class="s1" dir="ltr">48137</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmNdx1bZB2dzUkchq5CyTVYkqshn7kFF3k1AaFMuVSjC46</div></td><td class="s3" dir="ltr">Male Reptiloid</td><td class="s8" dir="ltr">Rare</td><td class="s7" dir="ltr">Stardust</td><td class="s3" dir="ltr">Reptiloid</td><td class="s3" dir="ltr">Male Reptiloid</td><td class="s3" dir="ltr">9</td></tr><tr style="height: 33px"><th id="947378362R32" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">33</div></th><td class="s1" dir="ltr">48136</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmeqfZfajEuyE9KzmoJDhNaiVcWyNk97qABLoNxiGDNQxx</div></td><td class="s3" dir="ltr">Female Reptiloid</td><td class="s8" dir="ltr">Rare</td><td class="s7" dir="ltr">Stardust</td><td class="s3" dir="ltr">Reptiloid</td><td class="s3" dir="ltr">Female Reptiloid</td><td class="s3" dir="ltr">8</td></tr><tr style="height: 33px"><th id="947378362R33" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">34</div></th><td class="s1" dir="ltr">48133</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmTxnUGtWq1VXuE7Hy7Np7gp9Zhv1qz3RpuUz23D6cevq4</div></td><td class="s3" dir="ltr">Male Cyborg T15</td><td class="s8" dir="ltr">Rare</td><td class="s7" dir="ltr">Stardust</td><td class="s3" dir="ltr">Human Augmented</td><td class="s3" dir="ltr">Male Cyborg T15 </td><td class="s3" dir="ltr">3</td></tr><tr style="height: 33px"><th id="947378362R34" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">35</div></th><td class="s1" dir="ltr">48132</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmNNvMy9oxQ5iWsD7REhJZBvgPRNuN3h3ars4iUXMT4Pmz</div></td><td class="s3" dir="ltr">Female Cyborg T8</td><td class="s8" dir="ltr">Rare</td><td class="s7" dir="ltr">Stardust</td><td class="s3" dir="ltr">Human Augmented</td><td class="s3" dir="ltr">Female Cyborg T8</td><td class="s3" dir="ltr">2</td></tr><tr style="height: 33px"><th id="947378362R35" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">36</div></th><td class="s1" dir="ltr">48150</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmYBsNuGrj4TYmwa9PtCp9AYq98p7wKk31zbLAdgzK6RGw</div></td><td class="s3" dir="ltr">Male Little Green Person</td><td class="s8" dir="ltr">Rare</td><td class="s11" dir="ltr">Antimatter</td><td class="s3" dir="ltr">LGP</td><td class="s3" dir="ltr">Male Little Green Person</td><td class="s3" dir="ltr">11</td></tr><tr style="height: 33px"><th id="947378362R36" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">37</div></th><td class="s1" dir="ltr">48149</td><td class="s9 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmXSn5tUiwGh47EYAju4YE2hD8YuEn4QgG9SG1vSmaaeyG</div></td><td class="s10 softmerge" dir="ltr"><div class="softmerge-inner" style="width:152px;left:-3px">Female Little Green Person</div></td><td class="s8" dir="ltr">Rare</td><td class="s11" dir="ltr">Antimatter</td><td class="s3" dir="ltr">LGP</td><td class="s3" dir="ltr">Female Little Green Person</td><td class="s3" dir="ltr">10</td></tr><tr style="height: 33px"><th id="947378362R37" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">38</div></th><td class="s1" dir="ltr">48148</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmQaqwP4rMgtGvZVvyxdCBAnLsRgqVrAaVtVB9Y5ixodXV</div></td><td class="s3" dir="ltr">Male Reptiloid</td><td class="s8" dir="ltr">Rare</td><td class="s11" dir="ltr">Antimatter</td><td class="s3" dir="ltr">Reptiloid</td><td class="s3" dir="ltr">Male Reptiloid</td><td class="s3" dir="ltr">9</td></tr><tr style="height: 33px"><th id="947378362R38" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">39</div></th><td class="s1" dir="ltr">48147</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmPLsatFjxiLAEPHUA3REYxGdLrM6YAcq1e8zs2j1cPzNX</div></td><td class="s3" dir="ltr">Female Reptiloid</td><td class="s8" dir="ltr">Rare</td><td class="s11" dir="ltr">Antimatter</td><td class="s3" dir="ltr">Reptiloid</td><td class="s3" dir="ltr">Female Reptiloid</td><td class="s3" dir="ltr">8</td></tr><tr style="height: 33px"><th id="947378362R39" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">40</div></th><td class="s1" dir="ltr">48146</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmRAKWyV2DKgnU5bycPA8JzDxbpZS9HnLbBU2dYC3vSkLa</div></td><td class="s3" dir="ltr">Male Cyborg T15</td><td class="s8" dir="ltr">Rare</td><td class="s11" dir="ltr">Antimatter</td><td class="s3" dir="ltr">Human Augmented</td><td class="s3" dir="ltr">Male Cyborg T15 </td><td class="s3" dir="ltr">3</td></tr><tr style="height: 33px"><th id="947378362R40" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">41</div></th><td class="s1" dir="ltr">48145</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmdXtDaxuoxquMpqKmTsn3QnWWKh6aU4HVDAEXAMquEykG</div></td><td class="s3" dir="ltr">Female Cyborg T8</td><td class="s8" dir="ltr">Rare</td><td class="s11" dir="ltr">Antimatter</td><td class="s3" dir="ltr">Human Augmented</td><td class="s3" dir="ltr">Female Cyborg T8</td><td class="s3" dir="ltr">2</td></tr><tr style="height: 33px"><th id="947378362R41" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">42</div></th><td class="s1" dir="ltr">20987</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmcN4wXdks74Cpb6dE6qygdXNniXqPEHciXbGsgYgh37TT</div></td><td class="s3">Male Little Green Person</td><td class="s8">Rare</td><td class="s12">XDimension</td><td class="s3">LGP</td><td class="s3">Male Little Green Person</td><td class="s3">11</td></tr><tr style="height: 33px"><th id="947378362R42" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">43</div></th><td class="s1" dir="ltr">20986</td><td class="s9 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmQXfax83Xu1YhJHsVArRp2H6gzFx5oDovgcyMPbY6zSns</div></td><td class="s10 softmerge" dir="ltr"><div class="softmerge-inner" style="width:152px;left:-3px">Female Little Green Person</div></td><td class="s8" dir="ltr">Rare</td><td class="s12" dir="ltr">XDimension</td><td class="s3" dir="ltr">LGP</td><td class="s3" dir="ltr">Female Little Green Person</td><td class="s3" dir="ltr">10</td></tr><tr style="height: 33px"><th id="947378362R43" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">44</div></th><td class="s1" dir="ltr">20985</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmWdw1vLXG7REw4uvHnKBmU57ifrhEoGEbDttUHw4PNUpB</div></td><td class="s3" dir="ltr">Male Reptiloid</td><td class="s8" dir="ltr">Rare</td><td class="s12" dir="ltr">XDimension</td><td class="s3" dir="ltr">Reptiloid</td><td class="s3" dir="ltr">Male Reptiloid</td><td class="s3" dir="ltr">9</td></tr><tr style="height: 33px"><th id="947378362R44" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">45</div></th><td class="s1" dir="ltr">20984</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmRMvFR65B3tczqS3ribubRsfkBkhiUSkL2PNNFgukxkTk</div></td><td class="s3" dir="ltr">Female Reptiloid</td><td class="s8" dir="ltr">Rare</td><td class="s12" dir="ltr">XDimension</td><td class="s3" dir="ltr">Reptiloid</td><td class="s3" dir="ltr">Female Reptiloid</td><td class="s3" dir="ltr">8</td></tr><tr style="height: 33px"><th id="947378362R45" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">46</div></th><td class="s1" dir="ltr">19660</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmRM8f2cE7UyZmVE9haoLtaV4wGa7BR8XJaLbur9RM9cVP</div></td><td class="s3" dir="ltr">Ted Shadewick</td><td class="s13" dir="ltr">Epic</td><td class="s4" dir="ltr">Stone</td><td class="s3" dir="ltr">Human Augmented</td><td class="s3" dir="ltr">Human Augmented</td><td class="s3" dir="ltr">15</td></tr><tr style="height: 33px"><th id="947378362R46" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">47</div></th><td class="s1" dir="ltr">19658</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmdV7HKYmEycnoLqKGNStniZDfSVdhouZmvLaUtymLbSvF</div></td><td class="s3" dir="ltr">Robotron Soldier</td><td class="s13" dir="ltr">Epic</td><td class="s4" dir="ltr">Stone</td><td class="s3" dir="ltr">Robotrons</td><td class="s3" dir="ltr">Robotron Soldier</td><td class="s3" dir="ltr">1</td></tr><tr style="height: 33px"><th id="947378362R47" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">48</div></th><td class="s1" dir="ltr">48130</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmQa93rBR3nyW5FShjVV29M1XRrLicePX14TAdtQu4zsFD</div></td><td class="s3" dir="ltr">Ted Shadewick</td><td class="s13" dir="ltr">Epic</td><td class="s5" dir="ltr">Gold</td><td class="s3" dir="ltr">Human Augmented</td><td class="s3" dir="ltr">Human Augmented</td><td class="s3" dir="ltr">15</td></tr><tr style="height: 33px"><th id="947378362R48" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">49</div></th><td class="s1" dir="ltr">48116</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmQ3HQrqLvK7FV93KJEiVEzFuJsR1EXmnZZm6y2tWkDLMZ</div></td><td class="s3">Robotron Soldier</td><td class="s13">Epic</td><td class="s5">Gold</td><td class="s3">Robotrons</td><td class="s3">Robotron Soldier</td><td class="s3">1</td></tr><tr style="height: 33px"><th id="947378362R49" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">50</div></th><td class="s1" dir="ltr">48143</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmbKUo3zTvMenRyWdGdf35HMy67v3Ukm4UeqKt3YEXzTKZ</div></td><td class="s3" dir="ltr">Ted Shadewick</td><td class="s13" dir="ltr">Epic</td><td class="s7" dir="ltr">Stardust</td><td class="s3" dir="ltr">Human Augmented</td><td class="s3" dir="ltr">Human Augmented</td><td class="s3" dir="ltr">15</td></tr><tr style="height: 33px"><th id="947378362R50" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">51</div></th><td class="s1" dir="ltr">48131</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmQpCVK7F7P7LV9dwZvKEwhHKoU5UtvezT4ny83xJUSj6n</div></td><td class="s3" dir="ltr">Robotron Soldier</td><td class="s13" dir="ltr">Epic</td><td class="s7" dir="ltr">Stardust</td><td class="s3" dir="ltr">Robotrons</td><td class="s3" dir="ltr">Robotron Soldier</td><td class="s3" dir="ltr">1</td></tr><tr style="height: 33px"><th id="947378362R51" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">52</div></th><td class="s1" dir="ltr">48152</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmQ7rgJLWpAzNsmsfNWZHcKNvZsJjHJpX3YaQhQFJ6p4hg</div></td><td class="s3" dir="ltr">Ted Shadewick</td><td class="s13" dir="ltr">Epic</td><td class="s11" dir="ltr">Antimatter</td><td class="s3" dir="ltr">Human Augmented</td><td class="s3" dir="ltr">Human Augmented</td><td class="s3" dir="ltr">15</td></tr><tr style="height: 33px"><th id="947378362R52" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">53</div></th><td class="s1" dir="ltr">48144</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmVPYCX46Nqq9WEvZnqiTjGid26cAuNcKV5wofmKEcQohe</div></td><td class="s3" dir="ltr">Robotron Soldier</td><td class="s13" dir="ltr">Epic</td><td class="s11" dir="ltr">Antimatter</td><td class="s3" dir="ltr">Robotrons</td><td class="s3" dir="ltr">Robotron Soldier</td><td class="s3" dir="ltr">1</td></tr><tr style="height: 33px"><th id="947378362R53" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">54</div></th><td class="s1" dir="ltr">44934</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmUhF6u35iSj1WtJtGokvGXxassdp1dgZ9Agk34u3imWdK</div></td><td class="s3">Celestial Terror</td><td class="s13">Epic</td><td class="s12">XDimension</td><td class="s3">Unknown</td><td class="s3">Celestial Terror</td><td class="s3">17</td></tr><tr style="height: 33px"><th id="947378362R54" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">55</div></th><td class="s1" dir="ltr">19659</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmdVJG3Ced5xvtSyji44moWfJaJHFnWZRqWA1w2UTGED4k</div></td><td class="s3" dir="ltr">Commander Church</td><td class="s14" dir="ltr">Legendary</td><td class="s4" dir="ltr">Stone</td><td class="s3" dir="ltr">Human</td><td class="s3" dir="ltr">Starship Officer</td><td class="s3" dir="ltr">14</td></tr><tr style="height: 33px"><th id="947378362R55" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">56</div></th><td class="s1" dir="ltr">48129</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmeK926g8EH56AfSQSrT34zuT5yaY72owKSNKuW5iRfmov</div></td><td class="s3" dir="ltr">Commander Church</td><td class="s14" dir="ltr">Legendary</td><td class="s5" dir="ltr">Gold</td><td class="s3" dir="ltr">Human</td><td class="s3" dir="ltr">Starship Officer</td><td class="s3" dir="ltr">14</td></tr><tr style="height: 33px"><th id="947378362R56" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">57</div></th><td class="s1" dir="ltr">48142</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/QmRMMQCGCdGhvW6m7tbUpRr5qp8pmpWFjKKDxjGvuuntjG</div></td><td class="s3" dir="ltr">Commander Church</td><td class="s14" dir="ltr">Legendary</td><td class="s7" dir="ltr">Stardust</td><td class="s3" dir="ltr">Human</td><td class="s3" dir="ltr">Starship Officer</td><td class="s3" dir="ltr">14</td></tr><tr style="height: 33px"><th id="947378362R57" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">58</div></th><td class="s1" dir="ltr">48151</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/Qmczn4dhfm5f1x3xPFYsA7jLRnV5YYw58MAUkcV3Phoret</div></td><td class="s3" dir="ltr">Commander Church</td><td class="s14" dir="ltr">Legendary</td><td class="s11" dir="ltr">Antimatter</td><td class="s3" dir="ltr">Human</td><td class="s3" dir="ltr">Starship Officer</td><td class="s3" dir="ltr">14</td></tr><tr style="height: 33px"><th id="947378362R58" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">59</div></th><td class="s1" dir="ltr">652725</td><td class="s2 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/Qmca53fZ3eb4bx7N8cm8i3J96XutCttNyZZwK3ofQ7GGHi</div></td><td class="s3" dir="ltr">Kol, The Emancipator</td><td class="s15" dir="ltr">Mythical</td><td class="s4" dir="ltr">Stone</td><td class="s3" dir="ltr">Reptiloid</td><td class="s3" dir="ltr">Leader</td><td class="s3" dir="ltr">18</td></tr><tr style="height: 33px"><th id="947378362R59" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">60</div></th><td class="s16" dir="ltr">28425</td><td class="s17 softmerge"><div class="softmerge-inner" style="width:39px;left:-1px">https://ipfs.io/ipfs/Qmc6YSi3jwfcrR5V41ZwS1M6dJZEUxM6h8G7KKbj6HdDWw</div></td><td class="s3">Aioshi Holoform</td><td class="s15">Mythical</td><td class="s4">Stone</td><td class="s3">Holoform</td><td class="s3">Aioshi</td><td class="s3">16</td></tr><tr style="height: 33px"><th id="947378362R60" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">61</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R61" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">62</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R62" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">63</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R63" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">64</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R64" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">65</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R65" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">66</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R66" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">67</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R67" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">68</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R68" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">69</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R69" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">70</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R70" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">71</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R71" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">72</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R72" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">73</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R73" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">74</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R74" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">75</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R75" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">76</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R76" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">77</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R77" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">78</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R78" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">79</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R79" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">80</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R80" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">81</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R81" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">82</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R82" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">83</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R83" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">84</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R84" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">85</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R85" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">86</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R86" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">87</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R87" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">88</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R88" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">89</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R89" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">90</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R90" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">91</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R91" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">92</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R92" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">93</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R93" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">94</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R94" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">95</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R95" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">96</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R96" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">97</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R97" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">98</div></th><td class="s18" dir="ltr"></td><td class="s19"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td></tr><tr style="height: 33px"><th id="947378362R98" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">99</div></th><td class="s18" dir="ltr"></td><td class="s19"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td></tr><tr style="height: 33px"><th id="947378362R99" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">100</div></th><td class="s18" dir="ltr"></td><td class="s19"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td></tr><tr style="height: 33px"><th id="947378362R100" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">101</div></th><td class="s18" dir="ltr"></td><td class="s19"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td></tr><tr style="height: 33px"><th id="947378362R101" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">102</div></th><td class="s18" dir="ltr"></td><td class="s19"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td></tr><tr style="height: 33px"><th id="947378362R102" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">103</div></th><td class="s18" dir="ltr"></td><td class="s19"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td></tr><tr style="height: 33px"><th id="947378362R103" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">104</div></th><td class="s18" dir="ltr"></td><td class="s19"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td></tr><tr style="height: 33px"><th id="947378362R104" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">105</div></th><td class="s18" dir="ltr"></td><td class="s19"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td></tr><tr style="height: 33px"><th id="947378362R105" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">106</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R106" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">107</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R107" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">108</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R108" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">109</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R109" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">110</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R110" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">111</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R111" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">112</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R112" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">113</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R113" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">114</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R114" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">115</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R115" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">116</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R116" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">117</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R117" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">118</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R118" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">119</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R119" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">120</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R120" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">121</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R121" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">122</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R122" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">123</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R123" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">124</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R124" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">125</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R125" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">126</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R126" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">127</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R127" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">128</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R128" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">129</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R129" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">130</div></th><td class="s18" dir="ltr"></td><td class="s19"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td></tr><tr style="height: 33px"><th id="947378362R130" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">131</div></th><td class="s18" dir="ltr"></td><td class="s19"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td></tr><tr style="height: 33px"><th id="947378362R131" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">132</div></th><td class="s18" dir="ltr"></td><td class="s19"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td></tr><tr style="height: 33px"><th id="947378362R132" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">133</div></th><td class="s18" dir="ltr"></td><td class="s19"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td></tr><tr style="height: 33px"><th id="947378362R133" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">134</div></th><td class="s18" dir="ltr"></td><td class="s19"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td></tr><tr style="height: 33px"><th id="947378362R134" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">135</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R135" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">136</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R136" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">137</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R137" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">138</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R138" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">139</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R139" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">140</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R140" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">141</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R141" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">142</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R142" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">143</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R143" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">144</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R144" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">145</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R145" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">146</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R146" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">147</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R147" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">148</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R148" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">149</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R149" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">150</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R150" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">151</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R151" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">152</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R152" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">153</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R153" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">154</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R154" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">155</div></th><td class="s18" dir="ltr"></td><td class="s19"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td></tr><tr style="height: 33px"><th id="947378362R155" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">156</div></th><td class="s18" dir="ltr"></td><td class="s19"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td></tr><tr style="height: 33px"><th id="947378362R156" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">157</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R157" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">158</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R158" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">159</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R159" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">160</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3" dir="ltr"></td><td class="s3" dir="ltr"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R160" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">161</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R161" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">162</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R162" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">163</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R163" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">164</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr><tr style="height: 33px"><th id="947378362R164" style="height: 33px;" class="row-headers-background"><div class="row-header-wrapper" style="line-height: 33px">165</div></th><td class="s18"></td><td class="s19"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td><td class="s3"></td></tr></tbody></table></div><script>
+        // --- CONFIGURATION ---
+        const API_STATS = "https://wax.api.atomicassets.io/atomicassets/v1"; 
+        const API_SALES = "https://wax.eosusa.io/atomicmarket/v1/sales/templates";
+        const API_HISTORY = "https://wax.api.atomicassets.io/atomicmarket/v2/sales"; 
+        
+        // Custom hierarchical weights for Rarity and Shine
+        const sortWeights = { 
+            "abundant": 1, "common": 2, "rare": 3, "epic": 4, "legendary": 5, "mythical": 6,
+            "stone": 1, "gold": 2, "stardust": 3, "antimatter": 4, "xdimension": 5
+        };
+        
+        const BASE_URLS = {
+            atomic: "https://wax.atomichub.io/market?collection_name=alien.worlds&order=asc&sort=price&symbol=WAX&template_id=",
+            nefty: "https://neftyblocks.com/templates/alien.worlds/",
+            hive: "https://nfthive.io/market?collection=alien.worlds&order=asc&sort=price&template_id=",
+            f12: "https://f12key.eu/collection/alien.worlds/templates/"
+        };
+
+        let dataRows = [];
+        let cardData = {}; 
+        let isDeckOpen = true;
+        let sortDirection = {}; 
+        window.deckHoverTimer = null;
+
+        // --- CLICK EFFECT ---
+        document.addEventListener('click', (e) => {
+            const clicker = document.createElement('div');
+            clicker.className = 'click-effect';
+            clicker.style.left = `${e.clientX}px`; clicker.style.top = `${e.clientY}px`;
+            document.body.appendChild(clicker);
+            setTimeout(() => clicker.remove(), 500);
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            checkWalletState();
+            
+            const table = document.querySelector("table");
+            if(!table) { document.getElementById("status").innerText = "ERROR: TABLE NOT FOUND"; return; }
+
+            // STRIP GOOGLE SHEETS HTML GARBAGE
+            table.querySelectorAll('.softmerge').forEach(el => el.classList.remove('softmerge'));
+            
+            const allRows = Array.from(table.querySelectorAll("tr"));
+            allRows.forEach(r => {
+                if(r.textContent.includes("freezebar") || r.style.height === "3px") r.style.display = 'none';
+            });
+            table.querySelectorAll(".row-headers-background, .column-headers-background").forEach(e => e.style.display = 'none');
+
+            // 1. FIND THE HEADER ROW
+            let headerRow = null;
+            for(let i = 0; i < Math.min(10, allRows.length); i++) {
+                if(allRows[i].textContent.toLowerCase().includes("template id")) { 
+                    headerRow = allRows[i]; 
+                    break; 
+                }
+            }
+
+            // Columns layout for Faces: 0:ID, 1:Img, 2:Name, 3:Rarity, 4:Shine
+            let nameIdx = 2; 
+            let shineIdx = 4; 
+
+            // 2. SETUP HEADER
+            if (headerRow) {
+                headerRow.style.display = "table-row";
+                
+                // Only select 'td' to bypass the phantom 'th' row numbers
+                const headerCells = Array.from(headerRow.querySelectorAll('td'));
+                
+                headerCells.forEach(c => {
+                    c.className = "live-header";
+                    c.style.backgroundColor = ""; 
+                    c.style.color = "";           
+                    c.style.borderRight = "2px solid var(--theme-color)"; 
+                });
+
+                // INJECT THE 5 NEW COLUMNS INTO THE HEADER
+                addHead(headerRow, "Lowest Price");
+                addHead(headerRow, "Last Sold");
+                addHead(headerRow, "Suggested");
+                addHead(headerRow, "Minted");
+                addHead(headerRow, "Burned");
+
+                Array.from(headerRow.querySelectorAll('td')).forEach((c, i) => {
+                    let txt = c.textContent.toLowerCase().trim();
+                    if(txt.includes("name")) nameIdx = i;
+                    if(txt.includes("shine")) shineIdx = i;
+                    c.title = "Sort"; c.onclick = () => fastSort(i);
+                });
+            }
+
+            // 3. PROCESS DATA ROWS
+            const dataRowsDom = Array.from(table.querySelectorAll("tr"));
+            dataRowsDom.forEach(row => {
+                if (row === headerRow || row.style.display === "none") return;
+
+                // Match body columns specifically to 'td'
+                const cells = Array.from(row.querySelectorAll('td'));
+                if(cells.length === 0) return;
+
+                let idCell = cells[0];
+                let templateId = idCell.textContent.replace(/\D/g, '').trim();
+                if(!templateId) return; 
+
+                row.setAttribute("data-id", templateId);
+
+                let name = (cells[nameIdx]) ? cells[nameIdx].textContent.trim() : "Unknown";
+                let shine = (cells[shineIdx]) ? cells[shineIdx].textContent.trim() : "";
+                cardData[templateId] = { name: name, shine: shine };
+
+                // IMAGE PARSING: Upgraded to pull images if the export used =IMAGE()
+                let highResImg = "";
+                if (cells.length > 1) {
+                    let imgCell = cells[1];
+                    let imgNode = imgCell.querySelector("img");
+                    
+                    if (imgNode && imgNode.src) {
+                        highResImg = imgNode.src;
+                    } else {
+                        highResImg = imgCell.textContent.trim();
+                    }
+
+                    imgCell.innerHTML = ""; 
+                    imgCell.style.width = "60px"; imgCell.style.minWidth = "60px"; imgCell.style.padding = "0"; imgCell.style.textAlign = "center";
+                    
+                    if(highResImg && highResImg.includes("http")) {
+                        let newImg = document.createElement("img");
+                        
+                        let safeUrl = highResImg;
+                        if (highResImg.includes("ipfs.io/ipfs/")) {
+                            safeUrl = encodeURIComponent(highResImg.replace("https://ipfs.io/ipfs/", "ipfs.io/ipfs/"));
+                            newImg.src = `https://wsrv.nl/?url=${safeUrl}&w=40&h=60&output=webp&fit=cover`;
+                        } else {
+                            // Leave Googleusercontent proxy links intact
+                            newImg.src = highResImg; 
+                        }
+
+                        newImg.loading = "lazy"; 
+                        newImg.style.height = "52px"; 
+                        newImg.style.width = "auto"; 
+                        imgCell.appendChild(newImg);
+                    }
+                }
+
+                // INJECT THE 5 NEW COLUMNS INTO THE BODY
+                let cLow = row.insertCell(-1); cLow.className = "live-cell"; cLow.innerText = "-";
+                let cLast = row.insertCell(-1); cLast.className = "live-cell"; cLast.innerText = "-";
+                let cSugg = row.insertCell(-1); cSugg.className = "live-cell"; cSugg.innerText = "-";
+                let cMint = row.insertCell(-1); cMint.className = "live-cell"; cMint.innerText = "-";
+                let cBurn = row.insertCell(-1); cBurn.className = "live-cell"; cBurn.innerText = "-";
+
+                dataRows.push({ id: templateId, cMint: cMint, cBurn: cBurn, cLow: cLow, cLast: cLast, cSugg: cSugg, element: row });
+
+                row.style.cursor = "pointer";
+                
+                row.addEventListener("click", (e) => {
+                    e.stopPropagation(); 
+                    if(window.deckHoverTimer) clearTimeout(window.deckHoverTimer);
+                    
+                    showPreview(templateId, highResImg); 
+                    fetchRowPrices(templateId, cLow, cLast, cSugg); 
+                    updateMarketLinks(templateId);
+                    
+                    if(window.innerWidth <= 800) {
+                        document.getElementById("preview-frame").classList.add("mobile-active");
+                        document.getElementById("market-frame").classList.add("mobile-active");
+                        document.getElementById("mobile-backdrop").classList.add("active");
+                    } else {
+                        document.getElementById("market-frame").style.display = "block";
+                    }
+                }, true);
+                
+                row.addEventListener("mouseenter", (e) => { 
+                    if(window.innerWidth <= 800) return; 
+                    e.stopPropagation(); 
+                    if(window.deckHoverTimer) clearTimeout(window.deckHoverTimer);
+                    
+                    window.deckHoverTimer = setTimeout(() => {
+                        if(isDeckOpen) showPreview(templateId, highResImg);
+                    }, 150);
+                }, true);
+
+                cells.forEach((cell, idx) => {
+                    let text = cell.textContent.trim().toLowerCase();
+
+                    // --- THE BLANK STAT FIX ---
+                    // Specifically ignore the Image column (idx 1) so it doesn't overwrite the pictures!
+                    if (text === "" && idx !== 1) {
+                        cell.textContent = "0";
+                        text = "0";
+                        cell.style.color = "#666"; 
+                    }
+
+                    // STANDARD HUD TAGGING
+                    if (text === "stone") cell.className += " tag-stone";
+                    else if (text === "gold") cell.className += " tag-gold";
+                    else if (text === "stardust") cell.className += " tag-stardust";
+                    else if (text === "antimatter") cell.className += " tag-antimatter";
+                    else if (text === "xdimension") cell.className += " tag-xdimension";
+                    else if (text === "abundant") cell.className += " tag-abundant";
+                    else if (text === "common") cell.className += " tag-common";
+                    else if (text === "rare") cell.className += " tag-rare";
+                    else if (text === "epic") cell.className += " tag-epic";
+                    else if (text === "legendary") cell.className += " tag-legendary";
+                    else if (text === "mythical") cell.className += " tag-mythical";
+                    
+                    // FACES SPECIFIC TAGGING
+                    else if (text === "human" || text === "human male" || text === "human female") cell.className += " tag-human";
+                    else if (text === "nordic" || text.includes("nordic")) cell.className += " tag-nordic";
+                    else if (text === "grey" || text.includes("grey")) cell.className += " tag-grey";
+                    else if (text === "lgp" || text.includes("little green person")) cell.className += " tag-lgp";
+                    else if (text === "reptiloid" || text.includes("reptiloid")) cell.className += " tag-reptiloid";
+                    else if (text === "human augmented" || text.includes("cyborg")) cell.className += " tag-cyborg";
+                    else if (text === "robotrons" || text.includes("robotron")) cell.className += " tag-robotron";
+                    
+                    if (!cell.style.color) { 
+                        cell.style.backgroundColor = "transparent";
+                    }
+                });
+            });
+            
+            document.getElementById("status").innerText = `READY: ${dataRows.length} ASSETS`;
+            document.querySelector("table").classList.add("system-ready"); 
+        });
+
+        function closeDeckMobile() {
+            document.getElementById("preview-frame").classList.remove("mobile-active");
+            document.getElementById("market-frame").classList.remove("mobile-active");
+            document.getElementById("mobile-backdrop").classList.remove("active");
+        }
+
+        function showPreview(id, imgSrc) {
+            const previewImg = document.getElementById("preview-img");
+            const nameLabel = document.getElementById("label-name");
+            const shineLabel = document.getElementById("label-shine");
+            const idLabel = document.getElementById("label-id");
+            const status = document.getElementById("preview-status");
+
+            if(cardData[id]) {
+                nameLabel.innerText = cardData[id].name;
+                shineLabel.innerText = cardData[id].shine || "";
+            } else { nameLabel.innerText = "UNKNOWN ASSET"; }
+            idLabel.innerText = "ID: " + id;
+
+            if (imgSrc) {
+                if (previewImg.getAttribute("data-current-src") !== imgSrc) {
+                    previewImg.src = imgSrc; 
+                    previewImg.setAttribute("data-current-src", imgSrc);
+                }
+                previewImg.style.display = "block"; 
+                status.style.display = "none";
+            } else {
+                status.innerText = "NO IMAGE LINKED"; 
+                status.style.display = "block"; 
+                previewImg.style.display = "none";
+            }
+        }
+
+        function updateMarketLinks(id) {
+            document.getElementById("lnk-atomic").href = BASE_URLS.atomic + id;
+            document.getElementById("lnk-nefty").href = BASE_URLS.nefty + id;
+            document.getElementById("lnk-hive").href = BASE_URLS.hive + id;
+            document.getElementById("lnk-f12").href = BASE_URLS.f12 + id;
+        }
+
+        function addHead(r, t) {
+            let h = document.createElement("td"); 
+            h.innerText = t; 
+            h.className = "live-header"; 
+            h.style.borderRight = "2px solid var(--theme-color)";
+            r.appendChild(h);
+            
+            // Re-evaluates index position for accurate sorting attachment
+            let idx = Array.from(r.querySelectorAll('td')).indexOf(h);
+            h.onclick = () => fastSort(idx);
+        }
+
+        async function fetchRowPrices(id, cellLow, cellLast, cellSugg) {
+            const deckFloor = document.getElementById("intel-floor");
+            const deckLast = document.getElementById("intel-last");
+            const deckSugg = document.getElementById("intel-sugg");
+            const header = document.getElementById("intel-header");
+            
+            if(cardData[id]) header.innerText = `MARKET INTEL: ${cardData[id].name} [${cardData[id].shine}]`.toUpperCase();
+            
+            cellLow.innerText = "..."; 
+            deckFloor.innerText = "SCANNING...";
+            deckFloor.style.color = "#fff"; 
+            cellLow.style.textShadow = "none";
+            
+            if (cellLast) cellLast.innerText = "...";
+            deckLast.innerText = "SCANNING...";
+            if (cellSugg) cellSugg.innerText = "-"; 
+            deckSugg.innerText = "---";
+
+            const urlFloor = `${API_SALES}?symbol=WAX&state=1&template_id=${id}&_ts=${Date.now()}`;
+            
+            try {
+                const res = await fetch(urlFloor, { cache: 'no-store' });
+                const floorData = await res.json();
+
+                if (floorData.success && floorData.data && floorData.data.length > 0) {
+                    const sale = floorData.data[0];
+                    const price = sale.price;
+                    
+                    let floorValNum = parseInt(price.amount) / Math.pow(10, price.token_precision);
+                    cellLow.innerText = floorValNum.toFixed(2); 
+                    cellLow.style.color = "#00ff00";
+                    deckFloor.innerText = floorValNum.toFixed(2) + " WAX";
+
+                    let suggValNum = 0;
+                    try {
+                        if (sale.assets && sale.assets.length > 0 && sale.assets[0].prices && sale.assets[0].prices.length > 0) {
+                            let s = sale.assets[0].prices[0].suggested_median;
+                            if (s) {
+                                suggValNum = parseInt(s) / Math.pow(10, price.token_precision);
+                                if (cellSugg) cellSugg.innerText = suggValNum.toFixed(2);
+                                deckSugg.innerText = suggValNum.toFixed(2) + " WAX";
+                            }
+                        }
+                    } catch(e) {}
+
+                    if(floorValNum > 0 && suggValNum > 0) {
+                        if (floorValNum < (suggValNum * 0.80)) {
+                             deckFloor.innerHTML += " <span style='color:#00ff00; font-weight:bold; animation:pulse 1s infinite'>[ DEAL! ]</span>";
+                             cellLow.style.textShadow = "0 0 10px #00ff00";
+                        }
+                    }
+                } else { 
+                    cellLow.innerText = "-"; deckFloor.innerText = "NONE"; 
+                }
+            } catch (e) { cellLow.innerText = "Err"; deckFloor.innerText = "ERROR"; }
+
+            try {
+                const soldRes = await fetch(`${API_HISTORY}?state=3&template_id=${id}&page=1&limit=1&order=desc&sort=updated&symbol=WAX&_ts=${Date.now()}`, { cache: 'no-store' });
+                const soldData = await soldRes.json();
+                
+                if (soldData.data && soldData.data.length > 0) {
+                    const price = soldData.data[0].price;
+                    let val = parseInt(price.amount) / Math.pow(10, price.token_precision);
+                    if(cellLast) cellLast.innerText = val.toFixed(2); 
+                    if(cellLast) cellLast.style.color = "#ffff00";
+                    deckLast.innerText = val.toFixed(2) + " WAX";
+                } else { 
+                    if(cellLast) cellLast.innerText = "-"; 
+                    deckLast.innerText = "NONE"; 
+                }
+            } catch (e) { if(cellLast) cellLast.innerText = "Err"; }
+        }
+
+        async function startScan(btnElement) {
+            if(btnElement) { btnElement.innerText = "SCANNING..."; btnElement.style.color = "#ffff00"; }
+            const barContainer = document.getElementById("progress-container");
+            const bar = document.getElementById("progress-bar");
+            barContainer.style.display = "block";
+
+            let queue = dataRows.filter(r => r.cMint.innerText === "-" || r.cMint.innerText === "Err");
+            let processed = 0; let batchSize = 5; 
+
+            for (let i = 0; i < queue.length; i += batchSize) {
+                const batch = queue.slice(i, i + batchSize);
+                await Promise.all(batch.map(async (item) => {
+                    item.cMint.style.color = "#555"; item.cMint.innerText = "...";
+                    try {
+                        const res = await fetch(`${API_STATS}/templates/alien.worlds/${item.id}/stats`);
+                        const d = await res.json();
+                        if(d.success) {
+                            let burned = parseInt(d.data.burned);
+                            let total = parseInt(d.data.assets) + burned;
+                            item.cMint.innerText = total.toLocaleString();
+                            item.cBurn.innerText = burned.toLocaleString();
+                            item.cMint.style.color = "var(--theme-color)";
+                            item.cBurn.style.color = "var(--theme-color)";
+                        }
+                    } catch(e) { item.cMint.innerText = "Err"; item.cBurn.innerText = "Err"; }
+                }));
+                processed += batch.length; 
+                let pct = (processed / queue.length) * 100; 
+                bar.style.width = pct + "%"; 
+                await new Promise(r => setTimeout(r, 100)); 
+            }
+            if(btnElement) { btnElement.innerText = "DATA ACQUIRED"; btnElement.style.color = "#00ff00"; }
+            document.getElementById("status").innerText = "IDLE";
+        }
+
+        function toggleDeck() {
+            const frame = document.getElementById("preview-frame");
+            const marketFrame = document.getElementById("market-frame");
+            const btn = document.querySelector(".top-bar button[onclick='toggleDeck()']"); 
+            isDeckOpen = !isDeckOpen;
+            if (isDeckOpen) {
+                frame.classList.remove("minimized"); marketFrame.classList.remove("minimized");
+                if(btn) btn.innerText = "[ MINIMIZE DECK ]";
+            } else {
+                frame.classList.add("minimized"); marketFrame.classList.add("minimized");
+                if(btn) btn.innerText = "[ OPEN DECK ]";
+            }
+        }
+
+        function resetSort() { sortDirection = {}; sortDirection[3] = 'desc'; fastSort(3); document.getElementById("searchInput").value = ""; filterTable(); }
+
+        // Master Sort Engine
+        function fastSort(colIndex) {
+            const table = document.querySelector("table");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+            const dataRows = rows.filter(r => r.hasAttribute("data-id"));
+            const otherRows = rows.filter(r => !r.hasAttribute("data-id"));
+            
+            let dir = sortDirection[colIndex] === 'asc' ? 'desc' : 'asc';
+            sortDirection[colIndex] = dir;
+            
+            dataRows.sort((a, b) => {
+                const cellsA = Array.from(a.querySelectorAll('td'));
+                const cellsB = Array.from(b.querySelectorAll('td'));
+                
+                let valA = cellsA[colIndex] ? cellsA[colIndex].textContent.replace(/,/g,'').trim() : "";
+                let valB = cellsB[colIndex] ? cellsB[colIndex].textContent.replace(/,/g,'').trim() : "";
+                
+                let keyA = valA.toLowerCase();
+                let keyB = valB.toLowerCase();
+                
+                // 1. Rarity & Shine Hierarchical Sort
+                if (sortWeights[keyA] !== undefined || sortWeights[keyB] !== undefined) {
+                    let weightA = sortWeights[keyA] || 0; 
+                    let weightB = sortWeights[keyB] || 0;
+                    return dir === 'asc' ? weightA - weightB : weightB - weightA;
+                }
+                
+                // 2. Numeric Sort
+                let isBlankA = (valA === "" || valA === "-" || valA === "Err" || valA === "...");
+                let isBlankB = (valB === "" || valB === "-" || valB === "Err" || valB === "...");
+                
+                let numA = parseFloat(valA);
+                let numB = parseFloat(valB);
+                
+                let isNumA = !isBlankA && !isNaN(numA);
+                let isNumB = !isBlankB && !isNaN(numB);
+
+                if (isNumA && isNumB) {
+                    return dir === 'asc' ? numA - numB : numB - numA;
+                } else if (isNumA && !isNumB) {
+                    return dir === 'asc' ? -1 : 1; 
+                } else if (!isNumA && isNumB) {
+                    return dir === 'asc' ? 1 : -1;
+                }
+                
+                // 3. Alphabetical Sort Fallback
+                return dir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            });
+            
+            otherRows.forEach(r => tbody.appendChild(r)); 
+            dataRows.forEach(r => tbody.appendChild(r));
+        }
+
+        function toggleThemePanel() { document.getElementById("theme-panel").style.display = document.getElementById("theme-panel").style.display === "grid" ? "none" : "grid"; }
+        
+        function setTheme(color, dark) {
+            document.documentElement.style.setProperty('--theme-color', color);
+            document.documentElement.style.setProperty('--theme-dark', dark);
+            document.documentElement.style.setProperty('--theme-hover', hexToRgba(color, 0.2));
+            document.documentElement.style.setProperty('--theme-shadow', `0 0 15px ${hexToRgba(color, 0.4)}`);
+            document.documentElement.style.setProperty('--theme-border', `1px solid ${hexToRgba(color, 0.3)}`);
+            document.getElementById("theme-panel").style.display = "none";
+        }
+        
+        function hexToRgba(hex, alpha) {
+            let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+        
+        function adjustFont(delta) {
+            let currentFontSize = parseFloat(document.querySelector('td').style.fontSize) || 0.9;
+            currentFontSize += (delta * 0.1);
+            if(currentFontSize < 0.6) currentFontSize = 0.6;
+            if(currentFontSize > 1.5) currentFontSize = 1.5;
+            document.querySelectorAll('td, th').forEach(c => c.style.setProperty('font-size', `${currentFontSize}em`, 'important'));
+        }
+        
+        function filterTable() {
+            const filter = document.getElementById("searchInput").value.toUpperCase();
+            dataRows.forEach(row => {
+                if (row.element.textContent.toUpperCase().indexOf(filter) > -1) row.element.style.display = "";
+                else row.element.style.display = "none";
+            });
+        }
+
+        const wax = new waxjs.WaxJS({ rpcEndpoint: 'https://wax.greymass.com' });
+
+        function checkWalletState() {
+            const savedWallet = localStorage.getItem("naron_wallet");
+            const btn = document.getElementById("wallet-connect-btn");
+            
+            if(savedWallet) {
+                btn.innerText = `[ ${savedWallet} ]`;
+                btn.classList.add("logged-in");
+            } else {
+                btn.innerText = "[ CONNECT WAX WALLET ]";
+                btn.classList.remove("logged-in");
+            }
+        }
+
+        async function toggleWallet() {
+            const currentWallet = localStorage.getItem("naron_wallet");
+            if(currentWallet) {
+                localStorage.removeItem("naron_wallet");
+                checkWalletState();
+                return;
+            } 
+            try {
+                const userAccount = await wax.login(); 
+                localStorage.setItem("naron_wallet", userAccount);
+                checkWalletState();
+            } catch (e) { console.error("WAX Login Error"); }
+        }
+    </script>
