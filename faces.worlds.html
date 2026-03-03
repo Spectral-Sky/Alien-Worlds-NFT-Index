@@ -123,8 +123,27 @@
 
         /* --- TABLE --- */
         .freezebar-cell, .row-header-wrapper, .row-headers-background, .column-headers-background { display: none !important; }
-        .grid-container { background: transparent !important; border: none !important; box-shadow: none !important; height: auto !important; overflow: visible !important; width: 100% !important; max-width: none !important; }
         
+        .grid-container { 
+            background: transparent !important; border: none !important; box-shadow: none !important; 
+            height: auto !important; overflow: visible !important; width: 100% !important; max-width: none !important; 
+            
+            /* The Side-Panel Push Mechanics */
+            box-sizing: border-box !important;
+            padding-left: 0px;
+            transition: padding-left 0.4s ease-out;
+        }
+        
+        /* When deck is open, push the table right by 310px (280px deck + 30px gap) */
+        body.deck-open .grid-container {
+            padding-left: 310px;
+        }
+        
+        /* Cancel the push on phones, as the deck becomes a pop-up modal */
+        @media screen and (max-width: 800px) {
+            body.deck-open .grid-container { padding-left: 0px; }
+        }
+
         .waffle { border-collapse: separate !important; border-spacing: 0 !important; margin: 0 auto; background: var(--theme-dark); width: auto !important; transition: background-color 0.5s; }
         
         .live-header { 
@@ -310,6 +329,7 @@
         });
 
         document.addEventListener("DOMContentLoaded", () => {
+            document.body.classList.add("deck-open"); // Tells the table to push over on load
             checkWalletState();
             
             const table = document.querySelector("table");
@@ -665,6 +685,10 @@
             const marketFrame = document.getElementById("market-frame");
             const btn = document.querySelector(".top-bar button[onclick='toggleDeck()']"); 
             isDeckOpen = !isDeckOpen;
+
+            // Toggles the physical wall that pushes the table
+            document.body.classList.toggle("deck-open", isDeckOpen);
+            
             if (isDeckOpen) {
                 frame.classList.remove("minimized"); marketFrame.classList.remove("minimized");
                 if(btn) btn.innerText = "[ MINIMIZE DECK ]";
