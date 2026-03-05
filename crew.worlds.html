@@ -399,9 +399,12 @@
 
 <div class="grid-container" style="padding-top: 0;">
         <div class="codex-footer">
-            <div class="footer-text">// THIS ARCHIVE WAS MADE POSSIBLE BY THE NARON UNION // ©@Spectral.Sky 2026 //</div>
-            <div class="footer-actions">
-                <button class="cyber-btn" style="color: #ffaa00; border-color: #ffaa00;" onclick="alert('WAX Tipping Contract coming soon!')">[ TIP DEV (WAX) ]</button>
+            <div class="footer-text">// THIS ARCHIVE WAS MADE POSSIBLE BY NARON UNION // ©@Spectral.Sky 2026 //</div>
+            <div class="footer-actions" style="margin-top: 10px; max-width: 600px;">
+                <div style="color: #666; font-size: 0.7em; font-family: monospace; line-height: 1.4; border: 1px dashed #333; padding: 10px; background: #050505;">
+                    [ DISCLAIMER: NARON CODEX IS A COMMUNITY-DRIVEN DATABASE. NOT OFFICIALLY AFFILIATED WITH DACOCO GMBH OR ALIEN WORLDS. LIVE MARKET DATA IS SUBJECT TO BLOCKCHAIN DELAYS. ]
+                </div>
+                <button class="cyber-btn" style="color: #ffaa00; border-color: #ffaa00;" onclick="alert('TLM Tipping Contract coming soon!')">[ TIP DEV (TLM) ]</button>
             </div>
         </div>
     </div>
@@ -526,8 +529,11 @@
                         c.innerHTML = `PD ATK <span class="info-icon">ⓘ<span class="tooltip-box"><span class="tooltip-header">FORMULA:</span>(Stat + Rarity) x Shine<br><br><span class="tooltip-header" style="font-size:0.9em;">RARITY BONUS:</span><div class="tooltip-row"><span>Mythical:</span><span>+50</span></div><div class="tooltip-row"><span>Legendary:</span><span>+25</span></div><div class="tooltip-row"><span>Epic:</span><span>+7</span></div><div class="tooltip-row"><span>Rare:</span><span>+3</span></div><div class="tooltip-row"><span>Common/Abundant:</span><span>+1</span></div><br><span class="tooltip-header" style="font-size:0.9em;">SHINE MULTIPLIER:</span><div class="tooltip-row"><span>XDimension:</span><span>x9</span></div><div class="tooltip-row"><span>Antimatter:</span><span>x7</span></div><div class="tooltip-row"><span>Stardust:</span><span>x5</span></div><div class="tooltip-row"><span>Gold:</span><span>x3</span></div><div class="tooltip-row"><span>Stone:</span><span>x1</span></div></span></span>`;
                     } else if(txt.includes("pd defense")) {
                         c.innerHTML = `PD DEF <span class="info-icon">ⓘ<span class="tooltip-box"><span class="tooltip-header">FORMULA:</span>(Stat + Rarity) x Shine<br><br><span class="tooltip-header" style="font-size:0.9em;">RARITY BONUS:</span><div class="tooltip-row"><span>Mythical:</span><span>+50</span></div><div class="tooltip-row"><span>Legendary:</span><span>+25</span></div><div class="tooltip-row"><span>Epic:</span><span>+7</span></div><div class="tooltip-row"><span>Rare:</span><span>+3</span></div><div class="tooltip-row"><span>Common/Abundant:</span><span>+1</span></div><br><span class="tooltip-header" style="font-size:0.9em;">SHINE MULTIPLIER:</span><div class="tooltip-row"><span>XDimension:</span><span>x9</span></div><div class="tooltip-row"><span>Antimatter:</span><span>x7</span></div><div class="tooltip-row"><span>Stardust:</span><span>x5</span></div><div class="tooltip-row"><span>Gold:</span><span>x3</span></div><div class="tooltip-row"><span>Stone:</span><span>x1</span></div></span></span>`;
-                    } else if(txt.includes("minutes added") || txt.includes("move cost")){
-                         c.innerHTML = `PD MOVE <span class="info-icon">ⓘ<span class="tooltip-box"><span class="tooltip-header">FORMULA:</span>3 Hours (Base) + <br>(10s x Move Cost)</span></span>`;
+                    } else if(txt === "move cost") {
+                        // Protects standard Move Cost from being overwritten
+                        c.innerHTML = `MOVE COST`; 
+                    } else if(txt.includes("minutes added")) {
+                        c.innerHTML = `PD MINUTES ADDED <span class="info-icon">ⓘ<span class="tooltip-box"><span class="tooltip-header">FORMULA:</span>3 Hours (Base) + <br>(10s x Move Cost)</span></span>`;
                     }
                 });
             }
@@ -991,6 +997,54 @@
         const wax = new waxjs.WaxJS({ rpcEndpoint: 'https://wax.greymass.com' });
         function checkWalletState() { /* Disabled for now */ }
         async function toggleWallet() { /* Disabled for now */ }
+
+    async function sendTip() {
+            // 1. Ensure WaxJS is initialized and the user is logged in
+            if (!wax.userAccount) {
+                try {
+                    await wax.login();
+                    localStorage.setItem("naron_wallet", wax.userAccount);
+                    checkWalletState();
+                } catch (e) {
+                    alert("Wallet connection required to transmit funds.");
+                    return;
+                }
+            }
+
+            const tipAmount = document.getElementById("tip-amount").value;
+            const receiverAddress = "1x1ci.wam"; //
+
+            try {
+                // 2. Construct and push the transaction payload
+                const result = await wax.api.transact({
+                    actions: [{
+                        account: 'alien.worlds',
+                        name: 'transfer',
+                        authorization: [{
+                            actor: wax.userAccount,
+                            permission: 'active',
+                        }],
+                        data: {
+                            from: wax.userAccount,
+                            to: receiverAddress,
+                            quantity: tipAmount,
+                            memo: 'Naron Codex Tip'
+                        },
+                    }]
+                }, {
+                    blocksBehind: 3,
+                    expireSeconds: 30
+                });
+
+                // 3. Success State
+                alert(`TRANSMISSION SUCCESSFUL.\n\nThank you for supporting Naron Codex! \nTransaction ID: ${result.transaction_id}`);
+                
+            } catch (e) {
+                // 4. Error State (e.g., user rejected the popup, or insufficient funds)
+                console.error(e);
+                alert(`TRANSMISSION FAILED.\n\nError: ${e.message}`);
+            }
+        }
     </script>
 </body>
 </html>
