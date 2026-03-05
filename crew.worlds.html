@@ -1049,15 +1049,28 @@
         // 4. SESSION RESTORATION ON PAGE LOAD
         async function checkWalletState() {
             const savedWallet = localStorage.getItem("naron_wallet");
+            
             if (savedWallet) {
+                // 1. Instantly update the UI so it doesn't flicker or look lost
+                updateWalletUI(savedWallet);
+                
+                // 2. Manually inject the account name back into the fresh wax variable
+                wax.userAccount = savedWallet; 
+                
                 try {
-                    // Silently check if the browser session is still valid
+                    // 3. Silently verify the true session with the WAX Cloud server
                     let isAutoLoginAvailable = await wax.isAutoLoginAvailable();
-                    if (isAutoLoginAvailable) {
-                        updateWalletUI(wax.userAccount);
-                    } else {
-                        // Session expired, clear local memory
+                    
+                    if (!isAutoLoginAvailable) {
+                        // If the Cloud Wallet session actually expired, revert the UI
+                        wax.userAccount = '';
                         localStorage.removeItem("naron_wallet");
+                        const btn = document.getElementById("wallet-btn");
+                        if (btn) {
+                            btn.innerText = "[ WAX LOGIN ]";
+                            btn.style.color = "#0088ff";
+                            btn.style.borderColor = "#0088ff";
+                        }
                     }
                 } catch(e) {
                     console.error("Auto-login check failed.");
