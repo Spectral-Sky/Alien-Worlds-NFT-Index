@@ -86,6 +86,9 @@
         .wallet-btn:hover { background: var(--theme-hover); box-shadow: var(--theme-shadow); }
         .wallet-btn.logged-in { background: var(--theme-color); color: #000; border: 1px solid #fff; }
 
+        /* --- UNIVERSAL PRICING HIGHLIGHT --- */
+        .price-highlight { color: var(--theme-color) !important; font-weight: bold !important; }
+
         /* --- UI BAR --- */
         .top-bar { 
             display: flex; justify-content: space-between; align-items: flex-start; 
@@ -165,12 +168,29 @@
         #market-frame.minimized { transform: translateX(-400px); opacity: 0; }
         .intel-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #333; padding: 6px 0; font-size: 0.9em; }
         .intel-label { color: #888; }
-        .intel-val { color: #fff; font-weight: bold; font-family: monospace; }
+        .intel-val { color: var(--theme-color); font-weight: bold; font-family: monospace; }
         #intel-header { color:var(--theme-color); font-weight:bold; border-bottom:1px solid #333; margin-bottom:10px; text-transform: uppercase; font-size: 0.85em; letter-spacing: 1px; }
 
         .market-links { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; pointer-events: auto; }
-        .market-link-btn { background: #111; border: 1px solid #444; color: #aaa; text-align: center; font-size: 0.7em; padding: 5px; cursor: pointer; text-decoration: none; display: block; transition: all 0.2s; font-family: monospace; }
-        .market-link-btn:hover { background: var(--theme-color); color: #000; border-color: #fff; }
+        .market-link-btn {
+            background: #111;
+            border: 1px solid var(--theme-color);
+            color: var(--theme-color);
+            text-align: center;
+            font-size: 1.1em;
+            padding: 10px 18px;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            transition: all 0.2s ease-in-out;
+            font-family: monospace;
+            text-transform: uppercase;
+        }
+        .market-link-btn:hover {
+            background: var(--theme-color);
+            color: #000;
+            box-shadow: var(--theme-shadow);
+        }
 
         /* --- SIDEBAR TOGGLE TAB --- */
         #deck-toggle-tab {
@@ -422,11 +442,14 @@
     </div>
 
 <script>
-    // 1. INITIALIZE WAXJS
-        // We use Greymass as it is one of the most reliable public WAX RPC endpoints.
+        // 1. CHECK LOCAL MEMORY FIRST
+        const savedWallet = localStorage.getItem("naron_wallet");
+
+        // 2. INITIALIZE WAXJS (Injecting the saved wallet directly)
     const wax = new waxjs.WaxJS({
         rpcEndpoint: 'https://wax.greymass.com',
-        tryAutoLogin: false 
+        userAccount: savedWallet || '', // Automatically restores state
+        tryAutoLogin: false
     });
                 
         // --- CONFIGURATION ---
@@ -741,7 +764,7 @@
             
             if(cardData[id]) header.innerText = `MARKET INTEL: ${cardData[id].name} [${cardData[id].shine}]`.toUpperCase();
             
-            cellLow.innerText = "..."; deckFloor.innerText = "SCANNING..."; deckFloor.style.color = "#fff"; cellLow.style.textShadow = "none";
+            cellLow.innerText = "..."; deckFloor.innerText = "SCANNING..."; cellLow.style.textShadow = "none";
             if (cellLast) cellLast.innerText = "..."; deckLast.innerText = "SCANNING...";
             if (cellSugg) cellSugg.innerText = "-"; deckSugg.innerText = "---";
 
@@ -751,7 +774,9 @@
                 if (floorData.success && floorData.data && floorData.data.length > 0) {
                     const sale = floorData.data[0]; const price = sale.price;
                     let floorValNum = parseInt(price.amount) / Math.pow(10, price.token_precision);
-                    cellLow.innerText = floorValNum.toFixed(2); cellLow.style.color = "#00ff00"; deckFloor.innerText = floorValNum.toFixed(2) + " WAX";
+                    cellLow.innerText = floorValNum.toFixed(2);
+                    cellLow.classList.add("price-highlight");
+                    deckFloor.innerText = floorValNum.toFixed(2) + " WAX";
 
                     let suggValNum = 0;
                     try {
@@ -759,15 +784,18 @@
                             let s = sale.assets[0].prices[0].suggested_median;
                             if (s) {
                                 suggValNum = parseInt(s) / Math.pow(10, price.token_precision);
-                                if (cellSugg) cellSugg.innerText = suggValNum.toFixed(2);
+                                if (cellSugg) {
+                                    cellSugg.innerText = suggValNum.toFixed(2);
+                                    cellSugg.classList.add("price-highlight");
+                                }
                                 deckSugg.innerText = suggValNum.toFixed(2) + " WAX";
                             }
                         }
                     } catch(e) {}
                     if(floorValNum > 0 && suggValNum > 0) {
                         if (floorValNum < (suggValNum * 0.80)) {
-                             deckFloor.innerHTML += " <span style='color:#00ff00; font-weight:bold; animation:pulse 1s infinite'>[ DEAL! ]</span>";
-                             cellLow.style.textShadow = "0 0 10px #00ff00";
+                             deckFloor.innerHTML += " <span style='color:var(--theme-color); font-weight:bold; animation:pulse 1s infinite'>[ DEAL! ]</span>";
+                             cellLow.style.textShadow = "0 0 10px var(--theme-color)";
                         }
                     }
                 } else { cellLow.innerText = "-"; deckFloor.innerText = "NONE"; }
@@ -778,7 +806,10 @@
                 const soldData = await soldRes.json();
                 if (soldData.data && soldData.data.length > 0) {
                     const price = soldData.data[0].price; let val = parseInt(price.amount) / Math.pow(10, price.token_precision);
-                    if(cellLast) cellLast.innerText = val.toFixed(2); if(cellLast) cellLast.style.color = "#ffff00";
+                    if(cellLast) {
+                        cellLast.innerText = val.toFixed(2);
+                        cellLast.classList.add("price-highlight");
+                    }
                     deckLast.innerText = val.toFixed(2) + " WAX";
                 } else { if(cellLast) cellLast.innerText = "-"; deckLast.innerText = "NONE"; }
             } catch (e) { if(cellLast) cellLast.innerText = "Err"; }
@@ -1046,35 +1077,11 @@
             btn.style.borderColor = "#00ff00";
         }
 
-        // 4. SESSION RESTORATION ON PAGE LOAD
-        async function checkWalletState() {
-            const savedWallet = localStorage.getItem("naron_wallet");
-            
-            if (savedWallet) {
-                // 1. Instantly update the UI so it doesn't flicker or look lost
-                updateWalletUI(savedWallet);
-                
-                // 2. Manually inject the account name back into the fresh wax variable
-                wax.userAccount = savedWallet; 
-                
-                try {
-                    // 3. Silently verify the true session with the WAX Cloud server
-                    let isAutoLoginAvailable = await wax.isAutoLoginAvailable();
-                    
-                    if (!isAutoLoginAvailable) {
-                        // If the Cloud Wallet session actually expired, revert the UI
-                        wax.userAccount = '';
-                        localStorage.removeItem("naron_wallet");
-                        const btn = document.getElementById("wallet-btn");
-                        if (btn) {
-                            btn.innerText = "[ WAX LOGIN ]";
-                            btn.style.color = "#0088ff";
-                            btn.style.borderColor = "#0088ff";
-                        }
-                    }
-                } catch(e) {
-                    console.error("Auto-login check failed.");
-                }
+        // 4. INSTANT SESSION RESTORATION
+        function checkWalletState() {
+            // No server check required; we trust the constructor injection.
+            if (wax.userAccount) {
+                updateWalletUI(wax.userAccount);
             }
         }
 
