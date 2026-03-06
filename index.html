@@ -162,6 +162,17 @@
         .discord-link:hover { background: #5865F2; color: #fff; border-color: #5865F2; box-shadow: 0 0 10px rgba(88, 101, 242, 0.5); }
         .discord-icon { width: 16px; height: 16px; fill: currentColor; }
 
+        /* --- WELCOME BOX --- */
+        .welcome-box {
+            display: flex; align-items: center; gap: 25px;
+            background: rgba(0,255,204,0.04); border: 1px solid var(--theme-color);
+            padding: 20px 30px; margin-bottom: 40px;
+            box-shadow: 0 0 20px rgba(0,255,204,0.08);
+        }
+        .welcome-logo { width: 90px; height: 90px; object-fit: contain; }
+        .welcome-title { color: var(--theme-color); font-size: 1.4em; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 10px var(--theme-color); margin-bottom: 6px; }
+        .welcome-sub { color: #888; font-family: monospace; font-size: 0.9em; letter-spacing: 1px; }
+
         @media screen and (max-width: 900px) {
             .phases-wrapper { grid-template-columns: 1fr; gap: 20px; }
             .global-header { flex-direction: column; gap: 15px; }
@@ -189,7 +200,15 @@
     </header>
 
     <div class="hub-container">
-        
+
+        <div class="welcome-box">
+            <img src="NCLogo512.png" alt="Naron Codex Logo" class="welcome-logo">
+            <div>
+                <div class="welcome-title">Welcome to Naron Codex!</div>
+                <div class="welcome-sub">Your gateway to Alien Worlds metaverse data — browse templates, track prices, and explore the archive.</div>
+            </div>
+        </div>
+
         <div class="phases-wrapper">
             
             <div class="phase-column">
