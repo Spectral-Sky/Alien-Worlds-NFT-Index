@@ -162,6 +162,16 @@
         .discord-link:hover { background: #5865F2; color: #fff; border-color: #5865F2; box-shadow: 0 0 10px rgba(88, 101, 242, 0.5); }
         .discord-icon { width: 16px; height: 16px; fill: currentColor; }
 
+        /* --- CURSOR GLOW --- */
+        #cursor-glow {
+            position: fixed; pointer-events: none; z-index: 9999;
+            width: 340px; height: 340px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,0,0,0.75) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            transition: opacity 0.4s;
+            opacity: 0;
+        }
+
         /* --- WELCOME BOX --- */
         .welcome-box {
             display: flex; align-items: center; gap: 25px;
@@ -180,6 +190,7 @@
     </style>
 </head>
 <body>
+    <div id="cursor-glow"></div>
 
     <header class="global-header">
         <div class="logo-section">
@@ -472,6 +483,13 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             checkWalletState();
+            const glow = document.getElementById("cursor-glow");
+            document.addEventListener("mousemove", e => {
+                glow.style.left = e.clientX + "px";
+                glow.style.top = e.clientY + "px";
+                glow.style.opacity = "1";
+            });
+            document.addEventListener("mouseleave", () => { glow.style.opacity = "0"; });
         });
 
         function checkWalletState() {
