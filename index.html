@@ -319,7 +319,7 @@
         </nav>
 
         <div class="wallet-section">
-            <button id="wallet-connect-btn" class="wallet-btn disabled" style="color: #555; border-color: #333; cursor: not-allowed; background: transparent; box-shadow: none;" onclick="return false;">[ WAX LOGIN COMING SOON ]</button>
+            <button id="wallet-connect-btn" class="wallet-btn" onclick="toggleWallet()">[ CONNECT WAX WALLET ]</button>
         </div>
     </header>
 
@@ -713,13 +713,15 @@
                 banner.textContent = '[ PARTY MODE ACTIVATED ]';
                 document.body.appendChild(banner);
                 setTimeout(() => banner.remove(), 3500);
-                let ticks = 0;
-                const interval = setInterval(() => { spawnConfettiBurst(); if (++ticks >= 65) clearInterval(interval); }, 200);
+                setInterval(spawnConfettiBurst, 600);
             }
 
             // ---- logo click ----
             document.getElementById("nc-logo").addEventListener("click", () => {
                 logoClicks++;
+                if (logoClicks === 1) {
+                    planet.style.opacity = "1";
+                }
                 if (logoClicks >= 12) {
                     document.getElementById('welcome-counter').style.display = 'block';
                     document.getElementById('wc-num').textContent = logoClicks;
@@ -729,7 +731,7 @@
                     document.getElementById('star-hud').style.display = 'block';
                     spawnStar();
                 }
-                if (logoClicks >= 100 && !partyActive) triggerParty();
+                if (logoClicks >= 50 && !partyActive) triggerParty();
             });
 
             // ---- mouse tracking ----
@@ -739,10 +741,12 @@
                 glow.style.top  = e.clientY + "px";
             });
             document.addEventListener("mouseleave", () => {
-                if (partyActive) { glow.style.opacity = "0"; planet.style.opacity = "0"; }
+                if (partyActive) glow.style.opacity = "0";
+                if (logoClicks >= 1) planet.style.opacity = "0";
             });
             document.addEventListener("mouseenter", () => {
-                if (partyActive) { glow.style.opacity = "1"; planet.style.opacity = "1"; }
+                if (partyActive) glow.style.opacity = "1";
+                if (logoClicks >= 1) planet.style.opacity = "1";
             });
 
             // ---- click ripple ----
