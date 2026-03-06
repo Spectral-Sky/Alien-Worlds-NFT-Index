@@ -174,21 +174,23 @@
             transition: opacity 0.4s;
             opacity: 0;
         }
-        /* swirling accretion disk with transparent crosshair hole at centre */
+        /* nebula rotation — light arms only, background shows through */
         #cursor-glow::before {
             content: ''; position: absolute; inset: 0; border-radius: 50%;
             background: conic-gradient(
-                rgba(0,0,0,0.95)   0deg,
-                rgba(0,18,14,0.5)  60deg,
-                rgba(0,0,0,0.9)   120deg,
-                rgba(0,18,14,0.55) 180deg,
-                rgba(0,0,0,0.95)  240deg,
-                rgba(0,18,14,0.4)  300deg,
-                rgba(0,0,0,0.95)  360deg
+                transparent          0deg,
+                rgba(0,255,204,0.65) 28deg,
+                transparent          65deg,
+                rgba(0,255,204,0.35) 115deg,
+                transparent          155deg,
+                rgba(0,255,204,0.55) 205deg,
+                transparent          245deg,
+                rgba(0,255,204,0.2)  305deg,
+                transparent          360deg
             );
             -webkit-mask: radial-gradient(circle at 50% 50%, transparent 9px, black 13px);
             mask:         radial-gradient(circle at 50% 50%, transparent 9px, black 13px);
-            animation: blackhole-spin 2s linear infinite;
+            animation: blackhole-spin 3s linear infinite;
         }
 
         /* --- WELCOME BOX --- */
@@ -240,8 +242,6 @@
         }
         @keyframes clickPulse { 0% { transform: translate(-50%,-50%) scale(0.2); opacity: 1; border-width: 5px; } 100% { transform: translate(-50%,-50%) scale(2.5); opacity: 0; border-width: 0px; } }
 
-        /* --- CURSOR EDGE GLOW RING --- */
-        #cursor-glow { box-shadow: 0 0 0 1.5px rgba(0,255,204,0.35), 0 0 7px 2px rgba(0,255,204,0.18); }
 
         /* --- FULL-PAGE RGB RIPPLE --- */
         @keyframes fullPageRipple { 0% { transform:translate(-50%,-50%) scale(0); opacity:0.8; } 100% { transform:translate(-50%,-50%) scale(300); opacity:0; } }
@@ -257,7 +257,29 @@
         .party-banner { position:fixed; top:50%; left:50%; font-family:monospace; font-size:2.2em; font-weight:bold; color:#fff; letter-spacing:4px; text-shadow:0 0 20px #ff0,0 0 40px #f0f,0 0 60px #0ff; animation:partyBanner 3.5s ease-in-out forwards; pointer-events:none; z-index:999999; white-space:nowrap; }
 
         /* --- LOGO CLICK COUNTER --- */
-        #logo-counter { position:fixed; bottom:15px; right:15px; color:var(--theme-color); font-family:monospace; font-size:0.72em; opacity:0.35; pointer-events:none; z-index:1000; display:none; letter-spacing:1px; }
+        /* welcome counter */
+        #welcome-counter { display:none; margin-top:10px; cursor:pointer; user-select:none; }
+        #welcome-counter:hover .wc-label { color:var(--theme-color); }
+        .wc-label { color:#444; font-size:0.78em; font-family:monospace; letter-spacing:1px; transition:color 0.2s; }
+        .wc-num { color:var(--theme-color); font-weight:bold; }
+
+        /* leaderboard modal */
+        #lb-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99999; }
+        #lb-modal { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:100000; background:#020a08; border:1px solid var(--theme-color); padding:25px 30px; min-width:290px; max-width:380px; width:90vw; box-shadow:0 0 40px rgba(0,255,204,0.2); font-family:monospace; }
+        .lb-title { color:var(--theme-color); font-size:1.05em; font-weight:bold; letter-spacing:3px; margin-bottom:14px; text-transform:uppercase; }
+        .lb-row { display:flex; gap:8px; color:#aaa; font-size:0.82em; padding:5px 0; border-bottom:1px solid #111; }
+        .lb-row:last-child { border-bottom:none; }
+        .lb-rank { color:#444; width:24px; flex-shrink:0; }
+        .lb-name { flex:1; }
+        .lb-score { color:var(--theme-color); }
+        .lb-input-row { margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+        #lb-name-input { background:#111; border:1px solid #333; color:#fff; padding:7px 10px; font-family:monospace; width:88px; text-transform:uppercase; outline:none; font-size:0.9em; }
+        #lb-name-input:focus { border-color:var(--theme-color); }
+
+        /* star game */
+        .star-target { position:fixed; pointer-events:all; z-index:99000; font-size:1.6em; cursor:crosshair; user-select:none; color:#ffe066; animation:star-pop 1.6s ease-out forwards; text-shadow:0 0 8px #ffe066, 0 0 20px rgba(255,224,102,0.4); }
+        @keyframes star-pop { 0%{opacity:0;transform:scale(0.2);} 20%{opacity:1;transform:scale(1.15);} 80%{opacity:1;transform:scale(1);} 100%{opacity:0;transform:scale(0.4);} }
+        #star-hud { display:none; position:fixed; bottom:15px; left:15px; z-index:50000; font-family:monospace; font-size:0.75em; color:#ffe066; opacity:0.6; letter-spacing:1px; pointer-events:none; }
         .welcome-title { color: var(--theme-color); font-size: 1.4em; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 10px var(--theme-color); margin-bottom: 6px; }
         .welcome-sub { color: #888; font-family: monospace; font-size: 0.9em; letter-spacing: 1px; }
 
@@ -271,7 +293,17 @@
     <div id="cursor-glow"></div>
     <div id="cursor-aura"></div>
     <div id="cursor-planet"></div>
-    <div id="logo-counter">&#x25C8; <span id="logo-count-num">0</span></div>
+    <div id="lb-backdrop"></div>
+    <div id="lb-modal">
+        <div class="lb-title">// CODEX TRANSMISSIONS //</div>
+        <div id="lb-list"></div>
+        <div class="lb-input-row">
+            <input id="lb-name-input" maxlength="8" placeholder="CALLSIGN" autocomplete="off">
+            <button class="cyber-btn" id="lb-submit" style="color:var(--theme-color);border:1px solid var(--theme-color);background:transparent;font-family:monospace;font-size:0.78em;padding:7px 10px;cursor:pointer;">[ LOG ]</button>
+            <button class="cyber-btn" id="lb-close" style="color:#555;border:1px solid #333;background:transparent;font-family:monospace;font-size:0.78em;padding:7px 10px;cursor:pointer;">[ CLOSE ]</button>
+        </div>
+    </div>
+    <div id="star-hud">&#9733; <span id="star-score-num">0</span></div>
 
     <header class="global-header">
         <div class="logo-section">
@@ -298,6 +330,7 @@
             <div>
                 <div class="welcome-title">Welcome to Naron Codex!</div>
                 <div class="welcome-sub">Your gateway to Alien Worlds metaverse data — browse templates, track prices, and explore the archive.</div>
+                <div id="welcome-counter"><span class="wc-label">TRANSMISSIONS: <span class="wc-num" id="wc-num">0</span></span></div>
             </div>
         </div>
 
@@ -565,36 +598,20 @@
         document.addEventListener("DOMContentLoaded", () => {
             checkWalletState();
 
-            const glow        = document.getElementById("cursor-glow");
-            const aura        = document.getElementById("cursor-aura");
-            const planet      = document.getElementById("cursor-planet");
-            const counter     = document.getElementById("logo-counter");
-            const counterNum  = document.getElementById("logo-count-num");
-
-            const AURA_COLORS = [
-                [0, 255, 204],  // cyan
-                [255, 0, 60],   // red
-                [255, 170, 0],  // gold
-                [188, 19, 254], // purple
-                [0, 136, 255],  // blue
-                'rgb'           // rainbow (final)
-            ];
+            const glow   = document.getElementById("cursor-glow");
+            const planet = document.getElementById("cursor-planet");
             const CONFETTI_COLORS = ['#00ffcc','#ff003c','#ffaa00','#bc13fe','#0088ff','#ff69b4','#00ff00','#ff6600','#ffffff'];
 
-            let glowEnabled  = false;
-            let auraOn       = false;
-            let auraIdx      = 0;
-            let logoClicks   = 0;
-            let partyActive  = false;
-
-            // ---- planet orbit ----
-            // 280px aura: inner edge = 30% of 140px radius = 42px ≈ black hole edge
-            const AURA_GRAD = 'transparent 30%, rgba(R,G,B,A) 41%, transparent 54%';
             let cursorX = window.innerWidth / 2;
             let cursorY = window.innerHeight / 2;
             let planetAngle = 0;
             const ORBIT_RADIUS = 52;
+            let logoClicks   = 0;
+            let partyActive  = false;
+            let starGameActive = false;
+            let starScore    = 0;
 
+            // ---- orbit loop (always ticking, planet hidden until party) ----
             (function orbitLoop() {
                 planetAngle += 0.025;
                 planet.style.left = (cursorX + Math.cos(planetAngle) * ORBIT_RADIUS) + 'px';
@@ -602,34 +619,68 @@
                 requestAnimationFrame(orbitLoop);
             })();
 
-            // ---- helpers ----
-            function applyAuraColor() {
-                const c = AURA_COLORS[auraIdx % AURA_COLORS.length];
-                if (c === 'rgb') {
-                    aura.style.background = `radial-gradient(circle, transparent 30%, rgba(255,0,0,0.18) 41%, transparent 54%)`;
-                    aura.style.animation  = 'rgb-aura-spin 2s linear infinite';
-                } else {
-                    aura.style.animation  = '';
-                    aura.style.filter     = '';
-                    aura.style.background = `radial-gradient(circle, transparent 30%, rgba(${c[0]},${c[1]},${c[2]},0.18) 41%, transparent 54%)`;
-                }
+            // ---- leaderboard ----
+            const LB_KEY = 'naron_codex_lb';
+            function getLB() { try { return JSON.parse(localStorage.getItem(LB_KEY)) || []; } catch(e) { return []; } }
+            function saveLB(lb) { localStorage.setItem(LB_KEY, JSON.stringify(lb)); }
+            function renderLB() {
+                const lb = getLB();
+                document.getElementById('lb-list').innerHTML = lb.length
+                    ? lb.slice(0,10).map((e,i) =>
+                        `<div class="lb-row"><span class="lb-rank">#${i+1}</span><span class="lb-name">${e.name}</span><span class="lb-score">${e.score}</span></div>`
+                      ).join('')
+                    : '<div class="lb-row" style="color:#555;">[ NO TRANSMISSIONS LOGGED ]</div>';
+            }
+            function openLB() {
+                renderLB();
+                document.getElementById('lb-backdrop').style.display = 'block';
+                document.getElementById('lb-modal').style.display = 'block';
+                document.getElementById('lb-name-input').value = '';
+            }
+            function closeLB() {
+                document.getElementById('lb-backdrop').style.display = 'none';
+                document.getElementById('lb-modal').style.display = 'none';
+            }
+            document.getElementById('lb-backdrop').addEventListener('click', closeLB);
+            document.getElementById('lb-close').addEventListener('click', closeLB);
+            document.getElementById('lb-submit').addEventListener('click', () => {
+                const name = document.getElementById('lb-name-input').value.trim().toUpperCase().slice(0,8);
+                if (!name) return;
+                const lb = getLB();
+                const idx = lb.findIndex(e => e.name === name);
+                if (idx >= 0) { if (logoClicks > lb[idx].score) lb[idx].score = logoClicks; }
+                else lb.push({name, score: logoClicks});
+                lb.sort((a,b) => b.score - a.score);
+                saveLB(lb.slice(0,10));
+                renderLB();
+                document.getElementById('lb-name-input').value = '';
+            });
+            document.getElementById('welcome-counter').addEventListener('click', openLB);
+
+            // ---- star mini-game (starts at 40 clicks) ----
+            function spawnStar() {
+                if (!starGameActive) return;
+                const star = document.createElement('div');
+                star.className = 'star-target';
+                star.textContent = '✦';
+                star.style.left = (Math.random() < 0.5)
+                    ? (Math.random() * 80 + 10) + 'px'
+                    : (window.innerWidth - Math.random() * 80 - 60) + 'px';
+                star.style.top = (Math.random() * (window.innerHeight - 100) + 20) + 'px';
+                star.addEventListener('click', () => {
+                    star.remove();
+                    starScore++;
+                    document.getElementById('star-score-num').textContent = starScore;
+                });
+                document.body.appendChild(star);
+                setTimeout(() => { if (star.parentNode) star.remove(); }, 1600);
+                setTimeout(spawnStar, Math.random() * 1200 + 600);
             }
 
-            function triggerFullPageRipple() {
-                const logo = document.getElementById("nc-logo");
-                const r    = logo.getBoundingClientRect();
-                const el   = document.createElement('div');
-                el.className = 'full-ripple';
-                el.style.left = (r.left + r.width  / 2) + 'px';
-                el.style.top  = (r.top  + r.height / 2) + 'px';
-                el.style.animation = 'fullPageRipple 2s ease-out forwards, rgb-ripple-hue 2s linear forwards';
-                document.body.appendChild(el);
-                setTimeout(() => el.remove(), 2100);
-            }
-
+            // ---- party helpers ----
             function spawnConfettiBurst() {
                 for (let i = 0; i < 7; i++) {
-                    const p   = document.createElement('div');
+                    const p = document.createElement('div');
                     p.className = 'confetti-piece';
                     const size = (Math.random() * 7 + 5) + 'px';
                     p.style.cssText = `left:${Math.random()*100}vw; top:-12px; width:${size}; height:${size};
@@ -640,62 +691,58 @@
                     setTimeout(() => p.remove(), 4200);
                 }
             }
-
+            function triggerFullPageRipple() {
+                const logo = document.getElementById("nc-logo");
+                const r = logo.getBoundingClientRect();
+                const el = document.createElement('div');
+                el.className = 'full-ripple';
+                el.style.left = (r.left + r.width / 2) + 'px';
+                el.style.top  = (r.top + r.height / 2) + 'px';
+                el.style.animation = 'fullPageRipple 2s ease-out forwards, rgb-ripple-hue 2s linear forwards';
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 2100);
+            }
             function triggerParty() {
                 if (partyActive) return;
                 partyActive = true;
+                glow.style.opacity   = "1";
+                planet.style.opacity = "1";
+                triggerFullPageRipple();
                 const banner = document.createElement('div');
                 banner.className = 'party-banner';
                 banner.textContent = '[ PARTY MODE ACTIVATED ]';
                 document.body.appendChild(banner);
                 setTimeout(() => banner.remove(), 3500);
                 let ticks = 0;
-                const interval = setInterval(() => {
-                    spawnConfettiBurst();
-                    if (++ticks >= 65) clearInterval(interval);
-                }, 200);
+                const interval = setInterval(() => { spawnConfettiBurst(); if (++ticks >= 65) clearInterval(interval); }, 200);
             }
 
             // ---- logo click ----
             document.getElementById("nc-logo").addEventListener("click", () => {
                 logoClicks++;
-                counterNum.textContent = logoClicks;
-                if (logoClicks === 12) counter.style.display = 'block';
-                if (logoClicks >= 100 && !partyActive) triggerParty();
-
-                if (!glowEnabled) {
-                    glowEnabled = true;
-                    glow.style.opacity   = "1";
-                    planet.style.opacity = "1";
-                } else if (auraOn) {
-                    aura.style.opacity   = "0";
-                    aura.style.animation = "";
-                    auraOn = false;
-                } else {
-                    const colorIdx = auraIdx % AURA_COLORS.length;
-                    applyAuraColor();
-                    aura.style.opacity = "1";
-                    if (colorIdx === AURA_COLORS.length - 1) triggerFullPageRipple();
-                    auraIdx++;
-                    auraOn = true;
+                if (logoClicks >= 12) {
+                    document.getElementById('welcome-counter').style.display = 'block';
+                    document.getElementById('wc-num').textContent = logoClicks;
                 }
+                if (logoClicks === 40 && !starGameActive) {
+                    starGameActive = true;
+                    document.getElementById('star-hud').style.display = 'block';
+                    spawnStar();
+                }
+                if (logoClicks >= 100 && !partyActive) triggerParty();
             });
 
             // ---- mouse tracking ----
             document.addEventListener("mousemove", e => {
                 cursorX = e.clientX; cursorY = e.clientY;
-                glow.style.left = aura.style.left = e.clientX + "px";
-                glow.style.top  = aura.style.top  = e.clientY + "px";
-                if (glowEnabled) glow.style.opacity = "1";
+                glow.style.left = e.clientX + "px";
+                glow.style.top  = e.clientY + "px";
             });
             document.addEventListener("mouseleave", () => {
-                glow.style.opacity   = "0";
-                planet.style.opacity = "0";
-                if (auraOn) aura.style.opacity = "0";
+                if (partyActive) { glow.style.opacity = "0"; planet.style.opacity = "0"; }
             });
             document.addEventListener("mouseenter", () => {
-                if (glowEnabled) { glow.style.opacity = "1"; planet.style.opacity = "1"; }
-                if (auraOn) aura.style.opacity = "1";
+                if (partyActive) { glow.style.opacity = "1"; planet.style.opacity = "1"; }
             });
 
             // ---- click ripple ----
