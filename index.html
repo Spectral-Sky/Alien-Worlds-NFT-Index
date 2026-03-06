@@ -204,9 +204,31 @@
         @keyframes rgb-aura-spin { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(360deg); } }
         #cursor-aura {
             position: fixed; pointer-events: none; z-index: 9997;
-            width: 340px; height: 340px; border-radius: 50%;
+            width: 280px; height: 280px; border-radius: 50%;
             transform: translate(-50%, -50%);
             opacity: 0; transition: opacity 0.6s;
+        }
+
+        /* --- PIXEL PLANET --- */
+        #cursor-planet {
+            position: fixed; pointer-events: none; z-index: 9998;
+            width: 1px; height: 1px;
+            background: #5599dd;
+            transform: translate(-50%, -50%);
+            box-shadow:
+                /* row -2 */
+                -1px -2px 0 0 #4488cc,  0px -2px 0 0 #5599dd,  1px -2px 0 0 #4488cc,
+                /* row -1 */
+                -2px -1px 0 0 #2266aa, -1px -1px 0 0 #aaddff,  0px -1px 0 0 #aaddff,  1px -1px 0 0 #5599dd,  2px -1px 0 0 #2266aa,
+                /* row 0 */
+                -2px  0px 0 0 #2266aa, -1px  0px 0 0 #5599dd,  1px  0px 0 0 #4488cc,  2px  0px 0 0 #1155aa,
+                /* row +1 */
+                -2px  1px 0 0 #1155aa, -1px  1px 0 0 #3377bb,  0px  1px 0 0 #4488cc,  1px  1px 0 0 #3377bb,  2px  1px 0 0 #1155aa,
+                /* row +2 */
+                -1px  2px 0 0 #1155aa,  0px  2px 0 0 #2266aa,  1px  2px 0 0 #1155aa,
+                /* glow */
+                 0px  0px 4px 2px rgba(74, 158, 255, 0.5);
+            opacity: 0; transition: opacity 0.5s;
         }
 
         /* --- CLICK RIPPLE --- */
@@ -248,6 +270,7 @@
 <body>
     <div id="cursor-glow"></div>
     <div id="cursor-aura"></div>
+    <div id="cursor-planet"></div>
     <div id="logo-counter">&#x25C8; <span id="logo-count-num">0</span></div>
 
     <header class="global-header">
@@ -544,6 +567,7 @@
 
             const glow        = document.getElementById("cursor-glow");
             const aura        = document.getElementById("cursor-aura");
+            const planet      = document.getElementById("cursor-planet");
             const counter     = document.getElementById("logo-counter");
             const counterNum  = document.getElementById("logo-count-num");
 
@@ -563,16 +587,31 @@
             let logoClicks   = 0;
             let partyActive  = false;
 
+            // ---- planet orbit ----
+            // 280px aura: inner edge = 30% of 140px radius = 42px ≈ black hole edge
+            const AURA_GRAD = 'transparent 30%, rgba(R,G,B,A) 41%, transparent 54%';
+            let cursorX = window.innerWidth / 2;
+            let cursorY = window.innerHeight / 2;
+            let planetAngle = 0;
+            const ORBIT_RADIUS = 52;
+
+            (function orbitLoop() {
+                planetAngle += 0.025;
+                planet.style.left = (cursorX + Math.cos(planetAngle) * ORBIT_RADIUS) + 'px';
+                planet.style.top  = (cursorY + Math.sin(planetAngle) * ORBIT_RADIUS) + 'px';
+                requestAnimationFrame(orbitLoop);
+            })();
+
             // ---- helpers ----
             function applyAuraColor() {
                 const c = AURA_COLORS[auraIdx % AURA_COLORS.length];
                 if (c === 'rgb') {
-                    aura.style.background = `radial-gradient(circle, transparent 25%, rgba(255,0,0,0.18) 38%, transparent 50%)`;
+                    aura.style.background = `radial-gradient(circle, transparent 30%, rgba(255,0,0,0.18) 41%, transparent 54%)`;
                     aura.style.animation  = 'rgb-aura-spin 2s linear infinite';
                 } else {
                     aura.style.animation  = '';
                     aura.style.filter     = '';
-                    aura.style.background = `radial-gradient(circle, transparent 25%, rgba(${c[0]},${c[1]},${c[2]},0.18) 38%, transparent 50%)`;
+                    aura.style.background = `radial-gradient(circle, transparent 30%, rgba(${c[0]},${c[1]},${c[2]},0.18) 41%, transparent 54%)`;
                 }
             }
 
@@ -626,7 +665,8 @@
 
                 if (!glowEnabled) {
                     glowEnabled = true;
-                    glow.style.opacity = "1";
+                    glow.style.opacity   = "1";
+                    planet.style.opacity = "1";
                 } else if (auraOn) {
                     aura.style.opacity   = "0";
                     aura.style.animation = "";
@@ -643,16 +683,18 @@
 
             // ---- mouse tracking ----
             document.addEventListener("mousemove", e => {
+                cursorX = e.clientX; cursorY = e.clientY;
                 glow.style.left = aura.style.left = e.clientX + "px";
                 glow.style.top  = aura.style.top  = e.clientY + "px";
                 if (glowEnabled) glow.style.opacity = "1";
             });
             document.addEventListener("mouseleave", () => {
-                glow.style.opacity = "0";
+                glow.style.opacity   = "0";
+                planet.style.opacity = "0";
                 if (auraOn) aura.style.opacity = "0";
             });
             document.addEventListener("mouseenter", () => {
-                if (glowEnabled) glow.style.opacity = "1";
+                if (glowEnabled) { glow.style.opacity = "1"; planet.style.opacity = "1"; }
                 if (auraOn) aura.style.opacity = "1";
             });
 
