@@ -162,14 +162,37 @@
         .discord-link:hover { background: #5865F2; color: #fff; border-color: #5865F2; box-shadow: 0 0 10px rgba(88, 101, 242, 0.5); }
         .discord-icon { width: 16px; height: 16px; fill: currentColor; }
 
-        /* --- CURSOR GLOW --- */
+        /* --- CURSOR GLOW (BLACK HOLE) --- */
+        @keyframes blackhole-spin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
         #cursor-glow {
             position: fixed; pointer-events: none; z-index: 9999;
-            width: 340px; height: 340px; border-radius: 50%;
-            background: radial-gradient(circle, rgba(0,0,0,0.75) 0%, transparent 70%);
+            width: 85px; height: 85px; border-radius: 50%;
             transform: translate(-50%, -50%);
             transition: opacity 0.4s;
             opacity: 0;
+        }
+        /* swirling accretion disk */
+        #cursor-glow::before {
+            content: ''; position: absolute; inset: 0; border-radius: 50%;
+            background: conic-gradient(
+                rgba(0,0,0,0.95)   0deg,
+                rgba(0,18,14,0.5)  60deg,
+                rgba(0,0,0,0.9)   120deg,
+                rgba(0,18,14,0.55) 180deg,
+                rgba(0,0,0,0.95)  240deg,
+                rgba(0,18,14,0.4)  300deg,
+                rgba(0,0,0,0.95)  360deg
+            );
+            animation: blackhole-spin 2s linear infinite;
+        }
+        /* solid event horizon core */
+        #cursor-glow::after {
+            content: ''; position: absolute; inset: 28%; border-radius: 50%;
+            background: #000;
+            box-shadow: 0 0 8px 4px rgba(0,0,0,0.9);
         }
 
         /* --- WELCOME BOX --- */
