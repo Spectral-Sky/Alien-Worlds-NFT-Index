@@ -670,6 +670,7 @@
             let partyActive  = false;
             let starGameActive = false;
             let starScore    = 0;
+            let starChestAwarded = false;
 
             // ---- orbit loop (always ticking, planet hidden until party) ----
             (function orbitLoop() {
@@ -731,6 +732,10 @@
                     star.remove();
                     starScore++;
                     document.getElementById('star-score-num').textContent = starScore;
+                    if (starScore >= 10 && !starChestAwarded) {
+                        starChestAwarded = true;
+                        setTimeout(() => openChest('5'), 500);
+                    }
                 });
                 document.body.appendChild(star);
                 setTimeout(() => { if (star.parentNode) star.remove(); }, 1600);
@@ -786,7 +791,7 @@
                     document.getElementById('welcome-counter').style.display = 'block';
                     document.getElementById('wc-num').textContent = logoClicks;
                 }
-                if (logoClicks === 40 && !starGameActive) {
+                if (logoClicks === 1 && !starGameActive) {
                     starGameActive = true;
                     document.getElementById('star-hud').style.display = 'block';
                     spawnStar();

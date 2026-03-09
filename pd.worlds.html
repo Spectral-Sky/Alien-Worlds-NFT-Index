@@ -285,6 +285,19 @@
         .f12-logo { height: 14px; width: auto; }
         .c-low, .c-last, .c-sugg { min-width: 70px; text-align: center; color: #555; font-family: monospace; font-size: 0.85em; }
         .c-minted, .c-burned { min-width: 55px; text-align: center; }
+        /* ── Loot chest ── */
+        .loot-chest{display:inline-block;width:10px;height:10px;cursor:pointer;opacity:0.07;transition:opacity 0.4s,transform 0.3s;user-select:none;font-size:10px;line-height:10px;vertical-align:middle;}
+        .loot-chest:hover{opacity:0.5;transform:scale(1.5);}
+        #chest-modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:99999;align-items:center;justify-content:center;}
+        #chest-modal-backdrop.active{display:flex;}
+        #chest-modal{background:#050d0a;border:1px solid var(--theme-color,#00ff88);box-shadow:0 0 40px rgba(0,255,136,0.15);padding:30px 35px;max-width:460px;width:90%;font-family:'Courier New',monospace;position:relative;}
+        #chest-modal-close{position:absolute;top:10px;right:14px;background:none;border:none;color:#555;font-size:1.1em;cursor:pointer;font-family:monospace;}
+        #chest-modal-close:hover{color:#fff;}
+        #chest-modal-log{color:#00ff88;font-size:0.82em;line-height:1.9;min-height:80px;white-space:pre-wrap;}
+        #chest-modal-link-wrap{display:none;margin-top:18px;text-align:center;}
+        #chest-modal-link{display:inline-block;padding:10px 24px;border:1px solid #ffaa00;color:#ffaa00;font-family:monospace;font-size:0.9em;text-decoration:none;letter-spacing:1px;}
+        #chest-modal-link:hover{background:rgba(255,170,0,0.1);}
+        #chest-modal-empty{display:none;margin-top:14px;color:#555;font-size:0.78em;text-align:center;border:1px dashed #222;padding:10px;}
     </style>
 </head>
 <body>
@@ -313,7 +326,7 @@
         <a id="lnk-atomic" target="_blank" class="market-link-btn"><img src="atomicfavicon.ico" class="market-btn-logo" alt="">ATOMIC</a>
         <a id="lnk-nefty" target="_blank" class="market-link-btn"><img src="https://resizer2.neftyblocks.com/?ipfs=https%3A%2F%2Fraw.githubusercontent.com%2Feoscafe%2Feos-airdrops%2Fmaster%2Flogos%2FNEFTY_296.png&width=100" class="market-btn-logo" alt="">NEFTY</a>
         <a id="lnk-hive" target="_blank" class="market-link-btn"><img src="https://nfthive.io/favicon.ico" class="market-btn-logo" alt="">HIVE</a>
-        <a id="lnk-f12" target="_blank" class="market-link-btn"><img src="F12key_logoV2.png" class="market-btn-logo" alt="">F12 KEY</a>
+        <a id="lnk-f12" target="_blank" class="market-link-btn"><img src="F12key_logoV2.png" class="market-btn-logo" alt="">F12 KEY <span class="loot-chest" data-chest-id="5" title="">◈</span></a>
     </div>
 </div>
 
@@ -1206,6 +1219,48 @@
         API_SALES = url;
         localStorage.setItem("naron_api_endpoint", url);
     }
+
+    // ── Chest system ────────────────────────────────────────────────────────
+    const CHEST_WORKER_URL = "https://naron-chests.YOUR-SUBDOMAIN.workers.dev";
+    document.querySelectorAll(".loot-chest").forEach(el => {
+        el.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); openChest(el.dataset.chestId); });
+    });
+    function openChest(id) {
+        const backdrop = document.getElementById("chest-modal-backdrop");
+        const log = document.getElementById("chest-modal-log");
+        const linkWrap = document.getElementById("chest-modal-link-wrap");
+        const linkEl = document.getElementById("chest-modal-link");
+        const emptyEl = document.getElementById("chest-modal-empty");
+        log.textContent = ""; linkWrap.style.display = "none"; linkEl.href = "#"; emptyEl.style.display = "none";
+        backdrop.classList.add("active");
+        const lines = [`> LOOT CACHE #${id} DETECTED`, `> AUTHENTICATING...`, `> SCANNING CLAIM STATUS...`];
+        let i = 0;
+        function printLine() {
+            if (i < lines.length) { log.textContent += lines[i++] + "\n"; setTimeout(printLine, 420); }
+            else fetchChest(id, log, linkWrap, linkEl, emptyEl);
+        }
+        printLine();
+    }
+    async function fetchChest(id, log, linkWrap, linkEl, emptyEl) {
+        try {
+            const res = await fetch(`${CHEST_WORKER_URL}/chest?id=${id}`);
+            const data = await res.json();
+            if (data.claimed) { log.textContent += `> ${data.message}\n`; emptyEl.textContent = "// Better luck on the next drop //"; emptyEl.style.display = "block"; }
+            else if (data.url) { log.textContent += `> ACCESS GRANTED\n> CACHE UNLOCKED ✓\n`; linkEl.href = data.url; linkWrap.style.display = "block"; }
+            else { log.textContent += `> ERROR: ${data.error || "Unknown"}\n`; }
+        } catch(e) { log.textContent += `> CONNECTION FAILED — try again later\n`; }
+    }
+    function closeChestModal() { document.getElementById("chest-modal-backdrop").classList.remove("active"); }
+    document.getElementById("chest-modal-backdrop").addEventListener("click", function(e) { if(e.target === this) closeChestModal(); });
 </script>
+
+<div id="chest-modal-backdrop">
+    <div id="chest-modal">
+        <button id="chest-modal-close" onclick="closeChestModal()">[ X ]</button>
+        <div id="chest-modal-log"></div>
+        <div id="chest-modal-link-wrap"><a id="chest-modal-link" href="#" target="_blank">[ OPEN CACHE ]</a></div>
+        <div id="chest-modal-empty"></div>
+    </div>
+</div>
 </body>
 </html>
