@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-48CCMEYHXG"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-48CCMEYHXG');
+    </script>
+    <title>Army.Optimizer // Naron Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="NCico.png">
+    <script src="waxjs.js"></script>
+    <style>
+        :root {
+            --theme-color: #ffaa00;
+            --theme-shadow: 0 0 15px rgba(255,170,0,0.4);
+            --theme-dark: #0f0a00;
+            --theme-hover: rgba(255,170,0,0.1);
+            --theme-border: 1px solid rgba(255,170,0,0.3);
+            --shine-stone: #a0a0a0;
+            --shine-gold: #ffdf00;
+            --shine-stardust: #e100ff;
+            --shine-antimatter: #00ff95;
+            --shine-xdimension: #7000ff;
+            --color-atk: #ff4444;
+            --color-def: #4488ff;
+        }
+
+        body {
+            cursor: crosshair;
+            background-color: #050505;
+            background-image: radial-gradient(circle at 50% 50%, var(--theme-dark) 0%, #050505 80%);
+            color: #d0d0d0;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0; padding: 0; overflow-x: auto;
+        }
+
+        /* ── Starfield ── */
+        body::before {
+            content: " "; position: fixed; top: 0; left: 0; width: 1px; height: 1px; z-index: -1;
+            box-shadow:
+                5vw 10vh #fff, 15vw 25vh rgba(255,255,255,0.5), 25vw 5vh #fff, 35vw 45vh rgba(255,255,255,0.7),
+                45vw 15vh #fff, 55vw 65vh #fff, 65vw 20vh rgba(255,255,255,0.4), 75vw 55vh #fff,
+                85vw 12vh rgba(255,255,255,0.8), 95vw 40vh #fff, 10vw 60vh #fff, 20vw 80vh rgba(255,255,255,0.6),
+                30vw 90vh #fff, 40vw 75vh rgba(255,255,255,0.5), 50vw 85vh #fff, 60vw 95vh rgba(255,255,255,0.7),
+                70vw 80vh #fff, 80vw 95vh rgba(255,255,255,0.4), 90vw 70vh #fff, 98vw 85vh #fff,
+                8vw 35vh rgba(255,255,255,0.5), 28vw 55vh #fff, 48vw 30vh rgba(255,255,255,0.8), 68vw 45vh #fff;
+            animation: starlight 4s ease-in-out infinite;
+        }
+        body::after {
+            content: " "; position: fixed; top: 0; left: 0; width: 2px; height: 2px; z-index: -1;
+            box-shadow:
+                12vw 18vh rgba(255,255,255,0.6), 32vw 38vh rgba(255,255,255,0.4),
+                52vw 58vh rgba(255,255,255,0.7), 72vw 78vh rgba(255,255,255,0.5),
+                22vw 48vh rgba(255,255,255,0.6), 62vw 28vh rgba(255,255,255,0.4),
+                82vw 8vh rgba(255,255,255,0.8),  42vw 88vh rgba(255,255,255,0.5);
+            animation: starlight 6s ease-in-out infinite reverse;
+        }
+        @keyframes starlight { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+        @keyframes pulse { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
+        @keyframes clickPop {
+            0%   { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%,-50%) scale(5); opacity: 0; }
+        }
+
+        ::-webkit-scrollbar { height: 12px; width: 12px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #333; border: 1px solid var(--theme-color); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--theme-color); }
+
+        /* ── Cursor ── */
+        #cursor-glow {
+            pointer-events: none; position: fixed; width: 300px; height: 300px;
+            border-radius: 50%; transform: translate(-50%,-50%); z-index: 0;
+            background: radial-gradient(circle, rgba(255,170,0,0.04) 0%, transparent 70%);
+        }
+        .click-effect {
+            position: fixed; pointer-events: none; z-index: 9999;
+            width: 6px; height: 6px; border-radius: 50%; background: var(--theme-color);
+            transform: translate(-50%,-50%);
+            animation: clickPop 0.5s ease-out forwards;
+        }
+
+        /* ── Global header / nav ── */
+        .global-header {
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 2000;
+            background: rgba(5,5,5,0.96); border-bottom: 2px solid var(--theme-color);
+            box-shadow: var(--theme-shadow); backdrop-filter: blur(5px);
+            padding: 0 30px; box-sizing: border-box; width: 100%; height: 66px;
+        }
+        .logo-section { display: flex; align-items: center; }
+        .logo-section h1 {
+            margin: 0; font-size: 1.8em; letter-spacing: 4px; text-transform: uppercase;
+            color: var(--theme-color); text-shadow: var(--theme-shadow);
+        }
+
+        /* ── Title bar (below header) ── */
+        .title-bar {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            padding: 20px 30px 10px; border-bottom: 1px solid rgba(255,170,0,0.12);
+            position: sticky; top: 66px; z-index: 1900;
+            background: rgba(5,5,5,0.97); backdrop-filter: blur(5px);
+        }
+        .title-bar-left { display: flex; flex-direction: column; gap: 8px; }
+        .title-bar-left h1 {
+            margin: 0; font-size: 1.8em; letter-spacing: 6px; text-transform: uppercase;
+            color: var(--theme-color); text-shadow: var(--theme-shadow);
+        }
+        .title-bar-left .page-subtitle {
+            margin: 0; color: #555; font-size: 0.72em; letter-spacing: 3px;
+            font-family: 'Courier New';
+        }
+        #theme-panel { display: flex; gap: 12px; padding: 4px 0; margin-top: 4px; }
+        .theme-opt {
+            width: 18px; height: 18px; border-radius: 50%; border: 2px solid #333;
+            cursor: pointer; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+        .theme-opt:hover { transform: scale(1.4); border-color: #fff; box-shadow: 0 0 10px var(--theme-color); }
+        .nav-links { display: flex; gap: 6px; flex-wrap: wrap; }
+        .nav-btn {
+            color: #d0d0d0; border: 1px solid #333; padding: 6px 12px; cursor: pointer;
+            font-family: 'Courier New', monospace; font-size: 0.75em; letter-spacing: 1px;
+            text-decoration: none; background: transparent; transition: 0.2s;
+            display: inline-flex; align-items: center; gap: 3px;
+        }
+        .nav-btn:hover, .nav-btn.active {
+            color: var(--theme-color); border-color: var(--theme-color);
+            box-shadow: var(--theme-shadow);
+        }
+        .cyber-btn {
+            color: #d0d0d0; border: 1px solid #555; padding: 8px 14px; cursor: pointer;
+            font-family: 'Courier New', monospace; font-size: 0.85em; letter-spacing: 1px;
+            background: transparent; transition: 0.2s;
+        }
+        .cyber-btn:hover { color: var(--theme-color); border-color: var(--theme-color); }
+        .cyber-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ── Page wrap ── */
+        .page-wrap { max-width: 1400px; margin: 0 auto; padding: 24px 20px; }
+
+        /* ── Controls bar ── */
+        .controls-bar {
+            display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+            padding: 15px 20px; background: rgba(15,10,0,0.85);
+            border: 1px solid rgba(255,170,0,0.2); margin-bottom: 18px;
+        }
+        .controls-bar input[type=text] {
+            padding: 10px 14px; width: 230px;
+            border: 1px solid #444; background: #0d0a00; color: #d0d0d0;
+            font-family: 'Courier New', monospace; outline: none; font-size: 0.9em;
+        }
+        .controls-bar input[type=text]:focus { border-color: var(--theme-color); }
+        .forge-toggle {
+            display: flex; align-items: center; gap: 10px;
+            background: #0d0a00; padding: 8px 14px; border: 1px solid #444;
+            color: var(--theme-color); font-size: 0.8em; font-weight: bold; letter-spacing: 1px;
+        }
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background: #333; transition: .3s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: #888; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background: var(--theme-color); }
+        input:checked + .slider:before { transform: translateX(22px); background: #000; }
+
+        #status-bar {
+            color: var(--theme-color); font-size: 0.82em; letter-spacing: 1px;
+            animation: pulse 2s infinite; flex: 1; text-align: right;
+        }
+
+        /* ── Stat boxes ── */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px;
+        }
+        .stat-box {
+            background: rgba(15,10,0,0.85); padding: 14px;
+            border: 1px solid rgba(255,170,0,0.2);
+            text-align: center; font-size: 0.75em; letter-spacing: 1px; text-transform: uppercase;
+        }
+        .stat-val {
+            font-size: 1.9em; font-weight: bold; display: block;
+            margin-top: 6px; font-family: 'Courier New';
+        }
+        .val-slots  { color: var(--theme-color); }
+        .val-crew   { color: var(--shine-antimatter); }
+        .val-arms   { color: #aa88ff; }
+        .val-atk    { color: var(--color-atk); }
+        .val-def    { color: var(--color-def); }
+
+        /* ── Section collapsibles ── */
+        .section-header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(20,14,0,0.95); color: var(--theme-color); cursor: pointer;
+            padding: 13px 20px; border: 1px solid rgba(255,170,0,0.22); margin-top: 14px;
+            font-size: 0.88em; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;
+        }
+        .section-header:hover { border-color: var(--theme-color); box-shadow: var(--theme-shadow); }
+        .section-meta { color: #666; font-size: 0.85em; }
+        .section-content {
+            max-height: 0; overflow: hidden; transition: max-height 0.45s ease-out;
+            background: rgba(8,5,0,0.6);
+        }
+
+        /* ── NFT card grid ── */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px; padding: 16px;
+        }
+        .nft-card {
+            background: rgba(15,12,0,0.95); border: 2px solid rgba(255,170,0,0.15);
+            position: relative; overflow: hidden; text-align: center;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .nft-card:hover { border-color: var(--theme-color); box-shadow: var(--theme-shadow); }
+        .nft-card.inactive { opacity: 0.25; filter: grayscale(1); }
+
+        .qty-badge {
+            position: absolute; top: 7px; right: 7px; background: rgba(0,0,0,0.9);
+            color: var(--theme-color); padding: 2px 7px; font-weight: bold;
+            border: 1px solid var(--theme-color); font-size: 0.72em; z-index: 5;
+        }
+        .shine-bar {
+            display: block; padding: 4px 6px; font-weight: bold;
+            font-size: 0.6em; text-transform: uppercase; color: #000; letter-spacing: 1px;
+        }
+        .nft-card img {
+            width: 100%; height: 148px; object-fit: contain;
+            background: #000; display: block;
+        }
+        .no-img {
+            height: 148px; background: #0a0800;
+            display: flex; align-items: center; justify-content: center;
+            color: #333; font-size: 0.7em;
+        }
+        .card-info { padding: 9px 8px; }
+        .card-subtext { font-size: 0.8em; margin-bottom: 5px; font-weight: bold; color: var(--theme-color); }
+        .card-name { font-weight: bold; font-size: 0.75em; height: 30px; overflow: hidden; color: #ccc; line-height: 1.4; }
+        .card-status { font-size: 0.68em; margin-top: 5px; letter-spacing: 1px; }
+        .s-active  { color: var(--shine-antimatter); }
+        .s-reserve { color: #ff4444; }
+        .s-always  { color: var(--theme-color); }
+
+        /* ── Empty state ── */
+        #results-empty {
+            display: none; text-align: center; padding: 60px 20px;
+            color: #444; font-size: 0.9em; letter-spacing: 2px;
+            border: 1px dashed #222; margin-top: 14px;
+        }
+
+        /* ── Footer ── */
+        .codex-footer {
+            text-align: center; padding: 40px 20px 60px;
+            display: flex; flex-direction: column; align-items: center; gap: 15px;
+            margin-top: 30px;
+        }
+        .footer-text {
+            color: var(--theme-color); font-family: 'Courier New', monospace;
+            font-weight: bold; letter-spacing: 2px; font-size: 0.85em; text-transform: uppercase;
+        }
+        #codex-disclaimer {
+            font-size: 0.78em; color: #666; font-family: monospace; line-height: 1.6;
+            text-align: left; border: 1px dashed #333; padding: 15px; margin: 10px 0;
+            max-width: 820px; box-sizing: border-box;
+        }
+
+        /* ── Loot chest ── */
+        .loot-chest { display:inline-block; width:10px; height:10px; cursor:pointer; opacity:0.07; transition:opacity 0.4s,transform 0.3s; user-select:none; font-size:10px; line-height:10px; vertical-align:middle; }
+        .loot-chest:hover { opacity:0.5; transform:scale(1.5); }
+        #chest-modal-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:99999; align-items:center; justify-content:center; }
+        #chest-modal-backdrop.active { display:flex; }
+        #chest-modal { background:#050d0a; border:1px solid var(--theme-color); box-shadow:0 0 40px rgba(0,255,136,0.12); padding:30px 35px; max-width:460px; width:90%; font-family:'Courier New',monospace; position:relative; }
+        #chest-modal-close { position:absolute; top:10px; right:14px; background:none; border:none; color:#555; font-size:1.1em; cursor:pointer; font-family:monospace; }
+        #chest-modal-close:hover { color:#fff; }
+        #chest-modal-log { color:#00ff88; font-size:0.82em; line-height:1.9; min-height:80px; white-space:pre-wrap; }
+        #chest-modal-link-wrap { display:none; margin-top:18px; text-align:center; }
+        #chest-modal-link { display:inline-block; padding:10px 24px; border:1px solid #ffaa00; color:#ffaa00; font-family:monospace; font-size:0.9em; text-decoration:none; letter-spacing:1px; }
+        #chest-modal-link:hover { background:rgba(255,170,0,0.1); }
+        #chest-modal-empty { display:none; margin-top:14px; color:#555; font-size:0.78em; text-align:center; border:1px dashed #222; padding:10px; }
+
+        /* rainbow dot handled inline */
+
+        /* ── Star burst ── */
+        .star-particle {
+            position: fixed; pointer-events: none; z-index: 9998;
+            font-size: 14px; animation: starBurst 1.2s ease-out forwards;
+        }
+        @keyframes starBurst {
+            0%   { transform: translate(-50%,-50%) scale(0) rotate(0deg);   opacity: 1; }
+            60%  { opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(1) rotate(var(--r)); opacity: 0; }
+        }
+        #star-score-hud {
+            position: fixed; bottom: 20px; right: 20px; z-index: 5000;
+            color: var(--theme-color); font-family: 'Courier New'; font-size: 0.8em;
+            letter-spacing: 2px; display: none; text-shadow: var(--theme-shadow);
+            animation: pulse 1.5s infinite;
+        }
+
+        /* ── Division Builder (locked) ── */
+        .division-locked {
+            margin-top: 20px; border: 1px dashed #333; position: relative; overflow: hidden;
+        }
+        .division-locked-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 13px 20px; background: rgba(10,10,10,0.95);
+            font-size: 0.88em; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;
+            color: #444;
+        }
+        .classified-badge {
+            font-size: 0.75em; letter-spacing: 3px; color: #ff4444; border: 1px solid #ff444433;
+            padding: 3px 10px; animation: pulse 2s infinite;
+        }
+        .division-locked-body {
+            padding: 40px 20px; text-align: center; background: rgba(5,0,0,0.6);
+            filter: blur(0.3px);
+        }
+        .division-locked-body::after {
+            content: ""; position: absolute; inset: 0;
+            background: repeating-linear-gradient(
+                45deg, transparent, transparent 8px,
+                rgba(255,0,0,0.015) 8px, rgba(255,0,0,0.015) 16px
+            );
+        }
+        .division-preview {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+            max-width: 500px; margin: 0 auto 20px; opacity: 0.25; filter: grayscale(1);
+        }
+        .division-slot {
+            border: 1px dashed #333; padding: 20px 10px; text-align: center;
+            font-size: 0.7em; color: #555; letter-spacing: 1px;
+        }
+        .division-unlock-msg {
+            color: #ff444488; font-size: 0.8em; letter-spacing: 3px; margin-top: 10px;
+        }
+
+        /* ── Sync button shimmer ── */
+        @keyframes shimmer {
+            0%,100% { box-shadow: 0 0 6px var(--theme-color), 0 0 12px var(--theme-color); }
+            50%      { box-shadow: 0 0 18px var(--theme-color), 0 0 35px var(--theme-color), inset 0 0 8px rgba(255,255,255,0.1); }
+        }
+        .btn-shimmer { animation: shimmer 1.6s ease-in-out infinite; }
+
+        /* ── Equipment locked subsection ── */
+        .equipment-section {
+            border: 1px dashed #333; margin-top: 6px;
+        }
+        .equipment-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 20px; background: rgba(8,5,0,0.9);
+            font-size: 0.78em; font-weight: bold; letter-spacing: 2px;
+            color: #444; text-transform: uppercase; cursor: pointer;
+        }
+        .equipment-header.forge-on  { color: var(--theme-color); border-bottom: 1px solid rgba(255,170,0,0.2); }
+        .equipment-header .eq-badge {
+            font-size: 0.8em; color: #ff444488; border: 1px solid #ff444422; padding: 2px 8px; letter-spacing: 2px;
+        }
+        .equipment-header.forge-on .eq-badge {
+            color: var(--shine-antimatter); border-color: rgba(0,255,149,0.3);
+        }
+        .equipment-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; }
+
+        /* ── Sort buttons ── */
+        .sort-btns { display:inline-flex; gap:4px; }
+        .sort-btn {
+            background: none; border: 1px solid #333; color: #555;
+            font-size: 0.85em; padding: 2px 7px; cursor: pointer;
+            font-family: 'Courier New'; transition: 0.15s; line-height: 1.4;
+        }
+        .sort-btn:hover { border-color: var(--theme-color); color: var(--theme-color); }
+        .sort-btn.active { border-color: var(--theme-color); color: var(--theme-color); background: rgba(255,170,0,0.1); }
+        .sort-btn.asc::after  { content: " ↑"; font-size: 0.8em; }
+        .sort-btn.desc::after { content: " ↓"; font-size: 0.8em; }
+
+        @media (max-width: 780px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .controls-bar input[type=text] { width: 100%; }
+            .global-header { flex-direction: column; align-items: flex-start; }
+            .nav-links { gap: 4px; }
+        }
+    </style>
+</head>
+<body>
+<div id="cursor-glow"></div>
+
+<!-- ══ NAV ══════════════════════════════════════════════════════════════════ -->
+<header class="global-header">
+    <div class="logo-section">
+        <h1 id="codex-logo" onclick="spawnStars(event)" style="cursor:pointer;">NARON CODEX</h1>
+    </div>
+    <nav class="nav-links">
+        <a href="index.html" class="nav-btn">HUB</a>
+        <a href="crew.worlds.html" class="nav-btn">
+            <img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;border-radius:2px;" onerror="this.style.display='none'">CREW</a>
+        <a href="arms.worlds.html" class="nav-btn">
+            <img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;border-radius:2px;" onerror="this.style.display='none'">ARMS</a>
+        <a href="tools.worlds.html" class="nav-btn">
+            <img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;border-radius:2px;" onerror="this.style.display='none'">TOOLS</a>
+        <a href="faces.worlds.html" class="nav-btn">
+            <img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;border-radius:2px;" onerror="this.style.display='none'">FACES</a>
+        <a href="pd.worlds.html" class="nav-btn">
+            <img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64" onerror="this.style.display='none'" style="height:13px;">PD UNITS</a>
+        <a href="pd.materials.html" class="nav-btn">
+            <img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64" onerror="this.style.display='none'" style="height:13px;">PD MATS</a>
+        <a href="army.html" class="nav-btn active">⚔ ARMY</a>
+    </nav>
+    <div>
+        <button id="wallet-btn" class="cyber-btn"
+            style="border-color:var(--theme-color); color:var(--theme-color);"
+            onclick="toggleWallet()">[ WAX LOGIN ]</button>
+    </div>
+</header>
+
+<!-- ══ TITLE BAR ════════════════════════════════════════════════════════════ -->
+<div class="title-bar">
+    <div class="title-bar-left">
+        <h1>ARMY BUILDER <span style="font-size:0.55em; color:#888; letter-spacing:2px;">(BETA)</span></h1>
+        <p class="page-subtitle">A COLLABORATION BY DEADLYMAN &amp; SHADE</p>
+        <div id="theme-panel">
+            <div class="theme-opt" style="background:#0088ff" onclick="setTheme('#0088ff','#00050f')" title="Cyber Blue"></div>
+            <div class="theme-opt" style="background:#00ff88" onclick="setTheme('#00ff88','#00100a')" title="Matrix Green"></div>
+            <div class="theme-opt" style="background:#ff4444" onclick="setTheme('#ff4444','#100000')" title="Crimson Red"></div>
+            <div class="theme-opt" style="background:#cc44ff" onclick="setTheme('#cc44ff','#0a0010')" title="Neon Purple"></div>
+            <div class="theme-opt" style="background:#ffaa00" onclick="setTheme('#ffaa00','#0f0a00')" title="Gold"></div>
+            <div class="theme-opt" style="background:#00ffff" onclick="setTheme('#00ffff','#001010')" title="Aqua"></div>
+            <div class="theme-opt" id="secret-rainbow-dot"   onclick="setTheme('rainbow','#050505')" title="RGB MODE" style="display:none; background: conic-gradient(red,orange,yellow,green,blue,violet,red);"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ MAIN ═════════════════════════════════════════════════════════════════ -->
+<div class="page-wrap">
+
+    <!-- Controls -->
+    <div class="controls-bar">
+        <input type="text" id="wallet-input" placeholder="Enter WAX wallet address...">
+        <div class="forge-toggle">
+            <span>🔥 FORGE</span>
+            <label class="switch">
+                <input type="checkbox" id="forgeCheck" onchange="recalculate()">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <button id="syncBtn" class="cyber-btn"
+            style="color:var(--theme-color); border-color:var(--theme-color);"
+            onclick="startScan()">[ SYNCHRONIZE ]</button>
+        <span id="forge-status" style="display:none; color:#00ff95; font-size:0.78em; letter-spacing:2px; border:1px solid #00ff9544; padding:4px 10px;">🔥 FORGE ACTIVE</span>
+        <button class="cyber-btn" style="color:#888; border-color:#444;"
+            onclick="expandAll()">[ EXPAND ALL ]</button>
+        <span id="status-bar">// AWAITING SCAN //</span>
+    </div>
+
+    <!-- Stat boxes -->
+    <div class="stats-grid">
+        <div class="stat-box">LOGISTICS (SLOTS)<span class="stat-val val-slots" id="totalSlots">—</span></div>
+        <div class="stat-box">ACTIVE UNITS<span class="stat-val val-crew" id="crewCount">—</span></div>
+        <div class="stat-box">ARMS EQUIPPED<span class="stat-val val-arms" id="armsCount">—</span></div>
+        <div class="stat-box">TOTAL ATTACK<span class="stat-val val-atk" id="totalAtk">—</span></div>
+        <div class="stat-box">TOTAL DEFENSE<span class="stat-val val-def" id="totalDef">—</span></div>
+    </div>
+
+    <!-- Results -->
+    <div id="results"></div>
+    <div id="results-empty">// SCAN A WALLET TO DISPLAY ARMY COMPOSITION //</div>
+
+    <!-- Locked Division Builder -->
+    <div class="division-locked">
+        <div class="division-locked-header">
+            <span>⚔ DIVISION BUILDER</span>
+            <span class="classified-badge">// CLASSIFIED //</span>
+        </div>
+        <div class="division-locked-body">
+            <div class="division-preview">
+                <div class="division-slot">WARLORD<br>SLOT</div>
+                <div class="division-slot">UNIT<br>SLOT</div>
+                <div class="division-slot">UNIT<br>SLOT</div>
+                <div class="division-slot">UNIT<br>SLOT</div>
+                <div class="division-slot">UNIT<br>SLOT</div>
+                <div class="division-slot">UNIT<br>SLOT</div>
+            </div>
+            <div style="color:#333; font-size:0.78em; letter-spacing:4px;">[ ACCESS RESTRICTED ]</div>
+            <div class="division-unlock-msg">DIVISION COMMAND PROTOCOLS PENDING — PLANETARY DEFENSE v3.0</div>
+        </div>
+    </div>
+
+    <!-- Star score HUD -->
+    <div id="star-score-hud"></div>
+
+    <!-- Footer -->
+    <div class="codex-footer">
+        <div class="footer-text">// THIS ARCHIVE WAS MADE POSSIBLE BY THE NARON UNION // ©@Spectral.Sky 2026 // <span class="loot-chest" data-chest-id="6" title="">◈</span></div>
+        <div id="codex-disclaimer">
+            <strong style="color:var(--theme-color); letter-spacing:2px;">// DISCLAIMER //</strong><br><br>
+            Stat calculations use publicly available AtomicAssets template data. Results are for informational and planning purposes only — actual in-game performance may vary. Naron Codex is an independent community tool and is not affiliated with Dacoco GmbH, Alien Worlds, or Planetary Defense.<br><br>
+            All images and names associated with Alien Worlds and Planetary Defense remain the intellectual property of their respective owners. Licensed under the MIT License. © 2026 @Spectral.Sky.
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; width:100%; max-width:820px; margin-top:8px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <select id="tip-amount" class="cyber-btn"
+                    style="background:#111; color:#ffaa00; border-color:#ffaa00; cursor:pointer; outline:none; padding:9px 10px;">
+                    <option value="1.0000 TLM">1 TLM</option>
+                    <option value="5.0000 TLM">5 TLM</option>
+                    <option value="10.0000 TLM" selected>10 TLM</option>
+                    <option value="50.0000 TLM">50 TLM</option>
+                    <option value="100.0000 TLM">100 TLM</option>
+                </select>
+                <button class="cyber-btn" style="color:#ffaa00; border-color:#ffaa00;" onclick="sendTip()">[ TRANSMIT TIP ]</button>
+            </div>
+        </div>
+    </div>
+
+</div><!-- end .page-wrap -->
+
+<!-- ══ CHEST MODAL ═══════════════════════════════════════════════════════════ -->
+<div id="chest-modal-backdrop">
+    <div id="chest-modal">
+        <button id="chest-modal-close" onclick="closeChestModal()">[ X ]</button>
+        <div id="chest-modal-log"></div>
+        <div id="chest-modal-link-wrap"><a id="chest-modal-link" href="#" target="_blank">[ OPEN CACHE ]</a></div>
+        <div id="chest-modal-empty"></div>
+    </div>
+</div>
+
+<!-- ══ SCRIPT ═════════════════════════════════════════════════════════════════ -->
+<script>
+// ── WaxJS init ──────────────────────────────────────────────────────────────
+const savedWallet = localStorage.getItem("naron_wallet");
+const wax = new waxjs.WaxJS({
+    rpcEndpoint: 'https://wax.greymass.com',
+    userAccount: savedWallet || '',
+    tryAutoLogin: false
+});
+
+// ── Cursor effects ──────────────────────────────────────────────────────────
+document.addEventListener('mousemove', e => {
+    const g = document.getElementById('cursor-glow');
+    if (g) { g.style.left = e.clientX + 'px'; g.style.top = e.clientY + 'px'; }
+});
+document.addEventListener('click', e => {
+    const c = document.createElement('div');
+    c.className = 'click-effect';
+    c.style.left = e.clientX + 'px';
+    c.style.top = e.clientY + 'px';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 500);
+}, true);
+
+// ── Theme engine ────────────────────────────────────────────────────────────
+let unlockedColors = new Set();
+let rainbowInterval = null;
+
+function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function setTheme(color, dark) {
+    localStorage.setItem('naron_theme_color', color);
+    localStorage.setItem('naron_theme_dark', dark);
+    if (rainbowInterval) { clearInterval(rainbowInterval); rainbowInterval = null; }
+    if (color === 'rainbow') {
+        let hue = 0;
+        document.documentElement.style.setProperty('--theme-dark', dark);
+        rainbowInterval = setInterval(() => {
+            hue = (hue + 2) % 360;
+            document.documentElement.style.setProperty('--theme-color', `hsl(${hue},100%,50%)`);
+            document.documentElement.style.setProperty('--theme-shadow', `0 0 15px hsla(${hue},100%,50%,0.4)`);
+            document.documentElement.style.setProperty('--theme-border', `1px solid hsla(${hue},100%,50%,0.3)`);
+            document.documentElement.style.setProperty('--theme-hover',  `hsla(${hue},100%,50%,0.1)`);
+        }, 40);
+        return;
+    }
+    document.documentElement.style.setProperty('--theme-color',  color);
+    document.documentElement.style.setProperty('--theme-dark',   dark);
+    document.documentElement.style.setProperty('--theme-hover',  hexToRgba(color, 0.1));
+    document.documentElement.style.setProperty('--theme-shadow', `0 0 15px ${hexToRgba(color, 0.4)}`);
+    document.documentElement.style.setProperty('--theme-border', `1px solid ${hexToRgba(color, 0.3)}`);
+    unlockedColors.add(color);
+    if (unlockedColors.size >= 6) {
+        localStorage.setItem('naron_magic_unlocked', 'true');
+        const dot = document.getElementById('secret-rainbow-dot');
+        if (dot && dot.style.display === 'none') {
+            dot.style.display = 'block';
+            dot.animate([{transform:'scale(0)'},{transform:'scale(1.5)'},{transform:'scale(1)'}],
+                {duration:400, easing:'cubic-bezier(0.175,0.885,0.32,1.275)'});
+        }
+    }
+}
+
+// ── Star mini-game ───────────────────────────────────────────────────────────
+let starScore = 0;
+let starChestAwarded = false;
+const STAR_EMOJIS = ['★','✦','✧','✩','✪','⭐','🌟'];
+
+function spawnStars(e) {
+    const count = 6 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < count; i++) {
+        const s = document.createElement('div');
+        s.className = 'star-particle';
+        s.textContent = STAR_EMOJIS[Math.floor(Math.random() * STAR_EMOJIS.length)];
+        const angle = Math.random() * Math.PI * 2;
+        const dist  = 60 + Math.random() * 120;
+        s.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
+        s.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+        s.style.setProperty('--r',  `${(Math.random()-0.5)*360}deg`);
+        s.style.left = e.clientX + 'px';
+        s.style.top  = e.clientY + 'px';
+        s.style.color = `hsl(${40 + Math.random()*30},100%,${60+Math.random()*30}%)`;
+        s.style.animationDuration = (0.8 + Math.random() * 0.8) + 's';
+        document.body.appendChild(s);
+        setTimeout(() => s.remove(), 1600);
+    }
+    starScore += count;
+    const hud = document.getElementById('star-score-hud');
+    hud.style.display = 'block';
+    hud.textContent = `★ ${starScore}`;
+    if (starScore >= 10 && !starChestAwarded) {
+        starChestAwarded = true;
+        setTimeout(() => openChest('5'), 600);
+    }
+}
+
+// ── WAX wallet ──────────────────────────────────────────────────────────────
+async function toggleWallet() {
+    const btn = document.getElementById("wallet-btn");
+    if (wax.userAccount || localStorage.getItem("naron_wallet")) {
+        wax.userAccount = '';
+        localStorage.removeItem("naron_wallet");
+        btn.innerText = "[ WAX LOGIN ]";
+        btn.style.color = "var(--theme-color)";
+        btn.style.borderColor = "var(--theme-color)";
+    } else {
+        try {
+            btn.innerText = "[ AUTHENTICATING... ]";
+            const account = await wax.login();
+            localStorage.setItem("naron_wallet", account);
+            updateWalletUI(account);
+            document.getElementById("wallet-input").value = account;
+        } catch(e) {
+            btn.innerText = "[ WAX LOGIN ]";
+        }
+    }
+}
+function updateWalletUI(account) {
+    const btn = document.getElementById("wallet-btn");
+    btn.innerText = `[ DISCONNECT: ${account} ]`;
+    btn.style.color = "#00ff00";
+    btn.style.borderColor = "#00ff00";
+}
+function checkWalletState() {
+    const saved = localStorage.getItem("naron_wallet");
+    if (saved) {
+        wax.userAccount = saved;
+        updateWalletUI(saved);
+        document.getElementById("wallet-input").value = saved;
+    }
+}
+document.addEventListener("DOMContentLoaded", () => {
+    checkWalletState();
+    document.getElementById("results-empty").style.display = "block";
+    document.getElementById("syncBtn").classList.add("btn-shimmer");
+    // Restore saved theme
+    const savedColor = localStorage.getItem('naron_theme_color');
+    const savedDark  = localStorage.getItem('naron_theme_dark');
+    if (savedColor && savedDark) setTheme(savedColor, savedDark);
+    if (localStorage.getItem('naron_magic_unlocked') === 'true') {
+        const dot = document.getElementById('secret-rainbow-dot');
+        if (dot) dot.style.display = 'block';
+    }
+});
+
+async function sendTip() {
+    if (!wax.userAccount) {
+        try {
+            await wax.login();
+            localStorage.setItem("naron_wallet", wax.userAccount);
+            checkWalletState();
+        } catch(e) { alert("Wallet connection required to transmit funds."); return; }
+    }
+    const tipAmount = document.getElementById("tip-amount").value;
+    try {
+        const result = await wax.api.transact({
+            actions: [{
+                account: 'alien.worlds', name: 'transfer',
+                authorization: [{ actor: wax.userAccount, permission: 'active' }],
+                data: { from: wax.userAccount, to: '1x1ci.wam', quantity: tipAmount, memo: 'Naron Codex Tip' }
+            }]
+        }, { blocksBehind: 3, expireSeconds: 30 });
+        alert(`TRANSMISSION SUCCESSFUL.\n\nThank you for supporting Naron Codex!\nTransaction ID: ${result.transaction_id}`);
+    } catch(e) { alert(`TRANSMISSION FAILED.\n\nError: ${e.message}`); }
+}
+
+// ── Army optimizer constants ─────────────────────────────────────────────────
+const SHINE_MULT = {
+    "stone": 1, "gold": 3, "stardust": 5, "antimatter": 7, "xdimension": 9
+};
+const RARITY_BONUS = {
+    "mythical": 50, "mythic": 50, "legendary": 25,
+    "epic": 7, "rare": 3, "common": 1, "abundant": 1
+};
+const WARLORD_OVERRIDE = {
+    "Exo-Colonel": 6,
+    "Supremacy Warden": 47
+};
+const SUPPLY_KEYWORDS = ["decaffeinated", "boar", "ration", "battery", "stimpack", "coffee", "booster"];
+const BANNED_KEYWORDS = [
+    "liquid", "prism", "chromium", "etherium", "concentrated", "purified",
+    "singularity", "key", "mineral", "abyss", "glow", "shard", "fragment", "dust",
+    "blueprint", "component", "circuit", "core", "essence", "relic", "medal",
+    "embers", "chest", "coastline", "sandy", "land", "avatar", "quartz",
+    "peacemaker", "stealth mercenary", "desert", "mountains", "volcano", "forest",
+    "crystal", "carbon", "oreon", "coins"
+];
+// PD Equipment template IDs (Gadgets, Weapons, Protection)
+const EQUIPMENT_TEMPLATE_IDS = new Set([
+    902055, 902056, 902057, 902058, 902059, 902060,  // Gadgets
+    903762, 903763, 903764, 903765, 903766, 903767,  // Weapons
+    904159, 904160, 904161, 904162, 904163, 904164   // Protection
+]);
+
+const AA_NODES = [
+    "https://wax.api.atomicassets.io",
+    "https://wax-atomic-api.eosphere.io",
+    "https://atomic.wax.eosrio.io"
+];
+
+let rawData = [];
+
+// ── On-chain forge status check ──────────────────────────────────────────────
+async function checkForgeStatus(wallet) {
+    const WAX_RPC = [
+        'https://wax.greymass.com',
+        'https://wax.eosphere.io',
+        'https://api.wax.alohaeos.com'
+    ];
+    for (const node of WAX_RPC) {
+        try {
+            const resp = await fetch(`${node}/v1/chain/get_table_rows`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    json: true,
+                    code: 'magordefense',
+                    scope: 'magordefense',
+                    table: 'forge',
+                    lower_bound: wallet,
+                    upper_bound: wallet,
+                    limit: 1,
+                    key_type: 'name',
+                    index_position: 1
+                })
+            });
+            const data = await resp.json();
+            return !!(data.rows && data.rows.length > 0);
+        } catch(e) { continue; }
+    }
+    return false;
+}
+
+// ── Scan ────────────────────────────────────────────────────────────────────
+async function startScan() {
+    const wallet = document.getElementById('wallet-input').value.trim();
+    if (!wallet) {
+        document.getElementById('status-bar').innerText = "// NO WALLET ENTERED //";
+        return;
+    }
+    const btn = document.getElementById('syncBtn');
+    const status = document.getElementById('status-bar');
+    btn.disabled = true; btn.innerText = "[ SCANNING... ]";
+    btn.classList.remove("btn-shimmer");
+    document.getElementById("results-empty").style.display = "none";
+
+    let success = false;
+    for (const node of AA_NODES) {
+        status.innerText = `SCANNING: ${new URL(node).hostname}...`;
+        try {
+            let allAssets = [];
+            let page = 1;
+            while (true) {
+                const resp = await fetch(
+                    `${node}/atomicassets/v1/assets?owner=${encodeURIComponent(wallet)}&collection_name=alien.worlds,planetdefnft&limit=1000&page=${page}`
+                );
+                const json = await resp.json();
+                if (!json.success) break;
+                allAssets = allAssets.concat(json.data);
+                if (json.data.length < 1000) break;
+                page++;
+            }
+            rawData = allAssets;
+            processData(rawData);
+            status.innerText = `ANALYSIS COMPLETE — ${rawData.length} ASSETS FOUND`;
+            success = true;
+            break;
+        } catch(e) { continue; }
+    }
+
+    if (!success) {
+        status.innerText = "// CONNECTION FAILED — TRY AGAIN //";
+    } else {
+        // Check on-chain forge status
+        const hasForge = await checkForgeStatus(wallet);
+        const forgeCheckbox = document.getElementById('forgeCheck');
+        const forgeStatusEl = document.getElementById('forge-status');
+        if (hasForge) {
+            forgeCheckbox.checked = true;
+            forgeStatusEl.style.display = 'inline-block';
+            processData(rawData); // re-run with forge enabled
+        } else {
+            forgeStatusEl.style.display = 'none';
+        }
+    }
+    btn.disabled = false; btn.innerText = "[ SYNCHRONIZE ]";
+}
+
+function recalculate() {
+    if (rawData.length > 0) processData(rawData);
+}
+
+// ── Process ─────────────────────────────────────────────────────────────────
+function processData(data) {
+    let faces = [], crew = [], arms = [], creatures = [], supplies = [], equipment = [];
+    const forgeEnabled = document.getElementById('forgeCheck').checked;
+
+    data.forEach(nft => {
+        const d  = nft.data || {};
+        const td = nft.template?.immutable_data || {};
+        const schema     = (nft.schema?.schema_name || "").toLowerCase();
+        const collection = (nft.collection?.collection_name || "").toLowerCase();
+        const name       = (nft.name || "").toLowerCase();
+
+        // Schema exclusions
+        if (schema === "level.worlds" || schema === "material" || schema.includes('tool')) return;
+        // Name exclusions
+        if (BANNED_KEYWORDS.some(kw => name.includes(kw))) return;
+
+        const rarity = (d.rarity || td.rarity || "common").toLowerCase();
+        const shine  = (d.shine  || td.shine  || "stone").toLowerCase();
+        const mult   = SHINE_MULT[shine]   || 1;
+        const bonus  = RARITY_BONUS[rarity] || 1;
+
+        const obj = {
+            name:     nft.name,
+            rarity, shine,
+            img:      d.img || td.img || null,
+            active:   false,
+            asset_id: nft.asset_id,
+            atk: (parseFloat(d.attack   ?? td.attack   ?? 0) + bonus) * mult,
+            def: (parseFloat(d.defense  ?? td.defense  ?? 0) + bonus) * mult,
+        };
+
+        // PD Equipment — forge-gated
+        const templateId = parseInt(nft.template?.template_id || 0);
+        if (EQUIPMENT_TEMPLATE_IDS.has(templateId)) {
+            obj.active = forgeEnabled;
+            // Store equipment type for display
+            obj.equipType = d.type || td.type || '';
+            equipment.push(obj);
+            return;
+        }
+
+        // Planetdef creatures — always active
+        if (collection === "planetdefnft" && schema === "creature") {
+            obj.active = true; creatures.push(obj); return;
+        }
+        // Supplies
+        if (SUPPLY_KEYWORDS.some(kw => name.includes(kw))) { supplies.push(obj); return; }
+
+        // Faces / Warlords
+        const isHuman = name.includes("human");
+        if ((schema.includes('warlord') || schema.includes('face')) && !isHuman) {
+            obj.slots = WARLORD_OVERRIDE[nft.name]
+                ?? parseFloat(d.crew_slot || d.units || d.slots || (bonus * mult));
+            obj.active = true;
+            faces.push(obj);
+        } else {
+            if (obj.atk === bonus * mult && obj.def === bonus * mult) return; // zero base stats
+            if (schema.includes('arms')) arms.push(obj);
+            else crew.push(obj);
+        }
+    });
+
+    const totalSlots = faces.reduce((s, f) => s + (f.slots || 0), 0);
+    crew.sort((a, b) => (b.def + b.atk) - (a.def + a.atk));
+    const activeCrew = crew.slice(0, Math.floor(totalSlots));
+    activeCrew.forEach(c => c.active = true);
+
+    let activeArms = [];
+    if (forgeEnabled) {
+        arms.sort((a, b) => (b.atk + b.def) - (a.atk + a.def));
+        activeArms = arms.slice(0, activeCrew.length);
+        activeArms.forEach(a => a.active = true);
+    }
+
+    const finalAtk = [...activeCrew, ...activeArms, ...creatures].reduce((s, x) => s + x.atk, 0);
+    const finalDef = [...activeCrew, ...activeArms, ...creatures].reduce((s, x) => s + x.def, 0);
+
+    document.getElementById('totalSlots').innerText = Math.floor(totalSlots);
+    document.getElementById('crewCount').innerText  = activeCrew.length;
+    document.getElementById('armsCount').innerText  = activeArms.length;
+    document.getElementById('totalAtk').innerText   = Math.floor(finalAtk).toLocaleString();
+    document.getElementById('totalDef').innerText   = Math.floor(finalDef).toLocaleString();
+
+    render(faces, crew, arms, creatures, supplies, equipment, forgeEnabled);
+}
+
+// ── Render ──────────────────────────────────────────────────────────────────
+function render(faces, crew, arms, creatures, supplies, equipment, forgeEnabled) {
+    const root = document.getElementById('results');
+    root.innerHTML = "";
+    buildSection("LOGISTICS — FACES & WARLORDS",                 faces,     root, "always",                    "slots", false);
+    buildSection("ARMY — CREW & MERCENARY",                      crew,      root, "partial",                   "stats", false);
+
+    // Merge equipment into arms — equipment active only when forge is on
+    const equipTagged = equipment.map(e => ({ ...e, active: forgeEnabled }));
+    const allArsenal = [...arms, ...equipTagged];
+    buildSection(`ARSENAL — ARMS & EQUIPMENT${!forgeEnabled ? ' (FORGE OFFLINE)' : ''}`, allArsenal, root, "partial", "stats", false);
+
+    buildSection("CREATURES — PLANETARY DEFENSE",                creatures, root, "always",                    "stats", false);
+    buildSection(`SUPPLIES${!forgeEnabled ? ' (FORGE OFFLINE)' : ''}`, supplies, root, forgeEnabled ? "always" : "never", "none");
+}
+
+// ── Equipment locked subsection ──────────────────────────────────────────────
+function buildEquipmentSection(equipment, root, forgeEnabled) {
+    if (!equipment.length) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'equipment-section';
+
+    const header = document.createElement('div');
+    header.className = `equipment-header${forgeEnabled ? ' forge-on' : ''}`;
+    header.innerHTML = `
+        <span>🔧 EQUIPMENT (${equipment.length})</span>
+        <span class="eq-badge">${forgeEnabled ? '◈ FORGE ACTIVE' : '⚠ FORGE REQUIRED'}</span>`;
+
+    const content = document.createElement('div');
+    content.className = 'equipment-content';
+    const grid = document.createElement('div');
+    grid.className = 'card-grid';
+
+    // Group by template
+    const groups = {};
+    equipment.forEach(item => {
+        const key = `${item.name}||${item.equipType}`;
+        if (!groups[key]) groups[key] = { ...item, qty: 0 };
+        groups[key].qty++;
+    });
+
+    Object.values(groups).sort((a, b) => (b.atk + b.def) - (a.atk + a.def)).forEach(item => {
+        const shineVar = `var(--shine-${item.shine}, #888)`;
+        const card = document.createElement('div');
+        card.className = `nft-card${!forgeEnabled ? ' inactive' : ''}`;
+        card.style.borderTopColor = shineVar;
+        card.style.borderTopWidth = '4px';
+
+        const imgHash = item.img;
+        const imgSrc  = imgHash ? `https://wsrv.nl/?url=${encodeURIComponent('ipfs.io/ipfs/' + imgHash)}&w=160&h=160&output=webp&fit=contain` : null;
+        const imgFb   = imgHash ? `https://ipfs.io/ipfs/${imgHash}` : null;
+
+        card.innerHTML = `
+            ${item.qty > 1 ? `<div class="qty-badge">×${item.qty}</div>` : ''}
+            <div class="shine-bar" style="background:${shineVar}">${item.shine}</div>
+            ${imgSrc ? `<img src="${imgSrc}" onerror="this.onerror=null;this.src='${imgFb}'" loading="lazy">` : '<div class="no-img">NO IMAGE</div>'}
+            <div class="card-info">
+                <div class="card-subtext">⚔ ${Math.floor(item.atk)} &nbsp;|&nbsp; 🛡 ${Math.floor(item.def)}</div>
+                <div class="card-name">${item.name}</div>
+                <div class="card-status" style="font-size:0.68em; color:#666; margin-top:4px;">${item.equipType || 'EQUIPMENT'}</div>
+            </div>`;
+        grid.appendChild(card);
+    });
+
+    content.appendChild(grid);
+    wrap.appendChild(header);
+    wrap.appendChild(content);
+    root.appendChild(wrap);
+
+    // Open instantly (no transition) so parent can measure correct full height
+    content.style.transition = 'none';
+    content.style.maxHeight = content.scrollHeight + 'px';
+    content.offsetHeight; // force reflow
+    content.style.transition = 'max-height 0.4s ease-out'; // restore
+
+    // Expand parent section-content to fit the newly added equipment
+    if (root.classList && root.classList.contains('section-content')) {
+        root.style.maxHeight = root.scrollHeight + 'px';
+    }
+
+    header.addEventListener('click', () => {
+        const isOpen = !!content.style.maxHeight && content.style.maxHeight !== '0px';
+        content.style.maxHeight = isOpen ? null : content.scrollHeight + 'px';
+        if (root.classList && root.classList.contains('section-content')) {
+            setTimeout(() => { root.style.maxHeight = root.scrollHeight + 'px'; }, 420);
+        }
+    });
+}
+
+function buildSection(title, list, root, activeMode, type, showStatus = true) {
+    if (!list.length) return;
+
+    // Group identical cards
+    const groups = {};
+    list.forEach(item => {
+        const key = `${item.name}||${item.shine}||${Math.round(item.atk)}||${Math.round(item.def)}||${Math.round(item.slots || 0)}||${item.active}`;
+        if (!groups[key]) groups[key] = { ...item, qty: 0 };
+        groups[key].qty++;
+    });
+    const items = Object.values(groups);
+
+    // Sort state — 1 = descending (highest first), -1 = ascending
+    let currentSort = type === 'slots' ? 'slots' : 'combo';
+    let sortDir = 1;
+
+    // Build sort buttons HTML
+    let sortHTML = '';
+    if (type === 'stats') {
+        sortHTML = `
+            <span class="sort-btns" onclick="event.stopPropagation()">
+                <button class="sort-btn active desc" data-sort="combo" title="Sort by combined">⚡</button>
+                <button class="sort-btn" data-sort="atk" title="Sort by attack">⚔</button>
+                <button class="sort-btn" data-sort="def" title="Sort by defense">🛡</button>
+            </span>`;
+    } else if (type === 'slots') {
+        sortHTML = `
+            <span class="sort-btns" onclick="event.stopPropagation()">
+                <button class="sort-btn active desc" data-sort="slots" title="Sort by slots">▣</button>
+            </span>`;
+    }
+
+    const header = document.createElement('div');
+    header.className = 'section-header';
+    header.innerHTML = `
+        <span>${title}</span>
+        <span style="display:flex;align-items:center;gap:10px;">
+            ${sortHTML}
+            <span class="section-meta">×${list.length} &nbsp; ▲</span>
+        </span>`;
+
+    const content = document.createElement('div');
+    content.className = 'section-content';
+    const grid = document.createElement('div');
+    grid.className = 'card-grid';
+    content.appendChild(grid);
+
+    // ── Card renderer ──────────────────────────────────────────────────────
+    function makeCard(item) {
+        const isActive   = activeMode === "always" || (activeMode === "partial" && item.active) /* "never" = always inactive */;
+        const shineVar   = `var(--shine-${item.shine}, #888)`;
+        const statusClass = activeMode === "always" ? "s-always" : isActive ? "s-active" : "s-reserve";
+        const statusText  = activeMode === "always" ? "◈ ACTIVE"  : isActive ? "◈ OPERATIONAL" : "○ RESERVE";
+
+        let subText = "";
+        if      (type === "slots") subText = `${Math.floor(item.slots || 0)} SLOTS`;
+        else if (type === "stats") subText = `⚔ ${Math.floor(item.atk)} &nbsp;|&nbsp; 🛡 ${Math.floor(item.def)}`;
+        else                       subText = "ITEM";
+
+        const imgHash    = item.img;
+        const imgSrc     = imgHash ? `https://wsrv.nl/?url=${encodeURIComponent('ipfs.io/ipfs/' + imgHash)}&w=160&h=160&output=webp&fit=contain` : null;
+        const imgFallback = imgHash ? `https://ipfs.io/ipfs/${imgHash}` : null;
+
+        const card = document.createElement('div');
+        card.className = `nft-card${!isActive ? ' inactive' : ''}`;
+        card.style.borderTopColor = shineVar;
+        card.style.borderTopWidth = '4px';
+        card.innerHTML = `
+            ${item.qty > 1 ? `<div class="qty-badge">×${item.qty}</div>` : ''}
+            <div class="shine-bar" style="background:${shineVar}">${item.shine}</div>
+            ${imgSrc
+                ? `<img src="${imgSrc}" onerror="this.onerror=null;this.src='${imgFallback}'" loading="lazy" alt="${item.name}">`
+                : `<div class="no-img">NO IMAGE</div>`}
+            <div class="card-info">
+                <div class="card-subtext">${subText}</div>
+                <div class="card-name">${item.name}</div>
+                ${showStatus ? `<div class="card-status ${statusClass}">${statusText}</div>` : ''}
+            </div>`;
+        return card;
+    }
+
+    // ── Sort + re-render grid ─────────────────────────────────────────────
+    function renderGrid() {
+        grid.innerHTML = '';
+        const sorted = [...items].sort((a, b) => {
+            let diff = 0;
+            if      (currentSort === 'combo') diff = (b.atk + b.def) - (a.atk + a.def);
+            else if (currentSort === 'atk')   diff = b.atk - a.atk;
+            else if (currentSort === 'def')   diff = b.def - a.def;
+            else if (currentSort === 'slots') diff = (b.slots || 0) - (a.slots || 0);
+            return sortDir * diff;
+        });
+        sorted.forEach(item => grid.appendChild(makeCard(item)));
+        // Update open height after re-render
+        if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+            content.style.maxHeight = content.scrollHeight + 'px';
+        }
+    }
+
+    renderGrid();
+
+    root.appendChild(header);
+    root.appendChild(content);
+
+    // Open by default
+    content.style.maxHeight = content.scrollHeight + 'px';
+
+    // ── Sort button listeners ─────────────────────────────────────────────
+    header.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            const sort = btn.dataset.sort;
+            if (currentSort === sort) {
+                sortDir *= -1;
+            } else {
+                currentSort = sort;
+                sortDir = -1;
+                header.querySelectorAll('.sort-btn').forEach(b => {
+                    b.classList.remove('active', 'asc', 'desc');
+                });
+            }
+            btn.classList.add('active');
+            btn.classList.toggle('desc', sortDir === 1);
+            btn.classList.toggle('asc',  sortDir === -1);
+            renderGrid();
+        });
+    });
+
+    // ── Collapse / expand on header click ────────────────────────────────
+    header.addEventListener('click', () => {
+        const isOpen = !!content.style.maxHeight && content.style.maxHeight !== '0px';
+        if (isOpen) {
+            content.style.maxHeight = null;
+        } else {
+            // Use scrollHeight after a tick so nested equipment is measured correctly
+            content.style.maxHeight = content.scrollHeight + 'px';
+            setTimeout(() => { content.style.maxHeight = content.scrollHeight + 'px'; }, 10);
+        }
+        header.querySelector('.section-meta').innerHTML =
+            isOpen ? `×${list.length} &nbsp; ▼` : `×${list.length} &nbsp; ▲`;
+    });
+
+    return content;
+}
+
+function expandAll() {
+    document.querySelectorAll('.section-content').forEach(c => {
+        c.style.maxHeight = c.scrollHeight + 'px';
+    });
+    document.querySelectorAll('.section-meta').forEach(s => {
+        s.innerHTML = s.innerHTML.replace('▼', '▲');
+    });
+}
+
+// ── Chest system ─────────────────────────────────────────────────────────────
+const CHEST_WORKER_URL = "https://naron-chests.YOUR-SUBDOMAIN.workers.dev";
+
+document.querySelectorAll(".loot-chest").forEach(el => {
+    el.addEventListener("click", e => {
+        e.preventDefault(); e.stopPropagation();
+        openChest(el.dataset.chestId);
+    });
+});
+function openChest(id) {
+    const backdrop = document.getElementById("chest-modal-backdrop");
+    const log      = document.getElementById("chest-modal-log");
+    const linkWrap = document.getElementById("chest-modal-link-wrap");
+    const linkEl   = document.getElementById("chest-modal-link");
+    const emptyEl  = document.getElementById("chest-modal-empty");
+    log.textContent = ""; linkWrap.style.display = "none"; linkEl.href = "#"; emptyEl.style.display = "none";
+    backdrop.classList.add("active");
+    const lines = [`> LOOT CACHE #${id} DETECTED`, `> AUTHENTICATING...`, `> SCANNING CLAIM STATUS...`];
+    let i = 0;
+    function printLine() {
+        if (i < lines.length) { log.textContent += lines[i++] + "\n"; setTimeout(printLine, 420); }
+        else fetchChest(id, log, linkWrap, linkEl, emptyEl);
+    }
+    printLine();
+}
+async function fetchChest(id, log, linkWrap, linkEl, emptyEl) {
+    try {
+        const res  = await fetch(`${CHEST_WORKER_URL}/chest?id=${id}`);
+        const data = await res.json();
+        if (data.claimed) {
+            log.textContent += `> ${data.message}\n`;
+            emptyEl.textContent = "// Better luck on the next drop //";
+            emptyEl.style.display = "block";
+        } else if (data.url) {
+            log.textContent += `> ACCESS GRANTED\n> CACHE UNLOCKED ✓\n`;
+            linkEl.href = data.url; linkWrap.style.display = "block";
+        } else {
+            log.textContent += `> ERROR: ${data.error || "Unknown"}\n`;
+        }
+    } catch(e) { log.textContent += `> CONNECTION FAILED — try again later\n`; }
+}
+function closeChestModal() {
+    document.getElementById("chest-modal-backdrop").classList.remove("active");
+}
+document.getElementById("chest-modal-backdrop").addEventListener("click", function(e) {
+    if (e.target === this) closeChestModal();
+});
+</script>
+</body>
+</html>
