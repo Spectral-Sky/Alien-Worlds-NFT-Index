@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-48CCMEYHXG"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-48CCMEYHXG');
+    </script>
+    <title>PD Materials // Live Database</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="NCico.png">
+    <script src="waxjs.js"></script>
+    <style>
+        /* --- FOUC PREVENTION --- */
+        table { opacity: 0; visibility: hidden; transition: opacity 0.6s ease-in; background-color: transparent !important; }
+        tr, td, th, tbody { background-color: transparent !important; }
+        table.system-ready { opacity: 1; visibility: visible; }
+
+        :root {
+            --theme-color: #5badff;
+            --theme-shadow: 0 0 15px rgba(91, 173, 255, 0.4);
+            --theme-dark: #050d18;
+            --theme-hover: #0a1a30;
+            --theme-border: 1px solid #1a3a5c;
+        }
+
+        body {
+            cursor: crosshair; background-color: #050510;
+            background-image: radial-gradient(circle at 50% 50%, var(--theme-dark) 0%, #050510 80%);
+            color: #d0d0d0; font-family: 'Courier New', Courier, monospace;
+            margin: 0; padding: 0; overflow-x: auto;
+        }
+
+        ::-webkit-scrollbar { height: 12px; width: 12px; }
+        ::-webkit-scrollbar-track { background: #050510; }
+        ::-webkit-scrollbar-thumb { background: #333; border: 1px solid var(--theme-color); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--theme-color); }
+
+        body::before {
+            content: " "; position: fixed; top: 0; left: 0; width: 1px; height: 1px; z-index: -1;
+            box-shadow:
+                5vw 10vh #fff, 15vw 25vh rgba(255,255,255,0.5), 25vw 5vh #fff, 35vw 45vh rgba(255,255,255,0.7),
+                45vw 15vh #fff, 55vw 65vh #fff, 65vw 20vh rgba(255,255,255,0.4), 75vw 55vh #fff,
+                85vw 12vh rgba(255,255,255,0.8), 95vw 40vh #fff, 10vw 60vh #fff, 20vw 80vh rgba(255,255,255,0.6),
+                30vw 90vh #fff, 40vw 75vh rgba(255,255,255,0.5), 50vw 85vh #fff, 60vw 95vh rgba(255,255,255,0.7),
+                70vw 80vh #fff, 80vw 95vh rgba(255,255,255,0.4), 90vw 70vh #fff, 98vw 85vh #fff;
+            animation: starlight 4s ease-in-out infinite;
+        }
+        body::after {
+            content: " "; position: fixed; top: 0; left: 0; width: 2px; height: 2px; z-index: -1;
+            box-shadow:
+                10vw 18vh #fff, 22vw 35vh rgba(255,255,255,0.6), 38vw 10vh #fff, 52vw 48vh rgba(255,255,255,0.8),
+                62vw 25vh #fff, 78vw 15vh rgba(255,255,255,0.5), 88vw 55vh #fff, 15vw 70vh rgba(255,255,255,0.7),
+                25vw 85vh #fff, 45vw 68vh rgba(255,255,255,0.4), 55vw 80vh #fff, 75vw 88vh rgba(255,255,255,0.6);
+            animation: starlight-alt 5s ease-in-out infinite alternate;
+        }
+        @keyframes starlight { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.9; } }
+        @keyframes starlight-alt { 0%, 100% { opacity: 0.7; } 50% { opacity: 0.1; } }
+
+        a, button, th, td { cursor: crosshair !important; }
+
+        .click-effect {
+            position: fixed; pointer-events: none; width: 40px; height: 40px;
+            border: 2px solid var(--theme-color); border-radius: 50%;
+            transform: translate(-50%, -50%); animation: clickPulse 0.4s ease-out forwards;
+            z-index: 2147483647; box-shadow: 0 0 10px var(--theme-color);
+        }
+        @keyframes clickPulse { 0% { transform: translate(-50%,-50%) scale(0.2); opacity:1; border-width:5px; } 100% { transform:translate(-50%,-50%) scale(2.5); opacity:0; border-width:0px; } }
+
+        .global-header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #020a08; border-bottom: 2px solid var(--theme-color);
+            padding: 0 30px; box-sizing: border-box; width: 100%; height: 66px;
+            position: sticky; top: 0; z-index: 6000;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.9);
+        }
+        .logo-section h1 { color: var(--theme-color); margin: 0; font-size: 1.8em; letter-spacing: 4px; text-transform: uppercase; text-shadow: 0 0 10px var(--theme-color); }
+        .nav-links { display: flex; gap: 10px; }
+
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 15px 30px; box-sizing: border-box; width: 100%;
+            background: #050510; border-bottom: 2px solid var(--theme-color);
+            position: sticky; top: 66px; z-index: 5000;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.8); flex-wrap: wrap; gap: 10px;
+        }
+        h1 { color: var(--theme-color); letter-spacing: 3px; margin: 0; text-transform: uppercase; font-size: 1.5em; line-height: 1; text-shadow: 0 0 10px var(--theme-color); }
+        .nav-btn { background: transparent; color: #888; border: 1px solid transparent; padding: 8px 16px; font-family: monospace; font-weight: bold; font-size: 0.9em; text-decoration: none; cursor: pointer; transition: all 0.3s; text-transform: uppercase; }
+        .nav-btn:hover { color: var(--theme-color); border-color: var(--theme-color); }
+        .nav-btn.active { color: #000; background: var(--theme-color); border-color: var(--theme-color); box-shadow: var(--theme-shadow); }
+
+        #searchInput { background: #000; border: 1px solid var(--theme-color); color: var(--theme-color); padding: 10px; font-family: 'Courier New', monospace; font-weight: bold; width: 200px; text-transform: uppercase; }
+        .cyber-btn { background: var(--theme-dark); color: var(--theme-color); border: 2px solid var(--theme-color); padding: 10px 14px; font-family: 'Courier New', Courier, monospace; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s; }
+        .cyber-btn:hover { background: var(--theme-color); color: #000; box-shadow: var(--theme-shadow); }
+
+        .glow-alert { border-color: #00ff00 !important; color: #00ff00 !important; animation: terminalPulse 1s infinite; box-shadow: 0 0 15px #00ff00 !important; }
+        @keyframes terminalPulse { 0% { opacity: 0.6; } 50% { opacity: 1; text-shadow: 0 0 8px #00ff00; } 100% { opacity: 0.6; } }
+
+        #cursor-glow {
+            position: fixed; top: -50px; left: -50px; width: 70px; height: 70px; border-radius: 50%;
+            background: var(--theme-color); filter: blur(35px); opacity: 0.25;
+            pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: background 0.2s;
+        }
+
+        #theme-panel { display: flex; gap: 12px; margin-top: 15px; padding: 5px 0; }
+        .theme-opt { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #333; cursor: pointer; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; }
+        .theme-opt:hover { transform: scale(1.4); border-color: #fff; box-shadow: 0 0 10px var(--theme-color); }
+        #secret-rainbow-dot { background: linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #1de840, #1ddde8, #2b1de8, #dd00f3, #ff2400); background-size: 1800% 1800%; animation: rainbow-shift 3s ease infinite; border-color: #fff; }
+        @keyframes rainbow-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        /* --- PREVIEW DECK --- */
+        #preview-frame {
+            position: fixed; top: 240px; left: 20px; width: 280px; height: 400px;
+            right: auto !important; border: 2px solid var(--theme-color); background: var(--theme-dark);
+            box-shadow: var(--theme-shadow); z-index: 3000; box-sizing: border-box;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: transform 0.4s, opacity 0.4s; transform: translateX(0); opacity: 1; pointer-events: none;
+        }
+        #preview-frame.minimized { transform: translateX(-400px); opacity: 0; }
+        #preview-img { width: 90%; height: auto; max-height: 80%; object-fit: contain; border: 1px solid #333; display: none; }
+        #preview-status { color: var(--theme-color); font-size: 0.8em; letter-spacing: 1px; display: none; }
+        #preview-label { margin-top: 10px; color: #fff; font-weight: bold; font-size: 0.9em; text-align: center; letter-spacing: 1px; width: 90%; border-top: 1px dashed #333; padding-top: 5px; }
+
+        #market-frame {
+            position: fixed; top: 655px; left: 20px; width: 280px; height: auto;
+            border: 2px solid var(--theme-color); background: #000; box-sizing: border-box;
+            box-shadow: var(--theme-shadow); z-index: 3000; padding: 10px; display: none;
+            transition: transform 0.4s, opacity 0.4s;
+        }
+        #market-frame.minimized { transform: translateX(-400px); opacity: 0; }
+        .intel-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #333; padding: 6px 0; font-size: 0.9em; }
+        .intel-label { color: #888; }
+        .intel-val { color: var(--theme-color); font-weight: bold; font-family: monospace; }
+        #intel-header { color: var(--theme-color); font-weight: bold; border-bottom: 1px solid #333; margin-bottom: 10px; text-transform: uppercase; font-size: 0.85em; letter-spacing: 1px; }
+        .market-links { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; pointer-events: auto; }
+        .market-link-btn { background: #111; border: 1px solid var(--theme-color); color: var(--theme-color); text-align: center; font-size: 1.1em; padding: 10px 18px; cursor: pointer; text-decoration: none; display: block; transition: all 0.2s; font-family: monospace; text-transform: uppercase; }
+        .market-link-btn:hover { background: var(--theme-color); color: #000; box-shadow: var(--theme-shadow); }
+
+        #deck-toggle-tab {
+            position: fixed; top: 240px; left: 298px; width: 30px; height: 400px;
+            box-sizing: border-box; background: var(--theme-dark); border: 2px solid var(--theme-color); border-left: none;
+            color: var(--theme-color); display: flex; align-items: center; justify-content: center;
+            font-size: 1.2em; font-weight: bold; cursor: pointer; z-index: 3005; pointer-events: auto !important;
+            transition: transform 0.4s ease-out, background-color 0.2s, color 0.2s;
+            border-radius: 0 8px 8px 0; box-shadow: 5px 0 15px rgba(0,0,0,0.8); user-select: none;
+        }
+        #deck-toggle-tab:hover { background: var(--theme-color); color: #000; }
+        #deck-toggle-tab.minimized { transform: translateX(-298px); }
+        @media screen and (max-width: 800px) { #deck-toggle-tab { display: none !important; } }
+
+        #mobile-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2900; backdrop-filter: blur(3px); }
+        #mobile-backdrop.active { display: block; }
+        .close-btn { display: none; position: absolute; top: -15px; right: -15px; background: var(--theme-color); color: #000; pointer-events: auto; border: 1px solid #fff; padding: 5px 10px; font-weight: bold; cursor: pointer; z-index: 4000; }
+
+
+ /* --- MARKET FRAME --- */
+        #market-frame {
+            position: fixed; top: 655px; left: 20px; width: 280px; height: auto;
+            border: 2px solid var(--theme-color); background: #000; box-sizing: border-box;
+            box-shadow: var(--theme-shadow); z-index: 3000; padding: 10px; display: none;
+            transition: transform 0.4s, opacity 0.4s; transform: translateX(0); opacity: 1;
+        }
+        #market-frame.minimized { transform: translateX(-400px); opacity: 0; }
+        .intel-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #333; padding: 6px 0; font-size: 0.9em; }
+        .intel-label { color: #888; }
+        .intel-val { color: var(--theme-color); font-weight: bold; font-family: monospace; }
+        #intel-header { color: var(--theme-color); font-weight: bold; border-bottom: 1px solid #333; margin-bottom: 10px; text-transform: uppercase; font-size: 0.85em; letter-spacing: 1px; }
+        .market-links { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; pointer-events: auto; }
+        .market-link-btn { background: #111; border: 1px solid var(--theme-color); color: var(--theme-color); text-align: center; font-size: 1.1em; padding: 10px 18px; cursor: pointer; text-decoration: none; display: block; transition: all 0.2s ease-in-out; font-family: monospace; text-transform: uppercase; }
+        .market-link-btn:hover { background: var(--theme-color); color: #000; box-shadow: var(--theme-shadow); }
+
+
+        /* --- GRID & TABLE --- */
+        .grid-container {
+            background: transparent !important; border: none !important; box-shadow: none !important;
+            height: auto !important; overflow: visible !important; width: 100% !important; max-width: none !important;
+            padding: 0; display: grid; grid-template-columns: minmax(20px, 1fr) auto minmax(20px, 1fr);
+            transition: grid-template-columns 0.4s ease-out;
+        }
+        body.deck-open .grid-container { grid-template-columns: minmax(340px, 1fr) auto minmax(20px, 1fr); }
+        @media screen and (max-width: 800px) { .grid-container, body.deck-open .grid-container { grid-template-columns: minmax(10px, 1fr) auto minmax(10px, 1fr); } }
+
+        .waffle {
+            grid-column: 2; margin: 0; border-collapse: separate !important; border-spacing: 0 !important;
+            background: var(--theme-dark); width: auto !important;
+            border-bottom: 2px solid var(--theme-color) !important;
+        }
+        .live-header {
+            position: sticky !important; top: 190px !important; z-index: 1900 !important;
+            background-color: var(--theme-dark) !important; color: var(--theme-color) !important;
+            border-bottom: 2px solid var(--theme-color) !important; border-right: 2px solid var(--theme-color) !important;
+            font-weight: bold !important; text-align: center !important; box-shadow: 0 0 15px var(--theme-color) !important;
+            text-transform: uppercase !important; letter-spacing: 1px !important; padding: 8px !important;
+        }
+        .live-header:hover { z-index: 2000 !important; background-color: #000 !important; }
+        .live-header:first-of-type { border-left: 2px solid var(--theme-color) !important; border-top-left-radius: 4px; }
+
+        td {
+            border-bottom: var(--theme-border) !important; border-right: var(--theme-border) !important;
+            padding: 4px 10px !important; vertical-align: middle; max-width: 140px;
+            white-space: normal !important; word-wrap: break-word !important;
+            font-family: 'Courier New', Courier, monospace !important; font-size: 0.9em !important;
+        }
+        td:first-of-type { border-left: var(--theme-border) !important; }
+        .waffle tr { height: 52px !important; }
+        .waffle td.img-cell { width: 60px !important; min-width: 60px !important; padding: 0 !important; text-align: center !important; }
+
+        tr:hover td { background-color: var(--theme-hover) !important; color: #fff !important; transition: background-color 0.1s; }
+        .live-cell { text-align: center; font-weight: bold; color: #666; font-family: monospace; }
+        .waffle img { height: 52px !important; width: auto !important; display: block; margin: 0 auto; object-fit: contain !important; border: none !important; cursor: pointer; }
+
+        /* --- RARITY TAGS --- */
+        [class*="tag-"] { text-align: center !important; font-weight: bold !important; border: 1px solid transparent !important; }
+        .tag-common    { box-shadow: inset 4px 0 0 #555, inset -4px 0 0 #555 !important; color: #aaa !important; }
+        .tag-uncommon  { box-shadow: inset 4px 0 0 #4cbb6e, inset -4px 0 0 #4cbb6e !important; color: #7dd99a !important; }
+        .tag-rare      { box-shadow: inset 4px 0 0 #0088ff, inset -4px 0 0 #0088ff !important; color: #4da6ff !important; }
+        .tag-epic      { box-shadow: inset 4px 0 0 #bc13fe, inset -4px 0 0 #bc13fe !important; color: #d67aff !important; }
+        .tag-legendary { box-shadow: inset 4px 0 0 #ffaa00, inset -4px 0 0 #ffaa00 !important; color: #ffcc00 !important; }
+        .tag-mythic    { box-shadow: inset 4px 0 0 #ff0055, inset -4px 0 0 #ff0055 !important; color: #ff6688 !important; }
+        .tag-primordial{ box-shadow: inset 4px 0 0 #ffffff, inset -4px 0 0 #ffffff !important; color: #ffffff !important; }
+
+        .stat-issued { color: var(--theme-color) !important; font-weight: bold !important; text-align: center !important; }
+        .stat-burned  { color: #ff6644 !important; font-weight: bold !important; text-align: center !important; }
+        .stat-code    { color: #ffd700 !important; font-weight: bold !important; text-align: center !important; letter-spacing: 2px !important; }
+        .stat-price  { color: #ffd700 !important; font-weight: bold !important; text-align: center !important; }
+        .scan-trigger { cursor: pointer; color: #000 !important; background: var(--theme-color); padding: 2px 8px; font-size: 0.8em; display: inline-block; animation: pulse 2s infinite; }
+        .buy-cell { display: flex; gap: 5px; align-items: center; justify-content: center; flex-wrap: wrap; }
+        .mkt-logo { width: 18px; height: 18px; object-fit: contain; opacity: 0.55; border-radius: 3px; transition: opacity 0.2s, transform 0.2s; vertical-align: middle; }
+        .mkt-logo:hover { opacity: 1; transform: scale(1.25); }
+        .market-btn-logo { width: 16px; height: 16px; object-fit: contain; vertical-align: middle; margin-right: 4px; border-radius: 2px; }
+        .nfthive-logo { height: 12px; width: auto; }
+        .f12-logo { height: 14px; width: auto; }
+        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; text-shadow: 0 0 5px #fff; } 100% { opacity: 0.8; } }
+        .c-low, .c-last, .c-sugg { min-width: 80px; text-align: center; color: #555; font-family: monospace; font-size: 0.85em; }
+
+        /* --- SECTION HEADERS --- */
+        .section-header {
+            color: var(--theme-color); font-weight: bold; text-transform: uppercase;
+            letter-spacing: 3px; padding: 12px 20px; margin: 30px 0 0 0;
+            border-left: 4px solid var(--theme-color); background: var(--theme-dark);
+            font-size: 1.1em; font-family: 'Courier New', monospace; text-align: center;
+        }
+        .family-header {
+            color: #888; font-size: 0.8em; letter-spacing: 4px; text-transform: uppercase;
+            padding: 8px 20px 4px 20px; font-family: 'Courier New', monospace;
+            border-left: 2px solid #333; margin: 10px 0 0 0;
+        }
+
+        /* VIEW LINK */
+        .view-link { color: var(--theme-color) !important; text-decoration: none !important; font-size: 0.85em; font-weight: bold; padding: 2px 6px; border: 1px solid var(--theme-color); transition: all 0.2s; }
+        .view-link:hover { background: var(--theme-color); color: #000 !important; }
+
+        .softmerge-inner { position: static !important; width: auto !important; max-width: 100%; white-space: normal !important; display: inline-block; left: auto !important; }
+        .freezebar-cell, .row-header-wrapper, .row-headers-background, .column-headers-background { display: none !important; }
+
+        /* FOOTER */
+        .codex-footer { grid-column: 2; text-align: center; padding: 40px 20px 60px 20px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .footer-text { color: var(--theme-color); font-family: 'Courier New', monospace; font-weight: bold; letter-spacing: 2px; font-size: 0.85em; text-transform: uppercase; }
+
+        @media screen and (max-width: 800px) {
+            .global-header { position: static; }
+            #preview-frame, #market-frame { display: none; }
+            #preview-frame.mobile-active { display: flex !important; left: 50%; transform: translateX(-50%); width: 90%; top: 120px; z-index: 3000; pointer-events: auto; }
+            #market-frame.mobile-active { display: block !important; left: 50%; transform: translateX(-50%); width: 90%; top: 540px; z-index: 3000; }
+            .close-btn { display: block; }
+            .top-bar { flex-direction: column; align-items: stretch; position: static; }
+            #searchInput { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="mobile-backdrop" onclick="closeDeckMobile()"></div>
+<div id="cursor-glow"></div>
+<div id="deck-toggle-tab" onclick="toggleDeck()">&#10094;</div>
+
+<div id="preview-frame">
+    <div class="close-btn" onclick="closeDeckMobile()">[ X CLOSE ]</div>
+    <div id="preview-status">AWAITING TARGET</div>
+    <img id="preview-img" src="" alt="PREVIEW">
+    <div id="preview-label">
+        <span id="label-name" style="display:block;">TAP TO SCAN</span>
+        <span id="label-id" style="font-size:0.7em; color:#666;"></span>
+    </div>
+    <div id="preview-desc" style="font-size:0.75em; font-family:monospace; padding:6px 10px; max-height:160px; overflow-y:auto; color:#888; text-align:left; width:90%; box-sizing:border-box; border-top:1px dashed #222; margin-top:4px;"></div>
+</div>
+
+<div id="market-frame">
+    <div id="intel-header">MARKET INTEL</div>
+    <div class="intel-row"><span class="intel-label">LOWEST PRICE:</span><span id="intel-floor" class="intel-val">---</span></div>
+    <div class="intel-row"><span class="intel-label">LAST SOLD:</span><span id="intel-last" class="intel-val">---</span></div>
+    <div class="intel-row"><span class="intel-label">SUGGESTED:</span><span id="intel-sugg" class="intel-val">---</span></div>
+    <div class="market-links">
+        <a id="lnk-atomic" target="_blank" class="market-link-btn"><img src="atomicfavicon.ico" class="market-btn-logo" alt="">ATOMIC</a>
+        <a id="lnk-nefty" target="_blank" class="market-link-btn"><img src="https://resizer2.neftyblocks.com/?ipfs=https%3A%2F%2Fraw.githubusercontent.com%2Feoscafe%2Feos-airdrops%2Fmaster%2Flogos%2FNEFTY_296.png&width=100" class="market-btn-logo" alt="">NEFTY</a>
+        <a id="lnk-hive" target="_blank" class="market-link-btn"><img src="https://nfthive.io/favicon.ico" class="market-btn-logo" alt="">HIVE</a>
+        <a id="lnk-f12" target="_blank" class="market-link-btn"><img src="F12key_logoV2.png" class="market-btn-logo" alt="">F12 KEY</a>
+    </div>
+</div>
+
+<header class="global-header">
+    <div class="logo-section"><h1>NARON CODEX</h1></div>
+    <nav class="nav-links">
+        <a href="index.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">HUB</a>
+        <a href="crew.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">CREW</a>
+        <a href="arms.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">ARMS</a>
+        <a href="tools.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">TOOLS</a>
+        <a href="faces.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">FACES</a>
+        <a href="pd.worlds.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD UNITS</a>
+        <a href="pd.materials.html" class="nav-btn active"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD MATS</a>
+    </nav>
+    <div class="wallet-section">
+        <button id="wallet-btn" class="cyber-btn" style="border-color:#5badff; color:#5badff;" onclick="toggleWallet()">[ WAX LOGIN ]</button>
+    </div>
+</header>
+
+<div class="top-bar">
+    <div style="flex-grow:1;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <a href="index.html" class="nav-btn">BACK</a>
+            <button id="reset-btn" class="cyber-btn" onclick="resetSort()">[ RESET ]</button>
+            <button class="cyber-btn" onclick="adjustFont(1)">A+</button>
+            <button class="cyber-btn" onclick="adjustFont(-1)">A-</button>
+            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="SEARCH...">
+            <button id="scan-all-btn" class="cyber-btn" onclick="scanAll()">[ SCAN ALL ]</button>
+        </div>
+        <div id="scan-status-bar" style="display:none; margin-top:6px;">
+            <div style="color:#555;font-size:0.8em;letter-spacing:1px;" id="scan-status-text">STANDBY</div>
+            <div style="background:#111;height:4px;width:200px;margin-top:3px;"><div id="scan-bar" style="background:var(--theme-color);height:4px;width:0%;transition:width 0.3s;"></div></div>
+        </div>
+        <div id="theme-panel">
+            <div class="theme-opt" style="background:#ff4d4d;" onclick="setTheme('#ff4d4d','#1a0505')" title="Crimson Red"></div>
+            <div class="theme-opt" style="background:#ff9900;" onclick="setTheme('#ff9900','#1a1005')" title="Safety Orange"></div>
+            <div class="theme-opt" style="background:#ffd700;" onclick="setTheme('#ffd700','#1a1a05')" title="Gold"></div>
+            <div class="theme-opt" style="background:#00ff41;" onclick="setTheme('#00ff41','#051a05')" title="Matrix Green"></div>
+            <div class="theme-opt" style="background:#5badff;" onclick="setTheme('#5badff','#050d18')" title="PD Blue"></div>
+            <div class="theme-opt" style="background:#bf00ff;" onclick="setTheme('#bf00ff','#12051a')" title="Neon Purple"></div>
+            <div id="secret-rainbow-dot" class="theme-opt" style="display:none;" onclick="setTheme('rainbow','#050510')" title="RGB MODE"></div>
+        </div>
+    </div>
+    <div style="text-align:right;">
+        <h1>PD MATERIALS</h1>
+        <div id="status" style="font-size:0.7em; color:#666; margin-top:5px;">STANDBY</div>
+    </div>
+</div>
+
+<div style="max-width:1400px; margin:6px auto 0 auto; padding:0 20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <a href="https://www.planetarydefense.io/" target="_blank" style="display:flex;align-items:center;gap:6px;text-decoration:none;background:rgba(0,0,0,0.5);border:1px solid #1a3a5c;border-radius:6px;padding:5px 12px;color:#5badff;font-family:monospace;font-size:0.8em;font-weight:bold;transition:all 0.2s;" onmouseover="this.style.borderColor='#5badff'" onmouseout="this.style.borderColor='#1a3a5c'"><img src="https://www.google.com/s2/favicons?domain=planetarydefense.io&sz=128" style="width:14px;height:14px;border-radius:2px;"> PLANETARYDEFENSE.IO</a>
+    <a href="https://discord.com/invite/rhHWe6hDNP" target="_blank" style="display:flex;align-items:center;gap:6px;text-decoration:none;background:rgba(0,0,0,0.5);border:1px solid #1a3a5c;border-radius:6px;padding:5px 12px;color:#5865F2;font-family:monospace;font-size:0.8em;font-weight:bold;transition:all 0.2s;" onmouseover="this.style.borderColor='#5865F2'" onmouseout="this.style.borderColor='#1a3a5c'"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" style="width:14px;height:14px;border-radius:2px;"> PD DISCORD</a>
+</div>
+
+<!-- ═══════════════ CRAFTING MATERIALS ═══════════════════════════════════════ -->
+
+<div class="section-header">// CRAFTING MATERIALS</div>
+
+<!-- ALL CRAFTING MATERIALS -->
+<div class="ritz grid-container" dir="ltr">
+<table id="table-crafting" class="waffle" cellspacing="0" cellpadding="0">
+<thead><tr><th class="column-headers-background"></th></tr></thead>
+<tbody>
+<tr><td class="live-header">CODE</td><td class="live-header">IMAGE</td><td class="live-header">NAME</td><td class="live-header">RARITY</td><td class="live-header">TYPE</td><td class="live-header">VIEW</td><td class="live-header">LOWEST PRICE</td><td class="live-header">LAST SOLD</td><td class="live-header">SUGGESTED</td><td class="live-header">SCAN</td></tr>
+<tr data-id="875318" data-desc="Raw Plasmo-Fibers are an unrefined, plasma-infused filament with a complex, interwoven structure. Their unique composition gives them a dynamic, ever-shifting glow and an almost weightless feel."><td class="stat-code">A1</td><td class="img-cell"><img src="https://i.imgur.com/tuYOBXw.png" loading="lazy"></td><td>Raw Plasmo-Fibers</td><td>Common</td><td>Plasmo-Fiber</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/raw-plasmo-fibers_875318" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875318')">SCAN</span></td></tr>
+<tr data-id="875319" data-desc="Reinforced Plasmo-Fibers are a dense, interlaced material infused with stabilized plasma currents. Their structure shimmers with a deep, pulsating glow, radiating an intense yet controlled energy."><td class="stat-code">A2</td><td class="img-cell"><img src="https://i.imgur.com/SP2QLtT.png" loading="lazy"></td><td>Reinforced Plasmo-Fibers</td><td>Uncommon</td><td>Plasmo-Fiber</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/reinforced-plasmo-fibers_875319" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875319')">SCAN</span></td></tr>
+<tr data-id="875320" data-desc="Exalted Plasmo-Fibers are a rare, high-energy weave that hums with a vibrant, otherworldly radiance. Their intricate lattice seems to pulse with raw power, shifting in color as if alive."><td class="stat-code">A3</td><td class="img-cell"><img src="https://i.imgur.com/EmTp6qi.png" loading="lazy"></td><td>Exalted Plasmo-Fibers</td><td>Rare</td><td>Plasmo-Fiber</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/exalted-plasmo-fibers_875320" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875320')">SCAN</span></td></tr>
+<tr data-id="875321" data-desc="Primary Nano-Metal is a meticulously structured alloy composed of self-arranging nanoscopic lattices. Its surface shimmers with a subtle metallic sheen, adapting seamlessly to shifts in pressure and temperature."><td class="stat-code">B1</td><td class="img-cell"><img src="https://i.imgur.com/ckEUexd.png" loading="lazy"></td><td>Primary Nano-Metal</td><td>Common</td><td>Nano-Metal</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/primary-nano-metal_875321" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875321')">SCAN</span></td></tr>
+<tr data-id="875322" data-desc="Stabilized Nano-Metal features a meticulously engineered, honeycomb-like structure at the microscopic level. Its surface scatters light in complex patterns, giving it a distinct, matte metallic sheen with a subtle inner glow."><td class="stat-code">B2</td><td class="img-cell"><img src="https://i.imgur.com/Qs1i1YX.png" loading="lazy"></td><td>Stabilized Nano-Metal</td><td>Uncommon</td><td>Nano-Metal</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/stabilized-nano-metal_875322" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875322')">SCAN</span></td></tr>
+<tr data-id="875323" data-desc="Purified Nano-Metal is an advanced alloy with a perfectly harmonized nanostructure, eliminating impurities at the atomic level. Its surface displays a finely textured, almost organic pattern, subtly shifting under different lighting conditions."><td class="stat-code">B3</td><td class="img-cell"><img src="https://i.imgur.com/HZlGqlu.png" loading="lazy"></td><td>Purified Nano-Metal</td><td>Rare</td><td>Nano-Metal</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/purified-nano-metal_875323" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875323')">SCAN</span></td></tr>
+<tr data-id="875324" data-desc="Fragile Quantum Crystal is a delicately structured lattice that shimmers with an ethereal, ever-shifting glow. Its translucent form appears to flicker between states, as if caught between different realities."><td class="stat-code">C1</td><td class="img-cell"><img src="https://i.imgur.com/Pmb0miV.png" loading="lazy"></td><td>Fragile Quantum Crystal</td><td>Common</td><td>Quantum Crystal</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/fragile-quantum-crystal_875324" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875324')">SCAN</span></td></tr>
+<tr data-id="875325" data-desc="Enhanced Quantum Crystal is a stabilized yet dynamic lattice that radiates a soft, pulsating luminescence. Its structure subtly bends light around it, creating the illusion of shifting depth and dimension."><td class="stat-code">C2</td><td class="img-cell"><img src="https://i.imgur.com/JrC9haF.png" loading="lazy"></td><td>Enhanced Quantum Crystal</td><td>Uncommon</td><td>Quantum Crystal</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/enhanced-quantum-crystal_875325" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875325')">SCAN</span></td></tr>
+<tr data-id="875326" data-desc="Perfected Quantum Crystal is a flawlessly harmonized lattice that resonates with an almost imperceptible hum. Its surface refracts light in mesmerizing patterns, appearing both solid and intangible at the same time."><td class="stat-code">C3</td><td class="img-cell"><img src="https://i.imgur.com/K9Jth12.png" loading="lazy"></td><td>Perfected Quantum Crystal</td><td>Rare</td><td>Quantum Crystal</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/perfected-quantum-crystal_875326" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875326')">SCAN</span></td></tr>
+<tr data-id="875327" data-desc="Raw synthetic carbon is an unrefined composite of carbon chains, forming a dense, spherical matrix. Its dark, matte surface absorbs light."><td class="stat-code">D1</td><td class="img-cell"><img src="https://i.imgur.com/31PMUGa.png" loading="lazy"></td><td>Raw Synthetic Carbon</td><td>Common</td><td>Synthetic Carbon</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/raw-synthetic-carbon_875327" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875327')">SCAN</span></td></tr>
+<tr data-id="875328" data-desc="Modified Synthetic Carbon is an engineered material with enhanced structural properties, offering superior durability and thermal stability. Its unique composition results from advanced processing techniques that optimize its molecular arrangement."><td class="stat-code">D2</td><td class="img-cell"><img src="https://i.imgur.com/Ud8MNts.png" loading="lazy"></td><td>Modified Synthetic Carbon</td><td>Uncommon</td><td>Synthetic Carbon</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/modified-synthetic-carbon_875328" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875328')">SCAN</span></td></tr>
+<tr data-id="875329" data-desc="Reinforced Synthetic Carbon is a high-strength material engineered with optimized bonding structures for enhanced mechanical performance. Its advanced composition improves resistance to stress, heat, and environmental factors."><td class="stat-code">D3</td><td class="img-cell"><img src="https://i.imgur.com/Ep3vRX1.png" loading="lazy"></td><td>Reinforced Synthetic Carbon</td><td>Rare</td><td>Synthetic Carbon</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/reinforced-synthetic-carbon_875329" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875329')">SCAN</span></td></tr>
+<tr data-id="875330" data-desc="Flexible Oreon is a golden-hued semi-liquid metal with an adaptive molecular structure, allowing it to shift between fluid and solid states. Its unique composition gives it a smooth, metallic luster and exceptional malleability."><td class="stat-code">E1</td><td class="img-cell"><img src="https://i.imgur.com/D7Hh258.png" loading="lazy"></td><td>Flexible Oreon</td><td>Common</td><td>Oreon</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/flexible-oreon_875330" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875330')">SCAN</span></td></tr>
+<tr data-id="875331" data-desc="Condensed Oreon is a dense, golden metal with a tightly packed atomic structure, giving it remarkable solidity and resilience. Its lustrous surface and high mass-to-volume ratio make it distinct from other metallic compounds."><td class="stat-code">E2</td><td class="img-cell"><img src="https://i.imgur.com/ID0Kncr.png" loading="lazy"></td><td>Condensed Oreon</td><td>Uncommon</td><td>Oreon</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/condensed-oreon_875331" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875331')">SCAN</span></td></tr>
+<tr data-id="875332" data-desc="Structured Oreon is a golden metal with a precisely arranged crystalline framework, enhancing its stability and strength. Its organized atomic composition gives it a distinctive balance between rigidity and adaptability."><td class="stat-code">E3</td><td class="img-cell"><img src="https://i.imgur.com/bB9fSBX.png" loading="lazy"></td><td>Structured Oreon</td><td>Rare</td><td>Oreon</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/structured-oreon_875332" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875332')">SCAN</span></td></tr>
+<tr data-id="875333" data-desc="Concentrated Neon Core is a cubic material with a dense, luminous structure, radiating a subtle neon glow. Its compact atomic arrangement gives it a strikingly uniform shape and exceptional stability."><td class="stat-code">F1</td><td class="img-cell"><img src="https://i.imgur.com/NpTvUGx.png" loading="lazy"></td><td>Concentrated Neon Core</td><td>Epic</td><td>Neon Core</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/concentrated-neon-core_875333" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875333')">SCAN</span></td></tr>
+<tr data-id="875334" data-desc="Ultra-Pure Neon Core is a spherical crystalline material with an immaculate atomic structure, emitting a vibrant, ethereal glow. Its chaotic composition enhances its refractive brilliance."><td class="stat-code">F2</td><td class="img-cell"><img src="https://i.imgur.com/AnYeEsE.png" loading="lazy"></td><td>Ultra-Pure Neon Core</td><td>Legendary</td><td>Neon Core</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/ultra-pure-neon-core_875334" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875334')">SCAN</span></td></tr>
+<tr data-id="875335" data-desc="Infinite Neon Core is a radiant material with a seemingly boundless internal luminosity, exhibiting a dynamic interplay of light and energy. Its structure gives it a glow that appears to extend beyond its physical boundaries."><td class="stat-code">F3</td><td class="img-cell"><img src="https://i.imgur.com/4gxqdHH.png" loading="lazy"></td><td>Infinite Neon Core</td><td>Mythic</td><td>Neon Core</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/infinite-neon-core_875335" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875335')">SCAN</span></td></tr>
+<tr data-id="875336" data-desc="Compressed Etherium Liquid is a dense, translucent substance with a shifting, fluid-like consistency despite its high compression. Its surface shimmers with an ever-changing interplay of light, giving it an almost ethereal appearance."><td class="stat-code">G1</td><td class="img-cell"><img src="https://i.imgur.com/NkmviMh.png" loading="lazy"></td><td>Compressed Etherium Liquid</td><td>Epic</td><td>Etherium Liquid</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/compressed-etherium-liquid_875336" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875336')">SCAN</span></td></tr>
+<tr data-id="875337" data-desc="Purified Etherium Liquid is a crystal-clear, luminescent fluid with an impeccably refined molecular structure. Its smooth, ever-flowing form emits a soft glow, reflecting its unmatched purity."><td class="stat-code">G2</td><td class="img-cell"><img src="https://i.imgur.com/c4sa0BO.png" loading="lazy"></td><td>Purified Etherium Liquid</td><td>Legendary</td><td>Etherium Liquid</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/purified-etherium-liquid_875337" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875337')">SCAN</span></td></tr>
+<tr data-id="875338" data-desc="Absolute Etherium Liquid is a perfectly stabilized, radiant fluid with an unparalleled level of purity and cohesion. Its ethereal glow and seamless flow give it an almost surreal, otherworldly presence."><td class="stat-code">G3</td><td class="img-cell"><img src="https://i.imgur.com/YU7zSOk.png" loading="lazy"></td><td>Absolute Etherium Liquid</td><td>Mythic</td><td>Etherium Liquid</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/absolute-etherium-liquid_875338" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875338')">SCAN</span></td></tr>
+<tr data-id="875339" data-desc="Unstable Singularity is a dense, shifting mass that warps its surroundings with an unpredictable gravitational pull. Its ever-changing form flickers between states of matter, radiating an eerie, fluctuating energy."><td class="stat-code">H1</td><td class="img-cell"><img src="https://i.imgur.com/97YYqeg.png" loading="lazy"></td><td>Unstable Singularity</td><td>Epic</td><td>Singularity</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/unstable-singularity_875339" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875339')">SCAN</span></td></tr>
+<tr data-id="875340" data-desc="Concentrated Singularity is a densely compressed core of immense gravitational energy, appearing as a dark, shimmering void. Its compact form distorts light and matter around it, giving it an intense, almost infinite depth."><td class="stat-code">H2</td><td class="img-cell"><img src="https://i.imgur.com/esyiphd.png" loading="lazy"></td><td>Concentrated Singularity</td><td>Legendary</td><td>Singularity</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/concentrated-singularity_875340" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875340')">SCAN</span></td></tr>
+<tr data-id="875341" data-desc="Perfected Singularity is an impeccably stabilized gravitational core, appearing as a smooth, obsidian-like void with an unwavering presence. Its flawless structure bends light seamlessly around it, creating an illusion of infinite depth and absolute stillness."><td class="stat-code">H3</td><td class="img-cell"><img src="https://i.imgur.com/S6WwqMl.png" loading="lazy"></td><td>Perfected Singularity</td><td>Mythic</td><td>Singularity</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/perfected-singularity_875341" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875341')">SCAN</span></td></tr>
+<tr data-id="875342" data-desc="Radial Chromium Prism is a hexagonal metallic liquid prism with a highly reflective, chrome-like surface that radiates shifting spectral hues. Its structured form enhances its geometric symmetry, creating a striking interplay of light and depth."><td class="stat-code">I1</td><td class="img-cell"><img src="https://i.imgur.com/uE4mYjb.png" loading="lazy"></td><td>Radial Chromium Prism</td><td>Epic</td><td>Chromium Prism</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/radial-chromium-prism_875342" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875342')">SCAN</span></td></tr>
+<tr data-id="875343" data-desc="The Dimensional Chrome Prism is a metallic hexagon with a reflective surface that distorts light into fascinating multi-dimensional patterns. Its complex structure appears to move subtly, creating an illusion of depth beyond its physical form."><td class="stat-code">I2</td><td class="img-cell"><img src="https://i.imgur.com/72qrqOX.png" loading="lazy"></td><td>Dimensional Chromium Prism</td><td>Legendary</td><td>Chromium Prism</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/dimensional-chromium-prism_875343" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875343')">SCAN</span></td></tr>
+<tr data-id="875344" data-desc="The Eternal Chrome Prism is a refined metal with an unchanging, mirror-like surface that refracts light in infinite, changing patterns. Its impeccable structure gives it an almost timeless presence, as if suspended beyond the flow of time."><td class="stat-code">I3</td><td class="img-cell"><img src="https://i.imgur.com/LVg2hlk.png" loading="lazy"></td><td>Eternal Chromium Prism</td><td>Mythic</td><td>Chromium Prism</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/eternal-chromium-prism_875344" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875344')">SCAN</span></td></tr>
+<tr data-id="875345" data-desc="Volatile Antimatter is an unstable, high-energy substance that flickers between existence and annihilation, radiating a chaotic glow. Its ever-shifting form pulses with raw, unpredictable energy, distorting the space around it."><td class="stat-code">J1</td><td class="img-cell"><img src="https://i.imgur.com/U89sfe2.png" loading="lazy"></td><td>Volatile Antimatter</td><td>Epic</td><td>Antimatter</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/volatile-antimatter_875345" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875345')">SCAN</span></td></tr>
+<tr data-id="875346" data-desc="Concentrated Antimatter is a dense, highly compressed core of pure energy, suspended in a delicate balance between creation and annihilation. Its intense, fluctuating glow distorts its surroundings, radiating an overwhelming presence."><td class="stat-code">J2</td><td class="img-cell"><img src="https://i.imgur.com/qkVILRI.png" loading="lazy"></td><td>Concentrated Antimatter</td><td>Legendary</td><td>Antimatter</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/concentrated-antimatter_875346" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875346')">SCAN</span></td></tr>
+<tr data-id="875347" data-desc="Exalted Antimatter is a perfectly spherical manifestation of pure energy, pulsating with a controlled yet immense power. Its flawless form radiates an ethereal glow, subtly bending space around its dark core."><td class="stat-code">J3</td><td class="img-cell"><img src="https://i.imgur.com/RIj03nv.png" loading="lazy"></td><td>Exalted Antimatter</td><td>Mythic</td><td>Antimatter</td><td><a href="https://atomichub.io/explorer/template/wax-mainnet/planetdefnft/exalted-antimatter_875347" target="_blank" class="view-link">VIEW</a></td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this,'875347')">SCAN</span></td></tr>
+</tbody></table></div>
+
+
+<!-- FOOTER -->
+<div class="ritz grid-container" dir="ltr">
+    <div class="codex-footer">
+        <div class="footer-text">// THIS ARCHIVE WAS MADE POSSIBLE BY THE NARON UNION // ©@Spectral.Sky 2026 //</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:8px;">
+            <div style="flex:1;"></div>
+            <div style="display:flex; align-items:center; gap:10px; justify-content:center;">
+                <span style="color:#666; font-size:0.8em;">TIP JAR:</span>
+                <select id="tip-amount" class="cyber-btn" style="background:#111; color:#ffaa00; border-color:#ffaa00; cursor:pointer; outline:none; padding:9px 10px;">
+                    <option value="1.0000 TLM">1 TLM</option>
+                    <option value="5.0000 TLM">5 TLM</option>
+                    <option value="10.0000 TLM" selected>10 TLM</option>
+                    <option value="50.0000 TLM">50 TLM</option>
+                    <option value="100.0000 TLM">100 TLM</option>
+                </select>
+                <button class="cyber-btn" style="border-color:#ffaa00; color:#ffaa00;" onclick="sendTip()">[ TRANSMIT TIP ]</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; justify-content:flex-end; flex:1;">
+                <label style="color:var(--theme-color); font-family:'Courier New'; font-size:0.8em; letter-spacing:1px; white-space:nowrap;">API NODE:</label>
+                <select id="endpointSelect" class="cyber-btn" onchange="setEndpoint(this.value)" style="background:#111; color:var(--theme-color); border-color:var(--theme-color); cursor:pointer; outline:none; padding:9px 10px;">
+                    <option value="https://wax.api.atomicassets.io/atomicmarket/v2/sales">Blacklusion</option>
+                    <option value="https://aa.wax.blacklusion.io/atomicmarket/v2/sales">AtomicAssets</option>
+                </select>
+            </div>
+        </div>
+        <div class="footer-text" style="font-size:0.7em; color:#333;">// PD MATERIALS DATABASE — NARON CODEX //</div>
+    </div>
+</div>
+
+<script>
+    // ─── CURSOR ───────────────────────────────────────────────────────────────
+    document.addEventListener("mousemove", e => {
+        const g = document.getElementById("cursor-glow");
+        if(g) { g.style.left = e.clientX + "px"; g.style.top = e.clientY + "px"; }
+    });
+    document.addEventListener("click", e => {
+        const el = document.createElement("div"); el.className = "click-effect";
+        el.style.left = e.clientX + "px"; el.style.top = e.clientY + "px";
+        document.body.appendChild(el); setTimeout(() => el.remove(), 400);
+    });
+
+    // ─── CONSTANTS ────────────────────────────────────────────────────────────
+    const SALES_ENDPOINTS = [
+        { label: "Blacklusion", url: "https://wax.api.atomicassets.io/atomicmarket/v2/sales" },
+        { label: "AtomicAssets", url: "https://aa.wax.blacklusion.io/atomicmarket/v2/sales" }
+    ];
+    let API_SALES = SALES_ENDPOINTS[0].url;
+    const API_HISTORY = "https://wax.api.atomicassets.io/atomicmarket/v2/sales";
+    const BASE_URLS = {
+        atomic: "https://wax.atomichub.io/market?collection_name=planetdefnft&template_id=",
+        nefty:  "https://neftyblocks.com/marketplace/listing?collection_name=planetdefnft&order=asc&page=1&sort=price&template_id=",
+        hive:   "https://nfthive.io/market?collection=planetdefnft&order=asc&sort=price&template_id=",
+        f12:    "https://f12key.eu/market?collection_name=planetdefnft&order=desc&sort=created&symbol=WAX&template_id="
+    };
+
+    function buildBuyCell(id) {
+        return `<div class="buy-cell"><a href="https://f12key.eu/market?collection_name=planetdefnft&order=desc&sort=created&symbol=WAX&template_id=${id}" target="_blank" title="F12Key — Limited Time Event"><img src="F12key_logoV2.png" class="mkt-logo f12-logo" alt="F12Key"></a></div>`;
+    }
+
+    const rarityOrder = { common:0, uncommon:1, rare:2, epic:3, legendary:4, mythic:5, primordial:6 };
+    let sortDirection = {};
+    let cardData = {};
+    let allDataRows = [];
+    let isDeckOpen = true;
+    let unlockedColors = new Set();
+    let rainbowInterval = null;
+
+    // ─── INIT ─────────────────────────────────────────────────────────────────
+    window.addEventListener("DOMContentLoaded", () => {
+        const sc = localStorage.getItem("naron_theme_color");
+        const sd = localStorage.getItem("naron_theme_dark");
+        if(sc && sd) setTheme(sc, sd);
+        const savedEndpoint = localStorage.getItem("naron_api_endpoint");
+        if(savedEndpoint) {
+            API_SALES = savedEndpoint;
+            const sel = document.getElementById("endpointSelect");
+            if(sel) sel.value = savedEndpoint;
+        }
+        if(localStorage.getItem("naron_magic_unlocked") === "true") {
+            const dot = document.getElementById("secret-rainbow-dot");
+            if(dot) dot.style.display = "block";
+        }
+
+        // Process every table
+        document.querySelectorAll("table.waffle").forEach(table => {
+            processTable(table);
+            table.classList.add("system-ready");
+        });
+
+        document.getElementById("status").innerText = `READY: ${allDataRows.length} MATERIALS`;
+        checkWalletState();
+    });
+
+    function processTable(table) {
+        const rows = Array.from(table.querySelectorAll("tr[data-id]"));
+        const headerTr = table.querySelector("tbody tr:not([data-id])");
+
+        // Make header cells sortable
+        if(headerTr) {
+            Array.from(headerTr.querySelectorAll("td")).forEach((th, i) => {
+                th.onclick = () => fastSortTable(table, i);
+            });
+        }
+
+        rows.forEach(row => {
+            const id = row.getAttribute("data-id");
+            const cells = Array.from(row.querySelectorAll("td"));
+            if(!cells.length) return;
+
+            // img-cell: proxy IPFS images
+            const imgCell = cells[1];
+            let imgSrc = "";
+            const existingImg = imgCell.querySelector("img");
+            if(existingImg) {
+                imgSrc = existingImg.getAttribute("src") || "";
+                if(imgSrc.includes("ipfs.io/ipfs/")) {
+                    const safeUrl = encodeURIComponent(imgSrc.replace("https://ipfs.io/ipfs/","ipfs.io/ipfs/"));
+                    const proxied = `https://wsrv.nl/?url=${safeUrl}&w=40&h=60&output=webp&fit=cover`;
+                    existingImg.setAttribute("data-hires", imgSrc);
+                    existingImg.src = proxied;
+                    existingImg.onerror = function(){ this.onerror=null; this.src=this.getAttribute("data-hires"); };
+                }
+                existingImg.style.height = "52px"; existingImg.style.width = "auto";
+                existingImg.style.display = "block"; existingImg.style.margin = "0 auto";
+            }
+            imgCell.style.width = "60px"; imgCell.style.minWidth = "60px";
+            imgCell.style.padding = "0"; imgCell.style.textAlign = "center";
+
+            // Store card data
+            const nameIdx = 2;
+            cardData[id] = { name: cells[nameIdx] ? cells[nameIdx].textContent.trim() : id, desc: row.getAttribute("data-desc") || "" };
+
+            // Apply tag/stat classes
+            cells.forEach((cell, idx) => {
+                const text = cell.textContent.trim().toLowerCase();
+                // Rarity tags
+                if(text === "common")     { cell.className += " tag-common"; }
+                else if(text === "uncommon")  { cell.className += " tag-uncommon"; }
+                else if(text === "rare")      { cell.className += " tag-rare"; }
+                else if(text === "epic")      { cell.className += " tag-epic"; }
+                else if(text === "legendary") { cell.className += " tag-legendary"; }
+                else if(text === "mythic")    { cell.className += " tag-mythic"; }
+                else if(text === "primordial"){ cell.className += " tag-primordial"; }
+                // Column-based stat coloring
+                else if(headerTr) {
+                    const hCells = Array.from(headerTr.querySelectorAll("td"));
+                    const hTxt = hCells[idx] ? hCells[idx].textContent.toLowerCase() : "";
+                    if(hTxt === "issued")   { cell.className += " stat-issued"; }
+                    else if(hTxt === "burned") { cell.className += " stat-burned"; }
+                }
+                cell.style.backgroundColor = "transparent";
+                if(!cell.className.includes("tag-") && !cell.className.includes("stat-")) {
+                    cell.style.color = "#d0d0d0";
+                }
+            });
+
+            // Add TEMPLATE ID td at start
+            const idTd = document.createElement("td");
+            idTd.textContent = id;
+            idTd.style.color = "#555";
+            idTd.style.fontSize = "0.75em";
+            idTd.style.fontFamily = "monospace";
+            row.insertBefore(idTd, row.firstChild);
+
+            // Remove VIEW td (cross-browser compatible)
+            const viewTd = Array.from(row.querySelectorAll("td")).find(td => td.querySelector("a.view-link"));
+            if(viewTd) viewTd.remove();
+
+            // Transform SCAN td → BUY market logos
+            const scanTd = row.querySelector("td:last-child");
+            if(scanTd && scanTd.querySelector(".scan-trigger")) {
+                scanTd.innerHTML = buildBuyCell(id);
+                scanTd.className = "";
+            }
+
+            // Click handler
+            row.style.cursor = "pointer";
+            row.addEventListener("click", (e) => {
+                if(e.target.closest("a")) return;
+                e.stopPropagation();
+                showPreview(id, imgSrc);
+                updateMarketLinks(id);
+                scanRow(null, id);
+                if(window.innerWidth <= 800) {
+                    document.getElementById("preview-frame").classList.add("mobile-active");
+                    document.getElementById("market-frame").classList.add("mobile-active");
+                    document.getElementById("mobile-backdrop").classList.add("active");
+                } else {
+                    document.getElementById("market-frame").style.display = "block";
+                }
+            });
+            row.addEventListener("mouseenter", () => {
+                if(window.innerWidth <= 800) return;
+                if(window.deckHoverTimer) clearTimeout(window.deckHoverTimer);
+                window.deckHoverTimer = setTimeout(() => { if(isDeckOpen) showPreview(id, imgSrc); }, 150);
+            }, true);
+
+            allDataRows.push({ id, element: row, imgSrc });
+        });
+
+        // Transform header row
+        if(headerTr) {
+            const hCells = Array.from(headerTr.querySelectorAll("td"));
+            // Remove VIEW header
+            const viewHdr = hCells.find(c => c.textContent.trim() === "VIEW");
+            if(viewHdr) viewHdr.remove();
+            // Rename SCAN → BUY
+            const scanHdr = Array.from(headerTr.querySelectorAll("td")).find(c => c.textContent.trim() === "SCAN");
+            if(scanHdr) scanHdr.textContent = "BUY";
+            // Add TEMPLATE ID header at start
+            const idTh = document.createElement("td");
+            idTh.className = "live-header";
+            idTh.textContent = "TEMPLATE ID";
+            headerTr.insertBefore(idTh, headerTr.firstChild);
+            // Re-bind sort onclick for all headers since indices changed
+            Array.from(headerTr.querySelectorAll("td")).forEach((th, i) => {
+                th.onclick = () => fastSortTable(table, i);
+            });
+        }
+    }
+
+    // ─── SORT ─────────────────────────────────────────────────────────────────
+    function fastSortTable(table, colIndex) {
+        const tbody = table.querySelector("tbody");
+        if(!tbody) return;
+        const key = (table.id || "t") + "_" + colIndex;
+        let dir = sortDirection[key] === "asc" ? "desc" : "asc";
+        sortDirection[key] = dir;
+        const rows = Array.from(tbody.querySelectorAll("tr[data-id]"));
+        rows.sort((a,b) => {
+            const cA = a.querySelectorAll("td")[colIndex];
+            const cB = b.querySelectorAll("td")[colIndex];
+            let vA = cA ? cA.textContent.replace(/,/g,"").trim() : "";
+            let vB = cB ? cB.textContent.replace(/,/g,"").trim() : "";
+            const kA = vA.toLowerCase(); const kB = vB.toLowerCase();
+            if(rarityOrder[kA] !== undefined || rarityOrder[kB] !== undefined) {
+                const wA = rarityOrder[kA] ?? 99; const wB = rarityOrder[kB] ?? 99;
+                return dir === "asc" ? wA - wB : wB - wA;
+            }
+            const nA = parseFloat(vA); const nB = parseFloat(vB);
+            if(!isNaN(nA) && !isNaN(nB)) return dir === "asc" ? nA - nB : nB - nA;
+            return dir === "asc" ? vA.localeCompare(vB) : vB.localeCompare(vA);
+        });
+        rows.forEach(r => tbody.appendChild(r));
+    }
+
+    function resetSort() {
+        sortDirection = {};
+        document.getElementById("searchInput").value = "";
+        filterTable();
+        document.getElementById("reset-btn").classList.remove("glow-alert");
+    }
+
+    // ─── FILTER ───────────────────────────────────────────────────────────────
+    function filterTable() {
+        const filter = document.getElementById("searchInput").value.toUpperCase();
+        const resetBtn = document.getElementById("reset-btn");
+        const PASS_1 = "SHADE", PASS_2 = "LEGEND";
+
+        if(filter === PASS_1 || filter === PASS_2) {
+            allDataRows.forEach(r => r.element.style.display = "none");
+            const tbody = document.querySelector("tbody");
+            let secretRow = document.getElementById("easter-egg-row");
+            if(!secretRow) { secretRow = document.createElement("tr"); secretRow.id = "easter-egg-row"; tbody.prepend(secretRow); }
+            secretRow.innerHTML = filter === PASS_1
+                ? `<td colspan="9" style="text-align:center;color:#00ff00;padding:40px;font-family:monospace;font-size:1.2em;font-weight:bold;letter-spacing:4px;background:#051a05;border:2px dashed #00ff00;cursor:pointer;" onclick="alert('ACCESS GRANTED: WELCOME, SHADE.\\n\\n[ INITIALIZING CREATOR PROTOCOLS... ]')">>> MAKER RECOGNIZED. CLICK TO INITIALIZE <<</td>`
+                : `<td colspan="9" style="text-align:center;color:#ffaa00;padding:40px;font-family:monospace;font-size:1.2em;font-weight:bold;letter-spacing:4px;background:#1a1005;border:2px dashed #ffaa00;cursor:pointer;" onclick="alert('LEGENDARY PROTOCOL ACTIVATED.\\n\\n[ DECRYPTING CLASSIFIED FEDERATION FILES... ]')">>> ALIEN LEGEND DETECTED. CLICK TO DECRYPT <<</td>`;
+            secretRow.style.display = "";
+            if(resetBtn) resetBtn.classList.add("glow-alert");
+            return;
+        }
+        const secretRow = document.getElementById("easter-egg-row");
+        if(secretRow) secretRow.style.display = "none";
+        if(resetBtn) resetBtn.classList.remove("glow-alert");
+
+        allDataRows.forEach(row => {
+            row.element.style.display = row.element.textContent.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+        });
+    }
+
+    // ─── PREVIEW ──────────────────────────────────────────────────────────────
+    function showPreview(id, imgSrc) {
+        const previewImg = document.getElementById("preview-img");
+        const nameLabel  = document.getElementById("label-name");
+        const idLabel    = document.getElementById("label-id");
+        const status     = document.getElementById("preview-status");
+        nameLabel.innerText = cardData[id] ? cardData[id].name : "UNKNOWN";
+        idLabel.innerText = "ID: " + id;
+        const descEl = document.getElementById("preview-desc");
+        if(descEl) descEl.textContent = (cardData[id] && cardData[id].desc) ? cardData[id].desc : "";
+        if(imgSrc) {
+            if(previewImg.getAttribute("data-current-src") !== imgSrc) {
+                previewImg.src = imgSrc; previewImg.setAttribute("data-current-src", imgSrc);
+            }
+            previewImg.style.display = "block"; status.style.display = "none";
+        } else {
+            status.innerText = "NO IMAGE LINKED"; status.style.display = "block"; previewImg.style.display = "none";
+        }
+    }
+
+    function updateMarketLinks(id) {
+        document.getElementById("lnk-atomic").href = BASE_URLS.atomic + id;
+        document.getElementById("lnk-nefty").href  = BASE_URLS.nefty  + id;
+        document.getElementById("lnk-hive").href   = BASE_URLS.hive   + id;
+        document.getElementById("lnk-f12").href    = BASE_URLS.f12    + id;
+    }
+
+    function toggleDeck() {
+        const frame = document.getElementById("preview-frame");
+        const mFrame = document.getElementById("market-frame");
+        const tab = document.getElementById("deck-toggle-tab");
+        isDeckOpen = !isDeckOpen;
+        document.body.classList.toggle("deck-open", isDeckOpen);
+        if(isDeckOpen) {
+            frame.classList.remove("minimized"); mFrame.classList.remove("minimized");
+            if(tab) { tab.classList.remove("minimized"); tab.innerHTML = "&#10094;"; }
+        } else {
+            frame.classList.add("minimized"); mFrame.classList.add("minimized");
+            if(tab) { tab.classList.add("minimized"); tab.innerHTML = "&#10095;"; }
+        }
+    }
+
+    function closeDeckMobile() {
+        document.getElementById("preview-frame").classList.remove("mobile-active");
+        document.getElementById("market-frame").classList.remove("mobile-active");
+        document.getElementById("mobile-backdrop").classList.remove("active");
+    }
+
+    // ─── MARKET ───────────────────────────────────────────────────────────────
+    async function fetchRowPrices(id, cLow, cLast, cSugg) {
+        const writeToCells = (cLow && cLast && cSugg);
+        const deckFloor = document.getElementById("intel-floor");
+        const deckLast  = document.getElementById("intel-last");
+        const deckSugg  = document.getElementById("intel-sugg");
+        const header    = document.getElementById("intel-header");
+        if(cardData[id]) header.innerText = `MARKET INTEL: ${cardData[id].name}`.toUpperCase();
+        deckFloor.innerText = "SCANNING..."; deckLast.innerText = "SCANNING..."; deckSugg.innerText = "---";
+        try {
+            const res = await fetch(`${API_SALES}?symbol=WAX&state=1&template_id=${id}&_ts=${Date.now()}`, { cache: "no-store" });
+            const data = await res.json();
+            if(data.success && data.data?.length > 0) {
+                const sale = data.data[0]; const price = sale.price;
+                const floorVal = parseInt(price.amount) / Math.pow(10, price.token_precision);
+                const floorStr = floorVal.toFixed(2) + " WAX";
+                if(writeToCells) { cLow.textContent = floorStr; }
+                deckFloor.innerText = floorStr;
+                try {
+                    if(sale.assets?.[0]?.prices?.[0]?.suggested_median) {
+                        const sv = parseInt(sale.assets[0].prices[0].suggested_median) / Math.pow(10, price.token_precision);
+                        const suggStr = sv.toFixed(2) + " WAX";
+                        if(writeToCells) { cSugg.textContent = suggStr; }
+                        deckSugg.innerText = suggStr;
+                    }
+                } catch(e) {}
+            } else {
+                if(writeToCells) { cLow.textContent = "NONE"; }
+                deckFloor.innerText = "NONE";
+            }
+        } catch(e) {
+            if(writeToCells) { cLow.textContent = "ERR"; }
+            deckFloor.innerText = "ERROR";
+        }
+        try {
+            const soldRes = await fetch(`${API_HISTORY}?state=3&template_id=${id}&page=1&limit=1&order=desc&sort=updated&symbol=WAX&_ts=${Date.now()}`, { cache: "no-store" });
+            const soldData = await soldRes.json();
+            if(soldData.data?.[0]?.price) {
+                const price = soldData.data[0].price;
+                const val = parseInt(price.amount) / Math.pow(10, price.token_precision);
+                const lastStr = val.toFixed(2) + " WAX";
+                if(writeToCells) { cLast.textContent = lastStr; }
+                deckLast.innerText = lastStr;
+            } else {
+                if(writeToCells) { cLast.textContent = "NONE"; }
+                deckLast.innerText = "NONE";
+            }
+        } catch(e) {
+            if(writeToCells) { cLast.textContent = "ERR"; }
+            deckLast.innerText = "ERR";
+        }
+    }
+
+    async function scanRow(btnEl, id) {
+        if(btnEl) { btnEl.textContent = '...'; btnEl.style.pointerEvents = 'none'; }
+        await fetchRowPrices(id, document.querySelector(`tr[data-id="${id}"] .c-low`), document.querySelector(`tr[data-id="${id}"] .c-last`), document.querySelector(`tr[data-id="${id}"] .c-sugg`));
+        if(btnEl) { btnEl.textContent = '✓'; setTimeout(() => { btnEl.textContent = 'SCAN'; btnEl.style.pointerEvents = ''; }, 2000); }
+    }
+
+    async function scanAll() {
+        const btn = document.getElementById('scan-all-btn');
+        const statusBar = document.getElementById('scan-status-bar');
+        const statusText = document.getElementById('scan-status-text');
+        const scanBar = document.getElementById('scan-bar');
+        btn.textContent = '[ SCANNING... ]';
+        btn.disabled = true;
+        if(statusBar) statusBar.style.display = 'block';
+        const rows = Array.from(document.querySelectorAll('tr[data-id]'));
+        for (let i = 0; i < rows.length; i++) {
+            const id = rows[i].getAttribute('data-id');
+            if(statusText) statusText.textContent = `SCANNING ${i+1}/${rows.length}: ${id}`;
+            if(scanBar) scanBar.style.width = `${Math.round(((i+1)/rows.length)*100)}%`;
+            await fetchRowPrices(id,
+                document.querySelector(`tr[data-id="${id}"] .c-low`),
+                document.querySelector(`tr[data-id="${id}"] .c-last`),
+                document.querySelector(`tr[data-id="${id}"] .c-sugg`)
+            );
+            if (i % 3 === 2) await new Promise(r => setTimeout(r, 400));
+        }
+        if(statusText) statusText.textContent = 'COMPLETE';
+        btn.textContent = '[ SCAN ALL ]';
+        btn.disabled = false;
+    }
+
+    // ─── THEME ────────────────────────────────────────────────────────────────
+    function setTheme(color, dark) {
+        localStorage.setItem("naron_theme_color", color);
+        localStorage.setItem("naron_theme_dark", dark);
+        const searchInput = document.getElementById("searchInput");
+        if(rainbowInterval) { clearInterval(rainbowInterval); rainbowInterval = null; }
+        if(color === "rainbow") {
+            if(searchInput) searchInput.placeholder = "ENTER PASSPHRASE...";
+            let hue = 0; document.documentElement.style.setProperty("--theme-dark", dark);
+            rainbowInterval = setInterval(() => {
+                hue = (hue + 2) % 360;
+                document.documentElement.style.setProperty("--theme-color", `hsl(${hue},100%,50%)`);
+                document.documentElement.style.setProperty("--theme-shadow", `0 0 15px hsla(${hue},100%,50%,0.4)`);
+                document.documentElement.style.setProperty("--theme-border", `1px solid hsla(${hue},100%,50%,0.3)`);
+                document.documentElement.style.setProperty("--theme-hover", `hsla(${hue},100%,50%,0.2)`);
+            }, 40);
+            return;
+        }
+        if(searchInput) searchInput.placeholder = "SEARCH...";
+        document.documentElement.style.setProperty("--theme-color", color);
+        document.documentElement.style.setProperty("--theme-dark", dark);
+        document.documentElement.style.setProperty("--theme-hover", hexToRgba(color, 0.2));
+        document.documentElement.style.setProperty("--theme-shadow", `0 0 15px ${hexToRgba(color, 0.4)}`);
+        document.documentElement.style.setProperty("--theme-border", `1px solid ${hexToRgba(color, 0.3)}`);
+        if(color !== "rainbow") { unlockedColors.add(color); }
+        if(unlockedColors.size >= 6) {
+            localStorage.setItem("naron_magic_unlocked","true");
+            const dot = document.getElementById("secret-rainbow-dot");
+            if(dot && dot.style.display === "none") {
+                dot.style.display = "block";
+                dot.animate([{transform:"scale(0)"},{transform:"scale(1.5)"},{transform:"scale(1)"}],{duration:400,easing:"cubic-bezier(0.175,0.885,0.32,1.275)"});
+            }
+        }
+    }
+
+    function hexToRgba(hex, alpha) {
+        const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+        return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function adjustFont(delta) {
+        const tds = document.querySelectorAll("td, th");
+        let cur = parseFloat(tds[0]?.style.fontSize) || 0.9;
+        cur = Math.min(1.5, Math.max(0.6, cur + delta * 0.1));
+        tds.forEach(c => c.style.setProperty("font-size", `${cur}em`, "important"));
+    }
+
+    // ─── WALLET ───────────────────────────────────────────────────────────────
+    const wax = new waxjs.WaxJS({ rpcEndpoint: "https://wax.greymass.com", userAccount: "", tryAutoLogin: false });
+
+    async function toggleWallet() {
+        const btn = document.getElementById("wallet-btn");
+        if(wax.userAccount || localStorage.getItem("naron_wallet")) {
+            wax.userAccount = ""; localStorage.removeItem("naron_wallet");
+            btn.innerText = "[ WAX LOGIN ]"; btn.style.color = "var(--theme-color)"; btn.style.borderColor = "var(--theme-color)";
+        } else {
+            try {
+                btn.innerText = "[ AUTHENTICATING... ]";
+                const account = await wax.login();
+                localStorage.setItem("naron_wallet", account);
+                updateWalletUI(account);
+            } catch(e) { btn.innerText = "[ WAX LOGIN ]"; }
+        }
+    }
+
+    function updateWalletUI(accountName) {
+        const btn = document.getElementById("wallet-btn");
+        if(btn) { btn.innerText = `[ DISCONNECT: ${accountName} ]`; btn.style.color = "#00ff00"; btn.style.borderColor = "#00ff00"; }
+    }
+
+    function checkWalletState() {
+        const saved = localStorage.getItem("naron_wallet");
+        if(saved) { wax.userAccount = saved; updateWalletUI(saved); }
+    }
+
+    async function sendTip() {
+        if(!wax.userAccount) {
+            try { await wax.login(); localStorage.setItem("naron_wallet", wax.userAccount); checkWalletState(); }
+            catch(e) { alert("Wallet connection required to transmit funds."); return; }
+        }
+        const tipAmount = document.getElementById("tip-amount").value;
+        try {
+            const result = await wax.api.transact({
+                actions: [{ account: "alien.worlds", name: "transfer",
+                    authorization: [{ actor: wax.userAccount, permission: "active" }],
+                    data: { from: wax.userAccount, to: "1x1ci.wam", quantity: tipAmount, memo: "Naron Codex Tip" }
+                }]
+            }, { blocksBehind: 3, expireSeconds: 30 });
+            alert(`TRANSMISSION SUCCESSFUL.\n\nThank you for supporting Naron Codex!\nTransaction ID: ${result.transaction_id}`);
+        } catch(e) { alert(`TRANSMISSION FAILED.\n\nError: ${e.message}`); }
+    }
+
+    function setEndpoint(url) {
+        API_SALES = url;
+        localStorage.setItem("naron_api_endpoint", url);
+    }
+</script>
+</body>
+</html>

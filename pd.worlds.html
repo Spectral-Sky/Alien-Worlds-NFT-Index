@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-48CCMEYHXG"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-48CCMEYHXG');
+    </script>
+    <title>PD Units // Live Database</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="NCico.png">
+    <script src="waxjs.js"></script>
+    <style>
+        /* --- FOUC PREVENTION --- */
+        table { opacity: 0; visibility: hidden; transition: opacity 0.6s ease-in; background-color: transparent !important; }
+        tr, td, th, tbody { background-color: transparent !important; }
+        table.system-ready { opacity: 1; visibility: visible; }
+
+        /* --- DYNAMIC THEME ENGINE (PD Blue) --- */
+        :root {
+            --theme-color: #5badff;
+            --theme-shadow: 0 0 15px rgba(91, 173, 255, 0.4);
+            --theme-dark: #050d18;
+            --theme-hover: #0a1a30;
+            --theme-border: 1px solid #1a3a5c;
+        }
+
+        /* --- SYSTEM CORE --- */
+        body {
+            cursor: crosshair; background-color: #050510;
+            background-image: radial-gradient(circle at 50% 50%, var(--theme-dark) 0%, #050510 80%);
+            color: #d0d0d0; font-family: 'Courier New', Courier, monospace;
+            margin: 0; padding: 0; overflow-x: auto;
+        }
+
+        ::-webkit-scrollbar { height: 12px; width: 12px; }
+        ::-webkit-scrollbar-track { background: #050510; }
+        ::-webkit-scrollbar-thumb { background: #333; border: 1px solid var(--theme-color); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--theme-color); }
+
+        /* --- STARFIELD --- */
+        body::before {
+            content: " "; position: fixed; top: 0; left: 0; width: 1px; height: 1px; z-index: -1;
+            box-shadow:
+                5vw 10vh #fff, 15vw 25vh rgba(255,255,255,0.5), 25vw 5vh #fff, 35vw 45vh rgba(255,255,255,0.7),
+                45vw 15vh #fff, 55vw 65vh #fff, 65vw 20vh rgba(255,255,255,0.4), 75vw 55vh #fff,
+                85vw 12vh rgba(255,255,255,0.8), 95vw 40vh #fff, 10vw 60vh #fff, 20vw 80vh rgba(255,255,255,0.6),
+                30vw 90vh #fff, 40vw 75vh rgba(255,255,255,0.5), 50vw 85vh #fff, 60vw 95vh rgba(255,255,255,0.7),
+                70vw 80vh #fff, 80vw 95vh rgba(255,255,255,0.4), 90vw 70vh #fff, 98vw 85vh #fff,
+                8vw 35vh rgba(255,255,255,0.5), 28vw 55vh #fff, 48vw 30vh rgba(255,255,255,0.8), 68vw 45vh #fff, 88vw 28vh #fff;
+            animation: starlight 4s ease-in-out infinite;
+        }
+        body::after {
+            content: " "; position: fixed; top: 0; left: 0; width: 2px; height: 2px; z-index: -1;
+            box-shadow:
+                10vw 18vh #fff, 22vw 35vh rgba(255,255,255,0.6), 38vw 10vh #fff, 52vw 48vh rgba(255,255,255,0.8),
+                62vw 25vh #fff, 78vw 15vh rgba(255,255,255,0.5), 88vw 55vh #fff, 15vw 70vh rgba(255,255,255,0.7),
+                25vw 85vh #fff, 45vw 68vh rgba(255,255,255,0.4), 55vw 80vh #fff, 75vw 88vh rgba(255,255,255,0.6),
+                85vw 75vh #fff, 5vw 90vh #fff, 95vw 15vh rgba(255,255,255,0.8);
+            animation: starlight-alt 5s ease-in-out infinite alternate;
+        }
+        @keyframes starlight { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.9; } }
+        @keyframes starlight-alt { 0%, 100% { opacity: 0.7; } 50% { opacity: 0.1; } }
+
+        a, button, th, td { cursor: crosshair !important; }
+
+        .click-effect {
+            position: fixed; pointer-events: none; width: 40px; height: 40px;
+            border: 2px solid var(--theme-color); border-radius: 50%;
+            transform: translate(-50%, -50%); animation: clickPulse 0.4s ease-out forwards;
+            z-index: 2147483647; box-shadow: 0 0 10px var(--theme-color);
+        }
+        @keyframes clickPulse { 0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; border-width: 5px; } 100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; border-width: 0px; } }
+
+        /* --- GLOBAL HEADER --- */
+        .global-header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #020a08; border-bottom: 2px solid var(--theme-color);
+            padding: 0 30px; box-sizing: border-box; width: 100%; height: 66px;
+            position: sticky; top: 0; z-index: 6000;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.9);
+        }
+        .logo-section h1 { color: var(--theme-color); margin: 0; font-size: 1.8em; letter-spacing: 4px; text-transform: uppercase; text-shadow: 0 0 10px var(--theme-color); }
+        .nav-links { display: flex; gap: 10px; }
+        .nav-links .nav-btn.active { color: #000; background: var(--theme-color); border-color: var(--theme-color); box-shadow: var(--theme-shadow); }
+
+        .wallet-btn { background: #111; color: var(--theme-color); border: 1px dashed var(--theme-color); padding: 10px 20px; font-family: monospace; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+        .wallet-btn:hover { background: var(--theme-hover); box-shadow: var(--theme-shadow); }
+        .wallet-btn.logged-in { background: var(--theme-color); color: #000; border: 1px solid #fff; }
+
+        /* --- UI BAR --- */
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 15px 30px; box-sizing: border-box; width: 100%;
+            background: #050510; border-bottom: 2px solid var(--theme-color);
+            position: sticky; top: 66px; z-index: 5000;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.8); margin-bottom: 0; flex-wrap: wrap; gap: 10px;
+        }
+        h1 { color: var(--theme-color); letter-spacing: 3px; margin: 0; text-transform: uppercase; font-size: 1.5em; line-height: 1; text-shadow: 0 0 10px var(--theme-color); transition: color 0.5s, text-shadow 0.5s; }
+        .nav-btn { background: transparent; color: #888; border: 1px solid transparent; padding: 8px 16px; font-family: monospace; font-weight: bold; font-size: 0.9em; text-decoration: none; cursor: pointer; transition: all 0.3s; text-transform: uppercase; }
+        .nav-btn:hover { color: var(--theme-color); border-color: var(--theme-color); }
+        .nav-btn.active { color: #000; background: var(--theme-color); border-color: var(--theme-color); box-shadow: var(--theme-shadow); }
+
+        #searchInput { background: #000; border: 1px solid var(--theme-color); color: var(--theme-color); padding: 10px; font-family: 'Courier New', monospace; font-weight: bold; width: 200px; text-transform: uppercase; }
+        .cyber-btn { background: var(--theme-dark); color: var(--theme-color); border: 2px solid var(--theme-color); padding: 10px 14px; font-family: 'Courier New', Courier, monospace; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s; }
+        .cyber-btn:hover { background: var(--theme-color); color: #000; box-shadow: var(--theme-shadow); }
+        .cyber-btn.active-section { background: var(--theme-color); color: #000; }
+        .cyber-btn.disabled-btn { opacity: 0.35; cursor: not-allowed !important; pointer-events: none; }
+
+        /* --- TERMINAL OVERRIDE GLOW --- */
+        .glow-alert { border-color: #00ff00 !important; color: #00ff00 !important; animation: terminalPulse 1s infinite; box-shadow: 0 0 15px #00ff00 !important; }
+        @keyframes terminalPulse { 0% { opacity: 0.6; } 50% { opacity: 1; text-shadow: 0 0 8px #00ff00; } 100% { opacity: 0.6; } }
+
+        /* --- CURSOR GLOW --- */
+        #cursor-glow {
+            position: fixed; top: -50px; left: -50px;
+            width: 70px; height: 70px; border-radius: 50%;
+            background: var(--theme-color); filter: blur(35px); opacity: 0.25;
+            pointer-events: none; z-index: 9999;
+            transform: translate(-50%, -50%); transition: background 0.2s;
+        }
+
+        /* --- THEME DOTS --- */
+        #theme-panel { display: flex; gap: 12px; margin-top: 15px; padding: 5px 0; }
+        .theme-opt { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #333; cursor: pointer; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; }
+        .theme-opt:hover { transform: scale(1.4); border-color: #fff; box-shadow: 0 0 10px var(--theme-color); }
+        #secret-rainbow-dot { background: linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #1de840, #1ddde8, #2b1de8, #dd00f3, #ff2400); background-size: 1800% 1800%; animation: rainbow-shift 3s ease infinite; border-color: #fff; }
+        @keyframes rainbow-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        /* --- PREVIEW DECK --- */
+        #preview-frame {
+            position: fixed; top: 240px; left: 20px; width: 280px; height: 400px;
+            right: auto !important; border: 2px solid var(--theme-color); background: var(--theme-dark);
+            box-shadow: var(--theme-shadow); z-index: 3000; box-sizing: border-box;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: transform 0.4s, opacity 0.4s; transform: translateX(0); opacity: 1; pointer-events: none;
+        }
+        #preview-frame.minimized { transform: translateX(-400px); opacity: 0; }
+        #preview-img { width: 90%; height: auto; max-height: 80%; object-fit: contain; border: 1px solid #333; display: none; }
+        #preview-status { color: var(--theme-color); font-size: 0.8em; letter-spacing: 1px; display: none; }
+        #preview-label { margin-top: 10px; color: #fff; font-weight: bold; font-size: 0.9em; text-align: center; letter-spacing: 1px; width: 90%; border-top: 1px dashed #333; padding-top: 5px; }
+
+        .price-highlight { color: var(--theme-color) !important; font-weight: bold !important; }
+
+        /* --- MARKET FRAME --- */
+        #market-frame {
+            position: fixed; top: 655px; left: 20px; width: 280px; height: auto;
+            border: 2px solid var(--theme-color); background: #000; box-sizing: border-box;
+            box-shadow: var(--theme-shadow); z-index: 3000; padding: 10px; display: none;
+            transition: transform 0.4s, opacity 0.4s; transform: translateX(0); opacity: 1;
+        }
+        #market-frame.minimized { transform: translateX(-400px); opacity: 0; }
+        .intel-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #333; padding: 6px 0; font-size: 0.9em; }
+        .intel-label { color: #888; }
+        .intel-val { color: var(--theme-color); font-weight: bold; font-family: monospace; }
+        #intel-header { color: var(--theme-color); font-weight: bold; border-bottom: 1px solid #333; margin-bottom: 10px; text-transform: uppercase; font-size: 0.85em; letter-spacing: 1px; }
+        .market-links { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; pointer-events: auto; }
+        .market-link-btn { background: #111; border: 1px solid var(--theme-color); color: var(--theme-color); text-align: center; font-size: 1.1em; padding: 10px 18px; cursor: pointer; text-decoration: none; display: block; transition: all 0.2s ease-in-out; font-family: monospace; text-transform: uppercase; }
+        .market-link-btn:hover { background: var(--theme-color); color: #000; box-shadow: var(--theme-shadow); }
+
+        /* --- SIDEBAR TOGGLE --- */
+        #deck-toggle-tab {
+            position: fixed; top: 240px; left: 298px; width: 30px; height: 400px;
+            box-sizing: border-box; background: var(--theme-dark); border: 2px solid var(--theme-color); border-left: none;
+            color: var(--theme-color); display: flex; align-items: center; justify-content: center;
+            font-size: 1.2em; font-weight: bold; cursor: pointer; z-index: 3005; pointer-events: auto !important;
+            transition: transform 0.4s ease-out, background-color 0.2s, color 0.2s;
+            border-radius: 0 8px 8px 0; box-shadow: 5px 0 15px rgba(0,0,0,0.8); user-select: none;
+        }
+        #deck-toggle-tab:hover { background: var(--theme-color); color: #000; }
+        #deck-toggle-tab.minimized { transform: translateX(-298px); }
+        @media screen and (max-width: 800px) { #deck-toggle-tab { display: none !important; } }
+
+        /* --- MOBILE MODAL --- */
+        #mobile-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2900; backdrop-filter: blur(3px); }
+        #mobile-backdrop.active { display: block; }
+        .close-btn { display: none; position: absolute; top: -15px; right: -15px; background: var(--theme-color); color: #000; pointer-events: auto; border: 1px solid #fff; padding: 5px 10px; font-weight: bold; cursor: pointer; z-index: 4000; box-shadow: var(--theme-shadow); }
+
+        /* --- GRID --- */
+        .grid-container {
+            background: transparent !important; border: none !important; box-shadow: none !important;
+            height: auto !important; overflow: visible !important; width: 100% !important; max-width: none !important;
+            padding: 0; display: grid; grid-template-columns: minmax(20px, 1fr) auto minmax(20px, 1fr);
+            transition: grid-template-columns 0.4s ease-out;
+        }
+        body.deck-open .grid-container { grid-template-columns: minmax(340px, 1fr) auto minmax(20px, 1fr); }
+        @media screen and (max-width: 800px) { .grid-container, body.deck-open .grid-container { grid-template-columns: minmax(10px, 1fr) auto minmax(10px, 1fr); } }
+
+        .waffle {
+            grid-column: 2; margin: 0; border-collapse: separate !important; border-spacing: 0 !important;
+            background: var(--theme-dark); width: auto !important; transition: background-color 0.5s;
+            border-bottom: 2px solid var(--theme-color) !important;
+        }
+
+        .live-header {
+            position: sticky !important; top: 190px !important; z-index: 1900 !important;
+            background-color: var(--theme-dark) !important; color: var(--theme-color) !important;
+            border-bottom: 2px solid var(--theme-color) !important; border-right: 2px solid var(--theme-color) !important;
+            font-weight: bold !important; text-align: center !important; box-shadow: 0 0 15px var(--theme-color) !important;
+            text-transform: uppercase !important; letter-spacing: 1px !important; padding: 8px !important;
+        }
+        .live-header:hover { z-index: 2000 !important; background-color: #000 !important; }
+        .live-header:first-of-type { border-left: 2px solid var(--theme-color) !important; border-top-left-radius: 4px; }
+
+        td {
+            border-bottom: var(--theme-border) !important; border-right: var(--theme-border) !important;
+            padding: 4px 10px !important; vertical-align: middle; max-width: 140px;
+            white-space: normal !important; word-wrap: break-word !important;
+            font-family: 'Courier New', Courier, monospace !important; font-size: 0.9em !important;
+        }
+        td:first-of-type { border-left: var(--theme-border) !important; }
+        .waffle tr { height: 52px !important; }
+        .waffle td:nth-of-type(2) { width: 60px !important; min-width: 60px !important; padding: 0 !important; text-align: center !important; }
+
+        tr:hover td { background-color: var(--theme-hover) !important; color: #fff !important; transition: background-color 0.1s; }
+        .live-cell { text-align: center; font-weight: bold; color: #666; font-family: monospace; }
+        .waffle img { height: 52px !important; width: auto !important; display: block; margin: 0 auto; object-fit: contain !important; border: none !important; cursor: pointer; }
+
+        /* --- RARITY TAGS --- */
+        [class*="tag-"] { text-align: center !important; font-weight: bold !important; border: 1px solid transparent !important; }
+        .tag-common    { box-shadow: inset 4px 0 0 #555, inset -4px 0 0 #555 !important; color: #aaa !important; }
+        .tag-uncommon  { box-shadow: inset 4px 0 0 #4cbb6e, inset -4px 0 0 #4cbb6e !important; color: #7dd99a !important; }
+        .tag-rare      { box-shadow: inset 4px 0 0 #0088ff, inset -4px 0 0 #0088ff !important; color: #4da6ff !important; }
+        .tag-epic      { box-shadow: inset 4px 0 0 #bc13fe, inset -4px 0 0 #bc13fe !important; color: #d67aff !important; }
+        .tag-legendary { box-shadow: inset 4px 0 0 #ffaa00, inset -4px 0 0 #ffaa00 !important; color: #ffcc00 !important; }
+        .tag-mythic    { box-shadow: inset 4px 0 0 #ff0055, inset -4px 0 0 #ff0055 !important; color: #ff6688 !important; }
+        .tag-primordial{ box-shadow: inset 4px 0 0 #ffffff, inset -4px 0 0 #ffffff !important; color: #ffffff !important; }
+
+        /* --- STAT COLORS --- */
+        .stat-attack  { color: #ff4444 !important; font-weight: bold !important; text-align: center !important; }
+        .stat-defense { color: #4488ff !important; font-weight: bold !important; text-align: center !important; }
+        .stat-move    { color: #ffd700 !important; font-weight: bold !important; text-align: center !important; }
+        .stat-spd     { color: #00e5ff !important; font-weight: bold !important; text-align: center !important; }
+        .stat-crew    { color: #ffd700 !important; font-weight: bold !important; text-align: center !important; }
+        .stat-effect  { color: #aaffaa !important; font-style: italic !important; }
+
+        /* --- SECTION HEADERS --- */
+        .section-wrapper { width: 100%; }
+        .section-header {
+            color: var(--theme-color); font-weight: bold; text-transform: uppercase;
+            letter-spacing: 3px; padding: 12px 20px; margin: 30px 0 0 0;
+            border-left: 4px solid var(--theme-color); background: var(--theme-dark);
+            font-size: 1.1em; font-family: 'Courier New', monospace; text-align: center;
+        }
+
+        /* --- COMBINED TABLE WRAPPER --- */
+        #combined-section { display: none; }
+        #combined-section .waffle { width: auto !important; }
+
+        /* --- FOOTER --- */
+        .codex-footer {
+            grid-column: 2; text-align: center; padding: 40px 20px 60px 20px;
+            display: flex; flex-direction: column; align-items: center; gap: 15px;
+        }
+        .footer-text { color: var(--theme-color); font-family: 'Courier New', monospace; font-weight: bold; letter-spacing: 2px; font-size: 0.85em; text-transform: uppercase; }
+        .footer-actions { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
+
+        .softmerge-inner { position: static !important; width: auto !important; max-width: 100%; white-space: normal !important; display: inline-block; left: auto !important; }
+        .freezebar-cell, .row-header-wrapper, .row-headers-background, .column-headers-background { display: none !important; }
+
+        @media screen and (max-width: 800px) {
+            .global-header { position: static; }
+            #preview-frame, #market-frame { display: none; }
+            #preview-frame.mobile-active { display: flex !important; left: 50%; transform: translateX(-50%); width: 90%; top: 120px; z-index: 3000; pointer-events: auto; }
+            #market-frame.mobile-active { display: block !important; left: 50%; transform: translateX(-50%); width: 90%; top: 540px; z-index: 3000; }
+            .close-btn { display: block; }
+            .top-bar { flex-direction: column; align-items: stretch; position: static; }
+            #searchInput { width: 100%; margin-bottom: 10px; }
+        }
+
+        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; text-shadow: 0 0 5px #fff; } 100% { opacity: 0.8; } }
+
+        /* --- SCAN / MINT / BURN / PRICE COLUMNS --- */
+        .stat-minted { color: #00cc88 !important; font-weight: bold !important; text-align: center !important; }
+        .stat-burned { color: #ff4444 !important; font-weight: bold !important; text-align: center !important; }
+        .stat-price  { color: #ffd700 !important; font-weight: bold !important; text-align: center !important; }
+        .scan-trigger { cursor: pointer; color: #000 !important; background: var(--theme-color); padding: 2px 8px; font-size: 0.8em; display: inline-block; animation: pulse 2s infinite; }
+        .buy-cell { display: flex; gap: 5px; align-items: center; justify-content: center; flex-wrap: wrap; }
+        .mkt-logo { width: 18px; height: 18px; object-fit: contain; opacity: 0.55; border-radius: 3px; transition: opacity 0.2s, transform 0.2s; vertical-align: middle; }
+        .mkt-logo:hover { opacity: 1; transform: scale(1.25); }
+        .market-btn-logo { width: 16px; height: 16px; object-fit: contain; vertical-align: middle; margin-right: 4px; border-radius: 2px; }
+        .nfthive-logo { height: 12px; width: auto; }
+        .f12-logo { height: 14px; width: auto; }
+        .c-low, .c-last, .c-sugg { min-width: 70px; text-align: center; color: #555; font-family: monospace; font-size: 0.85em; }
+        .c-minted, .c-burned { min-width: 55px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div id="mobile-backdrop" onclick="closeDeckMobile()"></div>
+<div id="cursor-glow"></div>
+<div id="deck-toggle-tab" onclick="toggleDeck()">&#10094;</div>
+
+<div id="preview-frame">
+    <div class="close-btn" onclick="closeDeckMobile()">[ X CLOSE ]</div>
+    <div id="preview-status">AWAITING TARGET</div>
+    <img id="preview-img" src="" alt="PREVIEW">
+    <div id="preview-label">
+        <span id="label-name" style="display:block;">TAP TO SCAN</span>
+        <span id="label-id" style="font-size:0.7em; color:#666;"></span>
+    </div>
+    <div id="preview-desc" style="font-size:0.75em; font-family:monospace; padding:6px 10px; max-height:200px; overflow-y:auto; color:#888; text-align:left; width:90%; box-sizing:border-box;"></div>
+</div>
+
+<div id="market-frame">
+    <div id="intel-header">MARKET INTEL</div>
+    <div class="intel-row"><span class="intel-label">LOWEST PRICE:</span><span id="intel-floor" class="intel-val">---</span></div>
+    <div class="intel-row"><span class="intel-label">LAST SOLD:</span><span id="intel-last" class="intel-val">---</span></div>
+    <div class="intel-row"><span class="intel-label">SUGGESTED:</span><span id="intel-sugg" class="intel-val">---</span></div>
+    <div class="market-links">
+        <a id="lnk-atomic" target="_blank" class="market-link-btn"><img src="atomicfavicon.ico" class="market-btn-logo" alt="">ATOMIC</a>
+        <a id="lnk-nefty" target="_blank" class="market-link-btn"><img src="https://resizer2.neftyblocks.com/?ipfs=https%3A%2F%2Fraw.githubusercontent.com%2Feoscafe%2Feos-airdrops%2Fmaster%2Flogos%2FNEFTY_296.png&width=100" class="market-btn-logo" alt="">NEFTY</a>
+        <a id="lnk-hive" target="_blank" class="market-link-btn"><img src="https://nfthive.io/favicon.ico" class="market-btn-logo" alt="">HIVE</a>
+        <a id="lnk-f12" target="_blank" class="market-link-btn"><img src="F12key_logoV2.png" class="market-btn-logo" alt="">F12 KEY</a>
+    </div>
+</div>
+
+<header class="global-header">
+    <div class="logo-section">
+        <h1>NARON CODEX</h1>
+    </div>
+    <nav class="nav-links">
+        <a href="index.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">HUB</a>
+        <a href="crew.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">CREW</a>
+        <a href="arms.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">ARMS</a>
+        <a href="tools.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">TOOLS</a>
+        <a href="faces.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">FACES</a>
+        <a href="pd.worlds.html" class="nav-btn active"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD UNITS</a>
+        <a href="pd.materials.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD MATS</a>
+    </nav>
+    <div class="wallet-section">
+        <button id="wallet-btn" class="cyber-btn" style="border-color: #5badff; color: #5badff;" onclick="toggleWallet()">[ WAX LOGIN ]</button>
+    </div>
+</header>
+
+<div class="top-bar">
+    <div style="flex-grow: 1;">
+        <div style="display:flex; align-items:center; gap: 10px; flex-wrap:wrap;">
+            <a href="index.html" class="nav-btn">BACK</a>
+            <button id="reset-btn" class="cyber-btn" onclick="resetSort()">[ RESET ]</button>
+            <button class="cyber-btn" onclick="adjustFont(1)">A+</button>
+            <button class="cyber-btn" onclick="adjustFont(-1)">A-</button>
+            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="SEARCH...">
+        </div>
+        <div style="margin-top: 8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <span style="color:#666; font-size:0.75em; letter-spacing:1px;">SECTIONS:</span>
+            <button id="tab-equipment"   class="cyber-btn active-section" onclick="filterSection('equipment')">[ EQUIPMENT ]</button>
+            <button id="tab-creatures"   class="cyber-btn active-section" onclick="filterSection('creatures')">[ CREATURES ]</button>
+            <button id="tab-mercenaries" class="cyber-btn active-section" onclick="filterSection('mercenaries')">[ MERCENARIES ]</button>
+            <button id="tab-warlords"    class="cyber-btn active-section" onclick="filterSection('warlords')">[ WARLORDS ]</button>
+            <button id="tab-supplies"    class="cyber-btn active-section" onclick="filterSection('supplies')">[ SUPPLIES ]</button>
+            <span style="color:#1a3a5c; font-size:1em;">|</span>
+            <button id="view-toggle-btn" class="cyber-btn" onclick="toggleView()">[ SPLIT VIEW ]</button>
+            <button id="scan-all-btn" class="cyber-btn" onclick="scanAll()">[ SCAN ALL ]</button>
+        </div>
+        <div id="scan-status-bar" style="display:none; margin-top:6px;">
+            <div style="color:#555;font-size:0.8em;letter-spacing:1px;" id="scan-status-text">STANDBY</div>
+            <div style="background:#111;height:4px;width:200px;margin-top:3px;"><div id="scan-bar" style="background:var(--theme-color);height:4px;width:0%;transition:width 0.3s;"></div></div>
+        </div>
+        <div id="theme-panel">
+            <div class="theme-opt" style="background:#ff4d4d;" onclick="setTheme('#ff4d4d','#1a0505')" title="Crimson Red"></div>
+            <div class="theme-opt" style="background:#ff9900;" onclick="setTheme('#ff9900','#1a1005')" title="Safety Orange"></div>
+            <div class="theme-opt" style="background:#ffd700;" onclick="setTheme('#ffd700','#1a1a05')" title="Gold"></div>
+            <div class="theme-opt" style="background:#00ff41;" onclick="setTheme('#00ff41','#051a05')" title="Matrix Green"></div>
+            <div class="theme-opt" style="background:#5badff;" onclick="setTheme('#5badff','#050d18')" title="PD Blue"></div>
+            <div class="theme-opt" style="background:#bf00ff;" onclick="setTheme('#bf00ff','#12051a')" title="Neon Purple"></div>
+            <div id="secret-rainbow-dot" class="theme-opt" style="display:none;" onclick="setTheme('rainbow','#050510')" title="RGB MODE"></div>
+        </div>
+    </div>
+    <div style="text-align:right;">
+        <h1>PD UNITS</h1>
+        <div id="status" style="font-size:0.7em; color:#666; margin-top:5px;">STANDBY</div>
+    </div>
+</div>
+
+<div style="max-width:1400px; margin:6px auto 0 auto; padding:0 20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <a href="https://www.planetarydefense.io/" target="_blank" style="display:flex;align-items:center;gap:6px;text-decoration:none;background:rgba(0,0,0,0.5);border:1px solid #1a3a5c;border-radius:6px;padding:5px 12px;color:#5badff;font-family:monospace;font-size:0.8em;font-weight:bold;transition:all 0.2s;" onmouseover="this.style.borderColor='#5badff'" onmouseout="this.style.borderColor='#1a3a5c'"><img src="https://www.google.com/s2/favicons?domain=planetarydefense.io&sz=128" style="width:14px;height:14px;border-radius:2px;"> PLANETARYDEFENSE.IO</a>
+    <a href="https://discord.com/invite/rhHWe6hDNP" target="_blank" style="display:flex;align-items:center;gap:6px;text-decoration:none;background:rgba(0,0,0,0.5);border:1px solid #1a3a5c;border-radius:6px;padding:5px 12px;color:#5865F2;font-family:monospace;font-size:0.8em;font-weight:bold;transition:all 0.2s;" onmouseover="this.style.borderColor='#5865F2'" onmouseout="this.style.borderColor='#1a3a5c'"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" style="width:14px;height:14px;border-radius:2px;"> PD DISCORD</a>
+</div>
+
+<!-- ═══════════════════════════════════════════ SPLIT VIEW SECTIONS ═══ -->
+
+<!-- SECTION 1: EQUIPMENT -->
+<div id="section-equipment" class="section-wrapper">
+    <div class="section-header">// EQUIPMENT</div>
+    <div class="ritz grid-container" dir="ltr">
+        <table id="table-equipment" class="waffle" cellspacing="0" cellpadding="0">
+            <thead><tr>
+                <th class="column-headers-background"></th>
+            </tr></thead>
+            <tbody id="tbody-equipment">
+                <tr><td class="live-header">#</td><td class="live-header">IMAGE</td><td class="live-header">NAME</td><td class="live-header">RARITY</td><td class="live-header">TYPE</td><td class="live-header">ELEMENT</td><td class="live-header">ATK</td><td class="live-header">DEF</td><td class="live-header">LOWEST PRICE</td><td class="live-header">LAST SOLD</td><td class="live-header">SUGGESTED</td><td class="live-header">SCAN</td></tr>
+                <tr data-id="902055" data-section="equipment" data-desc="Rapid-injection nanites accelerating wound recovery and tissue regeneration."><td>902055</td><td><img src="https://ipfs.io/ipfs/QmWAsoCiw6daLYLrD6XXaZeNF4gP6xWonrAJY13ErSc3Lj" loading="lazy"></td><td>Nano-Heal Injector</td><td>Common</td><td>Gadget</td><td>Ground</td><td>14</td><td>14</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '902055')">SCAN</span></td></tr>
+                <tr data-id="902056" data-section="equipment" data-desc="Tactical lens projecting hyperspectral scans to analyze the terrain and reveal enemy weaknesses with ruthless clarity."><td>902056</td><td><img src="https://ipfs.io/ipfs/QmbcN18dZ45qeDicZ2Vj7pNyYoLJqXxPMfPhyfeUjoCkxm" loading="lazy"></td><td>FragFinder Lens-9000</td><td>Uncommon</td><td>Gadget</td><td>Ground</td><td>25</td><td>25</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '902056')">SCAN</span></td></tr>
+                <tr data-id="902057" data-section="equipment" data-desc="Disrupts enemy electronics and targeting systems within a localized radius."><td>902057</td><td><img src="https://ipfs.io/ipfs/QmTkrgL7vAVcsLM694Fwaz3bkrFtA565npyqm3SLpW6BKh" loading="lazy"></td><td>EMP Scrambler</td><td>Rare</td><td>Gadget</td><td>Ground</td><td>38</td><td>38</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '902057')">SCAN</span></td></tr>
+                <tr data-id="902058" data-section="equipment" data-desc="A drone delivering razor-precise shock bursts through a phase-stabilized combat frame."><td>902058</td><td><img src="https://ipfs.io/ipfs/QmaZVA8YfkDsFiL8H9WDMB86pF38PXaA4tvLnZT7UkRLFb" loading="lazy"></td><td>Crimson Hunter</td><td>Epic</td><td>Gadget</td><td>Ground</td><td>54</td><td>54</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '902058')">SCAN</span></td></tr>
+                <tr data-id="902059" data-section="equipment" data-desc="Cybernetic implant boosting reaction time and combat efficiency."><td>902059</td><td><img src="https://ipfs.io/ipfs/QmZWHPYUvd7juEZWDXt9i5HosvR9QJGouptromN54wC3dD" loading="lazy"></td><td>Neural Reflex Amplifier</td><td>Legendary</td><td>Gadget</td><td>Ground</td><td>94</td><td>94</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '902059')">SCAN</span></td></tr>
+                <tr data-id="902060" data-section="equipment" data-desc="Emits destabilizing energy waves, disorienting foes and nullifying energy fields."><td>902060</td><td><img src="https://ipfs.io/ipfs/QmUKqkKNauB7CHACifqBQz1bAE6W5875JjETp4hqVzaL7e" loading="lazy"></td><td>Void Disruptor</td><td>Mythic</td><td>Gadget</td><td>Ground</td><td>148</td><td>148</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '902060')">SCAN</span></td></tr>
+                <tr data-id="903762" data-section="equipment" data-desc="High-rate autocannon optimized for close-quarters combat and suppressive fire."><td>903762</td><td><img src="https://ipfs.io/ipfs/QmNcM7hN8xVcb7m4DqfFM5k5kxMd8cVH8zN6pNnCi8e4Sq" loading="lazy"></td><td>Reaper-1 Rifle</td><td>Common</td><td>Weapon</td><td>Ground</td><td>26</td><td>17</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '903762')">SCAN</span></td></tr>
+                <tr data-id="903763" data-section="equipment" data-desc="Burst-fire SMG with adaptive recoil control, built for relentless engagements."><td>903763</td><td><img src="https://ipfs.io/ipfs/QmWZRT1WcrEhjdkH6KYWfwiSBsPmWdkHGB3S96VyNwpNDr" loading="lazy"></td><td>Cyclone Repeater</td><td>Uncommon</td><td>Weapon</td><td>Ground</td><td>40</td><td>27</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '903763')">SCAN</span></td></tr>
+                <tr data-id="903764" data-section="equipment" data-desc="Semi-automatic shotgun loaded with high-impact armor-piercing rounds."><td>903764</td><td><img src="https://ipfs.io/ipfs/QmTBiCeptFepQ1bEoUzNPkMtXXYGvdaGoBbhADyARnEE1N" loading="lazy"></td><td>Boar Rush-69</td><td>Rare</td><td>Weapon</td><td>Ground</td><td>58</td><td>38</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '903764')">SCAN</span></td></tr>
+                <tr data-id="903765" data-section="equipment" data-desc="Pressurized napalm flamethrower, ideal for assaults and area clearance."><td>903765</td><td><img src="https://ipfs.io/ipfs/Qmby8S4epSXhR7kpAscihNJfM3N1AjXFV1nvKxzt2s9r31" loading="lazy"></td><td>PyroFury Flamethrower</td><td>Epic</td><td>Weapon</td><td>Ground</td><td>78</td><td>52</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '903765')">SCAN</span></td></tr>
+                <tr data-id="903766" data-section="equipment" data-desc="Electromagnetic sniper rifle capable of penetrating heavy armor at extreme range."><td>903766</td><td><img src="https://ipfs.io/ipfs/QmQNYCDyddc56G5qBiDz3QBi478BVBL5jLhjfH1odkQG3j" loading="lazy"></td><td>Stormpiercer Railgun</td><td>Legendary</td><td>Weapon</td><td>Ground</td><td>129</td><td>86</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '903766')">SCAN</span></td></tr>
+                <tr data-id="903767" data-section="equipment" data-desc="Experimental energy weapon that destabilizes molecular bonds, reducing targets to dust."><td>903767</td><td><img src="https://ipfs.io/ipfs/QmYMLvZAy7r65M8Q6vAETZbqP9BY8G2VZSCCU7WDyQDcEB" loading="lazy"></td><td>Void Annihilator</td><td>Mythic</td><td>Weapon</td><td>Ground</td><td>198</td><td>132</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '903767')">SCAN</span></td></tr>
+                <tr data-id="904159" data-section="equipment" data-desc="Protective armor inspired by a carapace, combining flexibility and durability."><td>904159</td><td><img src="https://ipfs.io/ipfs/QmdmatbGVr1kNXhuddzL4jgARQJTiNzeJfNTCsp9bttoXn" loading="lazy"></td><td>Shellguard Vest</td><td>Common</td><td>Protection</td><td>Ground</td><td>17</td><td>26</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '904159')">SCAN</span></td></tr>
+                <tr data-id="904160" data-section="equipment" data-desc="Shield crafted from Maboar tusks, offering enhanced durability and defense."><td>904160</td><td><img src="https://ipfs.io/ipfs/QmWCQff15JxWe9DPpB7QZu48cpw5Fw89hr8HLdptchHDqH" loading="lazy"></td><td>Red Tusks Shield</td><td>Uncommon</td><td>Protection</td><td>Ground</td><td>27</td><td>40</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '904160')">SCAN</span></td></tr>
+                <tr data-id="904161" data-section="equipment" data-desc="Personal stealth module projecting dynamic light distortion to evade detection across visual and infrared spectrums."><td>904161</td><td><img src="https://ipfs.io/ipfs/QmdJDbr9omKSgww4SX86KthP5Av25cduRq2UdpWCHJbf1h" loading="lazy"></td><td>Spectra-Veil Mk.I</td><td>Rare</td><td>Protection</td><td>Ground</td><td>38</td><td>58</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '904161')">SCAN</span></td></tr>
+                <tr data-id="904162" data-section="equipment" data-desc="Autonomous micro-drones forming a reactive barrier against incoming projectiles and environmental hazards."><td>904162</td><td><img src="https://ipfs.io/ipfs/Qmc1iSnr1BUbmUVXz1GgZS2Gvfv2sKUkhkxSeUk3RPMbz2" loading="lazy"></td><td>Drone Shield Swarm</td><td>Epic</td><td>Protection</td><td>Air</td><td>52</td><td>78</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '904162')">SCAN</span></td></tr>
+                <tr data-id="904163" data-section="equipment" data-desc="Augmented combat suit with neural-link enhancements for peak combat efficiency."><td>904163</td><td><img src="https://ipfs.io/ipfs/QmYZXkTuRLcqh731WD2LfnrnvCAghgSYzywSwmqw9eiJf5" loading="lazy"></td><td>Neural Sync Exo-Suit</td><td>Legendary</td><td>Protection</td><td>Ground</td><td>86</td><td>129</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '904163')">SCAN</span></td></tr>
+                <tr data-id="904164" data-section="equipment" data-desc="Phase-shifting energy shield that absorbs and redirects incoming attacks."><td>904164</td><td><img src="https://ipfs.io/ipfs/QmZKf1sgqBxKePtkcoBr3ZZXrjBCBb3YF37i3PT5HpmRfX" loading="lazy"></td><td>Eclipse Barrier</td><td>Mythic</td><td>Protection</td><td>Ground | Aether</td><td>132</td><td>198</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '904164')">SCAN</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- SECTION 2: CREATURES -->
+<div id="section-creatures" class="section-wrapper">
+    <div class="section-header">// CREATURES</div>
+    <div class="ritz grid-container" dir="ltr">
+        <table id="table-creatures" class="waffle" cellspacing="0" cellpadding="0">
+            <thead><tr><th class="column-headers-background"></th></tr></thead>
+            <tbody id="tbody-creatures">
+                <tr><td class="live-header">#</td><td class="live-header">IMAGE</td><td class="live-header">NAME</td><td class="live-header">RARITY</td><td class="live-header">TYPE</td><td class="live-header">ELEMENT</td><td class="live-header">ATK</td><td class="live-header">DEF</td><td class="live-header">SPD</td><td class="live-header">EFFECT</td><td class="live-header">LOWEST PRICE</td><td class="live-header">LAST SOLD</td><td class="live-header">SUGGESTED</td><td class="live-header">SCAN</td></tr>
+                <tr data-id="888541" data-section="creatures" data-desc="Domesticated with cybernetic implants, with blackish fur and slightly luminescent eyes, he is the ideal companion for seasoned mercenaries. It can detect resources and warn its master of dangers. Be careful, it may explode if stressed too much."><td>888541</td><td><img src="https://ipfs.io/ipfs/bafybeidotzsn4soc6p3p7gommcasll6nm2mvnrxah6jh5e375riqvxnkba" loading="lazy"></td><td>Ma-Boar</td><td>Common</td><td>Pet</td><td>Ground</td><td>10</td><td>8</td><td>5</td><td>+4.6% mission success rate</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '888541')">SCAN</span></td></tr>
+                <tr data-id="888549" data-section="creatures" data-desc='This canine species is the result of a cross between a Earth dog embryo and a Ma-Boar. With its heat-resistant fur and superior intelligence, this dog is excellent for protection and searching for objects. Affectionately nicknamed "Hotdog" by its creators.'><td>888549</td><td><img src="https://ipfs.io/ipfs/bafybeibccre5kymkdchjw45antdozxolhxajnb6sig6h4liizmjzboacwe" loading="lazy"></td><td>DogX403 - The "Hotdog"</td><td>Uncommon</td><td>Pet</td><td>Ground</td><td>12</td><td>9</td><td>10</td><td>+5.5% mission success rate</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '888549')">SCAN</span></td></tr>
+                <tr data-id="888550" data-section="creatures" data-desc="A semi-sentient bioluminescent mushroom that attaches itself to its owner's shoulder via small symbiotic roots. Its glow varies depending on surrounding dangers and it can absorb certain toxins to protect its host. Its spores can temporarily blind enemies or illuminate dark areas. It pulses to the rhythm of its companion's emotions."><td>888550</td><td><img src="https://ipfs.io/ipfs/bafybeidqio4m4co4x7pmkppo64qyp3axycgi7zm2emzfejcxhmfnd7rlh4" loading="lazy"></td><td>Luminyx</td><td>Rare</td><td>Pet</td><td>Ground</td><td>14</td><td>15</td><td>8</td><td>+6.4% mission success rate</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '888550')">SCAN</span></td></tr>
+                <tr data-id="888554" data-section="creatures" data-desc="A genetically modified flying feline, the result of abandoned military experiments. Its membranous wings and reinforced alloy claws allow it to attack in flight and carry its master short distances. Its changing coat provides camouflage in various environments."><td>888554</td><td><img src="https://ipfs.io/ipfs/bafybeiam3dqdh2s7cwyt6rxvngu3ny7lvlyozystyjhcrykuhhqgwn446u" loading="lazy"></td><td>Nebulon</td><td>Epic</td><td>Pet</td><td>Air | Ground</td><td>18</td><td>16</td><td>22</td><td>+7.3% mission success rate</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '888554')">SCAN</span></td></tr>
+                <tr data-id="888560" data-section="creatures" data-desc='A mini time dragon hatched from an egg found in a dimensional rift. His ability to briefly slow time around him allows him to dodge deadly attacks. His scales change color depending on the era he "feels" and he can sometimes predict near future events. Extremely rare and difficult to tame.'><td>888560</td><td><img src="https://ipfs.io/ipfs/bafybeie6nvflh7bbadplv4r5dz36httx6ub2vqk7mqpq6z23eagdajk5om" loading="lazy"></td><td>Chronowyrm</td><td>Legendary</td><td>Pet</td><td>Air | Aether</td><td>25</td><td>25</td><td>20</td><td>+8.5% mission success rate</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '888560')">SCAN</span></td></tr>
+                <tr data-id="888566" data-section="creatures" data-desc="A conscious dark energy entity manifesting as an ethereal quadruped. It phases through walls, absorbs incoming attacks, and generates micro-portals to bypass physical barriers. Its ever-shifting form harbors a miniature cosmos, with galaxies and stars swirling within its ephemeral silhouette. Only those who've glimpsed beyond reality's veil can earn the attention of such a being."><td>888566</td><td><img src="https://ipfs.io/ipfs/bafybeig5tteikdatxvc2cuxrbd46pae3yrupoghyaeagxre2jjrvhvjv6i" loading="lazy"></td><td>Void Walker</td><td>Mythic</td><td>Pet</td><td>Space | Aether</td><td>30</td><td>28</td><td>32</td><td>+9.7% mission success rate</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '888566')">SCAN</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- SECTION 3: MERCENARIES -->
+<div id="section-mercenaries" class="section-wrapper">
+    <div class="section-header">// MERCENARIES</div>
+    <div class="ritz grid-container" dir="ltr">
+        <table id="table-mercenaries" class="waffle" cellspacing="0" cellpadding="0">
+            <thead><tr><th class="column-headers-background"></th></tr></thead>
+            <tbody id="tbody-mercenaries">
+                <tr><td class="live-header">#</td><td class="live-header">IMAGE</td><td class="live-header">NAME</td><td class="live-header">RARITY</td><td class="live-header">TYPE</td><td class="live-header">ELEMENT</td><td class="live-header">ATK</td><td class="live-header">DEF</td><td class="live-header">MOVE COST</td><td class="live-header">LOWEST PRICE</td><td class="live-header">LAST SOLD</td><td class="live-header">SUGGESTED</td><td class="live-header">SCAN</td></tr>
+                <tr data-id="891507" data-section="mercenaries" data-desc="A versatile recruit trained for both offense and defense. Skilled in basic weapons and tactical adaptability."><td>891507</td><td><img src="https://ipfs.io/ipfs/QmS1Bj3aEHvLu36S46uJbSTnNDrLtmpvT9Qa2GpJcdFJ1c" loading="lazy"></td><td>Trooper Recruit</td><td>Common</td><td>Multi-Skilled</td><td>Ground</td><td>23</td><td>23</td><td>15</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '891507')">SCAN</span></td></tr>
+                <tr data-id="891508" data-section="mercenaries" data-desc="A battle-tested soldier with improved combat skills and defensive tactics. Reliable in diverse combat scenarios."><td>891508</td><td><img src="https://ipfs.io/ipfs/QmYiRV8FZzut14TxMNnvcZfRL5htzESLWc9QsdqvHcRNqF" loading="lazy"></td><td>Trooper Veteran</td><td>Uncommon</td><td>Multi-Skilled</td><td>Ground</td><td>46</td><td>46</td><td>26</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '891508')">SCAN</span></td></tr>
+                <tr data-id="891509" data-section="mercenaries" data-desc="A specialized fighter adept at both reconnaissance and frontline engagements. Excels in adapting to unpredictable battlefields."><td>891509</td><td><img src="https://ipfs.io/ipfs/QmZVRTimiidn76rGRARuQmsVXS2QnmMx72eQYvBCmMAYE9" loading="lazy"></td><td>Field Operative</td><td>Rare</td><td>Multi-Skilled</td><td>Ground</td><td>78</td><td>78</td><td>39</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '891509')">SCAN</span></td></tr>
+                <tr data-id="891510" data-section="mercenaries" data-desc="A hardened veteran with extensive combat experience. Masters a wide range of weapons and defensive maneuvers."><td>891510</td><td><img src="https://ipfs.io/ipfs/QmRuuF3Mar6Hk37tzVVrSzLyyYg7ZT2CTp68SNDi91MD9u" loading="lazy"></td><td>Battleforged Veteran</td><td>Epic</td><td>Multi-Skilled</td><td>Ground</td><td>115</td><td>115</td><td>51</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '891510')">SCAN</span></td></tr>
+                <tr data-id="891511" data-section="mercenaries" data-desc="An elite combatant proficient in coordinating assaults and defensive holds. Expert in tactical versatility."><td>891511</td><td><img src="https://ipfs.io/ipfs/QmfLNKMT8rUKHuWfxHza5Nk91Yx6G9U2UgtmDinM9GC5Sm" loading="lazy"></td><td>Warfare Specialist</td><td>Legendary</td><td>Multi-Skilled</td><td>Ground</td><td>190</td><td>190</td><td>67</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '891511')">SCAN</span></td></tr>
+                <tr data-id="891512" data-section="mercenaries" data-desc="A top-tier warrior with unmatched proficiency in both offensive strikes and defensive resilience. The ultimate battlefield asset."><td>891512</td><td><img src="https://ipfs.io/ipfs/QmXRLbuoo2MDTjmMpU7mpBG6v3VHRGiuPu8fPv1gVLp8F9" loading="lazy"></td><td>Warfare Elite</td><td>Mythic</td><td>Multi-Skilled</td><td>Ground</td><td>285</td><td>285</td><td>81</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '891512')">SCAN</span></td></tr>
+                <tr data-id="896605" data-section="mercenaries" data-desc="A novice raider trained for swift attacks and reconnaissance missions. Skilled in infiltration and mobility."><td>896605</td><td><img src="https://ipfs.io/ipfs/QmPskniCsnZ8GGBL3PiRTPKNgHoaxtuHqXZtmkENonq4Up" loading="lazy"></td><td>Scout Recruit</td><td>Common</td><td>Raider</td><td>Ground</td><td>37</td><td>25</td><td>20</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '896605')">SCAN</span></td></tr>
+                <tr data-id="896606" data-section="mercenaries" data-desc="A seasoned scout with enhanced precision and speed. Effective in hit-and-run tactics."><td>896606</td><td><img src="https://ipfs.io/ipfs/Qmf8Pcu7DYrrbjRxHJ7Y8M8huap16wCCAFaypDBK1KhHiZ" loading="lazy"></td><td>Scout Veteran</td><td>Uncommon</td><td>Raider</td><td>Ground</td><td>66</td><td>44</td><td>31</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '896606')">SCAN</span></td></tr>
+                <tr data-id="896608" data-section="mercenaries" data-desc="An expert marksman specialized in dual-wielding firearms and rapid engagements. Lethal at close to mid-range."><td>896608</td><td><img src="https://ipfs.io/ipfs/QmQAjx6jcFTAy3LeAp7wh4HqvbidLMZdu8WY92pXeeP39i" loading="lazy"></td><td>Gunslinger</td><td>Rare</td><td>Raider</td><td>Ground</td><td>106</td><td>70</td><td>44</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '896608')">SCAN</span></td></tr>
+                <tr data-id="896609" data-section="mercenaries" data-desc="A frontline attacker skilled in suppression and shock tactics. Ideal for breaking enemy formations."><td>896609</td><td><img src="https://ipfs.io/ipfs/QmZsnYHeWoqNQXt2YUYDrFuP1MzYU1BfaQnhbvKtugTsLq" loading="lazy"></td><td>Enforcer</td><td>Epic</td><td>Raider</td><td>Ground</td><td>152</td><td>101</td><td>56</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '896609')">SCAN</span></td></tr>
+                <tr data-id="896610" data-section="mercenaries" data-desc="An elite raider specializing in surgical strikes and enemy disruption. Unmatched in ambush and assault operations."><td>896610</td><td><img src="https://ipfs.io/ipfs/QmaE6Yohrx4rj6W53mJDkBhyH6ArSN41L1mMusneVAp6PF" loading="lazy"></td><td>Strike Operative</td><td>Legendary</td><td>Raider</td><td>Ground</td><td>245</td><td>163</td><td>72</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '896610')">SCAN</span></td></tr>
+                <tr data-id="896611" data-section="mercenaries" data-desc="The ultimate raider, feared for brutal assaults and relentless aggression. Masters of high-risk, high-reward tactics."><td>896611</td><td><img src="https://ipfs.io/ipfs/Qma71SBEWYeNpRniurvuQqWwJv3ifdLuii5yonRSo6CaCF" loading="lazy"></td><td>Warhound</td><td>Mythic</td><td>Raider</td><td>Ground</td><td>363</td><td>242</td><td>86</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '896611')">SCAN</span></td></tr>
+                <tr data-id="898934" data-section="mercenaries" data-desc="An aspiring defender trained in protective tactics and shield-based combat. Reliable in securing positions."><td>898934</td><td><img src="https://ipfs.io/ipfs/QmZJQwbcnt86zUVrnHkp1tYNFq52bq5mDiadog5RLBQCMV" loading="lazy"></td><td>Sentinel Recruit</td><td>Common</td><td>Protector</td><td>Ground</td><td>25</td><td>37</td><td>20</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '898934')">SCAN</span></td></tr>
+                <tr data-id="898935" data-section="mercenaries" data-desc="A seasoned guardian with reinforced armor and defensive techniques. Adept at holding lines under pressure."><td>898935</td><td><img src="https://ipfs.io/ipfs/Qmdayv19GtY4E5kpTdkEk2Uqo8ycCFZRLGAdWqan7LVEDB" loading="lazy"></td><td>Sentinel Veteran</td><td>Uncommon</td><td>Protector</td><td>Ground</td><td>44</td><td>66</td><td>31</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '898935')">SCAN</span></td></tr>
+                <tr data-id="898936" data-section="mercenaries" data-desc="A defense expert specialized in fortified positions and heavy shielding. Known for absorbing and redirecting enemy assaults."><td>898936</td><td><img src="https://ipfs.io/ipfs/QmdYxoZzpyrZEauVK3zwJtSm2NbaaWcQJ9oBn8NTMtkTd9" loading="lazy"></td><td>Bulwark Specialist</td><td>Rare</td><td>Protector</td><td>Ground</td><td>70</td><td>106</td><td>44</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '898936')">SCAN</span></td></tr>
+                <tr data-id="898937" data-section="mercenaries" data-desc="An elite protector with advanced armor and tactical knowledge. Excels at safeguarding key objectives."><td>898937</td><td><img src="https://ipfs.io/ipfs/QmRWAHtMB4GQHbjryTeCXdDKejSi2mhArgqX4xiteTphYk" loading="lazy"></td><td>Bastion Defender</td><td>Epic</td><td>Protector</td><td>Ground</td><td>101</td><td>152</td><td>56</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '898937')">SCAN</span></td></tr>
+                <tr data-id="898938" data-section="mercenaries" data-desc="A towering defender equipped with superior armor and kinetic barriers. Masters of endurance and area control."><td>898938</td><td><img src="https://ipfs.io/ipfs/QmXwWepCzJmnhBpipMXjEepx2nB8g2zfL7fJEKSn8RMKvn" loading="lazy"></td><td>Titan Guard</td><td>Legendary</td><td>Protector</td><td>Ground</td><td>163</td><td>245</td><td>72</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '898938')">SCAN</span></td></tr>
+                <tr data-id="898939" data-section="mercenaries" data-desc="The ultimate protector, commanding advanced shielding technology. Unyielding in defense and strategic positioning."><td>898939</td><td><img src="https://ipfs.io/ipfs/QmPkgBzNKDn3fzjPvq5T3jpdyPVUFbYxffH7V6j7zmYfiX" loading="lazy"></td><td>Shieldmaster</td><td>Mythic</td><td>Protector</td><td>Ground</td><td>242</td><td>363</td><td>86</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '898939')">SCAN</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- SECTION 4: WARLORDS -->
+<div id="section-warlords" class="section-wrapper">
+    <div class="section-header">// WARLORDS</div>
+    <div class="ritz grid-container" dir="ltr">
+        <table id="table-warlords" class="waffle" cellspacing="0" cellpadding="0">
+            <thead><tr><th class="column-headers-background"></th></tr></thead>
+            <tbody id="tbody-warlords">
+                <tr><td class="live-header">#</td><td class="live-header">IMAGE</td><td class="live-header">NAME</td><td class="live-header">RARITY</td><td class="live-header">TYPE</td><td class="live-header">ELEMENT</td><td class="live-header">CREW SLOTS</td><td class="live-header">MOVE COST RED.</td><td class="live-header">LOWEST PRICE</td><td class="live-header">LAST SOLD</td><td class="live-header">SUGGESTED</td><td class="live-header">SCAN</td></tr>
+                <tr data-id="899894" data-section="warlords" data-desc="A novice leader trained for ground operations and urban warfare. Efficient in deploying small units and securing tactical objectives."><td>899894</td><td><img src="https://ipfs.io/ipfs/QmSb6Zt8upZK5CxQhzuZmjBR4RytrnYsKzWG6nHFfibeps" loading="lazy"></td><td>Tactician</td><td>Common</td><td>Standard</td><td>Ground</td><td>1</td><td>0</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '899894')">SCAN</span></td></tr>
+                <tr data-id="899895" data-section="warlords" data-desc="An experienced leader skilled at commanding squads in the heat of battle. Excels at frontline tactics and swift decision-making."><td>899895</td><td><img src="https://ipfs.io/ipfs/QmScUnzH7Z1tY53iJDHL8oi7V6nB11eqnr9mVUh6hmzHmw" loading="lazy"></td><td>Exo-Colonel</td><td>Uncommon</td><td>Standard</td><td>Ground</td><td>6</td><td>0</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '899895')">SCAN</span></td></tr>
+                <tr data-id="899896" data-section="warlords" data-desc="A strategic mastermind specialized in overseeing and coordinating ground forces. Expert in battlefield control and multi-squad operations."><td>899896</td><td><img src="https://ipfs.io/ipfs/QmSwZrCLXFwW6y3mTQ3DFo9qmGV14rsbiAoJzh9xsPJZsD" loading="lazy"></td><td>Warfare Architect</td><td>Rare</td><td>Standard</td><td>Ground</td><td>14</td><td>0</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '899896')">SCAN</span></td></tr>
+                <tr data-id="899897" data-section="warlords" data-desc="A true warlord capable of leading and coordinating large groups of units in battle. Commands with authority and tactical precision."><td>899897</td><td><img src="https://ipfs.io/ipfs/QmNZgiF6d1hLaWRTQUkP2quBsrmK3KCJNDYwQzECJHAcL3" loading="lazy"></td><td>Overlord</td><td>Epic</td><td>Standard</td><td>Ground</td><td>24</td><td>0</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '899897')">SCAN</span></td></tr>
+                <tr data-id="899898" data-section="warlords" data-desc="A battle-hardened leader, master of navigating perilous situations. Known for turning the tide in desperate engagements."><td>899898</td><td><img src="https://ipfs.io/ipfs/QmTMy1ySaVWA4mJ38KUa3Z6q6ELT5YUQyQq2xse7HnjKBA" loading="lazy"></td><td>Supremacy Warden</td><td>Legendary</td><td>Standard</td><td>Ground</td><td>47</td><td>0</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '899898')">SCAN</span></td></tr>
+                <tr data-id="899899" data-section="warlords" data-desc="The ultimate master of warfare, capable of coordinating strategic actions on a planetary scale. Commands with unmatched vision and expertise."><td>899899</td><td><img src="https://ipfs.io/ipfs/QmazonPNgfxM1LYEG4mVoFRPbTnHWqcKEMDaCqzHVzxgE3" loading="lazy"></td><td>Warmaster</td><td>Mythic</td><td>Standard</td><td>Ground</td><td>75</td><td>0</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '899899')">SCAN</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- SECTION 5: SUPPLIES -->
+<div id="section-supplies" class="section-wrapper">
+    <div class="section-header">// SUPPLIES</div>
+    <div class="ritz grid-container" dir="ltr">
+        <table id="table-supplies" class="waffle" cellspacing="0" cellpadding="0">
+            <thead><tr><th class="column-headers-background"></th></tr></thead>
+            <tbody id="tbody-supplies">
+                <tr><td class="live-header">#</td><td class="live-header">IMAGE</td><td class="live-header">NAME</td><td class="live-header">RARITY</td><td class="live-header">TYPE</td><td class="live-header">ATK</td><td class="live-header">DEF</td><td class="live-header">MOVE COST RED.</td><td class="live-header">EFFECT</td><td class="live-header">LOWEST PRICE</td><td class="live-header">LAST SOLD</td><td class="live-header">SUGGESTED</td><td class="live-header">SCAN</td></tr>
+                <tr data-id="900705" data-section="supplies" data-desc="A version offering all the characteristic taste of RedBoar but without caffeine. Its slightly sweet taste with notes of synthetic red fruits makes it the ideal choice for space explorers."><td>900705</td><td><img src="https://ipfs.io/ipfs/QmTfia5gGFrEeEK6XPDn6B4smcnAgAHr35rXr9TkksJZpo" loading="lazy"></td><td>Red Boar - Decaffeinated</td><td>Common</td><td>Drink</td><td>0</td><td>0</td><td>1</td><td>-16% on Discord bot missions duration</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '900705')">SCAN</span></td></tr>
+                <tr data-id="900706" data-section="supplies" data-desc="This variation offers a dry and spicy taste profile with a slight acidity reminiscent of grapefruit grown under the Kavian moons. Its advanced formula provides all the energizing power without the caloric intake, making it the preferred drink for figure-conscious mercenaries."><td>900706</td><td><img src="https://ipfs.io/ipfs/QmUQJCTsGYuoaXLwXamycxWaxzHYYMLg3DzkDgbfymjx7v" loading="lazy"></td><td>Red Boar - Sugar Free</td><td>Uncommon</td><td>Drink</td><td>8</td><td>8</td><td>9</td><td>-22% on Discord bot missions duration</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '900706')">SCAN</span></td></tr>
+                <tr data-id="900707" data-section="supplies" data-desc="The original drink that built the brand's reputation across all the solar systems. Its perfect balance between sweetness and bitterness, with its energizing bubbles that burst on the tongue releasing aromas of synthetic cherries, makes it a cult drink."><td>900707</td><td><img src="https://ipfs.io/ipfs/QmZaQ78PKjWxATpPc3uRXXGNmsiMG2HdR1ZdhhVvmT1mz6" loading="lazy"></td><td>Red Boar - Classic</td><td>Rare</td><td>Drink</td><td>16</td><td>16</td><td>17</td><td>-28% on Discord bot missions duration</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '900707')">SCAN</span></td></tr>
+                <tr data-id="900708" data-section="supplies" data-desc="An explosive blend of exotic berries and citrus fruits grown in orbital greenhouses, with a slightly metallic touch that leaves an electrifying aftertaste."><td>900708</td><td><img src="https://ipfs.io/ipfs/QmdoCX2YViExQ1g2EzBWVXApsjqsBJYJ9X98xgQpqRLhyP" loading="lazy"></td><td>Red Boar - Cosmic Fusion</td><td>Epic</td><td>Drink</td><td>24</td><td>24</td><td>25</td><td>-34% on Discord bot missions duration</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '900708')">SCAN</span></td></tr>
+                <tr data-id="900709" data-section="supplies" data-desc="A complex flavor of synthetic fruits mixed with rare spices from the outer colonies, with notes of crystallized honey that provide a sensation of warmth followed by freshness."><td>900709</td><td><img src="https://ipfs.io/ipfs/QmZGFUzsZpg8n381fQunGxHMHmsFmC6fpaFWP6ES32k1Ra" loading="lazy"></td><td>Red Boar - Stellar Nectarion</td><td>Legendary</td><td>Drink</td><td>42</td><td>42</td><td>43</td><td>-42% on Discord bot missions duration</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '900709')">SCAN</span></td></tr>
+                <tr data-id="900710" data-section="supplies" data-desc="The ultimate flavor that combines extracts of an ancestral plant recovered from a dying planet, offering an indescribable taste that adapts to the preferences of the one who consumes it, as if the drink reads your mind."><td>900710</td><td><img src="https://ipfs.io/ipfs/QmfUz3BdHYDZ8nEHgmCRmKDGH4erDyHUhcYQcUHkMsV6LN" loading="lazy"></td><td>Red Boar - Primordial Essence</td><td>Mythic</td><td>Drink</td><td>62</td><td>62</td><td>62</td><td>-50% on Discord bot missions duration</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '900710')">SCAN</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ COMBINE VIEW ═══════════ -->
+<div id="combined-section">
+    <div class="section-header">// ALL PD UNITS — COMBINED VIEW</div>
+    <div class="ritz grid-container" dir="ltr">
+        <table id="table-combined" class="waffle" cellspacing="0" cellpadding="0">
+            <thead><tr><th class="column-headers-background"></th></tr></thead>
+            <tbody id="tbody-combined">
+                <tr><td class="live-header">IMAGE</td><td class="live-header">NAME</td><td class="live-header">RARITY</td><td class="live-header">CATEGORY</td><td class="live-header">TYPE</td><td class="live-header">ATK</td><td class="live-header">DEF</td><td class="live-header">LOWEST PRICE</td><td class="live-header">LAST SOLD</td><td class="live-header">SUGGESTED</td><td class="live-header">BUY</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<div class="ritz grid-container" dir="ltr">
+    <div class="codex-footer">
+        <div class="footer-text">// THIS ARCHIVE WAS MADE POSSIBLE BY THE NARON UNION // ©@Spectral.Sky 2026 //</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:8px;">
+            <div style="flex:1;"></div>
+            <div style="display:flex; align-items:center; gap:10px; justify-content:center;">
+                <span style="color:#666; font-size:0.8em;">TIP JAR:</span>
+                <select id="tip-amount" class="cyber-btn" style="background:#111; color:#ffaa00; border-color:#ffaa00; cursor:pointer; outline:none; padding:9px 10px;">
+                    <option value="1.0000 TLM">1 TLM</option>
+                    <option value="5.0000 TLM">5 TLM</option>
+                    <option value="10.0000 TLM" selected>10 TLM</option>
+                    <option value="50.0000 TLM">50 TLM</option>
+                    <option value="100.0000 TLM">100 TLM</option>
+                </select>
+                <button class="cyber-btn" style="border-color:#ffaa00; color:#ffaa00;" onclick="sendTip()">[ TRANSMIT TIP ]</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; justify-content:flex-end; flex:1;">
+                <label style="color:var(--theme-color); font-family:'Courier New'; font-size:0.8em; letter-spacing:1px; white-space:nowrap;">API NODE:</label>
+                <select id="endpointSelect" class="cyber-btn" onchange="setEndpoint(this.value)" style="background:#111; color:var(--theme-color); border-color:var(--theme-color); cursor:pointer; outline:none; padding:9px 10px;">
+                    <option value="https://wax.api.atomicassets.io/atomicmarket/v2/sales">Blacklusion</option>
+                    <option value="https://aa.wax.blacklusion.io/atomicmarket/v2/sales">AtomicAssets</option>
+                </select>
+            </div>
+        </div>
+        <div class="footer-text" style="font-size:0.7em; color:#333;">// PD UNITS DATABASE — NARON CODEX //</div>
+    </div>
+</div>
+
+<script>
+    // ─── CURSOR GLOW ───────────────────────────────────────────────────────────
+    document.addEventListener("mousemove", e => {
+        const g = document.getElementById("cursor-glow");
+        if(g) { g.style.left = e.clientX + "px"; g.style.top = e.clientY + "px"; }
+    });
+    document.addEventListener("click", e => {
+        const el = document.createElement("div"); el.className = "click-effect";
+        el.style.left = e.clientX + "px"; el.style.top = e.clientY + "px";
+        document.body.appendChild(el); setTimeout(() => el.remove(), 400);
+    });
+
+    // ─── CONSTANTS ─────────────────────────────────────────────────────────────
+    const SALES_ENDPOINTS = [
+        { label: "Blacklusion", url: "https://wax.api.atomicassets.io/atomicmarket/v2/sales" },
+        { label: "AtomicAssets", url: "https://aa.wax.blacklusion.io/atomicmarket/v2/sales" }
+    ];
+    let API_SALES = SALES_ENDPOINTS[0].url;
+    const API_HISTORY = "https://wax.api.atomicassets.io/atomicmarket/v2/sales";
+    const API_STATS   = "https://aa.wax.blacklusion.io/atomicassets/v1";
+    const API_TEMPLATES = 'https://wax.api.atomicassets.io/atomicassets/v1/templates/planetdefnft/';
+    const BASE_URLS = {
+        atomic: "https://wax.atomichub.io/market?collection_name=planetdefnft&template_id=",
+        nefty:  "https://neftyblocks.com/marketplace/listing?collection_name=planetdefnft&order=asc&page=1&sort=price&template_id=",
+        hive:   "https://nfthive.io/market?collection=planetdefnft&order=asc&sort=price&template_id=",
+        f12:    "https://f12key.eu/market?collection_name=planetdefnft&order=desc&sort=created&symbol=WAX&template_id="
+    };
+
+    function buildBuyCell(id) {
+        return `<div class="buy-cell"><a href="https://f12key.eu/market?collection_name=planetdefnft&order=desc&sort=created&symbol=WAX&template_id=${id}" target="_blank" title="F12Key — Limited Time Event"><img src="F12key_logoV2.png" class="mkt-logo f12-logo" alt="F12Key"></a></div>`;
+    }
+
+    const rarityOrder = { common:0, uncommon:1, rare:2, epic:3, legendary:4, mythic:5, primordial:6 };
+    let sortDirection = {};
+    let cardData = {};
+    let allDataRows = [];     // { id, section, element, imgSrc }
+    let isDeckOpen = true;
+    let currentView = "split";  // "split" | "combine"
+    let visibleSections = new Set(["equipment","creatures","mercenaries","warlords","supplies"]);
+    let unlockedColors = new Set();
+    let rainbowInterval = null;
+
+    // ─── INIT ──────────────────────────────────────────────────────────────────
+    window.addEventListener("DOMContentLoaded", () => {
+        // Restore theme
+        const sc = localStorage.getItem("naron_theme_color");
+        const sd = localStorage.getItem("naron_theme_dark");
+        if(sc && sd) setTheme(sc, sd);
+        if(localStorage.getItem("naron_magic_unlocked") === "true") {
+            const dot = document.getElementById("secret-rainbow-dot");
+            if(dot) dot.style.display = "block";
+        }
+        const savedEndpoint = localStorage.getItem("naron_api_endpoint");
+        if(savedEndpoint) {
+            API_SALES = savedEndpoint;
+            const sel = document.getElementById("endpointSelect");
+            if(sel) sel.value = savedEndpoint;
+        }
+
+        // Process all section tables
+        ["equipment","creatures","mercenaries","warlords","supplies"].forEach(sec => {
+            processTable(sec);
+        });
+
+        // Populate desc in cardData from data-desc attributes
+        document.querySelectorAll("tr[data-id]").forEach(row => {
+            const id = row.getAttribute("data-id");
+            if(cardData[id]) cardData[id].desc = row.getAttribute("data-desc") || "";
+        });
+
+        // Build combined table
+        buildCombinedTable();
+
+        // Mark all visible
+        document.querySelectorAll(".waffle").forEach(t => t.classList.add("system-ready"));
+        document.getElementById("status").innerText = `READY: ${allDataRows.length} UNITS`;
+
+        checkWalletState();
+    });
+
+    function processTable(section) {
+        const tbody = document.getElementById("tbody-" + section);
+        if(!tbody) return;
+        const rows = Array.from(tbody.querySelectorAll("tr[data-id]"));
+        // First row (index 0 in tbody) is the header row — already processed as live-header tds
+        // Style header row
+        const headerTr = tbody.querySelector("tr:not([data-id])");
+        if(headerTr) {
+            Array.from(headerTr.querySelectorAll("td")).forEach((th, i) => {
+                th.onclick = () => fastSort(section, i);
+            });
+        }
+
+        rows.forEach(row => {
+            const id = row.getAttribute("data-id");
+            const cells = Array.from(row.querySelectorAll("td"));
+            if(!cells.length) return;
+
+            // Image cell (index 1) — replace text URL with actual img if not already img
+            const imgCell = cells[1];
+            let imgSrc = "";
+            const existingImg = imgCell.querySelector("img");
+            if(existingImg) {
+                imgSrc = existingImg.getAttribute("src") || "";
+                // Proxy IPFS images
+                if(imgSrc.includes("ipfs.io/ipfs/")) {
+                    const safeUrl = encodeURIComponent(imgSrc.replace("https://ipfs.io/ipfs/","ipfs.io/ipfs/"));
+                    const proxied = `https://wsrv.nl/?url=${safeUrl}&w=40&h=60&output=webp&fit=cover`;
+                    existingImg.setAttribute("data-hires", imgSrc);
+                    existingImg.src = proxied;
+                    existingImg.onerror = function(){ this.onerror=null; this.src=this.getAttribute("data-hires"); };
+                }
+                existingImg.style.height = "52px";
+                existingImg.style.width = "auto";
+                existingImg.style.display = "block";
+                existingImg.style.margin = "0 auto";
+                imgCell.style.width = "60px";
+                imgCell.style.minWidth = "60px";
+                imgCell.style.padding = "0";
+                imgCell.style.textAlign = "center";
+            }
+
+            // Store card data
+            const nameCell = cells[2];
+            cardData[id] = { name: nameCell ? nameCell.textContent.trim() : id, section: section };
+
+            // Apply tag classes
+            cells.forEach((cell, idx) => {
+                const text = cell.textContent.trim().toLowerCase();
+                applyTagClass(cell, text, section, idx, headerTr);
+                cell.style.backgroundColor = "transparent";
+                if(!cell.className.includes("tag-") && !cell.className.includes("stat-")) {
+                    cell.style.color = "#d0d0d0";
+                }
+            });
+
+            // Transform SCAN td → BUY market logos
+            const lastTd = row.querySelector("td:last-child");
+            if(lastTd && lastTd.querySelector(".scan-trigger")) {
+                lastTd.innerHTML = buildBuyCell(id);
+                lastTd.className = "";
+            }
+
+            // Click handler
+            row.style.cursor = "pointer";
+            row.addEventListener("click", (e) => {
+                if(e.target.closest("a")) return;
+                e.stopPropagation();
+                showPreview(id, imgSrc);
+                fetchRowPrices(id, document.querySelector(`tr[data-id="${id}"] .c-low`), document.querySelector(`tr[data-id="${id}"] .c-last`), document.querySelector(`tr[data-id="${id}"] .c-sugg`));
+                updateMarketLinks(id);
+                if(window.innerWidth <= 800) {
+                    document.getElementById("preview-frame").classList.add("mobile-active");
+                    document.getElementById("market-frame").classList.add("mobile-active");
+                    document.getElementById("mobile-backdrop").classList.add("active");
+                } else {
+                    document.getElementById("market-frame").style.display = "block";
+                }
+            }, true);
+            row.addEventListener("mouseenter", () => {
+                if(window.innerWidth <= 800) return;
+                if(window.deckHoverTimer) clearTimeout(window.deckHoverTimer);
+                window.deckHoverTimer = setTimeout(() => { if(isDeckOpen) showPreview(id, imgSrc); }, 150);
+            }, true);
+
+            allDataRows.push({ id, section, element: row, imgSrc });
+        });
+
+        // Rename SCAN header → BUY, # → TEMPLATE ID
+        if(headerTr) {
+            const scanHdr = Array.from(headerTr.querySelectorAll("td")).find(c => c.textContent.trim() === "SCAN");
+            if(scanHdr) scanHdr.textContent = "BUY";
+            const hashHdr = Array.from(headerTr.querySelectorAll("td")).find(c => c.textContent.trim() === "#");
+            if(hashHdr) hashHdr.textContent = "TEMPLATE ID";
+        }
+    }
+
+    function applyTagClass(cell, text, section, colIdx, headerTr) {
+        // Rarity tags
+        if(text === "common")    { cell.className += " tag-common"; return; }
+        if(text === "uncommon")  { cell.className += " tag-uncommon"; return; }
+        if(text === "rare")      { cell.className += " tag-rare"; return; }
+        if(text === "epic")      { cell.className += " tag-epic"; return; }
+        if(text === "legendary") { cell.className += " tag-legendary"; return; }
+        if(text === "mythic")    { cell.className += " tag-mythic"; return; }
+        if(text === "primordial"){ cell.className += " tag-primordial"; return; }
+
+        // Stat coloring via header label
+        if(headerTr) {
+            const hCells = Array.from(headerTr.querySelectorAll("td"));
+            const hTxt = hCells[colIdx] ? hCells[colIdx].textContent.toLowerCase() : "";
+            if(hTxt.includes("atk") || hTxt.includes("attack"))  { cell.className += " stat-attack"; return; }
+            if(hTxt.includes("def") || hTxt.includes("defense")) { cell.className += " stat-defense"; return; }
+            if(hTxt.includes("spd") || hTxt.includes("speed"))   { cell.className += " stat-spd"; return; }
+            if(hTxt.includes("move cost red") || hTxt.includes("move cost r")) { cell.className += " stat-move"; return; }
+            if(hTxt.includes("move cost") && !hTxt.includes("red")) { cell.className += " stat-move"; return; }
+            if(hTxt.includes("crew"))  { cell.className += " stat-crew"; return; }
+            if(hTxt.includes("effect")){ cell.className += " stat-effect"; return; }
+        }
+    }
+
+    // ─── COMBINED TABLE BUILD ──────────────────────────────────────────────────
+    function buildCombinedTable() {
+        const RARITY_ORDER = ["common","uncommon","rare","epic","legendary","mythic"];
+        const tbody = document.getElementById("tbody-combined");
+
+        // Collect all data rows sorted by rarity
+        const combined = [];
+
+        ["equipment","creatures","mercenaries","warlords","supplies"].forEach(sec => {
+            const rows = document.querySelectorAll(`tr[data-section="${sec}"]`);
+            rows.forEach(row => {
+                const cells = Array.from(row.querySelectorAll("td"));
+                if(!cells.length) return;
+                const id   = row.getAttribute("data-id");
+                const img  = cells[1].querySelector("img");
+                const imgSrc = img ? (img.getAttribute("data-hires") || img.src) : "";
+                const name = cells[2] ? cells[2].textContent.trim() : "";
+                const rarity = cells[3] ? cells[3].textContent.trim() : "";
+                let category = sec.charAt(0).toUpperCase() + sec.slice(1);
+                const type = cells[4] ? cells[4].textContent.trim() : "";
+                let atk = "", def = "";
+                const desc = row.getAttribute("data-desc") || "";
+
+                if(sec === "warlords") {
+                    atk = cells[6] ? cells[6].textContent.trim() : ""; // crew slots
+                    def = "-";
+                } else if(sec === "creatures") {
+                    atk = cells[6] ? cells[6].textContent.trim() : "";
+                    def = cells[7] ? cells[7].textContent.trim() : "";
+                } else if(sec === "supplies") {
+                    atk = cells[5] ? cells[5].textContent.trim() : "";
+                    def = cells[6] ? cells[6].textContent.trim() : "";
+                } else {
+                    atk = cells[6] ? cells[6].textContent.trim() : "";
+                    def = cells[7] ? cells[7].textContent.trim() : "";
+                }
+
+                // Store desc in cardData
+                if(cardData[id]) cardData[id].desc = desc;
+
+                combined.push({ id, imgSrc, name, rarity, category, type, atk, def, desc });
+            });
+        });
+
+        combined.sort((a,b) => {
+            const ra = rarityOrder[a.rarity.toLowerCase()] ?? 99;
+            const rb = rarityOrder[b.rarity.toLowerCase()] ?? 99;
+            return ra - rb;
+        });
+
+        combined.forEach(item => {
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-id", item.id);
+            tr.setAttribute("data-section", "combined");
+            tr.setAttribute("data-desc", item.desc);
+            tr.style.cursor = "pointer";
+
+            const rarityClass = "tag-" + item.rarity.toLowerCase();
+            tr.innerHTML = `
+                <td style="width:60px;min-width:60px;padding:0;text-align:center;"><img src="${item.imgSrc}" loading="lazy" style="height:52px;width:auto;display:block;margin:0 auto;" onerror="this.onerror=null;this.src='${item.imgSrc}'"></td>
+                <td>${item.name}</td>
+                <td class="${rarityClass}">${item.rarity}</td>
+                <td>${item.category}</td>
+                <td>${item.type}</td>
+                <td class="stat-attack">${item.atk}</td>
+                <td class="stat-defense">${item.def}</td>
+                <td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td>${buildBuyCell(item.id)}</td>
+            `;
+
+            tr.addEventListener("click", (e) => {
+                if(e.target.closest("a")) return;
+                e.stopPropagation();
+                showPreview(item.id, item.imgSrc);
+                fetchRowPrices(item.id);
+                updateMarketLinks(item.id);
+                if(window.innerWidth <= 800) {
+                    document.getElementById("preview-frame").classList.add("mobile-active");
+                    document.getElementById("market-frame").classList.add("mobile-active");
+                    document.getElementById("mobile-backdrop").classList.add("active");
+                } else {
+                    document.getElementById("market-frame").style.display = "block";
+                }
+            }, true);
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    // ─── VIEW TOGGLE ───────────────────────────────────────────────────────────
+    function toggleView() {
+        const btn = document.getElementById("view-toggle-btn");
+        const sectionTabs = ["tab-equipment","tab-creatures","tab-mercenaries","tab-warlords","tab-supplies"];
+
+        if(currentView === "split") {
+            currentView = "combine";
+            btn.innerText = "[ COMBINE VIEW ]";
+            btn.classList.add("active-section");
+            // Hide all split sections
+            ["equipment","creatures","mercenaries","warlords","supplies"].forEach(s => {
+                document.getElementById("section-" + s).style.display = "none";
+            });
+            // Show combined
+            document.getElementById("combined-section").style.display = "block";
+            // Disable section tabs
+            sectionTabs.forEach(t => document.getElementById(t).classList.add("disabled-btn"));
+            // Show combined table
+            document.getElementById("table-combined").classList.add("system-ready");
+        } else {
+            currentView = "split";
+            btn.innerText = "[ SPLIT VIEW ]";
+            btn.classList.remove("active-section");
+            document.getElementById("combined-section").style.display = "none";
+            sectionTabs.forEach(t => document.getElementById(t).classList.remove("disabled-btn"));
+            // Restore visible sections
+            ["equipment","creatures","mercenaries","warlords","supplies"].forEach(s => {
+                const wrapper = document.getElementById("section-" + s);
+                if(visibleSections.has(s)) wrapper.style.display = "block";
+                else wrapper.style.display = "none";
+            });
+        }
+    }
+
+    // ─── SECTION FILTER TABS ───────────────────────────────────────────────────
+    function filterSection(section) {
+        if(currentView === "combine") return;
+        const btn = document.getElementById("tab-" + section);
+        const wrapper = document.getElementById("section-" + section);
+
+        if(visibleSections.has(section)) {
+            visibleSections.delete(section);
+            btn.classList.remove("active-section");
+            wrapper.style.display = "none";
+        } else {
+            visibleSections.add(section);
+            btn.classList.add("active-section");
+            wrapper.style.display = "block";
+        }
+    }
+
+    // ─── SORT ──────────────────────────────────────────────────────────────────
+    function fastSort(section, colIndex) {
+        const tbody = document.getElementById("tbody-" + section);
+        if(!tbody) return;
+        const key = section + "_" + colIndex;
+        let dir = sortDirection[key] === "asc" ? "desc" : "asc";
+        sortDirection[key] = dir;
+
+        const rows = Array.from(tbody.querySelectorAll("tr[data-id]"));
+        rows.sort((a,b) => {
+            const cA = a.querySelectorAll("td")[colIndex];
+            const cB = b.querySelectorAll("td")[colIndex];
+            let vA = cA ? cA.textContent.replace(/,/g,"").trim() : "";
+            let vB = cB ? cB.textContent.replace(/,/g,"").trim() : "";
+            const kA = vA.toLowerCase(); const kB = vB.toLowerCase();
+            if(rarityOrder[kA] !== undefined || rarityOrder[kB] !== undefined) {
+                const wA = rarityOrder[kA] ?? 99; const wB = rarityOrder[kB] ?? 99;
+                return dir === "asc" ? wA - wB : wB - wA;
+            }
+            const nA = parseFloat(vA); const nB = parseFloat(vB);
+            if(!isNaN(nA) && !isNaN(nB)) return dir === "asc" ? nA - nB : nB - nA;
+            return dir === "asc" ? vA.localeCompare(vB) : vB.localeCompare(vA);
+        });
+        rows.forEach(r => tbody.appendChild(r));
+    }
+
+    // ─── RESET ─────────────────────────────────────────────────────────────���───
+    function resetSort() {
+        sortDirection = {};
+        document.getElementById("searchInput").value = "";
+        filterTable();
+        document.getElementById("reset-btn").classList.remove("glow-alert");
+    }
+
+    // ─── FILTER / SEARCH ───────────────────────────────────────────────────────
+    function filterTable() {
+        const filter = document.getElementById("searchInput").value.toUpperCase();
+        const resetBtn = document.getElementById("reset-btn");
+        const PASS_1 = "SHADE", PASS_2 = "LEGEND";
+
+        if(filter === PASS_1 || filter === PASS_2) {
+            allDataRows.forEach(r => r.element.style.display = "none");
+            const tbody = currentView === "combine"
+                ? document.getElementById("tbody-combined")
+                : document.getElementById("tbody-equipment");
+            let secretRow = document.getElementById("easter-egg-row");
+            if(!secretRow) {
+                secretRow = document.createElement("tr");
+                secretRow.id = "easter-egg-row";
+                tbody.prepend(secretRow);
+            }
+            if(filter === PASS_1) {
+                secretRow.innerHTML = `<td colspan="10" style="text-align:center;color:#00ff00;padding:40px;font-family:monospace;font-size:1.2em;font-weight:bold;letter-spacing:4px;background:#051a05;border:2px dashed #00ff00;cursor:pointer;" onclick="alert('ACCESS GRANTED: WELCOME, SHADE.\\n\\n[ INITIALIZING CREATOR PROTOCOLS... ]')">>> MAKER RECOGNIZED. CLICK TO INITIALIZE <<</td>`;
+            } else {
+                secretRow.innerHTML = `<td colspan="10" style="text-align:center;color:#ffaa00;padding:40px;font-family:monospace;font-size:1.2em;font-weight:bold;letter-spacing:4px;background:#1a1005;border:2px dashed #ffaa00;cursor:pointer;" onclick="alert('LEGENDARY PROTOCOL ACTIVATED.\\n\\n[ DECRYPTING CLASSIFIED FEDERATION FILES... ]')">>> ALIEN LEGEND DETECTED. CLICK TO DECRYPT <<</td>`;
+            }
+            secretRow.style.display = "";
+            if(resetBtn) resetBtn.classList.add("glow-alert");
+            return;
+        }
+
+        const secretRow = document.getElementById("easter-egg-row");
+        if(secretRow) secretRow.style.display = "none";
+        if(resetBtn) resetBtn.classList.remove("glow-alert");
+
+        if(currentView === "combine") {
+            Array.from(document.querySelectorAll("#tbody-combined tr[data-id]")).forEach(row => {
+                row.style.display = row.textContent.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+            });
+        } else {
+            allDataRows.forEach(row => {
+                if(!visibleSections.has(row.section)) return;
+                row.element.style.display = row.element.textContent.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+            });
+        }
+    }
+
+    // ─── PREVIEW DECK ──────────────────────────────────────────────────────────
+    function showPreview(id, imgSrc) {
+        const previewImg = document.getElementById("preview-img");
+        const nameLabel  = document.getElementById("label-name");
+        const idLabel    = document.getElementById("label-id");
+        const status     = document.getElementById("preview-status");
+        const descEl     = document.getElementById("preview-desc");
+
+        nameLabel.innerText = cardData[id] ? cardData[id].name : "UNKNOWN";
+        idLabel.innerText = "ID: " + id;
+        if(descEl) descEl.textContent = (cardData[id] && cardData[id].desc) ? cardData[id].desc : "";
+
+        if(imgSrc) {
+            if(previewImg.getAttribute("data-current-src") !== imgSrc) {
+                previewImg.src = imgSrc;
+                previewImg.setAttribute("data-current-src", imgSrc);
+            }
+            previewImg.style.display = "block"; status.style.display = "none";
+        } else {
+            status.innerText = "NO IMAGE LINKED"; status.style.display = "block"; previewImg.style.display = "none";
+        }
+    }
+
+    function updateMarketLinks(id) {
+        document.getElementById("lnk-atomic").href = BASE_URLS.atomic + id;
+        document.getElementById("lnk-nefty").href  = BASE_URLS.nefty  + id;
+        document.getElementById("lnk-hive").href   = BASE_URLS.hive   + id;
+        document.getElementById("lnk-f12").href    = BASE_URLS.f12    + id;
+    }
+
+    function toggleDeck() {
+        const frame = document.getElementById("preview-frame");
+        const mFrame = document.getElementById("market-frame");
+        const tab = document.getElementById("deck-toggle-tab");
+        isDeckOpen = !isDeckOpen;
+        document.body.classList.toggle("deck-open", isDeckOpen);
+        if(isDeckOpen) {
+            frame.classList.remove("minimized"); mFrame.classList.remove("minimized");
+            if(tab) { tab.classList.remove("minimized"); tab.innerHTML = "&#10094;"; }
+        } else {
+            frame.classList.add("minimized"); mFrame.classList.add("minimized");
+            if(tab) { tab.classList.add("minimized"); tab.innerHTML = "&#10095;"; }
+        }
+    }
+
+    function closeDeckMobile() {
+        document.getElementById("preview-frame").classList.remove("mobile-active");
+        document.getElementById("market-frame").classList.remove("mobile-active");
+        document.getElementById("mobile-backdrop").classList.remove("active");
+    }
+
+    // ─── MARKET DATA ───────────────────────────────────────────────────────────
+    async function fetchRowPrices(id, cLow, cLast, cSugg) {
+        const writeToCells = (cLow && cLast && cSugg);
+        const deckFloor = document.getElementById("intel-floor");
+        const deckLast  = document.getElementById("intel-last");
+        const deckSugg  = document.getElementById("intel-sugg");
+        const header    = document.getElementById("intel-header");
+        if(cardData[id]) header.innerText = `MARKET INTEL: ${cardData[id].name}`.toUpperCase();
+        deckFloor.innerText = "SCANNING..."; deckLast.innerText = "SCANNING..."; deckSugg.innerText = "---";
+        try {
+            const res = await fetch(`${API_SALES}?symbol=WAX&state=1&template_id=${id}&_ts=${Date.now()}`, { cache: "no-store" });
+            const data = await res.json();
+            if(data.success && data.data && data.data.length > 0) {
+                const sale = data.data[0]; const price = sale.price;
+                const floorVal = parseInt(price.amount) / Math.pow(10, price.token_precision);
+                const floorStr = floorVal.toFixed(2) + " WAX";
+                if(writeToCells) { cLow.textContent = floorStr; }
+                deckFloor.innerText = floorStr;
+                try {
+                    if(sale.assets?.[0]?.prices?.[0]?.suggested_median) {
+                        const s = sale.assets[0].prices[0].suggested_median;
+                        const sv = parseInt(s) / Math.pow(10, price.token_precision);
+                        const suggStr = sv.toFixed(2) + " WAX";
+                        if(writeToCells) { cSugg.textContent = suggStr; }
+                        deckSugg.innerText = suggStr;
+                    }
+                } catch(e) {}
+            } else {
+                if(writeToCells) { cLow.textContent = "NONE"; }
+                deckFloor.innerText = "NONE";
+            }
+        } catch(e) {
+            if(writeToCells) { cLow.textContent = "ERR"; }
+            deckFloor.innerText = "ERROR";
+        }
+        try {
+            const soldRes = await fetch(`${API_HISTORY}?state=3&template_id=${id}&page=1&limit=1&order=desc&sort=updated&symbol=WAX&_ts=${Date.now()}`, { cache: "no-store" });
+            const soldData = await soldRes.json();
+            if(soldData.data?.[0]?.price) {
+                const price = soldData.data[0].price;
+                const val = parseInt(price.amount) / Math.pow(10, price.token_precision);
+                const lastStr = val.toFixed(2) + " WAX";
+                if(writeToCells) { cLast.textContent = lastStr; }
+                deckLast.innerText = lastStr;
+            } else {
+                if(writeToCells) { cLast.textContent = "NONE"; }
+                deckLast.innerText = "NONE";
+            }
+        } catch(e) {
+            if(writeToCells) { cLast.textContent = "ERR"; }
+            deckLast.innerText = "ERR";
+        }
+    }
+
+    async function fetchTemplateMintBurn(id) {
+        try {
+            const res = await fetch(API_TEMPLATES + id + '?_ts=' + Date.now(), { cache: 'no-store' });
+            const data = await res.json();
+            if (data.success && data.data) {
+                const minted = data.data.issued_supply ?? '?';
+                const burned = data.data.burned_by_count ?? '?';
+                document.querySelectorAll(`tr[data-id="${id}"] .c-minted`).forEach(c => { c.textContent = minted; });
+                document.querySelectorAll(`tr[data-id="${id}"] .c-burned`).forEach(c => { c.textContent = burned; });
+            }
+        } catch(e) { /* silently fail */ }
+    }
+
+    async function scanRow(btnEl, id) {
+        if(btnEl) { btnEl.textContent = '...'; btnEl.style.pointerEvents = 'none'; }
+        await fetchRowPrices(id, document.querySelector(`tr[data-id="${id}"] .c-low`), document.querySelector(`tr[data-id="${id}"] .c-last`), document.querySelector(`tr[data-id="${id}"] .c-sugg`));
+        if(btnEl) { btnEl.textContent = '✓'; setTimeout(() => { btnEl.textContent = 'SCAN'; btnEl.style.pointerEvents = ''; }, 2000); }
+    }
+
+    async function scanAll() {
+        const btn = document.getElementById('scan-all-btn');
+        const statusBar = document.getElementById('scan-status-bar');
+        const statusText = document.getElementById('scan-status-text');
+        const scanBar = document.getElementById('scan-bar');
+        btn.textContent = '[ SCANNING... ]';
+        btn.disabled = true;
+        if(statusBar) statusBar.style.display = 'block';
+        const rows = Array.from(document.querySelectorAll('tr[data-id]'));
+        for (let i = 0; i < rows.length; i++) {
+            const id = rows[i].getAttribute('data-id');
+            if(statusText) statusText.textContent = `SCANNING ${i+1}/${rows.length}: ${id}`;
+            if(scanBar) scanBar.style.width = `${Math.round(((i+1)/rows.length)*100)}%`;
+            await fetchRowPrices(id, document.querySelector(`tr[data-id="${id}"] .c-low`), document.querySelector(`tr[data-id="${id}"] .c-last`), document.querySelector(`tr[data-id="${id}"] .c-sugg`));
+            if (i % 3 === 2) await new Promise(r => setTimeout(r, 400));
+        }
+        if(statusText) statusText.textContent = 'COMPLETE';
+        btn.textContent = '[ SCAN ALL ]';
+        btn.disabled = false;
+    }
+
+    // ─── THEME ENGINE ──────────────────────────────────────────────────────────
+    function setTheme(color, dark) {
+        localStorage.setItem("naron_theme_color", color);
+        localStorage.setItem("naron_theme_dark", dark);
+        const searchInput = document.getElementById("searchInput");
+        if(rainbowInterval) { clearInterval(rainbowInterval); rainbowInterval = null; }
+        if(color === "rainbow") {
+            if(searchInput) searchInput.placeholder = "ENTER PASSPHRASE...";
+            let hue = 0;
+            document.documentElement.style.setProperty("--theme-dark", dark);
+            rainbowInterval = setInterval(() => {
+                hue = (hue + 2) % 360;
+                document.documentElement.style.setProperty("--theme-color", `hsl(${hue},100%,50%)`);
+                document.documentElement.style.setProperty("--theme-shadow", `0 0 15px hsla(${hue},100%,50%,0.4)`);
+                document.documentElement.style.setProperty("--theme-border", `1px solid hsla(${hue},100%,50%,0.3)`);
+                document.documentElement.style.setProperty("--theme-hover", `hsla(${hue},100%,50%,0.2)`);
+            }, 40);
+            return;
+        }
+        if(searchInput) searchInput.placeholder = "SEARCH...";
+        document.documentElement.style.setProperty("--theme-color", color);
+        document.documentElement.style.setProperty("--theme-dark", dark);
+        document.documentElement.style.setProperty("--theme-hover", hexToRgba(color, 0.2));
+        document.documentElement.style.setProperty("--theme-shadow", `0 0 15px ${hexToRgba(color, 0.4)}`);
+        document.documentElement.style.setProperty("--theme-border", `1px solid ${hexToRgba(color, 0.3)}`);
+        if(color !== "rainbow") { unlockedColors.add(color); }
+        if(unlockedColors.size >= 6) {
+            localStorage.setItem("naron_magic_unlocked","true");
+            const dot = document.getElementById("secret-rainbow-dot");
+            if(dot && dot.style.display === "none") {
+                dot.style.display = "block";
+                dot.animate([{transform:"scale(0)"},{transform:"scale(1.5)"},{transform:"scale(1)"}],{duration:400,easing:"cubic-bezier(0.175,0.885,0.32,1.275)"});
+            }
+        }
+    }
+
+    function hexToRgba(hex, alpha) {
+        const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+        return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function adjustFont(delta) {
+        const tds = document.querySelectorAll("td, th");
+        let cur = parseFloat(tds[0]?.style.fontSize) || 0.9;
+        cur = Math.min(1.5, Math.max(0.6, cur + delta * 0.1));
+        tds.forEach(c => c.style.setProperty("font-size", `${cur}em`, "important"));
+    }
+
+    // ─── WALLET ────────────────────────────────────────────────────────────────
+    const wax = new waxjs.WaxJS({ rpcEndpoint: "https://wax.greymass.com", userAccount: "", tryAutoLogin: false });
+
+    async function toggleWallet() {
+        const btn = document.getElementById("wallet-btn");
+        if(wax.userAccount || localStorage.getItem("naron_wallet")) {
+            wax.userAccount = "";
+            localStorage.removeItem("naron_wallet");
+            btn.innerText = "[ WAX LOGIN ]";
+            btn.style.color = "var(--theme-color)"; btn.style.borderColor = "var(--theme-color)";
+        } else {
+            try {
+                btn.innerText = "[ AUTHENTICATING... ]";
+                const account = await wax.login();
+                localStorage.setItem("naron_wallet", account);
+                updateWalletUI(account);
+            } catch(e) { btn.innerText = "[ WAX LOGIN ]"; }
+        }
+    }
+
+    function updateWalletUI(accountName) {
+        const btn = document.getElementById("wallet-btn");
+        if(btn) { btn.innerText = `[ DISCONNECT: ${accountName} ]`; btn.style.color = "#00ff00"; btn.style.borderColor = "#00ff00"; }
+    }
+
+    function checkWalletState() {
+        const saved = localStorage.getItem("naron_wallet");
+        if(saved) { wax.userAccount = saved; updateWalletUI(saved); }
+    }
+
+    async function sendTip() {
+        if(!wax.userAccount) {
+            try { await wax.login(); localStorage.setItem("naron_wallet", wax.userAccount); checkWalletState(); }
+            catch(e) { alert("Wallet connection required to transmit funds."); return; }
+        }
+        const tipAmount = document.getElementById("tip-amount").value;
+        try {
+            const result = await wax.api.transact({
+                actions: [{ account: "alien.worlds", name: "transfer",
+                    authorization: [{ actor: wax.userAccount, permission: "active" }],
+                    data: { from: wax.userAccount, to: "1x1ci.wam", quantity: tipAmount, memo: "Naron Codex Tip" }
+                }]
+            }, { blocksBehind: 3, expireSeconds: 30 });
+            alert(`TRANSMISSION SUCCESSFUL.\n\nThank you for supporting Naron Codex!\nTransaction ID: ${result.transaction_id}`);
+        } catch(e) { alert(`TRANSMISSION FAILED.\n\nError: ${e.message}`); }
+    }
+
+    function setEndpoint(url) {
+        API_SALES = url;
+        localStorage.setItem("naron_api_endpoint", url);
+    }
+</script>
+</body>
+</html>

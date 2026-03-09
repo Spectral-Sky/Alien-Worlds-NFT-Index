@@ -103,8 +103,9 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.8); margin-bottom: 0; flex-wrap: wrap; gap:10px;
         }
         h1 { color: var(--theme-color); letter-spacing: 3px; margin: 0; text-transform: uppercase; font-size: 1.5em; line-height: 1; text-shadow: 0 0 10px var(--theme-color); transition: color 0.5s, text-shadow 0.5s; }
-        .nav-btn { padding: 10px 16px; background: rgba(0,0,0,0.5); border: 1px solid var(--theme-color); color: var(--theme-color); text-decoration: none; font-weight: bold; font-size: 0.8em; transition: all 0.3s; }
-        .nav-btn:hover { background: var(--theme-color); color: #000; }
+        .nav-btn { background: transparent; color: #888; border: 1px solid transparent; padding: 8px 16px; font-family: monospace; font-weight: bold; font-size: 0.9em; text-decoration: none; cursor: pointer; transition: all 0.3s; text-transform: uppercase; }
+        .nav-btn:hover { color: var(--theme-color); border-color: var(--theme-color); }
+        .nav-btn.active { color: #000; background: var(--theme-color); border-color: var(--theme-color); box-shadow: var(--theme-shadow); }
 
         #searchInput { background: #000; border: 1px solid var(--theme-color); color: var(--theme-color); padding: 10px; font-family: 'Courier New', monospace; font-weight: bold; width: 200px; text-transform: uppercase; }
         .cyber-btn { background: var(--theme-dark); color: var(--theme-color); border: 2px solid var(--theme-color); padding: 10px 14px; font-family: 'Courier New', Courier, monospace; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s; }
@@ -340,10 +341,12 @@
         
         <nav class="nav-links">
             <a href="index.html" class="nav-btn">HUB</a>
-            <a href="crew.worlds.html" class="nav-btn">CREW</a>
-            <a href="arms.worlds.html" class="nav-btn">ARMS</a>
-            <a href="tools.worlds.html" class="nav-btn">TOOLS</a>
-            <a href="faces.worlds.html" class="nav-btn active">FACES</a>
+            <a href="crew.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">CREW</a>
+            <a href="arms.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">ARMS</a>
+            <a href="tools.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">TOOLS</a>
+            <a href="faces.worlds.html" class="nav-btn active"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">FACES</a>
+            <a href="pd.worlds.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD UNITS</a>
+            <a href="pd.materials.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD MATS</a>
         </nav>
 
         <div class="wallet-section">
@@ -410,15 +413,27 @@
                 <br><br>
                 This protocol links to external, independent third-party marketplaces. Naron Codex does not process transactions and is not responsible for any financial losses or damages incurred on external platforms. Use of external links and data is entirely at your own risk.
                 <br><br>
-                All images and names associated with Alien Worlds remain the intellectual property of Dacoco GmbH. Simple compile copyright © 2026 @Spectral.Sky.
+                All images and names associated with Alien Worlds remain the intellectual property of Dacoco GmbH. Licensed under the MIT License. © 2026 @Spectral.Sky.
             </div>
-            <div class="footer-actions" style="display:flex; align-items:center; gap:10px; justify-content:center; flex-wrap:wrap;">
-                <label style="color:var(--theme-color); font-family:'Courier New'; font-size:0.8em; letter-spacing:1px; white-space:nowrap;">MARKET API NODE:</label>
-                <select id="endpointSelect" class="cyber-btn" onchange="setEndpoint(this.value)" style="background:#111; color:var(--theme-color); border-color:var(--theme-color); cursor:pointer; outline:none; padding:9px 10px;">
-                    <option value="https://wax.eosusa.io/atomicmarket/v1/sales/templates">eosusa.io</option>
-                    <option value="https://wax.api.atomicassets.io/atomicmarket/v1/sales/templates">atomicassets.io</option>
-                </select>
-                <button class="cyber-btn" style="color: #ffaa00; border-color: #ffaa00;" onclick="alert('TLM Tipping Contract coming soon!')">[ TIP DEV (TLM) ]</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:8px; width:100%;">
+                <div style="flex:1;"></div>
+                <div style="display:flex; align-items:center; gap:10px; justify-content:center;">
+                    <select id="tip-amount" class="cyber-btn" style="background:#111; color:#ffaa00; border-color:#ffaa00; cursor:pointer; outline:none; padding:9px 10px;">
+                        <option value="1.0000 TLM">1 TLM</option>
+                        <option value="5.0000 TLM">5 TLM</option>
+                        <option value="10.0000 TLM" selected>10 TLM</option>
+                        <option value="50.0000 TLM">50 TLM</option>
+                        <option value="100.0000 TLM">100 TLM</option>
+                    </select>
+                    <button class="cyber-btn" style="color:#ffaa00; border-color:#ffaa00;" onclick="sendTip()">[ TRANSMIT TIP ]</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; justify-content:flex-end; flex:1;">
+                    <label style="color:var(--theme-color); font-family:'Courier New'; font-size:0.8em; letter-spacing:1px; white-space:nowrap;">API NODE:</label>
+                    <select id="endpointSelect" class="cyber-btn" onchange="setEndpoint(this.value)" style="background:#111; color:var(--theme-color); border-color:var(--theme-color); cursor:pointer; outline:none; padding:9px 10px;">
+                        <option value="https://wax.eosusa.io/atomicmarket/v1/sales/templates">eosusa.io</option>
+                        <option value="https://wax.api.atomicassets.io/atomicmarket/v1/sales/templates">atomicassets.io</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
@@ -1068,6 +1083,33 @@
         }
 
         document.addEventListener("DOMContentLoaded", checkWalletState);
+
+        async function sendTip() {
+            if (!wax.userAccount) {
+                try {
+                    await wax.login();
+                    localStorage.setItem("naron_wallet", wax.userAccount);
+                    checkWalletState();
+                } catch (e) {
+                    alert("Wallet connection required to transmit funds.");
+                    return;
+                }
+            }
+            const tipAmount = document.getElementById("tip-amount").value;
+            const receiverAddress = "1x1ci.wam";
+            try {
+                const result = await wax.api.transact({
+                    actions: [{ account: 'alien.worlds', name: 'transfer',
+                        authorization: [{ actor: wax.userAccount, permission: 'active' }],
+                        data: { from: wax.userAccount, to: receiverAddress, quantity: tipAmount, memo: 'Naron Codex Tip' }
+                    }]
+                }, { blocksBehind: 3, expireSeconds: 30 });
+                alert(`TRANSMISSION SUCCESSFUL.\n\nThank you for supporting Naron Codex! \nTransaction ID: ${result.transaction_id}`);
+            } catch (e) {
+                console.error(e);
+                alert(`TRANSMISSION FAILED.\n\nError: ${e.message}`);
+            }
+        }
     </script>
 </body>
 </html>
