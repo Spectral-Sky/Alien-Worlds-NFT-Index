@@ -13,6 +13,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="NCico.png">
     <script src="waxjs.js"></script>
+    <script src="nft_data.js"></script>
     <style>
         :root {
             --theme-color: #ffaa00;
@@ -210,13 +211,15 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             gap: 12px; padding: 16px;
+            overflow: visible;
         }
         .nft-card {
             background: rgba(15,12,0,0.95); border: 2px solid rgba(255,170,0,0.15);
             position: relative; overflow: hidden; text-align: center;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s, transform 0.18s ease;
+            transform-origin: center center;
         }
-        .nft-card:hover { border-color: var(--theme-color); box-shadow: var(--theme-shadow); }
+        .nft-card:hover { border-color: var(--theme-color); box-shadow: var(--theme-shadow); transform: scale(1.07); z-index: 10; }
         .nft-card.inactive { opacity: 0.25; filter: grayscale(1); }
 
         .qty-badge {
@@ -224,9 +227,15 @@
             color: var(--theme-color); padding: 2px 7px; font-weight: bold;
             border: 1px solid var(--theme-color); font-size: 0.72em; z-index: 5;
         }
+        @keyframes rarity-bar-shimmer {
+            0%   { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
         .shine-bar {
             display: block; padding: 4px 6px; font-weight: bold;
-            font-size: 0.6em; text-transform: uppercase; color: #000; letter-spacing: 1px;
+            font-size: 0.6em; text-transform: uppercase; letter-spacing: 1px;
+            background-size: 200% 100%;
+            animation: rarity-bar-shimmer 3s linear infinite;
         }
         .nft-card img {
             width: 100%; height: 148px; object-fit: contain;
@@ -748,8 +757,18 @@ const WARLORD_OVERRIDE = {
     "Overlord": 24, "Supremacy Warden": 47, "Warmaster": 75
 };
 const RARITY_COLORS = {
-    "abundant": "#aaa", "common": "#aaa", "uncommon": "#4cbb6e", "rare": "#0088ff",
+    "abundant": "#c0c0c0", "common": "#555", "uncommon": "#4cbb6e", "rare": "#0088ff",
     "epic": "#bc13fe", "legendary": "#ffaa00", "mythic": "#ff0055", "mythical": "#ff0055"
+};
+const RARITY_GRADIENTS = {
+    "abundant":  "linear-gradient(90deg, #888 0%, #c0c0c0 30%, #f0f0f0 50%, #c0c0c0 70%, #888 100%)",
+    "common":    "linear-gradient(90deg, #111 0%, #333 30%, #5a5a5a 50%, #333 70%, #111 100%)",
+    "uncommon":  "linear-gradient(90deg, #1a5c34 0%, #2d8a52 30%, #4cbb6e 50%, #2d8a52 70%, #1a5c34 100%)",
+    "rare":      "linear-gradient(90deg, #002288 0%, #0055cc 30%, #4499ff 50%, #0055cc 70%, #002288 100%)",
+    "epic":      "linear-gradient(90deg, #5c0099 0%, #9a00cc 30%, #cc44ff 50%, #9a00cc 70%, #5c0099 100%)",
+    "legendary": "linear-gradient(90deg, #7a4400 0%, #cc7700 30%, #ffcc00 50%, #cc7700 70%, #7a4400 100%)",
+    "mythic":    "linear-gradient(90deg, #880022 0%, #cc0044 30%, #ff2266 50%, #cc0044 70%, #880022 100%)",
+    "mythical":  "linear-gradient(90deg, #880022 0%, #cc0044 30%, #ff2266 50%, #cc0044 70%, #880022 100%)",
 };
 const SUPPLY_KEYWORDS = ["decaffeinated", "boar", "ration", "battery", "stimpack", "coffee", "booster"];
 const BANNED_KEYWORDS = [
@@ -761,6 +780,9 @@ const BANNED_KEYWORDS = [
     "crystal", "carbon", "oreon", "coins"
 ];
 // PD Equipment template IDs (Gadgets, Weapons, Protection)
+// Desktop gets full-res/animated IPFS source; mobile gets wsrv.nl thumbnail
+const IS_MOBILE = window.innerWidth < 768 || window.matchMedia('(pointer: coarse)').matches;
+
 const EQUIPMENT_TEMPLATE_IDS = new Set([
     902055, 902056, 902057, 902058, 902059, 902060,  // Gadgets
     903762, 903763, 903764, 903765, 903766, 903767,  // Weapons
@@ -879,8 +901,10 @@ function processData(data) {
 
         // Schema exclusions
         if (schema === "level.worlds" || schema === "material" || schema.includes('tool')) return;
-        // Name exclusions
-        if (BANNED_KEYWORDS.some(kw => name.includes(kw))) return;
+        // Supplies bypass banned keyword filter (e.g. "Red Boar - Primordial Essence" contains "essence")
+        const isSupply = SUPPLY_KEYWORDS.some(kw => name.includes(kw));
+        // Name exclusions (supplies are exempt)
+        if (!isSupply && BANNED_KEYWORDS.some(kw => name.includes(kw))) return;
 
         const isPD   = collection === "planetdefnft";
         const rarity = (d.rarity || td.rarity || "common").toLowerCase();
@@ -888,27 +912,43 @@ function processData(data) {
         const mult   = SHINE_MULT[shine]   || 1;
         const bonus  = RARITY_BONUS[rarity] || 1;
 
-        // AW NFTs get rarity+shine formula; PD NFTs use raw stats as-is
-        const baseAtk = parseFloat(d.attack  ?? td.attack  ?? 0);
-        const baseDef = parseFloat(d.defense ?? td.defense ?? 0);
-        const atk = isPD ? baseAtk : (baseAtk + bonus) * mult;
-        const def = isPD ? baseDef : (baseDef + bonus) * mult;
+        // Look up verified stats from local database (PD templates)
+        const templateId = parseInt(nft.template?.template_id || 0);
+        const localData  = NFT_DATA[templateId];
+
+        // Stats: local DB is the source of truth for all known templates (PD and AW)
+        let atk, def, moveCostVal, moveCostRedVal;
+        if (localData) {
+            atk            = localData.atk  ?? 0;
+            def            = localData.def  ?? 0;
+            moveCostVal    = localData.movecost            ?? null;
+            moveCostRedVal = localData.move_cost_reduction ?? null;
+        } else {
+            // Fallback for unknown templates: AW formula from AtomicAssets base values
+            const baseAtk = parseFloat(d.attack  ?? td.attack  ?? 0);
+            const baseDef = parseFloat(d.defense ?? td.defense ?? 0);
+            if (!isPD && rarity === 'abundant' && schema.includes('arms')) {
+                atk = mult; def = mult;
+            } else {
+                atk = isPD ? baseAtk : (baseAtk + bonus) * mult;
+                def = isPD ? baseDef : (baseDef + bonus) * mult;
+            }
+            moveCostVal    = isPD
+                ? (parseFloat(d.movecost ?? td.movecost ?? 0) || null)
+                : (parseFloat(d['Move Cost'] ?? td['Move Cost'] ?? d.move_cost ?? td.move_cost ?? 0) || null);
+            moveCostRedVal = parseFloat(d.move_cost_reduction ?? td.move_cost_reduction ?? d.movecost_reduction ?? td.movecost_reduction ?? 0) || null;
+        }
 
         const obj = {
             name:     nft.name,
             rarity, shine, isPD,
-            img:      d.img || td.img || null,
+            img:      d.img || td.img || (localData?.img ? localData.img : null),
             active:   false,
             asset_id: nft.asset_id,
             atk, def,
-            moveCost: isPD
-                ? (parseFloat(d.movecost ?? td.movecost ?? 0) || null)
-                : (parseFloat(d['Move Cost'] ?? td['Move Cost'] ?? 0) || null),
-            moveCostReduction: parseFloat(d.move_cost_reduction ?? td.move_cost_reduction ?? d.movecost_reduction ?? td.movecost_reduction ?? 0) || null,
+            moveCost:          moveCostVal    || null,
+            moveCostReduction: moveCostRedVal || null,
         };
-
-        // PD Equipment — forge-gated
-        const templateId = parseInt(nft.template?.template_id || 0);
         if (EQUIPMENT_TEMPLATE_IDS.has(templateId)) {
             obj.active = forgeEnabled;
             // Store equipment type for display
@@ -922,19 +962,24 @@ function processData(data) {
             obj.active = true; creatures.push(obj); return;
         }
         // Supplies
-        if (SUPPLY_KEYWORDS.some(kw => name.includes(kw))) { supplies.push(obj); return; }
+        if (isSupply) { supplies.push(obj); return; }
 
         // Faces / Warlords
         const isHuman = name.includes("human");
         if ((schema.includes('warlord') || schema.includes('face')) && !isHuman) {
-            obj.slots = WARLORD_OVERRIDE[nft.name]
+            obj.slots = (localData?.crew_slots)
+                ?? WARLORD_OVERRIDE[nft.name]
                 ?? parseFloat(d.crew_slot || d.units || d.slots || (bonus * mult));
             obj.active = true;
             faces.push(obj);
         } else {
-            if (!isPD && obj.atk === bonus * mult && obj.def === bonus * mult) return; // zero base AW stats
-            if (schema.includes('arms')) arms.push(obj);
-            else crew.push(obj);
+            if (schema.includes('arms')) {
+                arms.push(obj);
+            } else {
+                if (!isPD && rarity === 'abundant') return; // abundant AW crew don't count (PD balance rule)
+                if (!isPD && obj.atk === bonus * mult && obj.def === bonus * mult) return; // zero base AW stats
+                crew.push(obj);
+            }
         }
     });
 
@@ -1021,8 +1066,12 @@ function buildEquipmentSection(equipment, root, forgeEnabled) {
         card.style.borderTopWidth = '4px';
 
         const imgHash = item.img;
-        const imgSrc  = imgHash ? `https://wsrv.nl/?url=${encodeURIComponent('ipfs.io/ipfs/' + imgHash)}&w=160&h=160&output=webp&fit=contain` : null;
         const imgFb   = imgHash ? `https://ipfs.io/ipfs/${imgHash}` : null;
+        const imgSrc  = imgHash
+            ? (IS_MOBILE
+                ? `https://wsrv.nl/?url=${encodeURIComponent('ipfs.io/ipfs/' + imgHash)}&w=160&h=160&output=webp&fit=contain`
+                : `https://wsrv.nl/?url=${encodeURIComponent('ipfs.io/ipfs/' + imgHash)}&w=320&h=320&fit=contain&n=-1`)
+            : null;
 
         card.innerHTML = `
             ${item.qty > 1 ? `<div class="qty-badge">×${item.qty}</div>` : ''}
@@ -1115,8 +1164,10 @@ function buildSection(title, list, root, activeMode, type, showStatus = true) {
         const statusText  = activeMode === "always" ? "◈ ACTIVE"  : isActive ? "◈ OPERATIONAL" : "○ RESERVE";
 
         // Both PD and AW: rarity bar at top; AW cards also show shine text below name
-        const barColor = RARITY_COLORS[item.rarity] || '#888';
-        const barLabel = item.rarity.toUpperCase();
+        const barColor    = RARITY_COLORS[item.rarity] || '#888';
+        const barGradient = RARITY_GRADIENTS[item.rarity] || 'linear-gradient(90deg, #333 0%, #666 50%, #333 100%)';
+        const barTextColor = item.rarity === 'abundant' ? '#111' : '#fff';
+        const barLabel    = item.rarity.toUpperCase();
 
         let subText = "";
         if (type === "slots") {
@@ -1127,14 +1178,18 @@ function buildSection(title, list, root, activeMode, type, showStatus = true) {
         } else if (type === "reduction") {
             subText = item.moveCostReduction
                 ? `<span class="card-move-reduc">▼ -${item.moveCostReduction}</span>`
-                : `<span style="color:#555">— NO REDUCTION —</span>`;
+                : ``;
         } else {
             subText = "ITEM";
         }
 
-        const imgHash    = item.img;
-        const imgSrc     = imgHash ? `https://wsrv.nl/?url=${encodeURIComponent('ipfs.io/ipfs/' + imgHash)}&w=160&h=160&output=webp&fit=contain` : null;
+        const imgHash     = item.img;
         const imgFallback = imgHash ? `https://ipfs.io/ipfs/${imgHash}` : null;
+        const imgSrc      = imgHash
+            ? (IS_MOBILE
+                ? `https://wsrv.nl/?url=${encodeURIComponent('ipfs.io/ipfs/' + imgHash)}&w=160&h=160&output=webp&fit=contain`
+                : `https://wsrv.nl/?url=${encodeURIComponent('ipfs.io/ipfs/' + imgHash)}&w=320&h=320&fit=contain&n=-1`)
+            : null;
 
         const card = document.createElement('div');
         card.className = `nft-card${!isActive ? ' inactive' : ''}`;
@@ -1142,7 +1197,7 @@ function buildSection(title, list, root, activeMode, type, showStatus = true) {
         card.style.borderTopWidth = '4px';
         card.innerHTML = `
             ${item.qty > 1 ? `<div class="qty-badge">×${item.qty}</div>` : ''}
-            <div class="shine-bar" style="background:${barColor}">${barLabel}</div>
+            <div class="shine-bar" style="background:${barGradient};background-size:200% 100%;color:${barTextColor}">${barLabel}</div>
             ${imgSrc
                 ? `<img src="${imgSrc}" onerror="this.onerror=null;this.src='${imgFallback}'" loading="lazy" alt="${item.name}">`
                 : `<div class="no-img">NO IMAGE</div>`}
