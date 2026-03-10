@@ -904,7 +904,7 @@ function processData(data) {
             moveCost: isPD
                 ? (parseFloat(d.movecost ?? td.movecost ?? 0) || null)
                 : (parseFloat(d['Move Cost'] ?? td['Move Cost'] ?? 0) || null),
-            moveCostReduction: parseFloat(d.move_cost_reduction ?? td.move_cost_reduction ?? 0) || null,
+            moveCostReduction: parseFloat(d.move_cost_reduction ?? td.move_cost_reduction ?? d.movecost_reduction ?? td.movecost_reduction ?? 0) || null,
         };
 
         // PD Equipment — forge-gated
