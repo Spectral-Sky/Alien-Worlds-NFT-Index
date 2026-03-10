@@ -281,6 +281,32 @@
         #chest-modal-link{display:inline-block;padding:10px 24px;border:1px solid #ffaa00;color:#ffaa00;font-family:monospace;font-size:0.9em;text-decoration:none;letter-spacing:1px;}
         #chest-modal-link:hover{background:rgba(255,170,0,0.1);}
         #chest-modal-empty{display:none;margin-top:14px;color:#555;font-size:0.78em;text-align:center;border:1px dashed #222;padding:10px;}
+        /* ── Mobile hamburger nav ── */
+        #hamburger-btn { display: none; }
+        #nav-dropdown {
+            position: fixed; top: 54px; right: 0; z-index: 5000;
+            background: rgba(5,5,5,0.98); border: 1px solid var(--theme-color);
+            padding: 8px 0; flex-direction: column; min-width: 200px;
+            box-shadow: -4px 8px 24px rgba(0,0,0,0.9); display: none;
+        }
+        #nav-dropdown.open { display: flex; }
+        #nav-dropdown .nav-btn {
+            display: block; text-align: left; padding: 10px 20px;
+            border: none; border-bottom: 1px solid #1a1a1a; border-radius: 0;
+            width: 100%; box-sizing: border-box;
+        }
+        #nav-dropdown .nav-btn:last-child { border-bottom: none; }
+        @media (max-width: 800px) {
+            .global-header { height: auto !important; padding: 8px 15px !important; min-height: 52px; }
+            .logo-section h1 { font-size: 1.1em !important; }
+            .nav-links { display: none !important; }
+            #hamburger-btn {
+                display: flex; align-items: center; justify-content: center;
+                background: none; border: 1px solid var(--theme-color);
+                color: var(--theme-color); font-size: 1.4em; padding: 2px 10px;
+                cursor: pointer; font-family: monospace; line-height: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -328,7 +354,18 @@
     <div class="wallet-section">
         <button id="wallet-btn" class="cyber-btn" style="border-color:#5badff; color:#5badff;" onclick="toggleWallet()">[ WAX LOGIN ]</button>
     </div>
+    <button id="hamburger-btn" onclick="toggleHamburger()" aria-label="Open navigation">&#9776;</button>
 </header>
+<nav id="nav-dropdown">
+    <a href="index.html" class="nav-btn">HUB</a>
+    <a href="crew.worlds.html" class="nav-btn">CREW</a>
+    <a href="arms.worlds.html" class="nav-btn">ARMS</a>
+    <a href="tools.worlds.html" class="nav-btn">TOOLS</a>
+    <a href="faces.worlds.html" class="nav-btn">FACES</a>
+    <a href="pd.worlds.html" class="nav-btn">PD UNITS</a>
+    <a href="pd.materials.html" class="nav-btn">PD MATS</a>
+    <a href="army.html" class="nav-btn">&#9876; ARMY</a>
+</nav>
 
 <div class="top-bar">
     <div style="flex-grow:1;">
@@ -477,6 +514,8 @@
 
     // ─── INIT ─────────────────────────────────────────────────────────────────
     window.addEventListener("DOMContentLoaded", () => {
+        // Deck starts open — sync body class so table is pushed correctly on load
+        if (isDeckOpen) document.body.classList.add('deck-open');
         const sc = localStorage.getItem("naron_theme_color");
         const sd = localStorage.getItem("naron_theme_dark");
         if(sc && sd) setTheme(sc, sd);
@@ -949,6 +988,17 @@
     }
     function closeChestModal() { document.getElementById("chest-modal-backdrop").classList.remove("active"); }
     document.getElementById("chest-modal-backdrop").addEventListener("click", function(e) { if(e.target === this) closeChestModal(); });
+    function toggleHamburger() {
+        const dd = document.getElementById('nav-dropdown');
+        if (dd) dd.classList.toggle('open');
+    }
+    document.addEventListener('click', function(e) {
+        const dd = document.getElementById('nav-dropdown');
+        const btn = document.getElementById('hamburger-btn');
+        if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) {
+            dd.classList.remove('open');
+        }
+    });
 </script>
 
 <div id="chest-modal-backdrop">
