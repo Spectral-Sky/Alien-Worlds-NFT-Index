@@ -536,6 +536,7 @@
             table.classList.add("system-ready");
         });
 
+        fastSortTable(document.getElementById("table-crafting"), 4);
         document.getElementById("status").innerText = `READY: ${allDataRows.length} MATERIALS`;
         checkWalletState();
     });
