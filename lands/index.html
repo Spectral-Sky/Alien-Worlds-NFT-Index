@@ -477,13 +477,15 @@ canvas.addEventListener('pointerdown', e => {
     raycaster.setFromCamera(pointer, camera);
     const hits = raycaster.intersectObjects(planets);
     if (hits.length > 0) {
-        const p = hits[0].object;
-        p.userData.clickCount++;
-        const boost = p.userData.clickCount > 8 ? 50 : BOOST_PER_CLICK;
-        p.userData.speedMultiplier = Math.min(p.userData.speedMultiplier + boost, MAX_MULTIPLIER);
-        togglePlanetFilter(p.name);
+        spinPlanet(hits[0].object);
     }
 });
+
+function spinPlanet(p) {
+    p.userData.clickCount++;
+    const boost = p.userData.clickCount > 8 ? 50 : BOOST_PER_CLICK;
+    p.userData.speedMultiplier = Math.min(p.userData.speedMultiplier + boost, MAX_MULTIPLIER);
+}
 
 // ─── ANIMATION ───────────────────────────────────────────────────────────────
 function animate() {
@@ -518,7 +520,11 @@ function togglePlanetFilter(name) {
     renderTable();
 }
 window.togglePlanetFilter = togglePlanetFilter;
-labelEls.forEach(el => el.addEventListener('click', () => togglePlanetFilter(el.dataset.planet)));
+labelEls.forEach(el => el.addEventListener('click', () => {
+    const planet = planets.find(p => p.name === el.dataset.planet);
+    if (planet) spinPlanet(planet);
+    togglePlanetFilter(el.dataset.planet);
+}));
 
 // ─── TABLE STATE ─────────────────────────────────────────────────────────────
 let allLands   = [];
