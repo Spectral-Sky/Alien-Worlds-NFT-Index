@@ -488,6 +488,14 @@ canvas.addEventListener('pointerdown', e => {
 // ─── ANIMATION ───────────────────────────────────────────────────────────────
 function animate() {
     requestAnimationFrame(animate);
+    // Sync renderer to actual display size every frame — fixes fullscreen stretch
+    const w = wrapper.clientWidth;
+    if (w > 0 && (renderer.domElement.width !== Math.round(w * window.devicePixelRatio) || camera.aspect !== w / CANVAS_H)) {
+        camera.aspect = w / CANVAS_H;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, CANVAS_H);
+        placePlanets(computeSpacing());
+    }
     planets.forEach(p => {
         p.userData.speedMultiplier = THREE.MathUtils.lerp(p.userData.speedMultiplier, 1, DECAY_RATE);
         p.rotation.y += BASE_SPEED * p.userData.speedMultiplier;
