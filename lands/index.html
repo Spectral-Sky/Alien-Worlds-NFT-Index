@@ -207,6 +207,21 @@
         }
         .market-link-btn:hover { background: var(--theme-color); color: #000; box-shadow: var(--theme-shadow); }
 
+        /* --- EXPAND SUB-TABLE --- */
+        .expand-row > td { padding: 0 !important; border-bottom: none !important; border-right: none !important; border-left: none !important; }
+        .sub-table-wrap { display: none; border-left: 3px solid var(--theme-color); background: rgba(0,5,2,0.9); }
+        .sub-table-wrap.open { display: block; }
+        .expand-btn { background: none; border: none; color: var(--theme-color); font-size: 1.1em; padding: 0 6px; line-height: 1; transition: transform 0.2s; cursor: crosshair !important; }
+        .expand-btn.open { transform: rotate(90deg); display: inline-block; }
+        .sub-table { width: 100%; border-collapse: collapse; }
+        .sub-header { background: rgba(0,0,0,0.9) !important; color: var(--theme-color) !important; border-bottom: 1px solid var(--theme-color) !important; border-right: 1px solid #0f2d1a !important; padding: 5px 10px !important; text-align: center !important; font-family: 'Courier New', monospace !important; font-size: 0.8em !important; text-transform: uppercase !important; letter-spacing: 1px !important; white-space: nowrap !important; user-select: none; cursor: crosshair !important; }
+        .sub-header:hover { background: #000 !important; }
+        .sub-header::after { content: ' ↕'; color: rgba(255,255,255,0.2); font-size: 0.8em; }
+        .sub-row td { border-bottom: 1px solid #091a0f !important; border-right: 1px solid #091a0f !important; padding: 4px 10px !important; font-family: 'Courier New', monospace !important; font-size: 0.82em !important; color: #aaa !important; white-space: nowrap !important; }
+        .sub-row td:first-child { border-left: none !important; }
+        .sub-row:hover td { background: rgba(0,60,30,0.4) !important; color: #ccc !important; }
+        .sub-loading { color: #335; text-align: center; padding: 20px; letter-spacing: 2px; font-family: 'Courier New', monospace; font-size: 0.8em; }
+
         /* --- FOOTER --- */
         .codex-footer {
             grid-column: 2; text-align: center; padding: 40px 20px 60px 20px;
@@ -311,7 +326,7 @@
     </div>
     <div style="text-align:right;">
         <h1>LAND.WORLDS</h1>
-        <div id="status" style="font-size:0.7em;color:#666;margin-top:5px;">CONNECT WALLET TO LOAD</div>
+        <div id="status" style="font-size:0.7em;color:#666;margin-top:5px;">SCANNING...</div>
     </div>
 </div>
 
@@ -332,19 +347,19 @@
 <div class="grid-container">
     <table id="land-table" class="waffle" cellspacing="0" cellpadding="0">
         <thead><tr>
-            <th class="live-header" onclick="sortBy('asset_id')">ASSET ID</th>
+            <th class="live-header" style="width:30px;padding:8px 4px!important;"></th>
+            <th class="live-header" onclick="sortBy('template_id')">TPL ID</th>
+            <th class="live-header">IMAGE</th>
             <th class="live-header" onclick="sortBy('planet')">PLANET</th>
-            <th class="live-header" onclick="sortBy('name')">NAME</th>
-            <th class="live-header" onclick="sortBy('land_type')">TYPE</th>
+            <th class="live-header" onclick="sortBy('terrain')">TYPE</th>
             <th class="live-header" onclick="sortBy('rarity')">RARITY</th>
-            <th class="live-header" onclick="sortBy('tlm')">TLM MULT</th>
-            <th class="live-header" onclick="sortBy('nft')">NFT MULT</th>
-            <th class="live-header" onclick="sortBy('comm')">COMM %</th>
-            <th class="live-header">COORDS</th>
-            <th class="live-header">MARKET</th>
+            <th class="live-header" onclick="sortBy('ease')">EASE</th>
+            <th class="live-header" onclick="sortBy('luck')">LUCK</th>
+            <th class="live-header" onclick="sortBy('delay')">DELAY</th>
+            <th class="live-header" onclick="sortBy('issued')">ISSUED</th>
         </tr></thead>
         <tbody id="land-tbody">
-            <tr><td colspan="10" style="text-align:center;color:#335;padding:50px;letter-spacing:2px;">CONNECT WALLET TO LOAD</td></tr>
+            <tr><td colspan="10" style="text-align:center;color:#335;padding:50px;letter-spacing:2px;">SCANNING...</td></tr>
         </tbody>
     </table>
 
@@ -519,7 +534,7 @@ function togglePlanetFilter(name) {
     } else {
         activePlanets.add(name);   el?.classList.add('active');
     }
-    renderTable();
+    renderTemplateTable();
 }
 window.togglePlanetFilter = togglePlanetFilter;
 labelEls.forEach(el => el.addEventListener('click', () => {
@@ -529,23 +544,26 @@ labelEls.forEach(el => el.addEventListener('click', () => {
 }));
 
 // ─── TABLE STATE ─────────────────────────────────────────────────────────────
-let allLands   = [];
-let sortColumn = 'planet';
-let sortDir    = 1;
-const RARITY_ORDER = ['Abundant','Common','Rare','Epic','Legendary'];
+let allTemplates  = [];
+let tplSortCol    = 'planet';
+let tplSortDir    = 1;
+const RARITY_ORDER  = ['Abundant','Common','Rare','Epic','Legendary'];
+const PLANETS_LIST  = ['eyeke','kavian','magor','naron','neri','veles'];
+const assetCache     = new Map();
+const assetSortState = new Map();
 
 window.sortBy = col => {
-    sortDir = sortColumn === col ? sortDir * -1 : 1;
-    sortColumn = col;
-    renderTable();
+    tplSortDir = tplSortCol === col ? tplSortDir * -1 : 1;
+    tplSortCol = col;
+    renderTemplateTable();
 };
 window.clearFilters = () => {
     activePlanets.clear();
     labelEls.forEach(el => el.classList.remove('active'));
     document.getElementById('searchInput').value = '';
-    renderTable();
+    renderTemplateTable();
 };
-window.filterTable  = () => renderTable();
+window.filterTable  = () => renderTemplateTable();
 window.adjustFont   = delta => {
     const cells = document.querySelectorAll('td, th');
     let cur = parseFloat(cells[0]?.style.fontSize) || 0.9;
@@ -553,81 +571,205 @@ window.adjustFont   = delta => {
     cells.forEach(c => c.style.setProperty('font-size', cur + 'em', 'important'));
 };
 
-function getSortVal(land, col) {
-    if (col === 'rarity') return RARITY_ORDER.indexOf(land.rarity);
-    if (['tlm','nft','comm'].includes(col)) return parseFloat(land[col]) || 0;
-    return land[col] || '';
+function getSortVal(t, col) {
+    if (col === 'rarity') return RARITY_ORDER.indexOf(t.rarity);
+    if (['ease','luck','delay','issued','template_id'].includes(col)) return parseFloat(t[col]) || 0;
+    return t[col] || '';
 }
 
-// ─── TABLE RENDER ─────────────────────────────────────────────────────────────
-function renderTable() {
+// ─── TEMPLATE TABLE RENDER ────────────────────────────────────────────────────
+function renderTemplateTable() {
     const tbody  = document.getElementById('land-tbody');
     const search = document.getElementById('searchInput').value.toLowerCase();
-    let rows = allLands.filter(land => {
-        if (activePlanets.size > 0 && !activePlanets.has(land.planet)) return false;
-        if (search && !JSON.stringify(land).toLowerCase().includes(search)) return false;
+    let rows = allTemplates.filter(t => {
+        if (activePlanets.size > 0 && !activePlanets.has(t.planet)) return false;
+        if (search && !JSON.stringify(t).toLowerCase().includes(search)) return false;
         return true;
     });
     rows.sort((a, b) => {
-        const av = getSortVal(a, sortColumn), bv = getSortVal(b, sortColumn);
-        if (typeof av === 'number') return (av - bv) * sortDir;
-        return String(av).localeCompare(String(bv)) * sortDir;
+        const av = getSortVal(a, tplSortCol), bv = getSortVal(b, tplSortCol);
+        if (typeof av === 'number') return (av - bv) * tplSortDir;
+        return String(av).localeCompare(String(bv)) * tplSortDir;
     });
     if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#335;padding:50px;letter-spacing:2px;">${allLands.length ? 'NO LANDS MATCH FILTER' : 'CONNECT WALLET TO LOAD'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#335;padding:50px;letter-spacing:2px;">${allTemplates.length ? 'NO TEMPLATES MATCH FILTER' : 'SCANNING...'}</td></tr>`;
         return;
     }
     const rar = r => r ? r.toLowerCase() : '';
-    tbody.innerHTML = rows.map(land => `<tr>
-        <td style="color:#557;font-size:0.8em!important">${land.asset_id}</td>
-        <td style="font-weight:bold;text-transform:uppercase;letter-spacing:1px">${land.planet}</td>
-        <td>${land.name || '—'}</td>
-        <td>${land.land_type || '—'}</td>
-        <td class="tag-${rar(land.rarity)}">${land.rarity || '—'}</td>
-        <td style="text-align:right">${land.tlm ?? '—'}</td>
-        <td style="text-align:right">${land.nft ?? '—'}</td>
-        <td style="text-align:right">${land.comm ?? '—'}</td>
-        <td style="color:#557;font-size:0.8em!important">${land.x !== undefined ? land.x+', '+land.y : '—'}</td>
-        <td><a class="market-link-btn" href="https://wax.atomichub.io/explorer/asset/wax-mainnet/${land.asset_id}" target="_blank">ATH</a></td>
-    </tr>`).join('');
+    tbody.innerHTML = rows.map(t => `
+        <tr class="tpl-row">
+            <td style="text-align:center;padding:4px!important"><button class="expand-btn" onclick="toggleExpand('${t.template_id}',this)">&#9658;</button></td>
+            <td style="color:#557;font-size:0.8em!important">${t.template_id}</td>
+            <td style="text-align:center;padding:4px!important">${t.img ? `<img src="https://ipfs.io/ipfs/${t.img}" style="width:38px;height:38px;object-fit:cover;border:1px solid #1a3320;" loading="lazy">` : '&mdash;'}</td>
+            <td style="font-weight:bold;text-transform:uppercase;letter-spacing:1px">${t.planet}</td>
+            <td>${t.terrain || '&mdash;'}</td>
+            <td class="tag-${rar(t.rarity)}">${t.rarity || '&mdash;'}</td>
+            <td style="text-align:right">${t.ease !== '' ? t.ease : '&mdash;'}</td>
+            <td style="text-align:right">${t.luck !== '' ? t.luck : '&mdash;'}</td>
+            <td style="text-align:right">${t.delay !== '' ? t.delay : '&mdash;'}</td>
+            <td style="text-align:right">${t.issued.toLocaleString()}</td>
+        </tr>
+        <tr class="expand-row">
+            <td colspan="10"><div class="sub-table-wrap" id="sub-${t.template_id}"></div></td>
+        </tr>`).join('');
     document.getElementById('land-table').classList.add('system-ready');
 }
 
-// ─── DATA FETCH ───────────────────────────────────────────────────────────────
-async function fetchAllLands(account) {
+// ─── TEMPLATE DATA FETCH ──────────────────────────────────────────────────────
+async function fetchTemplates() {
     const status = document.getElementById('status');
-    const BASE   = 'https://wax.api.atomicassets.io/atomicassets/v1/assets';
+    const BASE   = 'https://wax.api.atomicassets.io/atomicassets/v1/templates';
     let page = 1, all = [];
     while (true) {
-        status.textContent = `LOADING... PAGE ${page}`;
+        status.textContent = `LOADING TEMPLATES... (${all.length})`;
         try {
-            const res  = await fetch(`${BASE}?owner=${encodeURIComponent(account)}&collection_name=alien.worlds&schema_name=land.worlds&limit=1000&page=${page}&_ts=${Date.now()}`);
+            const res  = await fetch(`${BASE}?collection_name=alien.worlds&schema_name=land.worlds&page=${page}&limit=100&order=asc&sort=created`);
             const json = await res.json();
             if (!json.success || !json.data?.length) break;
             all = all.concat(json.data);
-            if (json.data.length < 1000) break;
+            if (json.data.length < 100) break;
             page++;
-        } catch(e) { status.textContent = `FETCH ERROR — ${e.message}`; console.error(e); break; }
+        } catch(e) { status.textContent = `FETCH ERROR &mdash; ${e.message}`; console.error(e); break; }
     }
-    // AW land immutable_data — note the typo "multilpler1/2" is in the original contract
-    allLands = all.map(asset => {
-        const d = Object.assign({}, asset.immutable_data || {}, asset.mutable_data || {});
+    allTemplates = all.map(t => {
+        const imm = t.immutable_data || {};
+        const rawName = String(imm.name || '');
+        let planet = 'unknown', terrain = rawName;
+        for (const p of PLANETS_LIST) {
+            if (rawName.toLowerCase().includes(p)) {
+                planet = p;
+                terrain = rawName.replace(new RegExp(' on ' + p, 'i'), '').trim();
+                break;
+            }
+        }
         return {
-            asset_id:  asset.asset_id,
-            name:      asset.name || d.name || '',
-            planet:    (d.planet_name || '').toLowerCase(),
-            land_type: d.land_type || d.type || '',
-            rarity:    d.rarity || '',
-            tlm:       d.multilpler1 ?? d.multiplier1 ?? d.trm_multiplier  ?? undefined,
-            nft:       d.multilpler2 ?? d.multiplier2 ?? d.nft_multiplier  ?? undefined,
-            comm:      d.comm_rate   ?? d.commission  ?? undefined,
-            x: d.x, y: d.y,
+            template_id: t.template_id,
+            planet, terrain,
+            rarity: imm.rarity || '',
+            ease:   imm.ease   ?? '',
+            luck:   imm.luck   ?? '',
+            delay:  imm.delay  ?? '',
+            issued: Number(t.issued_supply || 0),
+            img:    imm.img || '',
         };
     });
-    const n = allLands.length;
-    status.textContent = `${n} LAND${n !== 1 ? 'S' : ''} LOADED — ${account.toUpperCase()}`;
-    renderTable();
+    status.textContent = `${allTemplates.length} LAND TEMPLATES`;
+    renderTemplateTable();
 }
+
+// ─── PER-TEMPLATE ASSET FETCH ─────────────────────────────────────────────────
+async function fetchAssetsForTemplate(templateId) {
+    if (assetCache.has(templateId)) return assetCache.get(templateId);
+    const BASE = 'https://wax.api.atomicassets.io/atomicassets/v1/assets';
+    let all = [];
+    for (const burned of [false, true]) {
+        let page = 1;
+        while (true) {
+            try {
+                const res  = await fetch(`${BASE}?collection_name=alien.worlds&template_id=${templateId}&burned=${burned}&page=${page}&limit=1000&order=asc&sort=asset_id`);
+                const json = await res.json();
+                if (!json.success || !json.data?.length) break;
+                all = all.concat(json.data);
+                if (json.data.length < 1000) break;
+                page++;
+            } catch(e) { break; }
+        }
+    }
+    const assets = all.map(asset => {
+        const unified = asset.data           || {};
+        const mut     = asset.mutable_data   || {};
+        const imm     = asset.immutable_data || {};
+        const tplImm  = asset.template?.immutable_data || {};
+        const rawRating = unified.landrating ?? mut.landrating;
+        return {
+            asset_id:    asset.asset_id,
+            owner:       asset.owner || '(burned)',
+            ease:        unified.ease       ?? tplImm.ease       ?? '&mdash;',
+            luck:        unified.luck       ?? tplImm.luck       ?? '&mdash;',
+            delay:       unified.delay      ?? tplImm.delay      ?? '&mdash;',
+            commission:  unified.commission ?? mut.commission     ?? '&mdash;',
+            x:           unified.x          ?? imm.x             ?? '&mdash;',
+            y:           unified.y          ?? imm.y             ?? '&mdash;',
+            open_slots:  unified.openslots  ?? mut.openslots     ?? '&mdash;',
+            land_rating: rawRating != null ? Math.round(Number(rawRating) / 10000) : null,
+            usedBoosts:  unified.UsedBoostsDay    ?? mut.UsedBoostsDay    ?? '&mdash;',
+            boostLast:   unified.BoostLastUsedDay ?? mut.BoostLastUsedDay ?? '&mdash;',
+        };
+    });
+    assetCache.set(templateId, assets);
+    return assets;
+}
+
+// ─── SUB-TABLE RENDER ─────────────────────────────────────────────────────────
+function renderSubTable(templateId, assets) {
+    const state = assetSortState.get(templateId) || { col: 'asset_id', dir: 1 };
+    const sorted = [...assets].sort((a, b) => {
+        let av = a[state.col] ?? '', bv = b[state.col] ?? '';
+        if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * state.dir;
+        return String(av).localeCompare(String(bv)) * state.dir;
+    });
+    const cols = [
+        { key: 'asset_id',    label: 'ASSET ID' },
+        { key: 'owner',       label: 'OWNER' },
+        { key: 'ease',        label: 'EASE' },
+        { key: 'luck',        label: 'LUCK' },
+        { key: 'delay',       label: 'DELAY' },
+        { key: 'commission',  label: 'COMM %' },
+        { key: 'x',           label: 'X' },
+        { key: 'y',           label: 'Y' },
+        { key: 'open_slots',  label: 'OPEN SLOTS' },
+        { key: 'land_rating', label: 'LAND RATING' },
+        { key: 'usedBoosts',  label: 'USED BOOSTS' },
+        { key: 'boostLast',   label: 'BOOST LAST' },
+    ];
+    const heads = cols.map(c =>
+        `<th class="sub-header" onclick="sortSubTable('${templateId}','${c.key}')">${c.label}</th>`
+    ).join('') + '<th class="sub-header">MARKET</th>';
+    const dataRows = sorted.map(a => {
+        const ownerCell = a.owner === '(burned)'
+            ? `<span style="color:#444">(burned)</span>`
+            : `<a href="https://wax.atomichub.io/explorer/account/${a.owner}" target="_blank" style="color:var(--theme-color);text-decoration:none">${a.owner}</a>`;
+        const ratingCell = typeof a.land_rating === 'number' ? a.land_rating.toLocaleString() : '&mdash;';
+        return `<tr class="sub-row">
+            <td style="color:#446;font-size:0.78em!important">${a.asset_id}</td>
+            <td>${ownerCell}</td>
+            <td style="text-align:right">${a.ease}</td>
+            <td style="text-align:right">${a.luck}</td>
+            <td style="text-align:right">${a.delay}</td>
+            <td style="text-align:right">${a.commission}</td>
+            <td style="text-align:right">${a.x}</td>
+            <td style="text-align:right">${a.y}</td>
+            <td style="text-align:right">${a.open_slots}</td>
+            <td style="text-align:right">${ratingCell}</td>
+            <td style="text-align:right">${a.usedBoosts}</td>
+            <td style="text-align:right">${a.boostLast}</td>
+            <td><a class="market-link-btn" href="https://wax.atomichub.io/explorer/asset/wax-mainnet/${a.asset_id}" target="_blank">ATH</a></td>
+        </tr>`;
+    }).join('') || `<tr><td colspan="13" class="sub-loading">NO ASSETS FOUND</td></tr>`;
+    return `<table class="sub-table"><thead><tr>${heads}</tr></thead><tbody>${dataRows}</tbody></table>`;
+}
+
+window.sortSubTable = (templateId, col) => {
+    const state = assetSortState.get(templateId) || { col: 'asset_id', dir: 1 };
+    assetSortState.set(templateId, { col, dir: state.col === col ? state.dir * -1 : 1 });
+    const wrap = document.getElementById(`sub-${templateId}`);
+    if (wrap && assetCache.has(templateId)) wrap.innerHTML = renderSubTable(templateId, assetCache.get(templateId));
+};
+
+window.toggleExpand = async (templateId, btn) => {
+    const wrap = document.getElementById(`sub-${templateId}`);
+    if (wrap.classList.contains('open')) {
+        wrap.classList.remove('open'); btn.classList.remove('open'); return;
+    }
+    wrap.classList.add('open'); btn.classList.add('open');
+    if (!assetCache.has(templateId)) {
+        wrap.innerHTML = `<div class="sub-loading">FETCHING ASSETS...</div>`;
+        const assets = await fetchAssetsForTemplate(templateId);
+        wrap.innerHTML = renderSubTable(templateId, assets);
+    } else {
+        wrap.innerHTML = renderSubTable(templateId, assetCache.get(templateId));
+    }
+};
 
 // ─── WALLET ───────────────────────────────────────────────────────────────────
 const wax = new waxjs.WaxJS({ rpcEndpoint: 'https://wax.greymass.com', userAccount: '', tryAutoLogin: false });
@@ -638,8 +780,6 @@ window.toggleWallet = async () => {
         wax.userAccount = ''; localStorage.removeItem('naron_wallet');
         btn.innerText = '[ WAX LOGIN ]';
         btn.style.color = 'var(--theme-color)'; btn.style.borderColor = 'var(--theme-color)';
-        allLands = []; renderTable();
-        document.getElementById('status').textContent = 'CONNECT WALLET TO LOAD';
         return;
     }
     try {
@@ -647,17 +787,16 @@ window.toggleWallet = async () => {
         const account = await wax.login();
         localStorage.setItem('naron_wallet', account);
         updateWalletUI(account);
-        await fetchAllLands(account);
     } catch(e) { console.error(e); btn.innerText = '[ WAX LOGIN ]'; }
 };
 
 function updateWalletUI(accountName) {
     const btn = document.getElementById('wallet-btn');
-    if (btn) { btn.innerText = `[ DISCONNECT: ${accountName} ]`; btn.style.color = '#00ff00'; btn.style.borderColor = '#00ff00'; }
+    if (btn) { btn.innerText = `[ ${accountName} ]`; btn.style.color = '#00ff00'; btn.style.borderColor = '#00ff00'; }
 }
 function checkWalletState() {
     const saved = localStorage.getItem('naron_wallet');
-    if (saved) { wax.userAccount = saved; updateWalletUI(saved); fetchAllLands(saved); }
+    if (saved) { wax.userAccount = saved; updateWalletUI(saved); }
 }
 
 // ─── TIP ─────────────────────────────────────────────────────────────────────
@@ -734,6 +873,7 @@ document.getElementById('chest-modal-backdrop').addEventListener('click', functi
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     checkWalletState();
+    fetchTemplates();
     // Restore saved theme from localStorage (shared across all Naron Codex pages)
     const savedColor = localStorage.getItem('naron_theme_color');
     const savedDark  = localStorage.getItem('naron_theme_dark');
