@@ -139,12 +139,12 @@
            inline px values that override width:100%. Instead we always read from the
            wrapper div via ResizeObserver. */
         #planet-bar {
-            position: sticky; width: 100%;
+            position: fixed; width: 100%;
             border-bottom: 2px solid var(--theme-color);
         }
-        #planet-canvas { display: block; width: 100%; height: 180px; }
+        #planet-canvas { display: block; width: 100%; height: 140px; }
         #planet-labels {
-            position: sticky; height: 44px;
+            position: fixed; height: 44px;
             background: rgba(0,0,0,0.6);
             border-top: 1px solid #0f4d28;
         }
@@ -228,7 +228,7 @@
         #planet-bar { z-index: 4000; background: #050510; }
         body.deck-open .grid-container { grid-template-columns: minmax(320px, 1fr) auto minmax(20px, 1fr); }
         #preview-frame {
-            position: fixed; top: 466px; left: 10px; width: 285px; height: 370px;
+            position: fixed; top: 666px; left: 10px; width: 285px; height: 370px;
             border: 2px solid var(--theme-color); background: var(--theme-dark);
             box-shadow: var(--theme-shadow); z-index: 3000; box-sizing: border-box;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -494,7 +494,7 @@ import * as THREE from 'three';
 // ─── PLANET SCENE ────────────────────────────────────────────────────────────
 const canvas  = document.getElementById('planet-canvas');
 const wrapper = document.getElementById('planet-bar');
-const CANVAS_H = 220;
+const CANVAS_H = 180;
 
 // alpha:true = transparent canvas — CSS starfield from body::before/after shows through
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -513,7 +513,7 @@ sun.position.set(5, 5, 5);
 scene.add(sun);
 
 const PLANET_NAMES = ['eyeke','kavian','magor','naron','neri','veles'];
-const geo    = new THREE.SphereGeometry(1.25, 64, 64);
+const geo    = new THREE.SphereGeometry(1.25, 80, 80);
 const loader = new THREE.TextureLoader();
 let   planets = [];
 
