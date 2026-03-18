@@ -908,6 +908,56 @@ function showIntelPanel(header, intel) {
     drawSparkline(intel.history || []);
 }
 
+// ─── BUILD VALUE ESTIMATE ─────────────────────────────────────────────────────
+// Computes the cheapest estimated WAX cost to develop a land to its current
+// rating + slots, considering both TLM boosts and NFT boosts (Mega/Super).
+//
+// Mega Boost (~600 WAX): raises rating to current average between all lands
+// Super Boost (~25,000 WAX): raises rating halfway between current and max
+// TLM Boost (64 TLM each): raises rating ×1.0021 per boost
+//
+// Ratings: base=100, approx average=600,000, hard cap=5,702,337
+const BUILD_MAX_RATING  = 5702337;
+const BUILD_AVG_RATING  = 600000;  // approx Mega Boost target (shifts over time)
+const BUILD_MEGA_WAX    = 600;
+const BUILD_SUPER_WAX   = 25000;
+const BUILD_TLM_PER_WAX = 0.28;
+const BUILD_BASE        = 100;
+const BUILD_BOOST_MULT  = 1.0021;
+const BUILD_TLM_BOOST   = 64;
+const BUILD_SLOT_CUM    = [0,0,160,420,840,1520,2620,4420,7220,11820,19220,31220,49220,79220,129220,209220];
+
+function computeBuildWAX(rating, openSlots) {
+    const r = (typeof rating === 'number' && rating > 0) ? rating : BUILD_BASE;
+    let ratingWAX;
+    if (r <= BUILD_BASE) {
+        ratingWAX = 0;
+    } else {
+        // TLM-only path
+        const tlmBoosts  = Math.log(r / BUILD_BASE) / Math.log(BUILD_BOOST_MULT);
+        const tlmPathWAX = Math.round(tlmBoosts * BUILD_TLM_BOOST / BUILD_TLM_PER_WAX);
+        // NFT path (Mega Boost brings to ~average; Super Boosts from there toward max)
+        let nftPathWAX;
+        if (r < BUILD_AVG_RATING * 0.85) {
+            // Well below average — Mega would wildly overshoot; TLM is the only option
+            nftPathWAX = Infinity;
+        } else if (r <= BUILD_AVG_RATING * 1.15) {
+            // Near current average — one Mega Boost
+            nftPathWAX = BUILD_MEGA_WAX;
+        } else {
+            // Above average — one Mega Boost + N Super Boosts
+            const n = Math.max(0, Math.ceil(
+                Math.log2((BUILD_MAX_RATING - BUILD_AVG_RATING) / Math.max(BUILD_MAX_RATING - r, 0.5))
+            ));
+            nftPathWAX = BUILD_MEGA_WAX + n * BUILD_SUPER_WAX;
+        }
+        ratingWAX = Math.min(tlmPathWAX, nftPathWAX);
+    }
+    const slots   = Math.min(parseInt(openSlots) || 1, 15);
+    const slotWAX = Math.round((BUILD_SLOT_CUM[slots] ?? 0) / BUILD_TLM_PER_WAX);
+    return Math.round(ratingWAX) + slotWAX;
+}
+
 function drawSparkline(prices) {
     const cvs = document.getElementById('sparkline-canvas');
     if (!cvs) return;
@@ -1037,11 +1087,7 @@ function renderAssetTable() {
         const pc = priceCache.get(t.template_id);
         const tplFloor = (pc && pc.floor !== '—') ? parseFloat(pc.floor) : null;
         assets.forEach(a => {
-            const aRating   = (typeof a.land_rating === 'number' && a.land_rating > 0) ? a.land_rating : 100;
-            const aBoosts   = aRating > 100 ? Math.log(aRating / 100) / Math.log(1.0021) : 0;
-            const aSlots    = Math.min(parseInt(a.open_slots) || 1, 15);
-            const aTLM      = Math.round(aBoosts * 64) + ([0,0,160,420,840,1520,2620,4420,7220,11820,19220,31220,49220,79220,129220,209220][aSlots] ?? 0);
-            const aBuildWAX = Math.round(aTLM / 0.28);
+            const aBuildWAX = computeBuildWAX(a.land_rating, a.open_slots);
             allAssets.push({
                 ...a,
                 planet:    t.planet,
@@ -1072,10 +1118,13 @@ function renderAssetTable() {
             : `<a href="https://wax.atomichub.io/explorer/account/${a.owner}" target="_blank" style="color:var(--theme-color);text-decoration:none" onclick="event.stopPropagation()">${a.owner}</a>`;
         const ratingCell  = typeof a.land_rating === 'number' ? a.land_rating.toLocaleString() : '—';
         const floorCell   = a.floor != null ? `<span class="price-highlight">${a.floor.toFixed(2)}</span>` : `<span style="color:#333">—</span>`;
-        const aDelta      = (a.floor != null && a.build_val != null) ? Math.round(a.build_val - a.floor) : null;
-        const buildCell   = a.build_val != null
-            ? `<span class="price-highlight">~${a.build_val.toLocaleString()}</span>${aDelta != null ? `<br><span style="color:${aDelta >= 0 ? '#00cc66' : '#cc4444'};font-size:0.82em">${aDelta >= 0 ? '+' : ''}${aDelta.toLocaleString()}</span>` : ''}`
-            : `<span style="color:#333">—</span>`;
+        const aIsBase     = a.build_val === 0;
+        const aDelta      = (!aIsBase && a.floor != null && a.build_val != null) ? Math.round(a.build_val - a.floor) : null;
+        const buildCell   = aIsBase
+            ? `<span style="color:#444">BASE</span>`
+            : a.build_val != null
+                ? `<span class="price-highlight">~${a.build_val.toLocaleString()}</span>${aDelta != null ? `<br><span style="color:${aDelta >= 0 ? '#00cc66' : '#cc4444'};font-size:0.82em">${aDelta >= 0 ? '+' : ''}${aDelta.toLocaleString()}</span>` : ''}`
+                : `<span style="color:#333">—</span>`;
         return `<tr class="tpl-row" style="cursor:pointer" onclick="onAssetRowClick('${a.asset_id}','${a.img}','${a.owner.replace(/'/g,"\\'")}')">
             <td style="text-align:center;color:#446;font-size:0.8em!important">${a.asset_id}</td>
             <td style="text-align:center;padding:4px!important">${a.img ? `<img src="https://ipfs.io/ipfs/${a.img}" style="height:52px;width:auto;max-width:58px;object-fit:contain;border:1px solid #1a3320;" loading="lazy">` : '—'}</td>
@@ -1341,14 +1390,8 @@ function renderSubTable(templateId, assets) {
         { key: 'boostLast',   label: 'BOOST LAST',  align: 'center' },
         { key: 'price',       label: 'LISTED',      align: 'center' },
         { key: 'eff_wax',     label: 'BUILD VAL~ ?', align: 'center',
-          tip: 'ESTIMATE ONLY — costs vary; rating decays without re-boosting.\n\nRating: log(rating/100)/log(1.0021) boosts × 64 TLM. Base=100, cap≈570.\nSlots cumulative TLM: free, 160, 420, 840, 1520, 2620, 4420, 7220, 11820, 19220, 31220, 49220, 79220, 129220, 209220.\nTLM→WAX at 0.28 (range 0.23–0.32).\n\nGreen = floor < build cost (deal). Red = floor > build cost (premium).' },
+          tip: 'ESTIMATE — shows cheapest likely path (TLM boosts vs Mega/Super NFT boosts).\n\nMega Boost ~600 WAX: raises to avg rating (~600k). Super Boost ~25,000 WAX: halfway to max (5,702,337).\nTLM path: 64 TLM × log(rating/100)/log(1.0021) boosts, at 0.28 TLM/WAX.\nSlot unlock TLM cumulative: free, 160, 420, 840, 1520, 2620, 4420, 7220, 11820, 19220+…\n\nBASE = no investment above base. Green = floor below est. build cost. Red = floor above.' },
     ];
-    // BUILD VAL constants
-    const SLOT_TLM_CUM  = [0, 0, 160, 420, 840, 1520, 2620, 4420, 7220, 11820, 19220, 31220, 49220, 79220, 129220, 209220];
-    const TLM_PER_WAX   = 0.28;
-    const BASE_RATING   = 100;
-    const BOOST_MULT    = 1.0021;
-    const TLM_PER_BOOST = 64;
 
     const heads = cols.map(c =>
         `<th class="sub-header" onclick="sortSubTable('${templateId}','${c.key}')"${c.tip ? ` title="${c.tip}"` : ''}>${c.label}</th>`
@@ -1365,24 +1408,23 @@ function renderSubTable(templateId, assets) {
         const priceCell  = listedPrice
             ? `<span class="price-highlight">${listedPrice} WAX</span>`
             : `<span style="color:#333">—</span>`;
-        // BUILD VAL: estimate WAX-equivalent TLM invested in rating boosts + slots
-        const pc          = priceCache.get(templateId);
-        const floorWAX    = (pc && pc.floor !== '—') ? parseFloat(pc.floor) : null;
-        const rating      = (typeof a.land_rating === 'number' && a.land_rating > 0) ? a.land_rating : BASE_RATING;
-        const numBoosts   = rating > BASE_RATING ? Math.log(rating / BASE_RATING) / Math.log(BOOST_MULT) : 0;
-        const ratingTLM   = Math.round(numBoosts * TLM_PER_BOOST);
-        const slots       = Math.min(parseInt(a.open_slots) || 1, 15);
-        const slotTLM     = SLOT_TLM_CUM[slots] ?? 0;
-        const totalTLM    = ratingTLM + slotTLM;
-        const buildWAX    = Math.round(totalTLM / TLM_PER_WAX);
-        const delta       = floorWAX != null ? Math.round(buildWAX - floorWAX) : null;
-        const deltaStr    = delta != null
+        // BUILD VAL: cheapest estimated WAX cost (min of TLM path vs Mega/Super NFT path)
+        const pc        = priceCache.get(templateId);
+        const floorWAX  = (pc && pc.floor !== '—') ? parseFloat(pc.floor) : null;
+        const buildWAX  = computeBuildWAX(a.land_rating, a.open_slots);
+        const isBase    = buildWAX === 0;
+        const delta     = (!isBase && floorWAX != null) ? Math.round(buildWAX - floorWAX) : null;
+        const deltaStr  = delta != null
             ? (delta >= 0
                 ? `<br><span style="color:#00cc66;font-size:0.82em">+${delta.toLocaleString()} deal</span>`
                 : `<br><span style="color:#cc4444;font-size:0.82em">${delta.toLocaleString()} prem.</span>`)
             : '';
-        const tdTitle     = `Rating: ~${ratingTLM.toLocaleString()} TLM (${Math.round(numBoosts)} boosts)\nSlots: ~${slotTLM.toLocaleString()} TLM (${slots} slots)\nTotal: ~${totalTLM.toLocaleString()} TLM ≈ ${buildWAX.toLocaleString()} WAX${floorWAX != null ? `\nFloor ${floorWAX} WAX → ${delta >= 0 ? 'deal' : 'premium'} ${Math.abs(delta).toLocaleString()} WAX` : ''}`;
-        const buildCell   = `<span class="price-highlight">~${buildWAX.toLocaleString()} WAX</span>${deltaStr}`;
+        const tdTitle   = isBase
+            ? 'Base land — no TLM or NFT investment above base rating'
+            : `Est. cheapest build path (min of TLM vs Mega/Super NFT).\nFloor ${floorWAX ?? '?'} WAX  Build ~${buildWAX.toLocaleString()} WAX${delta != null ? `  →  ${delta >= 0 ? 'deal' : 'premium'} ${Math.abs(delta).toLocaleString()} WAX` : ''}`;
+        const buildCell = isBase
+            ? `<span style="color:#444">BASE</span>`
+            : `<span class="price-highlight">~${buildWAX.toLocaleString()} WAX</span>${deltaStr}`;
         return `<tr class="sub-row" style="cursor:pointer" onclick="onAssetRowClick('${a.asset_id}','${tplImg}','${a.owner.replace(/'/g,"\\'")}')">
             <td style="text-align:center;color:#446;font-size:0.78em!important">${a.asset_id}</td>
             <td>${ownerCell}</td>
