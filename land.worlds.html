@@ -969,7 +969,7 @@ function renderAssetTable() {
             <td>${ownerCell}</td>
             <td style="text-align:center">${a.ease}</td>
             <td style="text-align:center">${a.luck}</td>
-            <td style="text-align:center">${a.delay}</td>
+            <td style="text-align:center">${a.delay != null && a.delay !== '' && a.delay !== '—' ? 'x ' + (Number(a.delay)/10).toFixed(1) : '—'}</td>
             <td style="text-align:center">${a.commission}</td>
             <td style="text-align:center">${a.x}</td>
             <td style="text-align:center">${a.y}</td>
@@ -1081,7 +1081,7 @@ function renderTemplateTable() {
             <td class="tag-${rar(t.rarity)}">${t.rarity || '—'}</td>
             <td style="text-align:center">${t.ease ?? '—'}</td>
             <td style="text-align:center">${t.luck ?? '—'}</td>
-            <td style="text-align:center">${t.delay ?? '—'}</td>
+            <td style="text-align:center">${t.delay != null && t.delay !== '' ? 'x ' + (Number(t.delay)/10).toFixed(1) : '—'}</td>
             <td style="text-align:center">${t.issued.toLocaleString()}</td>
             <td style="text-align:center" id="floor-${t.template_id}">${floorCell}</td>
             <td style="text-align:center" id="last-${t.template_id}">${lastCell}</td>
@@ -1239,7 +1239,7 @@ function renderSubTable(templateId, assets) {
             <td>${ownerCell}</td>
             <td style="text-align:center">${a.ease}</td>
             <td style="text-align:center">${a.luck}</td>
-            <td style="text-align:center">${a.delay}</td>
+            <td style="text-align:center">${a.delay != null && a.delay !== '' && a.delay !== '—' ? 'x ' + (Number(a.delay)/10).toFixed(1) : '—'}</td>
             <td style="text-align:center">${a.commission}</td>
             <td style="text-align:center">${a.x}</td>
             <td style="text-align:center">${a.y}</td>
