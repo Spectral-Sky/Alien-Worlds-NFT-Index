@@ -637,14 +637,6 @@ const BOOST_PER_CLICK = 10;
 const MAX_MULTIPLIER  = 10000;
 const DECAY_RATE      = 0.0025;
 
-// ─── MOUSE PARALLAX ──────────────────────────────────────────────────────────
-const PARALLAX_DEPTH = [0.3, 0.5, 0.2, 0.6, 0.4, 0.35]; // world units per planet
-let mouseParallax = 0, mouseParallaxSmooth = 0;
-wrapper.addEventListener('mousemove', e => {
-    const rect = wrapper.getBoundingClientRect();
-    mouseParallax = (e.clientX - rect.left) / rect.width * 2 - 1;
-});
-wrapper.addEventListener('mouseleave', () => { mouseParallax = 0; });
 
 // ─── RAYCASTER ───────────────────────────────────────────────────────────────
 const raycaster = new THREE.Raycaster();
@@ -678,13 +670,11 @@ function animate() {
         renderer.setSize(w, CANVAS_H);
         placePlanets(computeSpacing());
     }
-    mouseParallaxSmooth = THREE.MathUtils.lerp(mouseParallaxSmooth, mouseParallax, 0.05);
-    planets.forEach((p, i) => {
+    planets.forEach(p => {
         p.userData.speedMultiplier = THREE.MathUtils.lerp(p.userData.speedMultiplier, 1, DECAY_RATE);
         p.rotation.y += BASE_SPEED * p.userData.speedMultiplier;
         const s = THREE.MathUtils.lerp(p.scale.x, p.userData.targetScale, 0.06);
         p.scale.setScalar(s);
-        p.position.x = (p.userData.baseX ?? p.position.x) + mouseParallaxSmooth * (PARALLAX_DEPTH[i] ?? 0.3);
     });
     updateLabelPositions();
     renderer.render(scene, camera);
