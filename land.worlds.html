@@ -478,7 +478,6 @@
             <th class="live-header" onclick="sortAsset('land_rating')">LAND RATING</th>
             <th class="live-header" onclick="sortAsset('usedBoosts')">USED BOOSTS</th>
             <th class="live-header" onclick="sortAsset('boostLast')">BOOST LAST</th>
-            <th class="live-header" onclick="sortAsset('listed')">LISTED</th>
         </tr></thead>
         <tbody id="asset-tbody">
             <tr><td colspan="17" style="text-align:center;color:#335;padding:50px;letter-spacing:2px;">SWITCH TO ASSET VIEW TO LOAD</td></tr>
@@ -959,7 +958,6 @@ function renderAssetTable() {
             ? `<span style="color:#444">(burned)</span>`
             : `<a href="https://wax.atomichub.io/explorer/account/${a.owner}" target="_blank" style="color:var(--theme-color);text-decoration:none" onclick="event.stopPropagation()">${a.owner}</a>`;
         const ratingCell = typeof a.land_rating === 'number' ? a.land_rating.toLocaleString() : '—';
-        const listedCell = a.listed != null ? `<span class="listed-yes">${a.listed} WAX</span>` : '';
         return `<tr class="tpl-row" style="cursor:pointer" onclick="onAssetRowClick('${a.asset_id}','${a.img}','${a.owner.replace(/'/g,"\\'")}')">
             <td style="text-align:center;color:#446;font-size:0.8em!important">${a.asset_id}</td>
             <td style="text-align:center;padding:4px!important">${a.img ? `<img src="https://ipfs.io/ipfs/${a.img}" style="height:52px;width:auto;max-width:58px;object-fit:contain;border:1px solid #1a3320;" loading="lazy">` : '—'}</td>
@@ -977,9 +975,8 @@ function renderAssetTable() {
             <td style="text-align:center">${ratingCell}</td>
             <td style="text-align:center">${a.usedBoosts}</td>
             <td style="text-align:center">${a.boostLast}</td>
-            <td style="text-align:center">${listedCell}</td>
         </tr>`;
-    }).join('') || `<tr><td colspan="17" class="sub-loading">NO ASSETS LOADED YET</td></tr>`;
+    }).join('') || `<tr><td colspan="16" class="sub-loading">NO ASSETS LOADED YET</td></tr>`;
     table.classList.add('system-ready');
 }
 
@@ -1221,7 +1218,6 @@ function renderSubTable(templateId, assets) {
         { key: 'land_rating', label: 'LAND RATING', align: 'center' },
         { key: 'usedBoosts',  label: 'USED BOOSTS', align: 'center' },
         { key: 'boostLast',   label: 'BOOST LAST',  align: 'center' },
-        { key: 'listed',      label: 'LISTED',      align: 'center' },
     ];
     const heads = cols.map(c =>
         `<th class="sub-header" onclick="sortSubTable('${templateId}','${c.key}')">${c.label}</th>`
@@ -1232,8 +1228,6 @@ function renderSubTable(templateId, assets) {
             : `<a href="https://wax.atomichub.io/explorer/account/${a.owner}" target="_blank" style="color:var(--theme-color);text-decoration:none" onclick="event.stopPropagation()">${a.owner}</a>`;
         const ratingCell  = typeof a.land_rating === 'number' ? a.land_rating.toLocaleString() : '—';
         const tplImg      = currentSubImg[templateId] || '';
-        const listPrice   = listed ? listed.get(String(a.asset_id)) : undefined;
-        const listedCell  = listPrice != null ? `<span class="listed-yes">${listPrice} WAX</span>` : '';
         return `<tr class="sub-row" style="cursor:pointer" onclick="onAssetRowClick('${a.asset_id}','${tplImg}','${a.owner.replace(/'/g,"\\'")}')">
             <td style="text-align:center;color:#446;font-size:0.78em!important">${a.asset_id}</td>
             <td>${ownerCell}</td>
@@ -1247,9 +1241,8 @@ function renderSubTable(templateId, assets) {
             <td style="text-align:center">${ratingCell}</td>
             <td style="text-align:center">${a.usedBoosts}</td>
             <td style="text-align:center">${a.boostLast}</td>
-            <td style="text-align:center">${listedCell}</td>
         </tr>`;
-    }).join('') || `<tr><td colspan="13" class="sub-loading">NO ASSETS FOUND</td></tr>`;
+    }).join('') || `<tr><td colspan="12" class="sub-loading">NO ASSETS FOUND</td></tr>`;
     return `<table class="sub-table system-ready"><thead><tr>${heads}</tr></thead><tbody>${dataRows}</tbody></table>`;
 }
 
