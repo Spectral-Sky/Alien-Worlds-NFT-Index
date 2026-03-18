@@ -211,9 +211,7 @@
         .market-link-btn:hover { background: var(--theme-color); color: #000; box-shadow: var(--theme-shadow); }
 
         /* --- EXPAND SUB-TABLE --- */
-        .expand-row { display: none; }
-        .expand-row.open { display: table-row; }
-        .expand-row > td { padding: 0 !important; border: none !important; height: 0 !important; overflow: hidden; }
+        .expand-row > td { padding: 0 !important; border-bottom: none !important; border-right: none !important; border-left: none !important; }
         .sub-table-wrap { display: none; border-left: 3px solid var(--theme-color); background: rgba(0,5,2,0.9); overflow-x: auto; }
         .sub-table-wrap.open { display: block; }
         .expand-btn { background: none; border: none; color: var(--theme-color); font-size: 1.1em; padding: 0 6px; line-height: 1; transition: transform 0.2s; cursor: crosshair !important; }
@@ -1262,10 +1260,11 @@ window.sortSubTable = (templateId, col) => {
 
 window.toggleExpand = async (templateId, btn) => {
     const wrap = document.getElementById(`sub-${templateId}`);
+    const row  = wrap.closest('tr');
     if (wrap.classList.contains('open')) {
-        wrap.classList.remove('open'); btn.classList.remove('open'); return;
+        wrap.classList.remove('open'); btn.classList.remove('open'); row?.classList.remove('open'); return;
     }
-    wrap.classList.add('open'); btn.classList.add('open');
+    wrap.classList.add('open'); btn.classList.add('open'); row?.classList.add('open');
     // Ensure img hash is available for sub-row deck clicks
     if (!currentSubImg[templateId]) {
         const tpl = allTemplates.find(t => t.template_id === templateId);
