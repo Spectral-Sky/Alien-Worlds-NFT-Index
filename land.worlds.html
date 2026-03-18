@@ -201,6 +201,7 @@
         .tag-rare      { box-shadow: inset 4px 0 0 #0088ff, inset -4px 0 0 #0088ff !important; color: #4da6ff !important; }
         .tag-epic      { box-shadow: inset 4px 0 0 #bc13fe, inset -4px 0 0 #bc13fe !important; color: #d67aff !important; }
         .tag-legendary { box-shadow: inset 4px 0 0 #ffaa00, inset -4px 0 0 #ffaa00 !important; color: #ffcc00 !important; }
+        .tag-mythical  { box-shadow: inset 4px 0 0 #ff0055, inset -4px 0 0 #ff0055 !important; color: #ff6688 !important; }
 
         .market-link-btn {
             background: #111; border: 1px solid var(--theme-color); color: var(--theme-color);
@@ -690,7 +691,7 @@ labelEls.forEach(el => el.addEventListener('click', () => {
 let allTemplates  = [];
 let tplSortCol    = 'planet';
 let tplSortDir    = 1;
-const RARITY_ORDER  = ['Abundant','Common','Rare','Epic','Legendary'];
+const RARITY_ORDER  = ['Abundant','Common','Rare','Epic','Legendary','Mythical'];
 const PLANETS_LIST  = ['eyeke','kavian','magor','naron','neri','veles'];
 
 const assetCache     = new Map();
