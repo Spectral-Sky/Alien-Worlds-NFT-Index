@@ -142,7 +142,7 @@
             position: fixed; width: 100%;
             border-bottom: 2px solid var(--theme-color);
         }
-        #planet-canvas { display: block; width: 100%; height: 140px; }
+        #planet-canvas { display: block; width: 100%; height: 160px; }
         #planet-labels {
             position: fixed; height: 44px;
             background: rgba(0,0,0,0.6);
@@ -207,9 +207,10 @@
         }
         .market-link-btn:hover { background: var(--theme-color); color: #000; box-shadow: var(--theme-shadow); }
 
-        /* --- EXPAND SUB-TABLE (Fixes the Gap) --- */
-        /* Added 'height: 0 !important' to kill the 64px inheritance */
-        .expand-row > td { padding: 0 !important; border-bottom: none !important; border-right: none !important; border-left: none !important; height: 0 !important; }
+        /* --- EXPAND SUB-TABLE  --- */
+        .expand-row { display: none; } /* Completely hides the row when closed */
+        .expand-row.open { display: table-row; } /* Restores it when clicked */
+        .expand-row > td { padding: 0 !important; border: none !important; height: 0 !important; }
         .sub-table-wrap { display: none; border-left: 3px solid var(--theme-color); background: rgba(0,5,2,0.9); overflow-x: auto; }
         .sub-table-wrap.open { display: block; }
         .expand-btn { background: none; border: none; color: var(--theme-color); font-size: 1.1em; padding: 0 6px; line-height: 1; transition: transform 0.2s; cursor: crosshair !important; }
@@ -223,24 +224,20 @@
         .sub-row:hover td { background: rgba(0,60,30,0.4) !important; color: #ccc !important; }
         .sub-loading { color: #335; text-align: center; padding: 20px; letter-spacing: 2px; font-family: 'Courier New', monospace; font-size: 0.8em; }
 
-        /* --- PLANET BAR (Fixes the Overlap) --- */
-        /* Changed to relative so it naturally pushes the table down */
-        #planet-bar { position: relative; z-index: 4000; background: #050510; border-bottom: 2px solid var(--theme-color); }
-        #planet-canvas { display: block; width: 100%; height: 140px; }
+        /* --- PLANET BAR (Fixes Scrolling & Sizing) --- */
+        #planet-bar { 
+            position: sticky; top: 135px; /* Pins it right below your top UI bar */
+            z-index: 2500; /* Keeps it above the table, but below the deck */
+            background: #050510; border-bottom: 2px solid var(--theme-color); 
+        }
+        #planet-canvas { display: block; width: 100%; height: 110px; } /* Trimmed height */
         #planet-labels {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 44px;
-            background: rgba(0,0,0,0.6);
-            border-top: 1px solid var(--theme-border);
-            pointer-events: none; /* Lets clicks pass through to the planets */
+            background: rgba(0,0,0,0.6); border-top: 1px solid var(--theme-border);
+            pointer-events: none; /* Prevents overlap blocking */
         }
-        .planet-label {
-            position: absolute; top: 50%; transform: translate(-50%, -50%);
-            background: transparent; border: 1px solid transparent;
-            color: #446; font-family: 'Courier New', monospace;
-            font-size: 0.72em; font-weight: bold; letter-spacing: 3px;
-            text-transform: uppercase; padding: 5px 10px; transition: all 0.2s;
-            white-space: nowrap; pointer-events: auto; /* Restores button clicks */
-        }
+        .planet-label { pointer-events: auto; /* Re-enables button clicks */ }
+        
         .planet-label:hover { color: var(--theme-color); border-color: var(--theme-color); }
         .planet-label.active { color: #000 !important; background: var(--theme-color) !important; border-color: var(--theme-color) !important; box-shadow: var(--theme-shadow); }
 
@@ -517,26 +514,14 @@ import * as THREE from 'three';
 // ─── PLANET SCENE ────────────────────────────────────────────────────────────
 const canvas  = document.getElementById('planet-canvas');
 const wrapper = document.getElementById('planet-bar');
-const CANVAS_H = 140; // Reduced from 180 to trim excess height
+const CANVAS_H = 110; // Trimmed canvas height
 
-// alpha:true = transparent canvas — CSS starfield from body::before/after shows through
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-renderer.setClearColor(0x000000, 0);
-renderer.setPixelRatio(window.devicePixelRatio);
-
-const scene  = new THREE.Scene();
-// OrthographicCamera: no perspective distortion — spheres stay circular at all positions
-const FRUSTUM_H = 8; // world units visible vertically
-const camera = new THREE.OrthographicCamera(-1, 1, FRUSTUM_H / 2, -FRUSTUM_H / 2, 0.1, 100);
-camera.position.z = 8;
-
-scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-const sun = new THREE.DirectionalLight(0xffffff, 2.0);
-sun.position.set(5, 5, 5);
-scene.add(sun);
+// ... [keep existing lights and camera] ...
 
 const PLANET_NAMES = ['eyeke','kavian','magor','naron','neri','veles'];
-const geo    = new THREE.SphereGeometry(1.55, 80, 80); // Increased radius from 1.25 to 1.55 (+24%)
+// Increased radius from 1.55 to 1.95 (approx 25% larger)
+const geo    = new THREE.SphereGeometry(1.95, 80, 80);
 const loader = new THREE.TextureLoader();
 let   planets = [];
 
@@ -1060,6 +1045,11 @@ function renderTemplateTable() {
         if (hiddenTypes.has(t.terrain)) return false;
         if (search && !JSON.stringify(t).toLowerCase().includes(search)) return false;
         return true;
+        <tr class="tpl-row" style="cursor:pointer" onclick="onTplRowClick(event,'${t.template_id}','${t.img}','${(t.terrain+' on '+t.planet).replace(/'/g,"\\'")}')">
+            </tr>
+        <tr class="expand-row" id="expand-tr-${t.template_id}">
+            <td colspan="12"><div class="sub-table-wrap" id="sub-${t.template_id}"></div></td>
+        </tr>`;
     });
     rows.sort((a, b) => {
         const av = getSortVal(a, tplSortCol), bv = getSortVal(b, tplSortCol);
