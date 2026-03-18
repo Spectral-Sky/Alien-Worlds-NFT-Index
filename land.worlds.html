@@ -207,8 +207,9 @@
         }
         .market-link-btn:hover { background: var(--theme-color); color: #000; box-shadow: var(--theme-shadow); }
 
-        /* --- EXPAND SUB-TABLE --- */
-        .expand-row > td { padding: 0 !important; border-bottom: none !important; border-right: none !important; border-left: none !important; }
+        /* --- EXPAND SUB-TABLE (Fixes the Gap) --- */
+        /* Added 'height: 0 !important' to kill the 64px inheritance */
+        .expand-row > td { padding: 0 !important; border-bottom: none !important; border-right: none !important; border-left: none !important; height: 0 !important; }
         .sub-table-wrap { display: none; border-left: 3px solid var(--theme-color); background: rgba(0,5,2,0.9); overflow-x: auto; }
         .sub-table-wrap.open { display: block; }
         .expand-btn { background: none; border: none; color: var(--theme-color); font-size: 1.1em; padding: 0 6px; line-height: 1; transition: transform 0.2s; cursor: crosshair !important; }
@@ -222,13 +223,32 @@
         .sub-row:hover td { background: rgba(0,60,30,0.4) !important; color: #ccc !important; }
         .sub-loading { color: #335; text-align: center; padding: 20px; letter-spacing: 2px; font-family: 'Courier New', monospace; font-size: 0.8em; }
 
-        /* --- MARKET DECK --- */
-        /* Planet bar sits in normal flow; give it a stacking context above the fixed deck (z:3000)
-           so it covers the deck while visible. Once the user scrolls past it the deck is revealed. */
-        #planet-bar { z-index: 4000; background: #050510; }
+        /* --- PLANET BAR (Fixes the Overlap) --- */
+        /* Changed to relative so it naturally pushes the table down */
+        #planet-bar { position: relative; z-index: 4000; background: #050510; border-bottom: 2px solid var(--theme-color); }
+        #planet-canvas { display: block; width: 100%; height: 140px; }
+        #planet-labels {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 44px;
+            background: rgba(0,0,0,0.6);
+            border-top: 1px solid var(--theme-border);
+            pointer-events: none; /* Lets clicks pass through to the planets */
+        }
+        .planet-label {
+            position: absolute; top: 50%; transform: translate(-50%, -50%);
+            background: transparent; border: 1px solid transparent;
+            color: #446; font-family: 'Courier New', monospace;
+            font-size: 0.72em; font-weight: bold; letter-spacing: 3px;
+            text-transform: uppercase; padding: 5px 10px; transition: all 0.2s;
+            white-space: nowrap; pointer-events: auto; /* Restores button clicks */
+        }
+        .planet-label:hover { color: var(--theme-color); border-color: var(--theme-color); }
+        .planet-label.active { color: #000 !important; background: var(--theme-color) !important; border-color: var(--theme-color) !important; box-shadow: var(--theme-shadow); }
+
+        /* --- MARKET DECK (Fixes the Positioning) --- */
         body.deck-open .grid-container { grid-template-columns: minmax(320px, 1fr) auto minmax(20px, 1fr); }
+        
         #preview-frame {
-            position: fixed; top: 666px; left: 10px; width: 285px; height: 370px;
+            position: fixed; top: 266px; left: 10px; width: 285px; height: 370px;
             border: 2px solid var(--theme-color); background: var(--theme-dark);
             box-shadow: var(--theme-shadow); z-index: 3000; box-sizing: border-box;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -238,11 +258,14 @@
         #preview-img { width: 90%; height: auto; max-height: 76%; object-fit: contain; border: 1px solid #1a3320; display: none; }
         #preview-status { color: var(--theme-color); font-size: 0.78em; letter-spacing: 2px; opacity: 0.6; }
         #preview-label { margin-top: 8px; color: #fff; font-weight: bold; font-size: 0.82em; text-align: center; letter-spacing: 1px; width: 90%; border-top: 1px dashed #1a3320; padding-top: 6px; }
+        
         #market-frame {
             position: fixed; top: 646px; left: 10px; width: 285px;
             border: 2px solid var(--theme-color); background: #000; box-sizing: border-box;
             box-shadow: var(--theme-shadow); z-index: 3000; padding: 10px; display: none;
             transition: transform 0.4s, opacity 0.4s; transform: translateX(-320px); opacity: 0;
+        }
+        #market-frame.open { transform: translateX(0); opacity: 1; }
         }
         #market-frame.open { transform: translateX(0); opacity: 1; }
         .intel-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #1a2a1a; padding: 5px 0; font-size: 0.88em; }
@@ -494,7 +517,7 @@ import * as THREE from 'three';
 // ─── PLANET SCENE ────────────────────────────────────────────────────────────
 const canvas  = document.getElementById('planet-canvas');
 const wrapper = document.getElementById('planet-bar');
-const CANVAS_H = 180;
+const CANVAS_H = 140; // Reduced from 180 to trim excess height
 
 // alpha:true = transparent canvas — CSS starfield from body::before/after shows through
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -513,7 +536,7 @@ sun.position.set(5, 5, 5);
 scene.add(sun);
 
 const PLANET_NAMES = ['eyeke','kavian','magor','naron','neri','veles'];
-const geo    = new THREE.SphereGeometry(1.25, 80, 80);
+const geo    = new THREE.SphereGeometry(1.55, 80, 80); // Increased radius from 1.25 to 1.55 (+24%)
 const loader = new THREE.TextureLoader();
 let   planets = [];
 
