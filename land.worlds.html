@@ -942,8 +942,11 @@ function computeRatingWAX(rating) {
         nftPathWAX = BUILD_MEGA_WAX;
     } else {
         // Above average — Mega + N Super Boosts
+        // Super Boosts are asymptotic to max; cap target at 97% of max for a
+        // practical "near-max" estimate (~5 boosts) rather than 23+ to hit exact cap
+        const effectiveTarget = Math.min(r, BUILD_MAX_RATING * 0.97);
         const n = Math.max(0, Math.ceil(
-            Math.log2((BUILD_MAX_RATING - BUILD_AVG_RATING) / Math.max(BUILD_MAX_RATING - r, 1))
+            Math.log2((BUILD_MAX_RATING - BUILD_AVG_RATING) / Math.max(BUILD_MAX_RATING - effectiveTarget, 1))
         ));
         nftPathWAX = BUILD_MEGA_WAX + n * BUILD_SUPER_WAX;
     }
