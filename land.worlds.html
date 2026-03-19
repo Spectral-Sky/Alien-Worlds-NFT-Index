@@ -1347,11 +1347,17 @@ async function fetchListingsForTemplate(templateId) {
     try {
         const r = await fetch(`https://wax.api.atomicassets.io/atomicmarket/v2/sales?state=1&collection_name=alien.worlds&template_id=${templateId}&limit=1000&symbol=WAX`);
         const d = await r.json();
-        if (d.success && d.data) {
+        if (d.data?.length) {
             d.data.forEach(sale => {
                 const p = sale.price;
-                const price = p ? (parseInt(p.amount) / Math.pow(10, p.token_precision)).toFixed(2) : null;
-                sale.assets?.forEach(a => listed.set(String(a.asset_id), price));
+                const price = sale.listing_price
+                    ? (parseInt(sale.listing_price) / 1e8).toFixed(2)
+                    : p ? (parseInt(p.amount) / Math.pow(10, p.token_precision)).toFixed(2) : null;
+                if (!price) return;
+                (sale.assets || []).forEach(a => {
+                    const id = typeof a === 'object' ? a.asset_id : a;
+                    if (id) listed.set(String(id), price);
+                });
             });
         }
     } catch(e) {}
