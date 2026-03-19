@@ -502,7 +502,7 @@
             <th class="live-header" onclick="sortAsset('usedBoosts')">USED BOOSTS</th>
             <th class="live-header" onclick="sortAsset('boostLast')">BOOST LAST</th>
             <th class="live-header" onclick="sortAsset('floor')">FLOOR (WAX)</th>
-            <th class="live-header" onclick="sortAsset('build_val')">BUILD VAL~</th>
+            <th class="live-header" onclick="sortAsset('build_val')">EST. RATING VALUE</th>
         </tr></thead>
         <tbody id="asset-tbody">
             <tr><td colspan="18" style="text-align:center;color:#335;padding:50px;letter-spacing:2px;">SWITCH TO ASSET VIEW TO LOAD</td></tr>
@@ -908,54 +908,46 @@ function showIntelPanel(header, intel) {
     drawSparkline(intel.history || []);
 }
 
-// ─── BUILD VALUE ESTIMATE ─────────────────────────────────────────────────────
-// Computes the cheapest estimated WAX cost to develop a land to its current
-// rating + slots, considering both TLM boosts and NFT boosts (Mega/Super).
+// ─── RATING VALUE ESTIMATE ────────────────────────────────────────────────────
+// Cheapest estimated WAX cost to reach a land's current rating.
+// Considers TLM boosts and NFT boosts (Mega/Super) — picks the minimum.
 //
-// Mega Boost (~600 WAX): raises rating to current average between all lands
+// Mega Boost (~600 WAX):  raises rating to current average (~600,000)
 // Super Boost (~25,000 WAX): raises rating halfway between current and max
-// TLM Boost (64 TLM each): raises rating ×1.0021 per boost
+// TLM Boost (64 TLM @ ~0.28 TLM/WAX): multiplies rating ×1.0021 per boost
 //
-// Ratings: base=100, approx average=600,000, hard cap=5,702,337
+// Base=100, avg≈600,000, cap=5,702,337
 const BUILD_MAX_RATING  = 5702337;
-const BUILD_AVG_RATING  = 600000;  // approx Mega Boost target (shifts over time)
+const BUILD_AVG_RATING  = 600000;
 const BUILD_MEGA_WAX    = 600;
 const BUILD_SUPER_WAX   = 25000;
 const BUILD_TLM_PER_WAX = 0.28;
 const BUILD_BASE        = 100;
 const BUILD_BOOST_MULT  = 1.0021;
 const BUILD_TLM_BOOST   = 64;
-const BUILD_SLOT_CUM    = [0,0,160,420,840,1520,2620,4420,7220,11820,19220,31220,49220,79220,129220,209220];
 
-function computeBuildWAX(rating, openSlots) {
+function computeRatingWAX(rating) {
     const r = (typeof rating === 'number' && rating > 0) ? rating : BUILD_BASE;
-    let ratingWAX;
-    if (r <= BUILD_BASE) {
-        ratingWAX = 0;
+    if (r <= BUILD_BASE) return 0;
+    // TLM-only path
+    const tlmBoosts  = Math.log(r / BUILD_BASE) / Math.log(BUILD_BOOST_MULT);
+    const tlmPathWAX = Math.round(tlmBoosts * BUILD_TLM_BOOST / BUILD_TLM_PER_WAX);
+    // NFT path
+    let nftPathWAX;
+    if (r < BUILD_AVG_RATING * 0.85) {
+        // Well below average — Mega would overshoot; TLM only
+        nftPathWAX = Infinity;
+    } else if (r <= BUILD_AVG_RATING * 1.15) {
+        // Near average — one Mega Boost
+        nftPathWAX = BUILD_MEGA_WAX;
     } else {
-        // TLM-only path
-        const tlmBoosts  = Math.log(r / BUILD_BASE) / Math.log(BUILD_BOOST_MULT);
-        const tlmPathWAX = Math.round(tlmBoosts * BUILD_TLM_BOOST / BUILD_TLM_PER_WAX);
-        // NFT path (Mega Boost brings to ~average; Super Boosts from there toward max)
-        let nftPathWAX;
-        if (r < BUILD_AVG_RATING * 0.85) {
-            // Well below average — Mega would wildly overshoot; TLM is the only option
-            nftPathWAX = Infinity;
-        } else if (r <= BUILD_AVG_RATING * 1.15) {
-            // Near current average — one Mega Boost
-            nftPathWAX = BUILD_MEGA_WAX;
-        } else {
-            // Above average — one Mega Boost + N Super Boosts
-            const n = Math.max(0, Math.ceil(
-                Math.log2((BUILD_MAX_RATING - BUILD_AVG_RATING) / Math.max(BUILD_MAX_RATING - r, 0.5))
-            ));
-            nftPathWAX = BUILD_MEGA_WAX + n * BUILD_SUPER_WAX;
-        }
-        ratingWAX = Math.min(tlmPathWAX, nftPathWAX);
+        // Above average — Mega + N Super Boosts
+        const n = Math.max(0, Math.ceil(
+            Math.log2((BUILD_MAX_RATING - BUILD_AVG_RATING) / Math.max(BUILD_MAX_RATING - r, 1))
+        ));
+        nftPathWAX = BUILD_MEGA_WAX + n * BUILD_SUPER_WAX;
     }
-    const slots   = Math.min(parseInt(openSlots) || 1, 15);
-    const slotWAX = Math.round((BUILD_SLOT_CUM[slots] ?? 0) / BUILD_TLM_PER_WAX);
-    return Math.round(ratingWAX) + slotWAX;
+    return Math.min(tlmPathWAX, nftPathWAX);
 }
 
 function drawSparkline(prices) {
@@ -1087,7 +1079,7 @@ function renderAssetTable() {
         const pc = priceCache.get(t.template_id);
         const tplFloor = (pc && pc.floor !== '—') ? parseFloat(pc.floor) : null;
         assets.forEach(a => {
-            const aBuildWAX = computeBuildWAX(a.land_rating, a.open_slots);
+            const aBuildWAX = computeRatingWAX(a.land_rating);
             allAssets.push({
                 ...a,
                 planet:    t.planet,
@@ -1389,8 +1381,8 @@ function renderSubTable(templateId, assets) {
         { key: 'usedBoosts',  label: 'USED BOOSTS', align: 'center' },
         { key: 'boostLast',   label: 'BOOST LAST',  align: 'center' },
         { key: 'price',       label: 'LISTED',      align: 'center' },
-        { key: 'eff_wax',     label: 'BUILD VAL~ ?', align: 'center',
-          tip: 'ESTIMATE — shows cheapest likely path (TLM boosts vs Mega/Super NFT boosts).\n\nMega Boost ~600 WAX: raises to avg rating (~600k). Super Boost ~25,000 WAX: halfway to max (5,702,337).\nTLM path: 64 TLM × log(rating/100)/log(1.0021) boosts, at 0.28 TLM/WAX.\nSlot unlock TLM cumulative: free, 160, 420, 840, 1520, 2620, 4420, 7220, 11820, 19220+…\n\nBASE = no investment above base. Green = floor below est. build cost. Red = floor above.' },
+        { key: 'eff_wax',     label: 'EST. RATING VALUE ?', align: 'center',
+          tip: 'Estimated cheapest WAX cost to reach this land\'s rating (rating only, not slots).\n\nPicks minimum of:\n• TLM path: log(rating/100)/log(1.0021) boosts × 64 TLM ÷ 0.28 TLM/WAX\n• Mega Boost ~600 WAX: raises to avg (~600k)\n• Mega + Super Boosts: above avg, each Super (25,000 WAX) goes halfway to max\n\nBASE = no investment above base rating. Green = floor below est. Red = floor above.' },
     ];
 
     const heads = cols.map(c =>
@@ -1408,10 +1400,10 @@ function renderSubTable(templateId, assets) {
         const priceCell  = listedPrice
             ? `<span class="price-highlight">${listedPrice} WAX</span>`
             : `<span style="color:#333">—</span>`;
-        // BUILD VAL: cheapest estimated WAX cost (min of TLM path vs Mega/Super NFT path)
+        // EST. RATING VALUE: cheapest WAX to reach this rating (TLM vs NFT path)
         const pc        = priceCache.get(templateId);
         const floorWAX  = (pc && pc.floor !== '—') ? parseFloat(pc.floor) : null;
-        const buildWAX  = computeBuildWAX(a.land_rating, a.open_slots);
+        const buildWAX  = computeRatingWAX(a.land_rating);
         const isBase    = buildWAX === 0;
         const delta     = (!isBase && floorWAX != null) ? Math.round(buildWAX - floorWAX) : null;
         const deltaStr  = delta != null
