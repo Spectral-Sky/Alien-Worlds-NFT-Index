@@ -289,14 +289,13 @@
         .welcome-box-left { display: flex; align-items: center; gap: 25px; }
         .request-feature-btn {
             display: flex; flex-direction: column; align-items: center; gap: 8px;
-            text-decoration: none; color: #888; font-family: monospace; font-size: 0.75em;
+            text-decoration: none; color: var(--theme-color); font-family: monospace; font-size: 0.75em;
             font-weight: bold; letter-spacing: 2px; text-transform: uppercase;
-            border: 1px dashed #333; padding: 12px 18px; transition: all 0.2s;
-            white-space: nowrap; flex-shrink: 0;
+            border: 1px dashed var(--theme-color); padding: 12px 18px; transition: all 0.2s;
+            white-space: nowrap; flex-shrink: 0; box-shadow: 0 0 10px var(--theme-color);
         }
-        .request-feature-btn:hover { color: var(--theme-color); border-color: var(--theme-color); box-shadow: 0 0 10px var(--theme-color); }
-        .request-feature-btn img { width: 36px; height: 36px; object-fit: contain; opacity: 0.7; transition: opacity 0.2s; }
-        .request-feature-btn:hover img { opacity: 1; }
+        .request-feature-btn:hover { transform: scale(1.15); box-shadow: 0 0 18px var(--theme-color); }
+        .request-feature-btn img { width: 36px; height: 36px; object-fit: contain; opacity: 1; }
         .welcome-logo { width: 90px; height: 90px; object-fit: contain; cursor: pointer; }
 
         /* --- WALLET PICKER --- */
@@ -463,7 +462,7 @@
         </div>
         
         <nav class="nav-links">
-            <a href="index.html" class="nav-btn active">HUB</a>
+            <a href="index.html" class="nav-btn active"><img src="NCico.png" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">HUB</a>
             <a href="crew.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">CREW</a>
             <a href="arms.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">ARMS</a>
             <a href="tools.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">TOOLS</a>
