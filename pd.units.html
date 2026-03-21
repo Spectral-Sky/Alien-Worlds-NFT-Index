@@ -99,7 +99,7 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.8); margin-bottom: 0; flex-wrap: wrap; gap: 10px;
         }
         h1 { color: var(--theme-color); letter-spacing: 3px; margin: 0; text-transform: uppercase; font-size: 1.5em; line-height: 1; text-shadow: 0 0 10px var(--theme-color); transition: color 0.5s, text-shadow 0.5s; }
-        .nav-btn { background: transparent; color: #888; border: 1px solid transparent; padding: 8px 16px; font-family: monospace; font-weight: bold; font-size: 0.9em; text-decoration: none; cursor: pointer; transition: all 0.3s; text-transform: uppercase; }
+        .nav-btn { background: transparent; color: #888; border: 1px solid transparent; padding: 8px 16px; font-family: monospace; font-weight: bold; font-size: 0.9em; text-decoration: none; cursor: pointer; transition: all 0.3s; text-transform: uppercase; border-radius: 6px; }
         .nav-btn:hover { color: var(--theme-color); border-color: var(--theme-color); }
         .nav-btn.active { color: #000; background: var(--theme-color); border-color: var(--theme-color); box-shadow: var(--theme-shadow); }
 
@@ -366,9 +366,9 @@
         <a href="tools.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">TOOLS</a>
         <a href="faces.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">FACES</a>
         <a href="land.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">LAND</a>
-        <a href="pd.worlds.html" class="nav-btn active"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD UNITS</a>
+        <a href="pd.units.html" class="nav-btn active"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD UNITS</a>
         <a href="pd.materials.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD MATS</a>
-        <a href="army.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">⚔ ARMY</a>
+        <a href="army.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">ARMY BUILDER</a>
     </nav>
     <div class="wallet-section">
         <button id="wallet-btn" class="cyber-btn" style="border-color: #5badff; color: #5badff;" onclick="toggleWallet()">[ WAX LOGIN ]</button>
@@ -382,9 +382,9 @@
     <a href="tools.worlds.html" class="nav-btn">TOOLS</a>
     <a href="faces.worlds.html" class="nav-btn">FACES</a>
     <a href="land.worlds.html" class="nav-btn">LAND</a>
-    <a href="pd.worlds.html" class="nav-btn">PD UNITS</a>
+    <a href="pd.units.html" class="nav-btn">PD UNITS</a>
     <a href="pd.materials.html" class="nav-btn">PD MATS</a>
-    <a href="army.html" class="nav-btn">&#9876; ARMY</a>
+    <a href="army.html" class="nav-btn">ARMY BUILDER</a>
 </nav>
 
 <div class="top-bar">
@@ -403,6 +403,7 @@
             <button id="tab-mercenaries" class="cyber-btn active-section" onclick="filterSection('mercenaries')">[ MERCENARIES ]</button>
             <button id="tab-warlords"    class="cyber-btn active-section" onclick="filterSection('warlords')">[ WARLORDS ]</button>
             <button id="tab-supplies"    class="cyber-btn active-section" onclick="filterSection('supplies')">[ SUPPLIES ]</button>
+            <button id="tab-services"    class="cyber-btn active-section" onclick="filterSection('services')">[ SERVICES ]</button>
             <span style="color:#1a3a5c; font-size:1em;">|</span>
             <button id="view-toggle-btn" class="cyber-btn" onclick="toggleView()">[ SPLIT VIEW ]</button>
             <button id="scan-all-btn" class="cyber-btn" onclick="scanAll()">[ SCAN ALL ]</button>
@@ -555,6 +556,25 @@
     </div>
 </div>
 
+<!-- SECTION 6: SERVICES -->
+<div id="section-services" class="section-wrapper">
+    <div class="section-header">// SERVICES</div>
+    <div class="ritz grid-container" dir="ltr">
+        <table id="table-services" class="waffle" cellspacing="0" cellpadding="0">
+            <thead><tr><th class="column-headers-background"></th></tr></thead>
+            <tbody id="tbody-services">
+                <tr><td class="live-header">#</td><td class="live-header">IMAGE</td><td class="live-header">NAME</td><td class="live-header">RARITY</td><td class="live-header">TYPE</td><td class="live-header">EFFECT</td><td class="live-header">LOWEST PRICE</td><td class="live-header">LAST SOLD</td><td class="live-header">SUGGESTED</td><td class="live-header">SCAN</td></tr>
+                <tr data-id="904574" data-section="services" data-desc="Rest and recharge in our Basic Suite, featuring breathtaking views of volcanoes and thermal springs. Comfort and serenity await you."><td>904574</td><td><img src="https://ipfs.io/ipfs/QmUe1evcLDzwvdAx3JA5EyE4y8PDcGwRPKimpDdTc9QPVh" loading="lazy"></td><td>Lava Lux - Basic Suite</td><td>Common</td><td>Hotel</td><td>+1 daily mission on Discord bot</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '904574')">SCAN</span></td></tr>
+                <tr data-id="904575" data-section="services" data-desc="Enjoy all the comforts of our Basic Suite with unlimited access to our thermal baths. Discover the rejuvenating power of our healing waters."><td>904575</td><td><img src="https://ipfs.io/ipfs/QmYXhzrJQozcJ5w6kf8WqTqMwhh5UiuPGtYD2i5GFHxjPV" loading="lazy"></td><td>Lava Lux - Thermal Pass</td><td>Uncommon</td><td>Hotel</td><td>+3 daily missions on Discord bot</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '904575')">SCAN</span></td></tr>
+                <tr data-id="904576" data-section="services" data-desc="Upgrade your stay with unlimited access to our lava sauna and personalized care from our wellness experts. Restore your body and mind with tailored treatments."><td>904576</td><td><img src="https://ipfs.io/ipfs/QmVM6ocqdQ4RM8rHN1wtuRYSEvYy362QXmLgv9ehYVr8dF" loading="lazy"></td><td>Lava Lux - Magma Therapy</td><td>Rare</td><td>Hotel</td><td>+5 daily missions on Discord bot</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '904576')">SCAN</span></td></tr>
+                <tr data-id="904577" data-section="services" data-desc="Indulge in our VIP package and experience the full range of our exclusive treatments. Unwind in your luxury suite while our wellness specialists cater to your every need."><td>904577</td><td><img src="https://ipfs.io/ipfs/QmXfq31RgmMAD6ykZJynaoGQye1YUx2bijBKTm99nwr8dA" loading="lazy"></td><td>Lava Lux - Ember Serenity</td><td>Epic</td><td>Hotel</td><td>+7 daily missions on Discord bot</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '904577')">SCAN</span></td></tr>
+                <tr data-id="904578" data-section="services" data-desc="More than just a stay—an escape. Retreat to a fully private life sphere in space, with a dedicated team ensuring your ultimate rejuvenation."><td>904578</td><td><img src="https://ipfs.io/ipfs/QmegmC7DzkyNYZy1Uz8BaaKqm1CU424hLQADQtqkhrybpC" loading="lazy"></td><td>Lava Lux - Core Retreat</td><td>Legendary</td><td>Hotel</td><td>+11 daily missions on Discord bot</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '904578')">SCAN</span></td></tr>
+                <tr data-id="904579" data-section="services" data-desc="Experience the ultimate rebirth of body and mind with our all-inclusive package. Enjoy a stay inside a volcano with a dedicated wellness team and access to cutting-edge treatments."><td>904579</td><td><img src="https://ipfs.io/ipfs/QmU9m8synBXRezKjVmxHrry6Q4ML5nQ624nwWThaVDSH3j" loading="lazy"></td><td>Lava Lux - Volcanic VIP</td><td>Mythic</td><td>Hotel</td><td>+15 daily missions on Discord bot</td><td class="c-low stat-price">-</td><td class="c-last stat-price">-</td><td class="c-sugg stat-price">-</td><td><span class="scan-trigger" onclick="scanRow(this, '904579')">SCAN</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <!-- ═══════════════════════════════════════════ COMBINE VIEW ═══════════ -->
 <div id="combined-section">
     <div class="section-header">// ALL PD UNITS — COMBINED VIEW</div>
@@ -635,7 +655,7 @@
     let allDataRows = [];     // { id, section, element, imgSrc }
     let isDeckOpen = true;
     let currentView = "split";  // "split" | "combine"
-    let visibleSections = new Set(["equipment","creatures","mercenaries","warlords","supplies"]);
+    let visibleSections = new Set(["equipment","creatures","mercenaries","warlords","supplies","services"]);
     let unlockedColors = new Set();
     let rainbowInterval = null;
 
@@ -659,7 +679,7 @@
         }
 
         // Process all section tables
-        ["equipment","creatures","mercenaries","warlords","supplies"].forEach(sec => {
+        ["equipment","creatures","mercenaries","warlords","supplies","services"].forEach(sec => {
             processTable(sec);
         });
 
@@ -807,7 +827,7 @@
         // Collect all data rows sorted by rarity
         const combined = [];
 
-        ["equipment","creatures","mercenaries","warlords","supplies"].forEach(sec => {
+        ["equipment","creatures","mercenaries","warlords","supplies","services"].forEach(sec => {
             const rows = document.querySelectorAll(`tr[data-section="${sec}"]`);
             rows.forEach(row => {
                 const cells = Array.from(row.querySelectorAll("td"));
@@ -890,14 +910,14 @@
     // ─── VIEW TOGGLE ───────────────────────────────────────────────────────────
     function toggleView() {
         const btn = document.getElementById("view-toggle-btn");
-        const sectionTabs = ["tab-equipment","tab-creatures","tab-mercenaries","tab-warlords","tab-supplies"];
+        const sectionTabs = ["tab-equipment","tab-creatures","tab-mercenaries","tab-warlords","tab-supplies","tab-services"];
 
         if(currentView === "split") {
             currentView = "combine";
             btn.innerText = "[ COMBINE VIEW ]";
             btn.classList.add("active-section");
             // Hide all split sections
-            ["equipment","creatures","mercenaries","warlords","supplies"].forEach(s => {
+            ["equipment","creatures","mercenaries","warlords","supplies","services"].forEach(s => {
                 document.getElementById("section-" + s).style.display = "none";
             });
             // Show combined
@@ -913,7 +933,7 @@
             document.getElementById("combined-section").style.display = "none";
             sectionTabs.forEach(t => document.getElementById(t).classList.remove("disabled-btn"));
             // Restore visible sections
-            ["equipment","creatures","mercenaries","warlords","supplies"].forEach(s => {
+            ["equipment","creatures","mercenaries","warlords","supplies","services"].forEach(s => {
                 const wrapper = document.getElementById("section-" + s);
                 if(visibleSections.has(s)) wrapper.style.display = "block";
                 else wrapper.style.display = "none";
@@ -1291,7 +1311,7 @@
         } catch(e) { log.textContent += `> CONNECTION FAILED — try again later\n`; }
     }
     function closeChestModal() { document.getElementById("chest-modal-backdrop").classList.remove("active"); }
-    document.getElementById("chest-modal-backdrop").addEventListener("click", function(e) { if(e.target === this) closeChestModal(); });
+    document.addEventListener("click", function(e) { if(e.target && e.target.id === 'chest-modal-backdrop') closeChestModal(); });
     function toggleHamburger() {
         const dd = document.getElementById('nav-dropdown');
         if (dd) dd.classList.toggle('open');

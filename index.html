@@ -15,10 +15,10 @@
     
     <script src="waxjs.js"></script>
     <script type="module">
-        import { SessionKit } from 'https://esm.sh/@wharfkit/session@0.8';
-        import { WebRenderer } from 'https://esm.sh/@wharfkit/web-renderer@0.3';
-        import { WalletPluginAnchor } from 'https://esm.sh/@wharfkit/wallet-plugin-anchor@0.3';
-        import { WalletPluginWAX } from 'https://esm.sh/@wharfkit/wallet-plugin-wax@0.2';
+        import { SessionKit } from 'https://esm.sh/@wharfkit/session@1';
+        import { WebRenderer } from 'https://esm.sh/@wharfkit/web-renderer@1';
+        import { WalletPluginAnchor } from 'https://esm.sh/@wharfkit/wallet-plugin-anchor@1';
+        import { WalletPluginWAX } from 'https://esm.sh/@wharfkit/wallet-plugin-wax';
 
         const kit = new SessionKit({
             appName: 'naroncodex',
@@ -81,6 +81,7 @@
             background: transparent; color: #888; border: 1px solid transparent;
             padding: 8px 16px; font-family: monospace; font-weight: bold; font-size: 0.9em;
             text-decoration: none; cursor: pointer; transition: all 0.3s; text-transform: uppercase;
+            border-radius: 6px;
         }
         .nav-btn:hover { color: var(--theme-color); border-color: var(--theme-color); }
         .nav-btn.active { color: #000; background: var(--theme-color); border-color: var(--theme-color); box-shadow: var(--theme-shadow); }
@@ -468,9 +469,9 @@
             <a href="tools.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">TOOLS</a>
             <a href="faces.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">FACES</a>
             <a href="land.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">LAND</a>
-            <a href="pd.worlds.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD UNITS</a>
+            <a href="pd.units.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD UNITS</a>
             <a href="pd.materials.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD MATS</a>
-            <a href="army.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">⚔ ARMY</a>
+            <a href="army.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">ARMY BUILDER</a>
         </nav>
 
         <div class="wallet-section">
@@ -489,9 +490,9 @@
     <a href="tools.worlds.html" class="nav-btn">TOOLS</a>
     <a href="faces.worlds.html" class="nav-btn">FACES</a>
     <a href="land.worlds.html" class="nav-btn">LAND</a>
-    <a href="pd.worlds.html" class="nav-btn">PD UNITS</a>
+    <a href="pd.units.html" class="nav-btn">PD UNITS</a>
     <a href="pd.materials.html" class="nav-btn">PD MATS</a>
-    <a href="army.html" class="nav-btn">&#9876; ARMY</a>
+    <a href="army.html" class="nav-btn">ARMY BUILDER</a>
 </nav>
 
     <div class="hub-container">
@@ -588,7 +589,7 @@
     <div class="phase-subheader" style="color: #3a6a8a;">schema: planetdefnft — Browse PD templates and crafting materials</div>
     <img src="PDsplash.png" alt="Planetary Defense" style="width:100%; max-height:160px; object-fit:cover; object-position:center; display:block; border:1px solid #1a3a5c; margin-bottom:15px; filter:brightness(0.9);">
     <div class="module-grid">
-        <a href="pd.worlds.html" class="module-card pd-module-card">
+        <a href="pd.units.html" class="module-card pd-module-card">
             <div class="card-text-wrapper">
                 <div class="card-title">PD UNITS</div>
                 <span class="card-schema">Equipment · Creatures · Mercenaries · Warlords · Supplies</span>
@@ -1068,7 +1069,7 @@
         } catch(e) { log.textContent += `> CONNECTION FAILED — try again later\n`; }
     }
     function closeChestModal() { document.getElementById("chest-modal-backdrop").classList.remove("active"); }
-    document.getElementById("chest-modal-backdrop").addEventListener("click", function(e) { if(e.target === this) closeChestModal(); });
+    document.addEventListener("click", function(e) { if(e.target && e.target.id === 'chest-modal-backdrop') closeChestModal(); });
 
     // ── Army Builder warlord fan shuffle ─────────────────────────────────────
     (function() {
