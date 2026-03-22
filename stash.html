@@ -17,7 +17,7 @@
         import { SessionKit } from 'https://esm.sh/@wharfkit/session@1';
         import { WebRenderer } from 'https://esm.sh/@wharfkit/web-renderer@1';
         import { WalletPluginAnchor } from 'https://esm.sh/@wharfkit/wallet-plugin-anchor@1';
-        import { WalletPluginWAX } from 'https://esm.sh/@wharfkit/wallet-plugin-wax';
+        import { WalletPluginWAX } from 'https://esm.sh/@wharfkit/wallet-plugin-wax@1';
         const kit = new SessionKit({
             appName: 'naroncodex',
             chains: [{ id: '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4', url: 'https://wax.greymass.com' }],
@@ -158,13 +158,13 @@
         /* TABLE */
         .stash-table-wrap { overflow-x:auto; }
         .stash-table { border-collapse:collapse; width:100%; font-size:0.82em; }
-        .stash-table th { background:rgba(2,8,6,0.9); color:var(--theme-color); border-bottom:2px solid var(--theme-color); border-right:1px solid #0f0f1e; padding:7px 10px; text-align:left; white-space:nowrap; font-weight:bold; letter-spacing:1px; cursor:pointer; user-select:none; }
+        .stash-table th { background:rgba(2,8,6,0.9); color:var(--theme-color); border-bottom:2px solid var(--theme-color); border-right:1px solid #252540; padding:7px 10px; text-align:left; white-space:nowrap; font-weight:bold; letter-spacing:1px; cursor:pointer; user-select:none; }
         .stash-table th:hover { background:rgba(4,12,10,0.9); }
-        .stash-table td { border-bottom:1px solid #0a0a18; border-right:1px solid #0c0c1c; padding:5px 10px; vertical-align:middle; white-space:nowrap; }
+        .stash-table td { border-bottom:1px solid #1c1c32; border-right:1px solid #18182e; padding:5px 10px; vertical-align:middle; white-space:nowrap; }
         .stash-table tbody tr { cursor:pointer; }
         .stash-table tbody tr:hover td { background:rgba(255,170,0,0.05); }
         .stash-table tbody tr.selected td { background:rgba(255,170,0,0.1); border-left:2px solid var(--theme-color); }
-        .stash-table td img { width:40px; height:40px; object-fit:contain; border-radius:4px; display:block; background:#0a0a1a; }
+        .stash-table td img { width:44px; height:62px; object-fit:cover; object-position:center top; border-radius:5px 5px 3px 3px; display:block; background:#0d0d1e; border:1px solid #252540; }
         .img-cell { width:50px; padding:4px 6px !important; }
         .floor-cell { color:var(--theme-color); }
         .floor-pending { color:#2a2a2a; }
@@ -421,8 +421,8 @@
     var API_SALES    = 'https://wax.eosusa.io/atomicmarket/v1/sales/templates';
     var API_SALES_FB = 'https://wax.api.atomicassets.io/atomicmarket/v1/sales/templates';
     var API_HISTORY  = 'https://wax.api.atomicassets.io/atomicmarket/v2/sales';
-    var IPFS_GW      = 'https://atomichub-ipfs.com/ipfs/';
-    var IPFS_FB      = 'https://ipfs.io/ipfs/';
+    var IPFS_GW      = 'https://ipfs.io/ipfs/';
+    var IPFS_FB      = 'https://cloudflare-ipfs.com/ipfs/';
 
     // ─── TABLE DEFINITIONS ─────────────────────────────────────────────────────
     var TAB_CFG = {
@@ -440,7 +440,7 @@
         if (!raw || raw === '—') return '<td class="img-cell" style="color:#333;font-size:0.6em;">N/A</td>';
         var url = raw.startsWith('http') ? raw : (IPFS_GW + raw);
         var fb  = raw.startsWith('http') ? raw : (IPFS_FB + raw);
-        return '<td class="img-cell"><img src="'+url+'" loading="lazy" onerror="if(this.src!==\''+fb+'\')this.src=\''+fb+'\';else this.style.opacity=0.1;"></td>';
+        return '<td class="img-cell"><img src="'+url+'" loading="lazy" onerror="this.onerror=null;this.src=\''+fb+'\';"></td>';
     }
     function dv(a, key) {
         var v = (a.data && a.data[key] != null) ? a.data[key] : null;
