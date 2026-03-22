@@ -153,6 +153,21 @@
             background-size: 1800% 1800%; animation: rainbow-shift 3s ease infinite; border-color: #fff;
         }
         @keyframes rainbow-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes simon-ping {
+            0%   { transform: scale(1); }
+            35%  { transform: scale(2.8); box-shadow: 0 0 30px var(--dot-color), 0 0 60px var(--dot-color); border-color: #fff; }
+            70%  { transform: scale(1.8); box-shadow: 0 0 12px var(--dot-color); }
+            100% { transform: scale(1); }
+        }
+        @keyframes simon-fail-flash {
+            0%   { box-shadow: 0 0 20px #ff0000; border-color: #ff0000; transform: scale(1.4); }
+            100% { box-shadow: none; border-color: #333; transform: scale(1); }
+        }
+        .simon-pinging { animation: simon-ping 0.65s ease-out forwards !important; }
+        .simon-fail    { animation: simon-fail-flash 0.6s ease-out forwards !important; }
+        .star-target { position:fixed; pointer-events:all; z-index:99000; font-size:1.6em; cursor:crosshair; user-select:none; color:#ffe066; animation:star-pop 1.6s ease-out forwards; text-shadow:0 0 8px #ffe066, 0 0 20px rgba(255,224,102,0.4); }
+        @keyframes star-pop { 0%{opacity:0;transform:scale(0.2);} 20%{opacity:1;transform:scale(1.15);} 80%{opacity:1;transform:scale(1);} 100%{opacity:0;transform:scale(0.4);} }
+        #star-hud { display:none; position:fixed; bottom:15px; left:15px; z-index:50000; font-family:monospace; font-size:0.75em; color:#ffe066; opacity:0.6; letter-spacing:1px; pointer-events:none; }
 
         /* --- UI BAR --- */
         .top-bar {
@@ -384,6 +399,8 @@
 </head>
 <body>
 
+<div id="star-hud">&#9733; <span id="star-score-num">0</span></div>
+
 <div id="cursor-glow"></div>
 
 <!-- ══ MARKET DECK ═══════════════════════════════════════════════════════════ -->
@@ -403,7 +420,7 @@
     <div class="intel-row"><span class="intel-label">FLOOR PRICE:</span><span id="intel-floor" class="intel-val">---</span></div>
     <div class="intel-row"><span class="intel-label">LAST SOLD:</span><span id="intel-last" class="intel-val">---</span></div>
     <div class="intel-row"><span class="intel-label">SUGGESTED:</span><span id="intel-sugg" class="intel-val">---</span></div>
-    <canvas id="sparkline-canvas" style="display:block;width:100%;height:50px;margin-top:8px;border-top:1px dashed #1a2a1a;padding-top:4px;box-sizing:border-box;"></canvas>
+    <canvas id="sparkline-canvas" style="display:block;width:100%;height:65px;margin-top:8px;border-top:1px dashed #1a2a1a;padding-top:4px;box-sizing:border-box;"></canvas>
     <div class="market-links">
         <a id="lnk-atomic" target="_blank" class="market-link-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://atomichub.io&size=64" style="height:13px;vertical-align:middle;margin-right:4px;border-radius:2px;" onerror="this.style.display='none'">ATOMIC</a>
         <a id="lnk-nefty"  target="_blank" class="market-link-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://neftyblocks.com&size=64" style="height:13px;vertical-align:middle;margin-right:4px;border-radius:2px;" onerror="this.style.display='none'">NEFTY</a>
@@ -470,13 +487,13 @@
             </div>
         </div>
         <div id="theme-panel">
-            <div class="theme-opt" style="background:#ff4d4d;" onclick="setTheme('#ff4d4d','#1a0505')" title="Red"></div>
-            <div class="theme-opt" style="background:#ff9900;" onclick="setTheme('#ff9900','#1a1005')" title="Orange"></div>
-            <div class="theme-opt" style="background:#ffd700;" onclick="setTheme('#ffd700','#1a1a05')" title="Yellow"></div>
-            <div class="theme-opt" style="background:#00ff41;" onclick="setTheme('#00ff41','#051a05')" title="Green"></div>
-            <div class="theme-opt" style="background:#0088ff;" onclick="setTheme('#0088ff','#050f1a')" title="Blue"></div>
-            <div class="theme-opt" style="background:#bf00ff;" onclick="setTheme('#bf00ff','#12051a')" title="Violet"></div>
-            <div id="secret-rainbow-dot" class="theme-opt" style="display:none;" onclick="setTheme('rainbow','#050510')" title="RGB MODE"></div>
+            <div id="simon-dot-0" class="theme-opt" style="background:#ff4d4d;--dot-color:#ff4d4d" onclick="simonDotClick(this,'#ff4d4d','#1a0505')" title="Red"></div>
+            <div id="simon-dot-1" class="theme-opt" style="background:#ff9900;--dot-color:#ff9900" onclick="simonDotClick(this,'#ff9900','#1a1005')" title="Orange"></div>
+            <div id="simon-dot-2" class="theme-opt" style="background:#ffd700;--dot-color:#ffd700" onclick="simonDotClick(this,'#ffd700','#1a1a05')" title="Yellow"></div>
+            <div id="simon-dot-3" class="theme-opt" style="background:#00ff41;--dot-color:#00ff41" onclick="simonDotClick(this,'#00ff41','#051a05')" title="Green"></div>
+            <div id="simon-dot-4" class="theme-opt" style="background:#0088ff;--dot-color:#0088ff" onclick="simonDotClick(this,'#0088ff','#050f1a')" title="Blue"></div>
+            <div id="simon-dot-5" class="theme-opt" style="background:#bf00ff;--dot-color:#bf00ff" onclick="simonDotClick(this,'#bf00ff','#12051a')" title="Violet"></div>
+            <div id="secret-rainbow-dot" class="theme-opt" style="display:none;--dot-color:#ffffff" onclick="simonDotClick(this,'rainbow','#050510')" title="RGB MODE"></div>
         </div>
     </div><!-- /topbar-controls -->
     <div style="text-align:right;">
@@ -488,6 +505,7 @@
 <!-- ══ PLANET BAR — sits between top-bun and table, scrolls with page ════════ -->
 <div id="planet-bar">
     <canvas id="planet-canvas"></canvas>
+    <canvas id="planet-halo-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;"></canvas>
     <div id="planet-labels">
         <button class="planet-label" data-planet="eyeke">EYEKE</button>
         <button class="planet-label" data-planet="kavian">KAVIAN</button>
@@ -595,6 +613,16 @@ sun.position.set(5, 5, 5);
 scene.add(sun);
 
 const PLANET_NAMES = ['eyeke','kavian','magor','naron','neri','veles'];
+const PLANET_SIMON_COLORS = [
+    { color: '#ff4d4d', dark: '#1a0505' }, // eyeke
+    { color: '#ff9900', dark: '#1a1005' }, // kavian
+    { color: '#ffd700', dark: '#1a1a05' }, // magor
+    { color: '#00ff41', dark: '#051a05' }, // naron
+    { color: '#0088ff', dark: '#050f1a' }, // neri
+    { color: '#bf00ff', dark: '#12051a' }, // veles
+];
+var simonHaloPulse = []; // per-planet pulse intensity 0..1
+var simonShootStar = null; // { x1,y1,x2,y2, t:0..1 }
 const geo    = new THREE.SphereGeometry(1.25, 64, 64);
 const loader = new THREE.TextureLoader();
 let   planets = [];
@@ -688,7 +716,27 @@ canvas.addEventListener('pointerdown', e => {
     raycaster.setFromCamera(pointer, camera);
     const hits = raycaster.intersectObjects(planets);
     if (hits.length > 0) {
-        spinPlanet(hits[0].object);
+        const hitPlanet = hits[0].object;
+        const hitIdx = planets.indexOf(hitPlanet);
+        if (simon.active && !simon.showing && hitIdx >= 0) {
+            // Find the corresponding simon-dot element and call simonHandleInput
+            const dotEl = document.getElementById('simon-dot-' + hitIdx);
+            if (dotEl) {
+                // Shoot star to next planet if correct
+                if (hitIdx === simon.sequence[simon.userStep]) {
+                    const nextIdx = simon.sequence[simon.userStep + 1];
+                    if (nextIdx !== undefined) {
+                        const from = getPlanetScreenPos(hitIdx);
+                        const to   = getPlanetScreenPos(nextIdx);
+                        simonShootStar = { x1:from.x, y1:from.y, x2:to.x, y2:to.y, t:0 };
+                    }
+                    simonHaloPulse[hitIdx] = 1.0;
+                }
+                simonHandleInput(dotEl);
+            }
+        } else {
+            spinPlanet(hitPlanet);
+        }
     }
 });
 
@@ -696,6 +744,57 @@ function spinPlanet(p) {
     p.userData.clickCount++;
     const boost = p.userData.clickCount > 8 ? 50 : BOOST_PER_CLICK;
     p.userData.speedMultiplier = Math.min(p.userData.speedMultiplier + boost, MAX_MULTIPLIER);
+}
+
+// ─── PLANET SIMON HELPERS ─────────────────────────────────────────────────────
+function getPlanetScreenPos(idx) {
+    const p = planets[idx];
+    if (!p) return { x: 0, y: 0 };
+    const pos = p.position.clone();
+    pos.project(camera);
+    const w = wrapper.clientWidth;
+    return { x: ((pos.x + 1) / 2) * w, y: ((1 - pos.y) / 2) * CANVAS_H };
+}
+
+function drawPlanetHalos() {
+    const hc = document.getElementById('planet-halo-canvas');
+    if (!hc) return;
+    const w = wrapper.clientWidth;
+    hc.width = w; hc.height = CANVAS_H;
+    const ctx = hc.getContext('2d');
+    ctx.clearRect(0, 0, w, CANVAS_H);
+    if (!simon.active) return;
+    // Initialize pulse array
+    if (!simonHaloPulse.length) simonHaloPulse = planets.map(() => 0);
+    planets.forEach((p, i) => {
+        const pos = getPlanetScreenPos(i);
+        const c = PLANET_SIMON_COLORS[i].color;
+        const pulse = simonHaloPulse[i] || 0;
+        const r = 55 + pulse * 30;
+        const alpha = (0.35 + pulse * 0.45).toFixed(2);
+        const grad = ctx.createRadialGradient(pos.x, pos.y, 10, pos.x, pos.y, r);
+        grad.addColorStop(0, c + Math.round(parseFloat(alpha) * 255).toString(16).padStart(2,'0'));
+        grad.addColorStop(1, c + '00');
+        ctx.beginPath(); ctx.fillStyle = grad;
+        ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2); ctx.fill();
+        // Decay pulse
+        if (simonHaloPulse[i] > 0) simonHaloPulse[i] = Math.max(0, simonHaloPulse[i] - 0.025);
+    });
+    // Shooting star animation
+    if (simonShootStar) {
+        const s = simonShootStar;
+        s.t = Math.min(1, s.t + 0.045);
+        const x = s.x1 + (s.x2 - s.x1) * s.t;
+        const y = s.y1 + (s.y2 - s.y1) * s.t;
+        ctx.save();
+        ctx.font = '18px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.globalAlpha = s.t < 0.9 ? 1 : 1 - (s.t - 0.9) / 0.1;
+        ctx.fillText('✦', x, y);
+        ctx.restore();
+        if (s.t >= 1) simonShootStar = null;
+    }
 }
 
 // ─── ANIMATION ───────────────────────────────────────────────────────────────
@@ -717,6 +816,7 @@ function animate() {
     });
     updateLabelPositions();
     renderer.render(scene, camera);
+    drawPlanetHalos();
 }
 animate();
 
@@ -921,7 +1021,7 @@ async function fetchTemplatePrice(templateId) {
             intel.last = (parseInt(p0.amount) / Math.pow(10, p0.token_precision)).toFixed(2);
             intel.history = d.data.slice().reverse().map(sale => {
                 const p = sale.price;
-                return parseInt(p.amount) / Math.pow(10, p.token_precision);
+                return { price: parseInt(p.amount) / Math.pow(10, p.token_precision), time: parseInt(sale.updated_at_time) };
             });
         }
     } catch(e) {}
@@ -992,34 +1092,39 @@ function computeRatingWAX(rating) {
     return Math.min(tlmPathWAX, nftPathWAX);
 }
 
-function drawSparkline(prices) {
+function drawSparkline(entries) {
     const cvs = document.getElementById('sparkline-canvas');
     if (!cvs) return;
     const W = cvs.clientWidth || 261;
-    const H = 46;
+    const H = 60;
     cvs.width  = W;
     cvs.height = H;
     const ctx = cvs.getContext('2d');
     ctx.clearRect(0, 0, W, H);
     const color = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim() || '#00ff88';
-    if (!prices || prices.length < 2) {
+    const LABEL_H = 12; // bottom reserved for date labels
+    const graphH = H - LABEL_H;
+    if (!entries || entries.length < 2) {
         ctx.fillStyle = '#444';
         ctx.font = '9px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('NO HISTORY', W / 2, H / 2 + 3);
+        ctx.fillText('NO HISTORY', W / 2, graphH / 2 + 3);
         return;
     }
+    // Support both plain numbers and {price,time} objects
+    const prices = entries.map(e => typeof e === 'object' ? e.price : e);
+    const times  = entries.map(e => typeof e === 'object' ? e.time  : null);
     const min = Math.min(...prices);
     const max = Math.max(...prices);
     const pad = 4;
     const range = max - min || 1;
-    const sy = p => H - pad - ((p - min) / range) * (H - pad * 2);
+    const sy = p => graphH - pad - ((p - min) / range) * (graphH - pad * 2);
     const sx = i => pad + (i / (prices.length - 1)) * (W - pad * 2);
     // fill area under line
     ctx.beginPath();
     prices.forEach((p, i) => i === 0 ? ctx.moveTo(sx(i), sy(p)) : ctx.lineTo(sx(i), sy(p)));
-    ctx.lineTo(sx(prices.length - 1), H);
-    ctx.lineTo(sx(0), H);
+    ctx.lineTo(sx(prices.length - 1), graphH);
+    ctx.lineTo(sx(0), graphH);
     ctx.closePath();
     ctx.fillStyle = color + '22';
     ctx.fill();
@@ -1040,9 +1145,23 @@ function drawSparkline(prices) {
     ctx.fillStyle = '#555';
     ctx.font = '8px monospace';
     ctx.textAlign = 'left';
-    ctx.fillText(min.toFixed(1), pad, H - 1);
+    ctx.fillText(min.toFixed(1), pad, graphH - 1);
     ctx.textAlign = 'right';
     ctx.fillText(max.toFixed(1), W - pad, 9);
+    // 4 date labels at bottom
+    if (times[0]) {
+        const fmt = ts => { const d = new Date(ts); return (d.getMonth()+1)+'/'+(d.getDate()); };
+        const n = prices.length - 1;
+        const dateIndices = [0, Math.round(n/3), Math.round(2*n/3), n];
+        ctx.fillStyle = '#555';
+        ctx.font = '8px monospace';
+        dateIndices.forEach((idx, i) => {
+            const x = sx(idx);
+            const label = fmt(times[idx]);
+            ctx.textAlign = i === 0 ? 'left' : i === 3 ? 'right' : 'center';
+            ctx.fillText(label, i === 0 ? pad : i === 3 ? W - pad : x, H - 2);
+        });
+    }
 }
 
 window.scanAllPrices = async (btn) => {
@@ -1711,6 +1830,125 @@ document.addEventListener('DOMContentLoaded', () => {
         if (dot) dot.style.display = 'block';
     }
 });
+
+// ── SIMON SAYS EASTER EGG ────────────────────────────────────────────────────
+var simonDotClicks = 0;
+var simonTriggered = false;
+var simon = { active:false, showing:false, sequence:[], userStep:0, round:0, dots:null };
+
+function simonMaybeStart() {
+    if (simonTriggered || simon.active) return;
+    if (simonDotClicks >= 2) {
+        simonTriggered = true;
+        setTimeout(simonBegin, 800);
+    }
+}
+function simonDotClick(el, color, dark) {
+    simonDotClicks++;
+    simonMaybeStart();
+    if (simon.active && !simon.showing) { simonHandleInput(el); }
+    else if (!simon.active) { setTheme(color, dark); }
+}
+function simonBegin() {
+    simon.active = true; simon.sequence = []; simon.userStep = 0; simon.round = 0; simon.dots = [];
+    for (var i = 0; i < 6; i++) { var d = document.getElementById('simon-dot-' + i); if (d) simon.dots.push(d); }
+    simonHaloPulse = planets.map(() => 0);
+    simonNextRound();
+}
+function simonNextRound() {
+    simon.round++;
+    if (simon.round > 6) { simonComplete(); return; }
+    simon.sequence.push(Math.floor(Math.random() * 6));
+    simon.userStep = 0; simon.showing = true;
+    setTimeout(function() { simonPlaySequence(0); }, 500);
+}
+function simonPlaySequence(idx) {
+    if (idx >= simon.sequence.length) { simon.showing = false; return; }
+    if (typeof simonHaloPulse !== 'undefined') simonHaloPulse[simon.sequence[idx]] = 1.0;
+    simonPingDot(simon.sequence[idx], function() { setTimeout(function() { simonPlaySequence(idx + 1); }, 250); });
+}
+function simonPingDot(idx, cb) {
+    var dot = simon.dots[idx]; if (!dot) { if (cb) cb(); return; }
+    dot.classList.add('simon-pinging');
+    setTimeout(function() { dot.classList.remove('simon-pinging'); if (cb) cb(); }, 700);
+}
+function simonHandleInput(el) {
+    var idx = parseInt(el.id.replace('simon-dot-', ''));
+    if (isNaN(idx) || idx < 0 || idx > 5) return;
+    if (idx === simon.sequence[simon.userStep]) {
+        simon.userStep++; simonPingDot(idx, null);
+        if (simon.userStep >= simon.sequence.length) { setTimeout(function() { simonNextRound(); }, 800); }
+    } else { simonFail(); }
+}
+function simonFail() {
+    simon.showing = true;
+    simon.dots.forEach(function(d) { d.classList.add('simon-fail'); setTimeout(function() { d.classList.remove('simon-fail'); }, 700); });
+    setTimeout(function() { simon.sequence = []; simon.userStep = 0; simon.round = 0; simon.showing = false; simonNextRound(); }, 1800);
+}
+function simonComplete() {
+    simon.active = false; localStorage.setItem('naron_magic_unlocked', 'true');
+    var rainbow = document.getElementById('secret-rainbow-dot');
+    if (rainbow) {
+        rainbow.style.display = 'block';
+        rainbow.animate([{transform:'scale(0)'},{transform:'scale(2)'},{transform:'scale(1)'}],{duration:500,easing:'cubic-bezier(0.175,0.885,0.32,1.275)'});
+        rainbow.onclick = simonWin;
+    }
+}
+function simonWin() {
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    var code = 'NARON-'; for (var i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    localStorage.setItem('naron_simon_code', code);
+    var wallet = localStorage.getItem('naron_wallet') || 'NOT CONNECTED';
+    localStorage.setItem('naron_simon_wallet', wallet);
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = '<div style="background:#050510;border:2px solid var(--theme-color);padding:48px 56px;text-align:center;font-family:monospace;color:var(--theme-color);box-shadow:0 0 80px rgba(0,0,0,0.9),0 0 60px rgba(91,173,255,0.15);max-width:520px;width:90vw;">' +
+        '<div style="font-size:1.5em;letter-spacing:5px;margin-bottom:6px;">// SEQUENCE COMPLETE //</div>' +
+        '<div style="color:#444;font-size:0.75em;letter-spacing:2px;margin-bottom:24px;border-bottom:1px solid #1a2a3a;padding-bottom:16px;">NARON CODEX · PLANETARY DEFENSE</div>' +
+        '<div style="color:#666;font-size:0.75em;letter-spacing:2px;margin-bottom:6px;">WALLET</div>' +
+        '<div style="font-size:1.1em;letter-spacing:3px;color:#aad4ff;margin-bottom:24px;">' + wallet + '</div>' +
+        '<div style="color:#666;font-size:0.75em;letter-spacing:2px;margin-bottom:8px;">YOUR UNLOCK CODE</div>' +
+        '<div style="font-size:2em;letter-spacing:8px;color:#fff;background:#0a0a1a;padding:18px 36px;border:1px solid var(--theme-color);margin-bottom:22px;">' + code + '</div>' +
+        '<div style="color:#777;font-size:0.78em;line-height:1.6;margin-bottom:28px;">Take a screenshot of this window and share it<br>in any AW Discord — tag<br>' +
+        '<span style="color:var(--theme-color);letter-spacing:2px;">@spectral.sky</span><br>' +
+        '<span style="color:#444;font-size:0.9em;">(Alien Worlds · Mission Control · Naron Events<br>Planetary Defense · La Ruche · Safe Haven<br>AtomicHub · F12 Key)</span></div>' +
+        '<button onclick="this.closest(\'[style*=fixed]\').remove()" class="cyber-btn">[ ACKNOWLEDGE ]</button></div>';
+    document.body.appendChild(overlay);
+    setTheme('rainbow', '#050510');
+}
+// ── END SIMON ────────────────────────────────────────────────────────────────
+
+// ── STAR MINI-GAME ───────────────────────────────────────────────────────────
+var starGameActive = false;
+var starScore = 0;
+function spawnStar() {
+    if (!starGameActive) return;
+    const star = document.createElement('div');
+    star.className = 'star-target';
+    star.textContent = '✦';
+    star.style.left = (Math.random() < 0.5 ? (Math.random() * 80 + 10) : (window.innerWidth - Math.random() * 80 - 60)) + 'px';
+    star.style.top = (Math.random() * (window.innerHeight - 100) + 20) + 'px';
+    star.addEventListener('click', () => {
+        star.remove(); starScore++;
+        document.getElementById('star-score-num').textContent = starScore;
+    });
+    document.body.appendChild(star);
+    setTimeout(() => { if (star.parentNode) star.remove(); }, 1600);
+    setTimeout(spawnStar, Math.random() * 1200 + 600);
+}
+// Star game triggered by clicking the NARON CODEX logo text
+(function() {
+    const logoH1 = document.querySelector('h1');
+    if (logoH1) logoH1.style.cursor = 'pointer';
+    if (logoH1) logoH1.addEventListener('click', function() {
+        if (!starGameActive) {
+            starGameActive = true;
+            document.getElementById('star-hud').style.display = 'block';
+            spawnStar();
+        }
+    });
+})();
+// ── END STAR MINI-GAME ───────────────────────────────────────────────────────
 
 </script>
 

@@ -151,6 +151,18 @@
         .theme-opt:hover { transform: scale(1.4); border-color: #fff; box-shadow: 0 0 10px var(--theme-color); }
         #secret-rainbow-dot { background: linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #1de840, #1ddde8, #2b1de8, #dd00f3, #ff2400); background-size: 1800% 1800%; animation: rainbow-shift 3s ease infinite; border-color: #fff; }
         @keyframes rainbow-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes simon-ping {
+            0%   { transform: scale(1); }
+            35%  { transform: scale(2.8); box-shadow: 0 0 30px var(--dot-color), 0 0 60px var(--dot-color); border-color: #fff; }
+            70%  { transform: scale(1.8); box-shadow: 0 0 12px var(--dot-color); }
+            100% { transform: scale(1); }
+        }
+        @keyframes simon-fail-flash {
+            0%   { box-shadow: 0 0 20px #ff0000; border-color: #ff0000; transform: scale(1.4); }
+            100% { box-shadow: none; border-color: #333; transform: scale(1); }
+        }
+        .simon-pinging { animation: simon-ping 0.65s ease-out forwards !important; }
+        .simon-fail    { animation: simon-fail-flash 0.6s ease-out forwards !important; }
 
         /* --- PREVIEW DECK --- */
         #preview-frame {
@@ -360,6 +372,7 @@
     <div class="intel-row"><span class="intel-label">LOWEST PRICE:</span><span id="intel-floor" class="intel-val">---</span></div>
     <div class="intel-row"><span class="intel-label">LAST SOLD:</span><span id="intel-last" class="intel-val">---</span></div>
     <div class="intel-row"><span class="intel-label">SUGGESTED:</span><span id="intel-sugg" class="intel-val">---</span></div>
+    <canvas id="sparkline-canvas" style="display:block;width:100%;height:65px;margin-top:8px;border-top:1px dashed #1a2a1a;padding-top:4px;box-sizing:border-box;"></canvas>
     <div class="market-links">
         <a id="lnk-atomic" target="_blank" class="market-link-btn"><img src="atomicfavicon.ico" class="market-btn-logo" alt="">ATOMIC</a>
         <a id="lnk-nefty" target="_blank" class="market-link-btn"><img src="https://resizer2.neftyblocks.com/?ipfs=https%3A%2F%2Fraw.githubusercontent.com%2Feoscafe%2Feos-airdrops%2Fmaster%2Flogos%2FNEFTY_296.png&width=100" class="market-btn-logo" alt="">NEFTY</a>
@@ -413,13 +426,13 @@
             <div style="background:#111;height:4px;width:200px;margin-top:3px;"><div id="scan-bar" style="background:var(--theme-color);height:4px;width:0%;transition:width 0.3s;"></div></div>
         </div>
         <div id="theme-panel">
-            <div class="theme-opt" style="background:#ff4d4d;" onclick="setTheme('#ff4d4d','#1a0505')" title="Crimson Red"></div>
-            <div class="theme-opt" style="background:#ff9900;" onclick="setTheme('#ff9900','#1a1005')" title="Safety Orange"></div>
-            <div class="theme-opt" style="background:#ffd700;" onclick="setTheme('#ffd700','#1a1a05')" title="Gold"></div>
-            <div class="theme-opt" style="background:#00ff41;" onclick="setTheme('#00ff41','#051a05')" title="Matrix Green"></div>
-            <div class="theme-opt" style="background:#5badff;" onclick="setTheme('#5badff','#050d18')" title="PD Blue"></div>
-            <div class="theme-opt" style="background:#bf00ff;" onclick="setTheme('#bf00ff','#12051a')" title="Neon Purple"></div>
-            <div id="secret-rainbow-dot" class="theme-opt" style="display:none;" onclick="setTheme('rainbow','#050510')" title="RGB MODE"></div>
+            <div id="simon-dot-0" class="theme-opt" style="background:#ff4d4d;--dot-color:#ff4d4d" onclick="simonDotClick(this,'#ff4d4d','#1a0505')" title="Crimson Red"></div>
+            <div id="simon-dot-1" class="theme-opt" style="background:#ff9900;--dot-color:#ff9900" onclick="simonDotClick(this,'#ff9900','#1a1005')" title="Safety Orange"></div>
+            <div id="simon-dot-2" class="theme-opt" style="background:#ffd700;--dot-color:#ffd700" onclick="simonDotClick(this,'#ffd700','#1a1a05')" title="Gold"></div>
+            <div id="simon-dot-3" class="theme-opt" style="background:#00ff41;--dot-color:#00ff41" onclick="simonDotClick(this,'#00ff41','#051a05')" title="Matrix Green"></div>
+            <div id="simon-dot-4" class="theme-opt" style="background:#5badff;--dot-color:#5badff" onclick="simonDotClick(this,'#5badff','#050d18')" title="PD Blue"></div>
+            <div id="simon-dot-5" class="theme-opt" style="background:#bf00ff;--dot-color:#bf00ff" onclick="simonDotClick(this,'#bf00ff','#12051a')" title="Neon Purple"></div>
+            <div id="secret-rainbow-dot" class="theme-opt" style="display:none;--dot-color:#ffffff" onclick="simonDotClick(this,'rainbow','#050510')" title="RGB MODE"></div>
         </div>
     </div>
     <div style="text-align:right;">
@@ -842,7 +855,7 @@
             deckFloor.innerText = "ERROR";
         }
         try {
-            const soldRes = await fetch(`${API_HISTORY}?state=3&template_id=${id}&page=1&limit=1&order=desc&sort=updated&symbol=WAX&_ts=${Date.now()}`, { cache: "no-store" });
+            const soldRes = await fetch(`${API_HISTORY}?state=3&template_id=${id}&page=1&limit=10&order=desc&sort=updated&symbol=WAX&_ts=${Date.now()}`, { cache: "no-store" });
             const soldData = await soldRes.json();
             if(soldData.data?.[0]?.price) {
                 const price = soldData.data[0].price;
@@ -850,13 +863,20 @@
                 const lastStr = val.toFixed(2) + " WAX";
                 if(writeToCells) { cLast.textContent = lastStr; }
                 deckLast.innerText = lastStr;
+                const hist = soldData.data.slice().reverse().map(sale => ({
+                    price: parseInt(sale.price.amount) / Math.pow(10, sale.price.token_precision),
+                    time: parseInt(sale.updated_at_time)
+                }));
+                drawSparkline(hist);
             } else {
                 if(writeToCells) { cLast.textContent = "NONE"; }
                 deckLast.innerText = "NONE";
+                drawSparkline([]);
             }
         } catch(e) {
             if(writeToCells) { cLast.textContent = "ERR"; }
             deckLast.innerText = "ERR";
+            drawSparkline([]);
         }
     }
 
@@ -1071,6 +1091,163 @@
             dd.classList.remove('open');
         }
     });
+
+    function drawSparkline(entries) {
+        const cvs = document.getElementById('sparkline-canvas');
+        if (!cvs) return;
+        const W = cvs.clientWidth || 261;
+        const H = 60;
+        cvs.width  = W;
+        cvs.height = H;
+        const ctx = cvs.getContext('2d');
+        ctx.clearRect(0, 0, W, H);
+        const color = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim() || '#00ff88';
+        const LABEL_H = 12; // bottom reserved for date labels
+        const graphH = H - LABEL_H;
+        if (!entries || entries.length < 2) {
+            ctx.fillStyle = '#444';
+            ctx.font = '9px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('NO HISTORY', W / 2, graphH / 2 + 3);
+            return;
+        }
+        // Support both plain numbers and {price,time} objects
+        const prices = entries.map(e => typeof e === 'object' ? e.price : e);
+        const times  = entries.map(e => typeof e === 'object' ? e.time  : null);
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+        const pad = 4;
+        const range = max - min || 1;
+        const sy = p => graphH - pad - ((p - min) / range) * (graphH - pad * 2);
+        const sx = i => pad + (i / (prices.length - 1)) * (W - pad * 2);
+        // fill area under line
+        ctx.beginPath();
+        prices.forEach((p, i) => i === 0 ? ctx.moveTo(sx(i), sy(p)) : ctx.lineTo(sx(i), sy(p)));
+        ctx.lineTo(sx(prices.length - 1), graphH);
+        ctx.lineTo(sx(0), graphH);
+        ctx.closePath();
+        ctx.fillStyle = color + '22';
+        ctx.fill();
+        // line
+        ctx.beginPath();
+        prices.forEach((p, i) => i === 0 ? ctx.moveTo(sx(i), sy(p)) : ctx.lineTo(sx(i), sy(p)));
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        // dots
+        ctx.fillStyle = color;
+        prices.forEach((p, i) => {
+            ctx.beginPath();
+            ctx.arc(sx(i), sy(p), 2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        // min / max labels
+        ctx.fillStyle = '#555';
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(min.toFixed(1), pad, graphH - 1);
+        ctx.textAlign = 'right';
+        ctx.fillText(max.toFixed(1), W - pad, 9);
+        // 4 date labels at bottom
+        if (times[0]) {
+            const fmt = ts => { const d = new Date(ts); return (d.getMonth()+1)+'/'+(d.getDate()); };
+            const n = prices.length - 1;
+            const dateIndices = [0, Math.round(n/3), Math.round(2*n/3), n];
+            ctx.fillStyle = '#555';
+            ctx.font = '8px monospace';
+            dateIndices.forEach((idx, i) => {
+                const x = sx(idx);
+                const label = fmt(times[idx]);
+                ctx.textAlign = i === 0 ? 'left' : i === 3 ? 'right' : 'center';
+                ctx.fillText(label, i === 0 ? pad : i === 3 ? W - pad : x, H - 2);
+            });
+        }
+    }
+
+    // ── SIMON SAYS EASTER EGG ────────────────────────────────────────────────────
+    var simonDotClicks = 0;
+    var simonTriggered = false;
+    var simon = { active:false, showing:false, sequence:[], userStep:0, round:0, dots:null };
+
+    function simonMaybeStart() {
+        if (simonTriggered || simon.active) return;
+        if (simonDotClicks >= 2) {
+            simonTriggered = true;
+            setTimeout(simonBegin, 800);
+        }
+    }
+    function simonDotClick(el, color, dark) {
+        simonDotClicks++;
+        simonMaybeStart();
+        if (simon.active && !simon.showing) { simonHandleInput(el); }
+        else if (!simon.active) { setTheme(color, dark); }
+    }
+    function simonBegin() {
+        simon.active = true; simon.sequence = []; simon.userStep = 0; simon.round = 0; simon.dots = [];
+        for (var i = 0; i < 6; i++) { var d = document.getElementById('simon-dot-' + i); if (d) simon.dots.push(d); }
+        simonNextRound();
+    }
+    function simonNextRound() {
+        simon.round++;
+        if (simon.round > 6) { simonComplete(); return; }
+        simon.sequence.push(Math.floor(Math.random() * 6));
+        simon.userStep = 0; simon.showing = true;
+        setTimeout(function() { simonPlaySequence(0); }, 500);
+    }
+    function simonPlaySequence(idx) {
+        if (idx >= simon.sequence.length) { simon.showing = false; return; }
+        simonPingDot(simon.sequence[idx], function() { setTimeout(function() { simonPlaySequence(idx + 1); }, 250); });
+    }
+    function simonPingDot(idx, cb) {
+        var dot = simon.dots[idx]; if (!dot) { if (cb) cb(); return; }
+        dot.classList.add('simon-pinging');
+        setTimeout(function() { dot.classList.remove('simon-pinging'); if (cb) cb(); }, 700);
+    }
+    function simonHandleInput(el) {
+        var idx = parseInt(el.id.replace('simon-dot-', ''));
+        if (isNaN(idx) || idx < 0 || idx > 5) return;
+        if (idx === simon.sequence[simon.userStep]) {
+            simon.userStep++; simonPingDot(idx, null);
+            if (simon.userStep >= simon.sequence.length) { setTimeout(function() { simonNextRound(); }, 800); }
+        } else { simonFail(); }
+    }
+    function simonFail() {
+        simon.showing = true;
+        simon.dots.forEach(function(d) { d.classList.add('simon-fail'); setTimeout(function() { d.classList.remove('simon-fail'); }, 700); });
+        setTimeout(function() { simon.sequence = []; simon.userStep = 0; simon.round = 0; simon.showing = false; simonNextRound(); }, 1800);
+    }
+    function simonComplete() {
+        simon.active = false; localStorage.setItem('naron_magic_unlocked', 'true');
+        var rainbow = document.getElementById('secret-rainbow-dot');
+        if (rainbow) {
+            rainbow.style.display = 'block';
+            rainbow.animate([{transform:'scale(0)'},{transform:'scale(2)'},{transform:'scale(1)'}],{duration:500,easing:'cubic-bezier(0.175,0.885,0.32,1.275)'});
+            rainbow.onclick = simonWin;
+        }
+    }
+    function simonWin() {
+        var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        var code = 'NARON-'; for (var i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+        localStorage.setItem('naron_simon_code', code);
+        var wallet = localStorage.getItem('naron_wallet') || 'NOT CONNECTED';
+        localStorage.setItem('naron_simon_wallet', wallet);
+        var overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;';
+        overlay.innerHTML = '<div style="background:#050510;border:2px solid var(--theme-color);padding:48px 56px;text-align:center;font-family:monospace;color:var(--theme-color);box-shadow:0 0 80px rgba(0,0,0,0.9),0 0 60px rgba(91,173,255,0.15);max-width:520px;width:90vw;">' +
+            '<div style="font-size:1.5em;letter-spacing:5px;margin-bottom:6px;">// SEQUENCE COMPLETE //</div>' +
+            '<div style="color:#444;font-size:0.75em;letter-spacing:2px;margin-bottom:24px;border-bottom:1px solid #1a2a3a;padding-bottom:16px;">NARON CODEX · PLANETARY DEFENSE</div>' +
+            '<div style="color:#666;font-size:0.75em;letter-spacing:2px;margin-bottom:6px;">WALLET</div>' +
+            '<div style="font-size:1.1em;letter-spacing:3px;color:#aad4ff;margin-bottom:24px;">' + wallet + '</div>' +
+            '<div style="color:#666;font-size:0.75em;letter-spacing:2px;margin-bottom:8px;">YOUR UNLOCK CODE</div>' +
+            '<div style="font-size:2em;letter-spacing:8px;color:#fff;background:#0a0a1a;padding:18px 36px;border:1px solid var(--theme-color);margin-bottom:22px;">' + code + '</div>' +
+            '<div style="color:#777;font-size:0.78em;line-height:1.6;margin-bottom:28px;">Take a screenshot of this window and share it<br>in any AW Discord — tag<br>' +
+            '<span style="color:var(--theme-color);letter-spacing:2px;">@spectral.sky</span><br>' +
+            '<span style="color:#444;font-size:0.9em;">(Alien Worlds · Mission Control · Naron Events<br>Planetary Defense · La Ruche · Safe Haven<br>AtomicHub · F12 Key)</span></div>' +
+            '<button onclick="this.closest(\'[style*=fixed]\').remove()" class="cyber-btn">[ ACKNOWLEDGE ]</button></div>';
+        document.body.appendChild(overlay);
+        setTheme('rainbow', '#050510');
+    }
+    // ── END SIMON ────────────────────────────────────────────────────────────────
 </script>
 
 <div id="chest-modal-backdrop">

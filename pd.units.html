@@ -440,6 +440,7 @@
     <div class="intel-row"><span class="intel-label">LOWEST PRICE:</span><span id="intel-floor" class="intel-val">---</span></div>
     <div class="intel-row"><span class="intel-label">LAST SOLD:</span><span id="intel-last" class="intel-val">---</span></div>
     <div class="intel-row"><span class="intel-label">SUGGESTED:</span><span id="intel-sugg" class="intel-val">---</span></div>
+    <canvas id="sparkline-canvas" style="display:block;width:100%;height:65px;margin-top:8px;border-top:1px dashed #1a2a1a;padding-top:4px;box-sizing:border-box;"></canvas>
     <div class="market-links">
         <a id="lnk-atomic" target="_blank" class="market-link-btn"><img src="atomicfavicon.ico" class="market-btn-logo" alt="">ATOMIC</a>
         <a id="lnk-nefty" target="_blank" class="market-link-btn"><img src="https://resizer2.neftyblocks.com/?ipfs=https%3A%2F%2Fraw.githubusercontent.com%2Feoscafe%2Feos-airdrops%2Fmaster%2Flogos%2FNEFTY_296.png&width=100" class="market-btn-logo" alt="">NEFTY</a>
@@ -1222,7 +1223,7 @@
             deckFloor.innerText = "ERROR";
         }
         try {
-            const soldRes = await fetch(`${API_HISTORY}?state=3&template_id=${id}&page=1&limit=1&order=desc&sort=updated&symbol=WAX&_ts=${Date.now()}`, { cache: "no-store" });
+            const soldRes = await fetch(`${API_HISTORY}?state=3&template_id=${id}&page=1&limit=10&order=desc&sort=updated&symbol=WAX&_ts=${Date.now()}`, { cache: "no-store" });
             const soldData = await soldRes.json();
             if(soldData.data?.[0]?.price) {
                 const price = soldData.data[0].price;
@@ -1230,13 +1231,20 @@
                 const lastStr = val.toFixed(2) + " WAX";
                 if(writeToCells) { cLast.textContent = lastStr; }
                 deckLast.innerText = lastStr;
+                const hist = soldData.data.slice().reverse().map(sale => ({
+                    price: parseInt(sale.price.amount) / Math.pow(10, sale.price.token_precision),
+                    time: parseInt(sale.updated_at_time)
+                }));
+                drawSparkline(hist);
             } else {
                 if(writeToCells) { cLast.textContent = "NONE"; }
                 deckLast.innerText = "NONE";
+                drawSparkline([]);
             }
         } catch(e) {
             if(writeToCells) { cLast.textContent = "ERR"; }
             deckLast.innerText = "ERR";
+            drawSparkline([]);
         }
     }
 
@@ -1600,6 +1608,78 @@
             '</div>';
         document.body.appendChild(overlay);
         setTheme('rainbow', '#050510');
+    }
+
+    function drawSparkline(entries) {
+        const cvs = document.getElementById('sparkline-canvas');
+        if (!cvs) return;
+        const W = cvs.clientWidth || 261;
+        const H = 60;
+        cvs.width  = W;
+        cvs.height = H;
+        const ctx = cvs.getContext('2d');
+        ctx.clearRect(0, 0, W, H);
+        const color = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim() || '#00ff88';
+        const LABEL_H = 12; // bottom reserved for date labels
+        const graphH = H - LABEL_H;
+        if (!entries || entries.length < 2) {
+            ctx.fillStyle = '#444';
+            ctx.font = '9px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('NO HISTORY', W / 2, graphH / 2 + 3);
+            return;
+        }
+        // Support both plain numbers and {price,time} objects
+        const prices = entries.map(e => typeof e === 'object' ? e.price : e);
+        const times  = entries.map(e => typeof e === 'object' ? e.time  : null);
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+        const pad = 4;
+        const range = max - min || 1;
+        const sy = p => graphH - pad - ((p - min) / range) * (graphH - pad * 2);
+        const sx = i => pad + (i / (prices.length - 1)) * (W - pad * 2);
+        // fill area under line
+        ctx.beginPath();
+        prices.forEach((p, i) => i === 0 ? ctx.moveTo(sx(i), sy(p)) : ctx.lineTo(sx(i), sy(p)));
+        ctx.lineTo(sx(prices.length - 1), graphH);
+        ctx.lineTo(sx(0), graphH);
+        ctx.closePath();
+        ctx.fillStyle = color + '22';
+        ctx.fill();
+        // line
+        ctx.beginPath();
+        prices.forEach((p, i) => i === 0 ? ctx.moveTo(sx(i), sy(p)) : ctx.lineTo(sx(i), sy(p)));
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        // dots
+        ctx.fillStyle = color;
+        prices.forEach((p, i) => {
+            ctx.beginPath();
+            ctx.arc(sx(i), sy(p), 2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        // min / max labels
+        ctx.fillStyle = '#555';
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(min.toFixed(1), pad, graphH - 1);
+        ctx.textAlign = 'right';
+        ctx.fillText(max.toFixed(1), W - pad, 9);
+        // 4 date labels at bottom
+        if (times[0]) {
+            const fmt = ts => { const d = new Date(ts); return (d.getMonth()+1)+'/'+(d.getDate()); };
+            const n = prices.length - 1;
+            const dateIndices = [0, Math.round(n/3), Math.round(2*n/3), n];
+            ctx.fillStyle = '#555';
+            ctx.font = '8px monospace';
+            dateIndices.forEach((idx, i) => {
+                const x = sx(idx);
+                const label = fmt(times[idx]);
+                ctx.textAlign = i === 0 ? 'left' : i === 3 ? 'right' : 'center';
+                ctx.fillText(label, i === 0 ? pad : i === 3 ? W - pad : x, H - 2);
+            });
+        }
     }
 </script>
 

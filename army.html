@@ -462,6 +462,18 @@
                 cursor: pointer; font-family: monospace; line-height: 1;
             }
         }
+        @keyframes simon-ping {
+            0%   { transform: scale(1); }
+            35%  { transform: scale(2.8); box-shadow: 0 0 30px var(--dot-color), 0 0 60px var(--dot-color); border-color: #fff; }
+            70%  { transform: scale(1.8); box-shadow: 0 0 12px var(--dot-color); }
+            100% { transform: scale(1); }
+        }
+        @keyframes simon-fail-flash {
+            0%   { box-shadow: 0 0 20px #ff0000; border-color: #ff0000; transform: scale(1.4); }
+            100% { box-shadow: none; border-color: #333; transform: scale(1); }
+        }
+        .simon-pinging { animation: simon-ping 0.65s ease-out forwards !important; }
+        .simon-fail    { animation: simon-fail-flash 0.6s ease-out forwards !important; }
     </style>
 </head>
 <body>
@@ -512,13 +524,13 @@
         <h1>ARMY BUILDER <span style="font-size:0.55em; color:#888; letter-spacing:2px;">(BETA)</span></h1>
         <p class="page-subtitle">A COLLABORATION BY DEADLYMAN &amp; SHADE</p>
         <div id="theme-panel">
-            <div class="theme-opt" style="background:#ff4444" onclick="setTheme('#ff4444','#100000')" title="Crimson Red"></div>
-            <div class="theme-opt" style="background:#ffaa00" onclick="setTheme('#ffaa00','#0f0a00')" title="Gold"></div>
-            <div class="theme-opt" style="background:#00ff88" onclick="setTheme('#00ff88','#00100a')" title="Matrix Green"></div>
-            <div class="theme-opt" style="background:#0088ff" onclick="setTheme('#0088ff','#00050f')" title="Cyber Blue"></div>
-            <div class="theme-opt" style="background:#00ffff" onclick="setTheme('#00ffff','#001010')" title="Aqua"></div>
-            <div class="theme-opt" style="background:#cc44ff" onclick="setTheme('#cc44ff','#0a0010')" title="Neon Purple"></div>
-            <div class="theme-opt" id="secret-rainbow-dot"   onclick="setTheme('rainbow','#050505')" title="RGB MODE" style="display:none; background: conic-gradient(red,orange,yellow,green,blue,violet,red);"></div>
+            <div id="simon-dot-0" class="theme-opt" style="background:#ff4444;--dot-color:#ff4444" onclick="simonDotClick(this,'#ff4444','#100000')" title="Crimson Red"></div>
+            <div id="simon-dot-1" class="theme-opt" style="background:#ffaa00;--dot-color:#ffaa00" onclick="simonDotClick(this,'#ffaa00','#0f0a00')" title="Gold"></div>
+            <div id="simon-dot-2" class="theme-opt" style="background:#00ff88;--dot-color:#00ff88" onclick="simonDotClick(this,'#00ff88','#00100a')" title="Matrix Green"></div>
+            <div id="simon-dot-3" class="theme-opt" style="background:#0088ff;--dot-color:#0088ff" onclick="simonDotClick(this,'#0088ff','#00050f')" title="Cyber Blue"></div>
+            <div id="simon-dot-4" class="theme-opt" style="background:#00ffff;--dot-color:#00ffff" onclick="simonDotClick(this,'#00ffff','#001010')" title="Aqua"></div>
+            <div id="simon-dot-5" class="theme-opt" style="background:#cc44ff;--dot-color:#cc44ff" onclick="simonDotClick(this,'#cc44ff','#0a0010')" title="Neon Purple"></div>
+            <div id="secret-rainbow-dot" class="theme-opt" style="display:none;--dot-color:#ffffff" onclick="simonDotClick(this,'rainbow','#050510')" title="RGB MODE"></div>
         </div>
     </div>
 </div>
@@ -1431,6 +1443,91 @@ document.addEventListener('click', function(e) {
         dd.classList.remove('open');
     }
 });
+
+// ── SIMON SAYS EASTER EGG ────────────────────────────────────────────────────
+var simonDotClicks = 0;
+var simonTriggered = false;
+var simon = { active:false, showing:false, sequence:[], userStep:0, round:0, dots:null };
+
+function simonMaybeStart() {
+    if (simonTriggered || simon.active) return;
+    if (simonDotClicks >= 2) {
+        simonTriggered = true;
+        setTimeout(simonBegin, 800);
+    }
+}
+function simonDotClick(el, color, dark) {
+    simonDotClicks++;
+    simonMaybeStart();
+    if (simon.active && !simon.showing) { simonHandleInput(el); }
+    else if (!simon.active) { setTheme(color, dark); }
+}
+function simonBegin() {
+    simon.active = true; simon.sequence = []; simon.userStep = 0; simon.round = 0; simon.dots = [];
+    for (var i = 0; i < 6; i++) { var d = document.getElementById('simon-dot-' + i); if (d) simon.dots.push(d); }
+    simonNextRound();
+}
+function simonNextRound() {
+    simon.round++;
+    if (simon.round > 6) { simonComplete(); return; }
+    simon.sequence.push(Math.floor(Math.random() * 6));
+    simon.userStep = 0; simon.showing = true;
+    setTimeout(function() { simonPlaySequence(0); }, 500);
+}
+function simonPlaySequence(idx) {
+    if (idx >= simon.sequence.length) { simon.showing = false; return; }
+    simonPingDot(simon.sequence[idx], function() { setTimeout(function() { simonPlaySequence(idx + 1); }, 250); });
+}
+function simonPingDot(idx, cb) {
+    var dot = simon.dots[idx]; if (!dot) { if (cb) cb(); return; }
+    dot.classList.add('simon-pinging');
+    setTimeout(function() { dot.classList.remove('simon-pinging'); if (cb) cb(); }, 700);
+}
+function simonHandleInput(el) {
+    var idx = parseInt(el.id.replace('simon-dot-', ''));
+    if (isNaN(idx) || idx < 0 || idx > 5) return;
+    if (idx === simon.sequence[simon.userStep]) {
+        simon.userStep++; simonPingDot(idx, null);
+        if (simon.userStep >= simon.sequence.length) { setTimeout(function() { simonNextRound(); }, 800); }
+    } else { simonFail(); }
+}
+function simonFail() {
+    simon.showing = true;
+    simon.dots.forEach(function(d) { d.classList.add('simon-fail'); setTimeout(function() { d.classList.remove('simon-fail'); }, 700); });
+    setTimeout(function() { simon.sequence = []; simon.userStep = 0; simon.round = 0; simon.showing = false; simonNextRound(); }, 1800);
+}
+function simonComplete() {
+    simon.active = false; localStorage.setItem('naron_magic_unlocked', 'true');
+    var rainbow = document.getElementById('secret-rainbow-dot');
+    if (rainbow) {
+        rainbow.style.display = 'block';
+        rainbow.animate([{transform:'scale(0)'},{transform:'scale(2)'},{transform:'scale(1)'}],{duration:500,easing:'cubic-bezier(0.175,0.885,0.32,1.275)'});
+        rainbow.onclick = simonWin;
+    }
+}
+function simonWin() {
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    var code = 'NARON-'; for (var i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    localStorage.setItem('naron_simon_code', code);
+    var wallet = localStorage.getItem('naron_wallet') || 'NOT CONNECTED';
+    localStorage.setItem('naron_simon_wallet', wallet);
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = '<div style="background:#050510;border:2px solid var(--theme-color);padding:48px 56px;text-align:center;font-family:monospace;color:var(--theme-color);box-shadow:0 0 80px rgba(0,0,0,0.9),0 0 60px rgba(91,173,255,0.15);max-width:520px;width:90vw;">' +
+        '<div style="font-size:1.5em;letter-spacing:5px;margin-bottom:6px;">// SEQUENCE COMPLETE //</div>' +
+        '<div style="color:#444;font-size:0.75em;letter-spacing:2px;margin-bottom:24px;border-bottom:1px solid #1a2a3a;padding-bottom:16px;">NARON CODEX · PLANETARY DEFENSE</div>' +
+        '<div style="color:#666;font-size:0.75em;letter-spacing:2px;margin-bottom:6px;">WALLET</div>' +
+        '<div style="font-size:1.1em;letter-spacing:3px;color:#aad4ff;margin-bottom:24px;">' + wallet + '</div>' +
+        '<div style="color:#666;font-size:0.75em;letter-spacing:2px;margin-bottom:8px;">YOUR UNLOCK CODE</div>' +
+        '<div style="font-size:2em;letter-spacing:8px;color:#fff;background:#0a0a1a;padding:18px 36px;border:1px solid var(--theme-color);margin-bottom:22px;">' + code + '</div>' +
+        '<div style="color:#777;font-size:0.78em;line-height:1.6;margin-bottom:28px;">Take a screenshot of this window and share it<br>in any AW Discord — tag<br>' +
+        '<span style="color:var(--theme-color);letter-spacing:2px;">@spectral.sky</span><br>' +
+        '<span style="color:#444;font-size:0.9em;">(Alien Worlds · Mission Control · Naron Events<br>Planetary Defense · La Ruche · Safe Haven<br>AtomicHub · F12 Key)</span></div>' +
+        '<button onclick="this.closest(\'[style*=fixed]\').remove()" class="cyber-btn">[ ACKNOWLEDGE ]</button></div>';
+    document.body.appendChild(overlay);
+    setTheme('rainbow', '#050510');
+}
+// ── END SIMON ────────────────────────────────────────────────────────────────
 </script>
 <div id="wallet-modal" onclick="if(event.target===this)closeWalletModal()" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;">
     <div style="background:#050510;border:1px solid var(--theme-color);padding:32px 40px;min-width:280px;text-align:center;font-family:monospace;box-shadow:0 0 40px rgba(0,0,0,0.9);">

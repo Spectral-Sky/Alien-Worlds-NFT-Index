@@ -133,11 +133,11 @@
 
         /* FAN MECHANICS */
         .card-fan {
-            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            position: absolute; right: 50px; top: calc(50% - 40px); transform: translateY(-50%);
             width: 100px; height: 80px; pointer-events: none; opacity: 0.7;
             transition: all 0.3s ease-out;
         }
-        .module-card:hover .card-fan { opacity: 1; right: 20px; }
+        .module-card:hover .card-fan { opacity: 1; right: 60px; }
         
         .fan-img {
             position: absolute; width: 45px; height: auto; bottom: 0; left: 25px;
@@ -564,6 +564,7 @@
                     </a>
 
                     <a href="land.worlds.html" class="module-card">
+                        <span class="rgb-text-badge" id="land-card-badge" style="position:absolute;top:8px;right:8px;font-size:0.65em;transform:rotate(-15deg);z-index:10;">NEW</span>
                         <div class="card-text-wrapper">
                             <div class="card-title">LAND</div>
                             <span class="card-schema">schema: land.worlds</span>
@@ -808,6 +809,11 @@
 }
 
         document.addEventListener("DOMContentLoaded", () => {
+            // Auto-expire NEW badges after April 18, 2026
+            if (new Date() > new Date('2026-04-18T23:59:59')) {
+                document.querySelectorAll('.rgb-text-badge').forEach(el => el.remove());
+            }
+
             checkWalletState();
 
             const glow   = document.getElementById("cursor-glow");
