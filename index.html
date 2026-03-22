@@ -248,6 +248,9 @@
         .discord-icon { width: 16px; height: 16px; fill: currentColor; }
 
         /* --- CURSOR GLOW (BLACK HOLE) --- */
+        @keyframes rgb-badge { 0%{color:#ff0044}16%{color:#ff8800}33%{color:#ffe000}50%{color:#00ff88}66%{color:#00aaff}83%{color:#cc00ff}100%{color:#ff0044} }
+        .rgb-text-badge { animation: rgb-badge 2s linear infinite; text-shadow: 0 0 5px currentColor; pointer-events:none; font-style:italic; }
+
         @keyframes blackhole-spin {
             from { transform: rotate(0deg); }
             to   { transform: rotate(360deg); }
@@ -467,18 +470,14 @@
             <a href="arms.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">ARMS</a>
             <a href="tools.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">TOOLS</a>
             <a href="faces.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">FACES</a>
-            <a href="land.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">LAND</a>
+            <a href="land.worlds.html" class="nav-btn" style="position:relative;"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">LAND<span class="rgb-text-badge" style="position:absolute;top:-7px;right:-2px;font-size:0.52em;letter-spacing:0.5px;transform:rotate(-18deg);display:inline-block;">NEW</span></a>
             <a href="pd.units.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD UNITS</a>
             <a href="pd.materials.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD MATS</a>
             <a href="army.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">ARMY BUILDER</a>
         </nav>
 
         <div class="wallet-section">
-            <button id="wallet-connect-btn" class="wallet-btn" onclick="handleWalletClick()">[ CONNECT WALLET ]</button>
-            <div id="wallet-picker">
-                <button class="wallet-picker-opt" onclick="loginWithAnchor()">⚓ Anchor</button>
-                <button class="wallet-picker-opt" onclick="loginWithWCC()">☁ Wax Cloud Wallet</button>
-            </div>
+            <button id="wallet-connect-btn" class="wallet-btn" onclick="handleWalletClick()">[ CONNECT WALLET <img src="https://www.google.com/s2/favicons?domain=greymass.com&sz=32" style="height:11px;vertical-align:middle;margin:0 2px;border-radius:2px;" onerror="this.style.display='none'"><img src="https://www.google.com/s2/favicons?domain=mycloudwallet.com&sz=32" style="height:11px;vertical-align:middle;margin:0 2px;border-radius:2px;" onerror="this.style.display='none'"> ]</button>
         </div>
         <button id="hamburger-btn" onclick="toggleHamburger()" aria-label="Open navigation">&#9776;</button>
     </header>
@@ -711,7 +710,7 @@
 
             <div class="project-social">
                 <a href="https://www.planetarydefense.io/" target="_blank" class="site-link">
-                    <img src="https://www.google.com/s2/favicons?domain=planetarydefense.io&sz=128" alt="Planetary Defense" class="project-logo">
+                    <img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=128&animated=true" alt="Planetary Defense" class="project-logo" style="background:#111;">
                     <span class="social-name">PLANETARY DEFENSE</span>
                 </a>
                 <a href="https://discord.com/invite/rhHWe6hDNP" target="_blank" class="discord-link">
@@ -983,10 +982,10 @@
             const savedWallet = localStorage.getItem("naron_wallet");
             const btn = document.getElementById("wallet-connect-btn");
             if (savedWallet) {
-                btn.innerText = `[ ${savedWallet} ]`;
+                btn.innerHTML = `[ ${savedWallet} ]`;
                 btn.classList.add("logged-in");
             } else {
-                btn.innerText = "[ CONNECT WALLET ]";
+                btn.innerHTML = '[ CONNECT WALLET <img src="https://www.google.com/s2/favicons?domain=greymass.com&sz=32" style="height:11px;vertical-align:middle;margin:0 2px;border-radius:2px;" onerror="this.style.display=\'none\'"><img src="https://www.google.com/s2/favicons?domain=mycloudwallet.com&sz=32" style="height:11px;vertical-align:middle;margin:0 2px;border-radius:2px;" onerror="this.style.display=\'none\'"> ]';
                 btn.classList.remove("logged-in");
             }
         }
@@ -995,19 +994,20 @@
             if (localStorage.getItem("naron_wallet")) {
                 disconnectWallet();
             } else {
-                const picker = document.getElementById("wallet-picker");
-                picker.style.display = picker.style.display === 'block' ? 'none' : 'block';
+                openWalletModal();
             }
         }
-
-        document.addEventListener('click', e => {
-            if (!e.target.closest('.wallet-section')) {
-                document.getElementById("wallet-picker").style.display = 'none';
-            }
-        });
+        function openWalletModal() {
+            const m = document.getElementById('wallet-modal');
+            if (m) { m.style.display = 'flex'; }
+        }
+        function closeWalletModal() {
+            const m = document.getElementById('wallet-modal');
+            if (m) { m.style.display = 'none'; }
+        }
 
         async function loginWithAnchor() {
-            document.getElementById("wallet-picker").style.display = 'none';
+            closeWalletModal();
             if (!window.walletKit) { console.error("WharfKit not loaded yet"); return; }
             try {
                 const { session } = await window.walletKit.login({ walletPlugin: new window.WalletPluginAnchor() });
@@ -1018,7 +1018,7 @@
         }
 
         async function loginWithWCC() {
-            document.getElementById("wallet-picker").style.display = 'none';
+            closeWalletModal();
             if (!window.walletKit) { console.error("WharfKit not loaded yet"); return; }
             try {
                 const { session } = await window.walletKit.login({ walletPlugin: new window.WalletPluginWAX() });
@@ -1136,6 +1136,14 @@
         <div id="chest-modal-log"></div>
         <div id="chest-modal-link-wrap"><a id="chest-modal-link" href="#" target="_blank">[ OPEN CACHE ]</a></div>
         <div id="chest-modal-empty"></div>
+    </div>
+</div>
+<div id="wallet-modal" onclick="if(event.target===this)closeWalletModal()" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;">
+    <div style="background:#050510;border:1px solid var(--theme-color);padding:32px 40px;min-width:280px;text-align:center;font-family:monospace;box-shadow:0 0 40px rgba(0,0,0,0.9);">
+        <div style="color:var(--theme-color);letter-spacing:3px;font-size:0.9em;margin-bottom:20px;border-bottom:1px solid #1a2a3a;padding-bottom:12px;">// CONNECT WALLET //</div>
+        <button class="wallet-picker-opt" onclick="loginWithAnchor()" style="display:flex;align-items:center;gap:10px;margin-bottom:8px;width:100%;"><img src="https://www.google.com/s2/favicons?domain=greymass.com&sz=32" style="height:18px;border-radius:3px;" onerror="this.style.display='none'"> ANCHOR</button>
+        <button class="wallet-picker-opt" onclick="loginWithWCC()" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;width:100%;"><img src="https://www.google.com/s2/favicons?domain=mycloudwallet.com&sz=32" style="height:18px;border-radius:3px;" onerror="this.style.display='none'"> WAX CLOUD WALLET</button>
+        <button class="wallet-picker-opt" onclick="closeWalletModal()" style="color:#555;font-size:0.85em;width:100%;">[ CANCEL ]</button>
     </div>
 </div>
 </body>

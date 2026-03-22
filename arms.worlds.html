@@ -230,8 +230,9 @@
             text-decoration: none; 
             display: block; 
             transition: all 0.2s ease-in-out; 
-            font-family: monospace; 
-            text-transform: uppercase; 
+            font-family: monospace;
+            text-transform: uppercase;
+            border-radius: 6px;
         }
         .market-link-btn:hover {
             background: var(--theme-color);
@@ -442,11 +443,7 @@
         </nav>
 
         <div class="wallet-section">
-            <button id="wallet-connect-btn" class="wallet-btn" onclick="handleWalletClick()">[ CONNECT WALLET ]</button>
-            <div id="wallet-picker">
-                <button class="wallet-picker-opt" onclick="loginWithAnchor()">⚓ Anchor</button>
-                <button class="wallet-picker-opt" onclick="loginWithWCC()">☁ Wax Cloud Wallet</button>
-            </div>
+            <button id="wallet-connect-btn" class="wallet-btn" onclick="handleWalletClick()">[ CONNECT WALLET <img src="https://www.google.com/s2/favicons?domain=greymass.com&sz=32" style="height:11px;vertical-align:middle;margin:0 2px;border-radius:2px;" onerror="this.style.display='none'"><img src="https://www.google.com/s2/favicons?domain=mycloudwallet.com&sz=32" style="height:11px;vertical-align:middle;margin:0 2px;border-radius:2px;" onerror="this.style.display='none'"> ]</button>
         </div>
         <button id="hamburger-btn" onclick="toggleHamburger()" aria-label="Open navigation">&#9776;</button>
     </header>
@@ -1177,18 +1174,19 @@
             if (localStorage.getItem("naron_wallet")) {
                 disconnectWallet();
             } else {
-                const picker = document.getElementById("wallet-picker");
-                picker.style.display = picker.style.display === 'block' ? 'none' : 'block';
+                openWalletModal();
             }
         }
-        document.addEventListener('click', e => {
-            if (!e.target.closest('.wallet-section')) {
-                const p = document.getElementById("wallet-picker");
-                if(p) p.style.display = 'none';
-            }
-        });
+        function openWalletModal() {
+            const m = document.getElementById('wallet-modal');
+            if (m) { m.style.display = 'flex'; }
+        }
+        function closeWalletModal() {
+            const m = document.getElementById('wallet-modal');
+            if (m) { m.style.display = 'none'; }
+        }
         async function loginWithAnchor() {
-            document.getElementById("wallet-picker").style.display = 'none';
+            closeWalletModal();
             if (!window.walletKit) { return; }
             try {
                 const { session } = await window.walletKit.login({ walletPlugin: new window.WalletPluginAnchor() });
@@ -1200,7 +1198,7 @@
             } catch(e) { console.error("Anchor login failed:", e); }
         }
         async function loginWithWCC() {
-            document.getElementById("wallet-picker").style.display = 'none';
+            closeWalletModal();
             if (!window.walletKit) { return; }
             try {
                 const { session } = await window.walletKit.login({ walletPlugin: new window.WalletPluginWAX() });
@@ -1226,10 +1224,10 @@
             const btn = document.getElementById("wallet-connect-btn");
             if(!btn) return;
             if(accountName) {
-                btn.innerText = `[ ${accountName} ]`;
+                btn.innerHTML = `[ ${accountName} ]`;
                 btn.classList.add("logged-in");
             } else {
-                btn.innerText = "[ CONNECT WALLET ]";
+                btn.innerHTML = '[ CONNECT WALLET <img src="https://www.google.com/s2/favicons?domain=greymass.com&sz=32" style="height:11px;vertical-align:middle;margin:0 2px;border-radius:2px;" onerror="this.style.display=\'none\'"><img src="https://www.google.com/s2/favicons?domain=mycloudwallet.com&sz=32" style="height:11px;vertical-align:middle;margin:0 2px;border-radius:2px;" onerror="this.style.display=\'none\'"> ]';
                 btn.classList.remove("logged-in");
             }
         }
@@ -1296,5 +1294,13 @@
             }
         });
     </script>
+<div id="wallet-modal" onclick="if(event.target===this)closeWalletModal()" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;">
+    <div style="background:#050510;border:1px solid var(--theme-color);padding:32px 40px;min-width:280px;text-align:center;font-family:monospace;box-shadow:0 0 40px rgba(0,0,0,0.9);">
+        <div style="color:var(--theme-color);letter-spacing:3px;font-size:0.9em;margin-bottom:20px;border-bottom:1px solid #1a2a3a;padding-bottom:12px;">// CONNECT WALLET //</div>
+        <button class="wallet-picker-opt" onclick="loginWithAnchor()" style="display:flex;align-items:center;gap:10px;margin-bottom:8px;width:100%;"><img src="https://www.google.com/s2/favicons?domain=greymass.com&sz=32" style="height:18px;border-radius:3px;" onerror="this.style.display='none'"> ANCHOR</button>
+        <button class="wallet-picker-opt" onclick="loginWithWCC()" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;width:100%;"><img src="https://www.google.com/s2/favicons?domain=mycloudwallet.com&sz=32" style="height:18px;border-radius:3px;" onerror="this.style.display='none'"> WAX CLOUD WALLET</button>
+        <button class="wallet-picker-opt" onclick="closeWalletModal()" style="color:#555;font-size:0.85em;width:100%;">[ CANCEL ]</button>
+    </div>
+</div>
 </body>
 </html>
