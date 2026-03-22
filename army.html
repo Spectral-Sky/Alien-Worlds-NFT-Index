@@ -1445,22 +1445,26 @@ document.addEventListener('click', function(e) {
 });
 
 // ── SIMON SAYS EASTER EGG ────────────────────────────────────────────────────
-var simonDotClicks = 0;
+var simonDotsClicked = new Set();
 var simonTriggered = false;
 var simon = { active:false, showing:false, sequence:[], userStep:0, round:0, dots:null };
 
 function simonMaybeStart() {
     if (simonTriggered || simon.active) return;
-    if (simonDotClicks >= 2) {
+    if (simonDotsClicked.size >= 6) {
         simonTriggered = true;
         setTimeout(simonBegin, 800);
     }
 }
 function simonDotClick(el, color, dark) {
-    simonDotClicks++;
-    simonMaybeStart();
-    if (simon.active && !simon.showing) { simonHandleInput(el); }
-    else if (!simon.active) { setTheme(color, dark); }
+    setTheme(color, dark);
+    if (simon.active && !simon.showing) {
+        simonHandleInput(el);
+    } else if (!simon.active) {
+        var idx = parseInt(el.id.replace('simon-dot-', ''));
+        if (!isNaN(idx)) simonDotsClicked.add(idx);
+        simonMaybeStart();
+    }
 }
 function simonBegin() {
     simon.active = true; simon.sequence = []; simon.userStep = 0; simon.round = 0; simon.dots = [];
@@ -1495,6 +1499,14 @@ function simonFail() {
     simon.showing = true;
     simon.dots.forEach(function(d) { d.classList.add('simon-fail'); setTimeout(function() { d.classList.remove('simon-fail'); }, 700); });
     setTimeout(function() { simon.sequence = []; simon.userStep = 0; simon.round = 0; simon.showing = false; simonNextRound(); }, 1800);
+}
+function simonReset() {
+    simon.active = false; simon.showing = false;
+    simon.sequence = []; simon.userStep = 0; simon.round = 0;
+    simonTriggered = false; simonDotsClicked = new Set();
+    var rainbow = document.getElementById('secret-rainbow-dot');
+    if (rainbow) rainbow.style.display = 'none';
+    if (simon.dots) simon.dots.forEach(function(d) { d.classList.remove('simon-pinging','simon-fail'); });
 }
 function simonComplete() {
     simon.active = false; localStorage.setItem('naron_magic_unlocked', 'true');
