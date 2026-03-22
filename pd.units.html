@@ -768,10 +768,7 @@
         const sc = localStorage.getItem("naron_theme_color");
         const sd = localStorage.getItem("naron_theme_dark");
         if(sc && sd) setTheme(sc, sd);
-        if(localStorage.getItem("naron_magic_unlocked") === "true") {
-            const dot = document.getElementById("secret-rainbow-dot");
-            if(dot) dot.style.display = "block";
-        }
+        // rainbow dot only revealed via Simon Says sequence, not auto-restored
         const savedEndpoint = localStorage.getItem("naron_api_endpoint");
         if(savedEndpoint) {
             API_SALES = savedEndpoint;
@@ -1317,14 +1314,6 @@
         document.documentElement.style.setProperty("--theme-shadow", `0 0 15px ${hexToRgba(color, 0.4)}`);
         document.documentElement.style.setProperty("--theme-border", `1px solid ${hexToRgba(color, 0.3)}`);
         if(color !== "rainbow") { unlockedColors.add(color); }
-        if(unlockedColors.size >= 6) {
-            localStorage.setItem("naron_magic_unlocked","true");
-            const dot = document.getElementById("secret-rainbow-dot");
-            if(dot && dot.style.display === "none") {
-                dot.style.display = "block";
-                dot.animate([{transform:"scale(0)"},{transform:"scale(1.5)"},{transform:"scale(1)"}],{duration:400,easing:"cubic-bezier(0.175,0.885,0.32,1.275)"});
-            }
-        }
     }
 
     function hexToRgba(hex, alpha) {
@@ -1583,9 +1572,11 @@
 
     function simonComplete() {
         simon.active = false;
+        localStorage.setItem('naron_magic_unlocked', 'true');
         var rainbow = document.getElementById('secret-rainbow-dot');
         if (rainbow) {
             rainbow.style.display = 'block';
+            rainbow.animate([{transform:'scale(0)'},{transform:'scale(2)'},{transform:'scale(1)'}],{duration:500,easing:'cubic-bezier(0.175,0.885,0.32,1.275)'});
             rainbow.onclick = simonWin;
         }
     }
@@ -1594,14 +1585,25 @@
         var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         var code = 'NARON-';
         for (var i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+        localStorage.setItem('naron_simon_code', code);
+        localStorage.setItem('naron_simon_wallet', localStorage.getItem('naron_wallet') || '???');
+        var wallet = localStorage.getItem('naron_wallet') || '???';
         var overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.88);display:flex;align-items:center;justify-content:center;';
-        overlay.innerHTML = '<div style="background:#050510;border:2px solid var(--theme-color);padding:50px 60px;text-align:center;font-family:monospace;color:var(--theme-color);box-shadow:0 0 80px rgba(0,0,0,0.9),0 0 40px rgba(91,173,255,0.2);max-width:90vw;">' +
-            '<div style="font-size:1.4em;letter-spacing:4px;margin-bottom:20px;">// SEQUENCE COMPLETE //</div>' +
-            '<div style="color:#555;font-size:0.8em;letter-spacing:2px;margin-bottom:10px;">YOUR UNLOCK CODE</div>' +
-            '<div style="font-size:2.2em;letter-spacing:8px;color:#fff;background:#0a0a1a;padding:20px 40px;border:1px solid var(--theme-color);margin-bottom:20px;">' + code + '</div>' +
-            '<div style="color:#333;font-size:0.7em;letter-spacing:1px;margin-bottom:24px;">RECORD THIS CODE — ONE TIME ONLY</div>' +
-            '<button onclick="this.closest(\'[style*=fixed]\').remove()" class="cyber-btn">[ ACKNOWLEDGE ]</button>' +
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;';
+        overlay.innerHTML =
+            '<div style="background:#050510;border:2px solid var(--theme-color);padding:48px 56px;text-align:center;font-family:monospace;color:var(--theme-color);box-shadow:0 0 80px rgba(0,0,0,0.9),0 0 60px rgba(91,173,255,0.15);max-width:520px;width:90vw;">' +
+                '<div style="font-size:1.5em;letter-spacing:5px;margin-bottom:6px;">// SEQUENCE COMPLETE //</div>' +
+                '<div style="color:#444;font-size:0.75em;letter-spacing:2px;margin-bottom:24px;border-bottom:1px solid #1a2a3a;padding-bottom:16px;">NARON CODEX · PLANETARY DEFENSE</div>' +
+                '<div style="color:#666;font-size:0.75em;letter-spacing:2px;margin-bottom:6px;">WALLET</div>' +
+                '<div style="font-size:1.1em;letter-spacing:3px;color:#aad4ff;margin-bottom:24px;">' + wallet + '</div>' +
+                '<div style="color:#666;font-size:0.75em;letter-spacing:2px;margin-bottom:8px;">YOUR UNLOCK CODE</div>' +
+                '<div style="font-size:2em;letter-spacing:8px;color:#fff;background:#0a0a1a;padding:18px 36px;border:1px solid var(--theme-color);margin-bottom:22px;">' + code + '</div>' +
+                '<div style="color:#777;font-size:0.78em;line-height:1.6;margin-bottom:28px;">' +
+                    'Take a screenshot of this window and<br>' +
+                    'share it in the PD Discord tagging<br>' +
+                    '<span style="color:var(--theme-color);letter-spacing:2px;">@spectral.sky</span> to claim your reward.' +
+                '</div>' +
+                '<button onclick="this.closest(\'[style*=fixed]\').remove()" class="cyber-btn">[ ACKNOWLEDGE ]</button>' +
             '</div>';
         document.body.appendChild(overlay);
         setTheme('rainbow', '#050510');
