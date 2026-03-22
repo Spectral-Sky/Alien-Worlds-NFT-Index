@@ -477,7 +477,7 @@
         </nav>
 
         <div class="wallet-section">
-            <button id="wallet-connect-btn" class="wallet-btn" onclick="handleWalletClick()">[ CONNECT WALLET <img src="https://www.google.com/s2/favicons?domain=greymass.com&sz=32" style="height:11px;vertical-align:middle;margin:0 2px;border-radius:2px;" onerror="this.style.display='none'"><img src="https://www.google.com/s2/favicons?domain=mycloudwallet.com&sz=32" style="height:11px;vertical-align:middle;margin:0 2px;border-radius:2px;" onerror="this.style.display='none'"> ]</button>
+            <button id="wallet-connect-btn" class="wallet-btn" onclick="handleWalletClick()">[ CONNECT WALLET ⚓<img src="https://www.google.com/s2/favicons?domain=mycloudwallet.com&sz=32" style="height:11px;vertical-align:middle;margin:0 2px;border-radius:2px;" onerror="this.style.display='none'"> ]</button>
         </div>
         <button id="hamburger-btn" onclick="toggleHamburger()" aria-label="Open navigation">&#9776;</button>
     </header>
@@ -985,7 +985,7 @@
                 btn.innerHTML = `[ ${savedWallet} ]`;
                 btn.classList.add("logged-in");
             } else {
-                btn.innerHTML = '[ CONNECT WALLET <img src="https://www.google.com/s2/favicons?domain=greymass.com&sz=32" style="height:11px;vertical-align:middle;margin:0 2px;border-radius:2px;" onerror="this.style.display=\'none\'"><img src="https://www.google.com/s2/favicons?domain=mycloudwallet.com&sz=32" style="height:11px;vertical-align:middle;margin:0 2px;border-radius:2px;" onerror="this.style.display=\'none\'"> ]';
+                btn.innerHTML = '[ CONNECT WALLET ⚓<img src="https://www.google.com/s2/favicons?domain=mycloudwallet.com&sz=32" style="height:11px;vertical-align:middle;margin:0 2px;border-radius:2px;" onerror="this.style.display=\'none\'"> ]';
                 btn.classList.remove("logged-in");
             }
         }
@@ -1141,7 +1141,7 @@
 <div id="wallet-modal" onclick="if(event.target===this)closeWalletModal()" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;">
     <div style="background:#050510;border:1px solid var(--theme-color);padding:32px 40px;min-width:280px;text-align:center;font-family:monospace;box-shadow:0 0 40px rgba(0,0,0,0.9);">
         <div style="color:var(--theme-color);letter-spacing:3px;font-size:0.9em;margin-bottom:20px;border-bottom:1px solid #1a2a3a;padding-bottom:12px;">// CONNECT WALLET //</div>
-        <button class="wallet-picker-opt" onclick="loginWithAnchor()" style="display:flex;align-items:center;gap:10px;margin-bottom:8px;width:100%;"><img src="https://www.google.com/s2/favicons?domain=greymass.com&sz=32" style="height:18px;border-radius:3px;" onerror="this.style.display='none'"> ANCHOR</button>
+        <button class="wallet-picker-opt" onclick="loginWithAnchor()" style="display:flex;align-items:center;gap:10px;margin-bottom:8px;width:100%;">⚓ ANCHOR</button>
         <button class="wallet-picker-opt" onclick="loginWithWCC()" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;width:100%;"><img src="https://www.google.com/s2/favicons?domain=mycloudwallet.com&sz=32" style="height:18px;border-radius:3px;" onerror="this.style.display='none'"> WAX CLOUD WALLET</button>
         <button class="wallet-picker-opt" onclick="closeWalletModal()" style="color:#555;font-size:0.85em;width:100%;">[ CANCEL ]</button>
     </div>
