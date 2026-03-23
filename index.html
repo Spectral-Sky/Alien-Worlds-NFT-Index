@@ -101,7 +101,7 @@
         /* --- HUB CONTENT (2-COLUMN LAYOUT) --- */
         .hub-container { max-width: 1400px; margin: 50px auto; padding: 0 20px; flex: 1; width: 100%; box-sizing: border-box; }
         
-        .phases-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .phases-wrapper { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 40px; }
 
         .phase-header { 
             border-bottom: 1px solid var(--theme-color); color: #fff; font-size: 1.4em; 
@@ -445,6 +445,16 @@
                 cursor: pointer; font-family: monospace; line-height: 1;
             }
         }
+        /* NAV DROPDOWNS */
+        .nav-dropdown-wrap { position:relative; display:inline-block; }
+        .nav-dropdown-btn { background:transparent; color:#888; border:1px solid transparent; padding:8px 16px; font-family:monospace; font-weight:bold; font-size:0.9em; cursor:pointer; transition:all 0.3s; text-transform:uppercase; border-radius:6px; letter-spacing:1px; }
+        .nav-dropdown-btn:hover { color:var(--theme-color); border-color:var(--theme-color); }
+        .nav-dropdown-btn.active { color:#000; background:var(--theme-color); border-color:var(--theme-color); box-shadow:var(--theme-shadow); }
+        .nav-dropdown-menu { display:none; position:absolute; top:calc(100% + 4px); left:0; z-index:5000; background:rgba(2,8,6,0.98); border:1px solid var(--theme-color); min-width:160px; padding:4px 0; box-shadow:0 8px 24px rgba(0,0,0,0.9); backdrop-filter:blur(6px); }
+        .nav-dropdown-wrap:hover .nav-dropdown-menu { display:block; }
+        .nav-dropdown-item { display:block; padding:8px 16px; color:#888; text-decoration:none; font-family:monospace; font-size:0.85em; letter-spacing:1px; text-transform:uppercase; transition:all 0.2s; white-space:nowrap; }
+        .nav-dropdown-item:hover { color:var(--theme-color); background:rgba(255,255,255,0.04); }
+        .nav-dropdown-item.active { color:var(--theme-color); font-weight:bold; background:rgba(255,255,255,0.03); }
     </style>
 </head>
 <body>
@@ -471,14 +481,25 @@
         
         <nav class="nav-links">
             <a href="index.html" class="nav-btn active"><img src="NCico.png" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">HUB</a>
-            <a href="crew.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">CREW</a>
-            <a href="arms.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">ARMS</a>
-            <a href="tools.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">TOOLS</a>
-            <a href="faces.worlds.html" class="nav-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">FACES</a>
-            <a href="land.worlds.html" class="nav-btn" style="position:relative;"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">LAND<span class="rgb-text-badge" style="position:absolute;top:-7px;right:-2px;font-size:0.52em;letter-spacing:0.5px;transform:rotate(-18deg);display:inline-block;">NEW</span></a>
-            <a href="pd.units.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD UNITS</a>
-            <a href="pd.materials.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD MATS</a>
-            <a href="army.html" class="nav-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">ARMY BUILDER</a>
+            <div class="nav-dropdown-wrap">
+                <button class="nav-btn nav-dropdown-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">AW &#9660;</button>
+                <div class="nav-dropdown-menu">
+                    <a href="crew.worlds.html" class="nav-dropdown-item">CREW</a>
+                    <a href="arms.worlds.html" class="nav-dropdown-item">ARMS</a>
+                    <a href="tools.worlds.html" class="nav-dropdown-item">TOOLS</a>
+                    <a href="faces.worlds.html" class="nav-dropdown-item">FACES</a>
+                    <a href="land.worlds.html" class="nav-dropdown-item">LAND</a>
+                </div>
+            </div>
+            <div class="nav-dropdown-wrap">
+                <button class="nav-btn nav-dropdown-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.onerror=null;this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD &#9660;</button>
+                <div class="nav-dropdown-menu">
+                    <a href="pd.units.html" class="nav-dropdown-item">PD UNITS</a>
+                    <a href="pd.materials.html" class="nav-dropdown-item">PD MATS</a>
+                    <a href="army.html" class="nav-dropdown-item">ARMY BUILDER</a>
+                </div>
+            </div>
+            <a href="stash.html" class="nav-btn">&#11041; STASH</a>
         </nav>
 
         <div class="wallet-section">
@@ -496,6 +517,7 @@
     <a href="pd.units.html" class="nav-btn">PD UNITS</a>
     <a href="pd.materials.html" class="nav-btn">PD MATS</a>
     <a href="army.html" class="nav-btn">ARMY BUILDER</a>
+    <a href="stash.html" class="nav-btn">&#11041; STASH</a>
 </nav>
 
     <div class="hub-container">
@@ -637,7 +659,26 @@
         </a>
     </div>
 </div>
-            
+
+<div class="phase-column">
+    <div class="phase-header" style="border-color:#7722cc;color:#aa55ff;text-shadow:0 0 8px rgba(119,34,204,0.5);">WALLET TOOLS</div>
+    <div class="phase-subheader" style="color:#7733bb;">Your NFT inventory — connect wallet or search any address</div>
+    <div class="module-grid">
+        <a href="stash.html" class="module-card" style="border-color:#7722cc;min-height:160px;">
+            <div class="card-text-wrapper">
+                <div class="card-title">&#11041; STASH</div>
+                <span class="card-schema">Live NFT inventory — AW &amp; PD assets</span>
+                <div class="card-status status-live">SYSTEM LIVE</div>
+            </div>
+            <div class="card-fan fan-standard" style="opacity:0.7;">
+                <img src="https://ipfs.io/ipfs/QmVXsVEkT5fuASSexrcMQuuXWZFFSuGRSyRkLGghq1yhpW" class="fan-img">
+                <img src="https://ipfs.io/ipfs/QmS1Bj3aEHvLu36S46uJbSTnNDrLtmpvT9Qa2GpJcdFJ1c" class="fan-img">
+                <img src="https://ipfs.io/ipfs/QmavhvWjoU7YYAstpqBD76QSicPTJWWyN468UVw4vDH7pR" class="fan-img">
+            </div>
+        </a>
+    </div>
+</div>
+
 
         </div>
     </div>
