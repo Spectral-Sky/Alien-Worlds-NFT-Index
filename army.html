@@ -298,6 +298,8 @@
         .card-move-cost { font-size: 0.88em; color: #ffd700; font-weight: bold; letter-spacing: 1px; }
         .card-move-reduc { font-size: 0.88em; color: #ffd700; font-weight: bold; letter-spacing: 1px; }
         .card-name { font-weight: bold; font-size: 0.75em; height: 30px; overflow: hidden; color: #ccc; line-height: 1.4; }
+        .card-tpl-link { display:block; font-size:0.62em; color:#333; text-decoration:none; margin-top:5px; letter-spacing:0.5px; }
+        .card-tpl-link:hover { color:var(--theme-color); }
         .card-shine-label { font-size: 0.68em; margin-top: 3px; letter-spacing: 2px; font-weight: bold; }
         .card-status { font-size: 0.68em; margin-top: 5px; letter-spacing: 1px; }
         .s-active  { color: var(--shine-antimatter); }
@@ -1070,6 +1072,7 @@ function processData(data) {
         }
 
         const obj = {
+            templateId,
             name:     nft.name,
             rarity, shine, isPD,
             img:      d.img || td.img || (localData?.img ? localData.img : null),
@@ -1130,8 +1133,9 @@ function processData(data) {
         activeArms.forEach(a => a.active = true);
     }
 
-    const finalAtk = [...activeCrew, ...activeArms, ...creatures].reduce((s, x) => s + x.atk, 0);
-    const finalDef = [...activeCrew, ...activeArms, ...creatures].reduce((s, x) => s + x.def, 0);
+    // supplies (Red Boar) and services (Lava Lux) always contribute atk/def regardless of forge state
+    const finalAtk = [...activeCrew, ...activeArms, ...creatures, ...supplies, ...services].reduce((s, x) => s + (x.atk || 0), 0);
+    const finalDef = [...activeCrew, ...activeArms, ...creatures, ...supplies, ...services].reduce((s, x) => s + (x.def || 0), 0);
 
     // Move time: 3h base + (10s × each active crew moveCost) − (10s × each supply moveCostReduction)
     const BASE_MOVE_SECS = 3 * 60 * 60;
@@ -1312,13 +1316,15 @@ function buildSection(title, list, root, activeMode, type, showStatus = true) {
             subText = `<span style="color:#ff4444">⚔ ${Math.floor(item.atk)}</span> &nbsp;|&nbsp; <span style="color:#4488ff">🛡 ${Math.floor(item.def)}</span>`;
             if (item.moveCost) subText += `<br><span class="card-move-cost">&gt;&gt; ${item.moveCost}</span>`;
         } else if (type === "reduction") {
-            subText = item.moveCostReduction
-                ? `<span class="card-move-reduc">▼ -${item.moveCostReduction}</span>`
-                : ``;
+            const parts = [];
+            if (item.moveCostReduction) parts.push(`<span class="card-move-reduc">▼ -${item.moveCostReduction}</span>`);
+            if (item.atk || item.def) parts.push(`<span style="color:#ff4444">⚔ ${item.atk}</span> &nbsp;|&nbsp; <span style="color:#4488ff">🛡 ${item.def}</span>`);
+            subText = parts.join('<br>');
         } else if (type === "missions") {
             subText = item.missions
                 ? `<span style="color:#ffd700">+${item.missions} daily missions</span>`
                 : (item.effect || "SERVICE");
+            if (item.atk || item.def) subText += `<br><span style="color:#ff4444">⚔ ${item.atk}</span> &nbsp;|&nbsp; <span style="color:#4488ff">🛡 ${item.def}</span>`;
         } else {
             subText = "ITEM";
         }
@@ -1346,6 +1352,7 @@ function buildSection(title, list, root, activeMode, type, showStatus = true) {
                 <div class="card-name">${item.name}</div>
                 ${!item.isPD && item.shine ? `<div class="card-shine-label" style="color:var(--shine-${item.shine},#888)">${item.shine.toUpperCase()}</div>` : ''}
                 ${showStatus ? `<div class="card-status ${statusClass}">${statusText}</div>` : ''}
+                ${item.templateId ? `<a class="card-tpl-link" href="https://wax.atomichub.io/explorer/template/wax-mainnet/${item.isPD ? 'planetdefnft' : 'alien.worlds'}/${item.templateId}" target="_blank" onclick="event.stopPropagation()">#${item.templateId}</a>` : ''}
             </div>`;
         return card;
     }

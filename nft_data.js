@@ -81,6 +81,14 @@ const NFT_DATA = {
   900709: { collection:"planetdefnft", category:"supply", rarity:"legendary", name:"Red Boar - Stellar Nectarion",  atk:42, def:42, movecost:0, move_cost_reduction:43, img:"QmZGFUzsZpg8n381fQunGxHMHmsFmC6fpaFWP6ES32k1Ra" },
   900710: { collection:"planetdefnft", category:"supply", rarity:"mythic",    name:"Red Boar - Primordial Essence", atk:62, def:62, movecost:0, move_cost_reduction:62, img:"QmfUz3BdHYDZ8nEHgmCRmKDGH4erDyHUhcYQcUHkMsV6LN" },
 
+  // ── PD SERVICES — LAVA LUX HOTELS ────────────────────────────────────────────
+  904574: { collection:"planetdefnft", category:"service", rarity:"common",    name:"Lava Lux - Basic Suite",      atk:0,  def:0,  movecost:0, img:"QmUe1evcLDzwvdAx3JA5EyE4y8PDcGwRPKimpDdTc9QPVh" },
+  904575: { collection:"planetdefnft", category:"service", rarity:"uncommon",  name:"Lava Lux - Thermal Pass",     atk:8,  def:8,  movecost:0, img:"QmYXhzrJQozcJ5w6kf8WqTqMwhh5UiuPGtYD2i5GFHxjPV" },
+  904576: { collection:"planetdefnft", category:"service", rarity:"rare",      name:"Lava Lux - Magma Therapy",    atk:16, def:16, movecost:0, img:"QmVM6ocqdQ4RM8rHN1wtuRYSEvYy362QXmLgv9ehYVr8dF"  },
+  904577: { collection:"planetdefnft", category:"service", rarity:"epic",      name:"Lava Lux - Ember Serenity",   atk:24, def:24, movecost:0, img:"QmXfq31RgmMAD6ykZJynaoGQye1YUx2bijBKTm99nwr8dA"  },
+  904578: { collection:"planetdefnft", category:"service", rarity:"legendary", name:"Lava Lux - Core Retreat",     atk:42, def:42, movecost:0, img:"QmegmC7DzkyNYZy1Uz8BaaKqm1CU424hLQADQtqkhrybpC" },
+  904579: { collection:"planetdefnft", category:"service", rarity:"mythic",    name:"Lava Lux - Volcanic VIP",     atk:62, def:62, movecost:0, img:"QmU9m8synBXRezKjVmxHrry6Q4ML5nQ624nwWThaVDSH3j"  },
+
   // ── AW CREW — Common (Stone) ─────────────────────────────────────────────────
   // movecost = PD_Movecost_Minutes_Added × 6  (converts minutes to ×10-second units)
   // Abundant AW crew are excluded — they don't count in PD's balance system
