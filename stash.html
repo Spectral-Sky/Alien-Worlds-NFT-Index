@@ -17,7 +17,7 @@
         import { SessionKit } from 'https://esm.sh/@wharfkit/session@1';
         import { WebRenderer } from 'https://esm.sh/@wharfkit/web-renderer@1';
         import { WalletPluginAnchor } from 'https://esm.sh/@wharfkit/wallet-plugin-anchor@1';
-        import { WalletPluginWAX } from 'https://esm.sh/@wharfkit/wallet-plugin-wax@1';
+        import { WalletPluginWAX } from 'https://esm.sh/@wharfkit/wallet-plugin-wax';
         const kit = new SessionKit({
             appName: 'naroncodex',
             chains: [{ id: '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4', url: 'https://wax.greymass.com' }],
@@ -98,26 +98,54 @@
         .simon-pinging { animation:simon-flash 0.5s ease-out; }
         .simon-fail    { animation:simon-fail 0.7s ease-in-out; }
 
+        /* DECK: PREVIEW FRAME */
+        #preview-frame {
+            position:fixed; top:70px; left:20px; width:260px; height:340px;
+            z-index:1500; background:rgba(3,3,16,0.96); border:2px solid var(--theme-color);
+            box-shadow:var(--theme-shadow); padding:12px; box-sizing:border-box;
+            font-family:monospace; display:flex; flex-direction:column; align-items:center;
+            gap:8px; transition:transform 0.3s ease;
+        }
+        #preview-frame.minimized { transform:translateX(-282px); }
+        #preview-status { font-size:0.68em; color:#444; letter-spacing:2px; text-align:center; }
+        #preview-img { max-width:130px; max-height:190px; object-fit:contain; background:#0d0d1e; border:1px solid #252540; border-radius:6px; }
+        #preview-label { font-size:0.72em; color:#aaa; letter-spacing:1px; text-align:center; line-height:1.5; padding:2px 4px; }
+
+        /* DECK TOGGLE TAB */
+        #deck-toggle-tab {
+            position:fixed; top:70px; left:278px; width:24px; height:340px;
+            z-index:1501; background:rgba(3,3,16,0.96);
+            border:2px solid var(--theme-color); border-left:none;
+            color:var(--theme-color); cursor:pointer; font-size:1.2em; font-weight:bold;
+            user-select:none; border-radius:0 6px 6px 0;
+            box-shadow:4px 0 10px rgba(0,0,0,0.8);
+            display:flex; align-items:center; justify-content:center;
+            transition:transform 0.3s ease;
+        }
+        #deck-toggle-tab:hover { background:var(--theme-color); color:#000; }
+        #deck-toggle-tab.minimized { transform:translateX(-278px); }
+
         /* MARKET INTEL PANEL */
         #market-frame {
-            position:fixed; right:-280px; top:80px; width:260px; z-index:1500;
-            background:rgba(3,3,16,0.96); border:1px solid var(--theme-color);
-            border-right:none; padding:16px; font-family:monospace;
-            box-shadow:-4px 0 20px rgba(0,0,0,0.8);
-            transition:right 0.3s ease; backdrop-filter:blur(6px);
+            position:fixed; top:425px; left:20px; width:260px; z-index:1500;
+            background:rgba(3,3,16,0.96); border:2px solid var(--theme-color);
+            padding:12px; font-family:monospace; display:none;
+            box-shadow:var(--theme-shadow); transition:transform 0.3s ease;
         }
-        #market-frame.open { right:0; }
-        #intel-header { color:var(--theme-color); font-size:0.75em; letter-spacing:3px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #1a1a2e; text-transform:uppercase; }
-        #intel-name { color:#aaa; font-size:0.72em; letter-spacing:1px; margin-bottom:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .intel-row { display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.78em; }
+        #market-frame.open { display:block; }
+        #market-frame.minimized { transform:translateX(-282px); display:block; }
+        #intel-header { color:var(--theme-color); font-size:0.75em; letter-spacing:3px; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid #1a1a2e; text-transform:uppercase; }
+        #intel-name { color:#aaa; font-size:0.72em; letter-spacing:1px; margin-bottom:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .intel-row { display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.78em; }
         .intel-label { color:#444; letter-spacing:1px; }
         .intel-val { color:var(--theme-color); font-weight:bold; }
-        .market-links { display:flex; flex-direction:column; gap:5px; margin-top:12px; border-top:1px solid #1a1a2e; padding-top:10px; }
+        .market-links { display:flex; flex-direction:column; gap:5px; margin-top:10px; border-top:1px solid #1a1a2e; padding-top:8px; }
         .market-link-btn { background:#0a0a14; color:var(--theme-color); border:1px solid #1a1a2e; padding:6px 10px; font-family:monospace; font-size:0.72em; cursor:pointer; text-decoration:none; display:flex; align-items:center; gap:6px; transition:all 0.2s; letter-spacing:1px; }
         .market-link-btn:hover { border-color:var(--theme-color); }
         .market-btn-logo { width:14px; height:14px; object-fit:contain; }
-        #intel-close { float:right; background:transparent; border:none; color:#555; cursor:pointer; font-family:monospace; font-size:0.85em; margin-top:-2px; }
-        #intel-close:hover { color:#aaa; }
+
+        /* PUSH TABLE RIGHT WHEN DECK OPEN */
+        body.deck-open .stash-main { margin-left:310px; }
 
         /* STASH MAIN */
         .stash-main { max-width:1400px; margin:0 auto; width:100%; padding:20px; box-sizing:border-box; flex:1; }
@@ -139,6 +167,8 @@
         .cyber-btn:disabled { opacity:0.3; cursor:not-allowed; }
         #stash-search { background:#07070f; color:#ccc; border:1px solid #1a1a2e; padding:6px 12px; font-family:monospace; font-size:0.82em; outline:none; width:180px; }
         #stash-search:focus { border-color:var(--theme-color); }
+        #wallet-input { background:#07070f; color:#ccc; border:1px solid #1a1a2e; padding:6px 12px; font-family:monospace; font-size:0.82em; outline:none; width:200px; }
+        #wallet-input:focus { border-color:var(--theme-color); }
 
         /* SCAN BAR */
         .scan-bar-wrap { margin-bottom:8px; display:none; }
@@ -205,9 +235,9 @@
             .logo-section h1 { font-size:1.1em; }
             .nav-links { display:none !important; }
             #hamburger-btn { display:inline-block; }
-            .stash-main { padding:12px; }
-            #market-frame { top:auto; bottom:0; right:0; width:100%; border-right:1px solid var(--theme-color); border-top:1px solid var(--theme-color); transform:translateY(100%); transition:transform 0.3s ease; }
-            #market-frame.open { transform:translateY(0); right:0; }
+            .stash-main { padding:12px; margin-left:0 !important; }
+            #preview-frame, #deck-toggle-tab { display:none !important; }
+            #market-frame { position:fixed; top:auto !important; bottom:0; left:0 !important; width:100%; right:0; border:none; border-top:2px solid var(--theme-color); transform:none !important; border-radius:0; }
         }
     </style>
 </head>
@@ -217,9 +247,17 @@
 <div id="star-hud" style="display:none;position:fixed;bottom:15px;left:15px;z-index:50000;font-family:monospace;font-size:0.75em;color:#ffe066;opacity:0.6;letter-spacing:1px;pointer-events:none;">&#9733; <span id="star-score-num">0</span></div>
 <div id="cursor-glow"></div>
 
+<!-- DECK: PREVIEW FRAME -->
+<div id="preview-frame">
+    <div id="preview-status">AWAITING TARGET</div>
+    <img id="preview-img" src="" alt="PREVIEW" style="display:none;">
+    <div id="preview-label"><span id="label-name">CLICK A ROW TO PREVIEW</span><br><span id="label-id" style="font-size:0.7em;color:#444;"></span></div>
+</div>
+<div id="deck-toggle-tab" onclick="toggleDeck()">&#10094;</div>
+
 <!-- MARKET INTEL PANEL -->
 <div id="market-frame">
-    <div id="intel-header">MARKET INTEL <button id="intel-close" onclick="closeIntel()">[ X ]</button></div>
+    <div id="intel-header">MARKET INTEL</div>
     <div id="intel-name">—</div>
     <div class="intel-row"><span class="intel-label">LOWEST PRICE:</span><span id="intel-floor" class="intel-val">—</span></div>
     <div class="intel-row"><span class="intel-label">LAST SOLD:</span><span id="intel-last" class="intel-val">—</span></div>
@@ -296,9 +334,11 @@
     </div>
 
     <div class="stash-action-bar">
+        <input type="text" id="wallet-input" placeholder="ENTER WAX WALLET..." oninput="manualWalletInput()" onkeydown="if(event.key==='Enter')manualScan()">
+        <button class="cyber-btn" onclick="manualScan()">[ SCAN ]</button>
         <button class="cyber-btn" onclick="refreshTab()">[ REFRESH ]</button>
         <button class="cyber-btn" id="scan-prices-btn" onclick="scanPrices()">[ SCAN PRICES ]</button>
-        <input type="text" id="stash-search" placeholder="SEARCH..." oninput="filterStash()">
+        <input type="text" id="stash-search" placeholder="FILTER..." oninput="filterStash()">
         <span id="stash-status" style="font-size:0.72em;color:#333;letter-spacing:1px;"></span>
     </div>
     <div class="scan-bar-wrap" id="scan-bar-wrap">
@@ -337,11 +377,15 @@
     function checkWalletState() {
         var saved = localStorage.getItem("naron_wallet");
         updateWalletUI(saved || null);
+        var wi = document.getElementById('wallet-input');
+        if (saved && wi && !wi.value.trim()) wi.value = saved;
+        // Open deck on load
+        document.body.classList.add('deck-open');
         if (saved) {
             document.getElementById('stash-subtitle').textContent = 'WALLET: ' + saved.toUpperCase();
             loadTab(_activeTab, saved);
         } else {
-            document.getElementById('stash-subtitle').textContent = 'CONNECT WALLET TO VIEW YOUR ASSETS';
+            document.getElementById('stash-subtitle').textContent = 'ENTER A WALLET ABOVE OR CONNECT TO VIEW YOUR STASH';
             showConnectPrompt();
         }
     }
@@ -351,13 +395,16 @@
         try {
             var r = await window.walletKit.login();
             window.walletSession = r.session;
-            localStorage.setItem("naron_wallet", String(r.session.actor));
+            var account = String(r.session.actor);
+            localStorage.setItem("naron_wallet", account);
+            var wi=document.getElementById('wallet-input'); if(wi) wi.value=account;
             checkWalletState();
         } catch(e) { console.error(e); }
     }
     function disconnectWallet() {
         if (window.walletKit && window.walletSession) { window.walletKit.logout(window.walletSession).catch(function(){}); window.walletSession=null; }
         localStorage.removeItem("naron_wallet"); _assetCache={}; _pdAllCache={};
+        var wi=document.getElementById('wallet-input'); if(wi) wi.value='';
         ['crew','tools','land','arms','faces','pd-units','pd-mats'].forEach(function(t){ var el=document.getElementById('cnt-'+t); if(el) el.textContent='—'; });
         checkWalletState();
     }
@@ -445,7 +492,12 @@
     function dv(a, key) {
         var v = (a.data && a.data[key] != null) ? a.data[key] : null;
         if (v == null) v = (a.immutable_data && a.immutable_data[key] != null) ? a.immutable_data[key] : null;
+        if (v == null) v = (a.template && a.template.immutable_data && a.template.immutable_data[key] != null) ? a.template.immutable_data[key] : null;
         return v != null ? String(v) : '—';
+    }
+    function getCurrentWallet() {
+        var wi = document.getElementById('wallet-input');
+        return (wi && wi.value.trim()) || localStorage.getItem('naron_wallet') || '';
     }
     function dv2(a, k1, k2) { var v=dv(a,k1); return v!=='—'?v:dv(a,k2); }
     function shClass(s){if(!s||s==='—')return'';var l=s.toLowerCase();if(l.includes('xdim'))return'sh-xd';if(l.includes('anti'))return'sh-anti';if(l.includes('star'))return'sh-star';if(l.includes('gold'))return'sh-gold';return'';}
@@ -547,11 +599,26 @@
 
     // ─── MARKET INTEL ──────────────────────────────────────────────────────────
     var _intelOpen = false;
-    function closeIntel() { _intelOpen=false; document.getElementById('market-frame').classList.remove('open'); }
+    var _deckOpen = true;
+    function toggleDeck() {
+        _deckOpen = !_deckOpen;
+        var pf=document.getElementById('preview-frame'), tab=document.getElementById('deck-toggle-tab'), mf=document.getElementById('market-frame');
+        if (_deckOpen) {
+            pf.classList.remove('minimized'); tab.classList.remove('minimized');
+            if (mf.classList.contains('open')) mf.classList.remove('minimized');
+            tab.innerHTML='&#10094;'; document.body.classList.add('deck-open');
+        } else {
+            pf.classList.add('minimized'); tab.classList.add('minimized');
+            mf.classList.add('minimized');
+            tab.innerHTML='&#10095;'; document.body.classList.remove('deck-open');
+        }
+    }
+    function closeIntel() { _intelOpen=false; var mf=document.getElementById('market-frame'); mf.classList.remove('open'); mf.style.display='none'; }
 
     async function openIntel(assetName, templateId, collection) {
         _intelOpen=true;
-        var mf=document.getElementById('market-frame'); mf.classList.add('open');
+        var mf=document.getElementById('market-frame'); mf.classList.add('open'); mf.style.display='block';
+        if (!_deckOpen) mf.classList.add('minimized'); else mf.classList.remove('minimized');
         document.getElementById('intel-header').innerHTML='MARKET INTEL <button id="intel-close" onclick="closeIntel()">[ X ]</button>';
         document.getElementById('intel-name').textContent=assetName||'—';
         document.getElementById('intel-floor').textContent='SCANNING...';
@@ -616,6 +683,15 @@
         var tmpl=row.getAttribute('data-tmpl');
         var name=row.getAttribute('data-name');
         var col=row.getAttribute('data-col');
+        // Update preview frame
+        var imgEl=row.querySelector('.img-cell img');
+        var pImg=document.getElementById('preview-img'), pLbl=document.getElementById('label-name'), pId=document.getElementById('label-id'), pSt=document.getElementById('preview-status');
+        if (imgEl && imgEl.src && imgEl.src !== window.location.href) {
+            pImg.src=imgEl.src; pImg.style.display='block';
+        } else { pImg.style.display='none'; }
+        if (pLbl) pLbl.textContent=name||'—';
+        if (pId) pId.textContent=tmpl?'TMPL: '+tmpl:'';
+        if (pSt) pSt.textContent='SELECTED';
         openIntel(name, tmpl, col);
     }
 
@@ -668,21 +744,34 @@
         var ab=document.getElementById('tab-'+tabId); if(ab) ab.classList.add('active');
         var s=document.getElementById('stash-search'); if(s) s.value='';
         closeIntel();
-        var wallet=localStorage.getItem('naron_wallet');
+        var wallet=getCurrentWallet();
         if(!wallet){showConnectPrompt();return;}
         loadTab(tabId,wallet);
     }
 
     function refreshTab(){
-        var wallet=localStorage.getItem('naron_wallet'); if(!wallet){showConnectPrompt();return;}
+        var wallet=getCurrentWallet(); if(!wallet){showConnectPrompt();return;}
         var cacheKey=_activeTab+'_'+wallet; delete _assetCache[cacheKey];
         if(TAB_CFG[_activeTab]&&TAB_CFG[_activeTab].pdAll) delete _pdAllCache[wallet];
         loadTab(_activeTab,wallet);
     }
 
+    function manualWalletInput() {
+        // clear cache when wallet field changes
+        _assetCache={}; _pdAllCache={};
+    }
+    function manualScan() {
+        var wi=document.getElementById('wallet-input'); if(!wi) return;
+        var wallet=wi.value.trim(); if(!wallet) return;
+        _assetCache={}; _pdAllCache={};
+        var saved=localStorage.getItem('naron_wallet');
+        document.getElementById('stash-subtitle').textContent='WALLET: '+wallet.toUpperCase()+(saved&&saved!==wallet?' (MANUAL LOOKUP)':'');
+        loadTab(_activeTab, wallet);
+    }
+
     // ─── SCAN PRICES ───────────────────────────────────────────────────────────
     async function scanPrices(){
-        var wallet=localStorage.getItem('naron_wallet'); if(!wallet) return;
+        var wallet=getCurrentWallet(); if(!wallet) return;
         var assets=_assetCache[_activeTab+'_'+wallet]; if(!assets||assets.length===0){setStatus('LOAD A TAB FIRST');return;}
         var btn=document.getElementById('scan-prices-btn'); btn.disabled=true; btn.textContent='[ SCANNING... ]';
         var barWrap=document.getElementById('scan-bar-wrap'),barFill=document.getElementById('scan-bar-fill'),barLabel=document.getElementById('scan-bar-label');
