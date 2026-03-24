@@ -19,7 +19,7 @@
         import { SessionKit } from 'https://esm.sh/@wharfkit/session@1';
         import { WebRenderer } from 'https://esm.sh/@wharfkit/web-renderer@1';
         import { WalletPluginAnchor } from 'https://esm.sh/@wharfkit/wallet-plugin-anchor@1';
-        import { WalletPluginWAX } from 'https://esm.sh/@wharfkit/wallet-plugin-wax';
+        import { WalletPluginWAX } from 'https://esm.sh/@wharfkit/wallet-plugin-wax@1';
         const kit = new SessionKit({
             appName: 'naroncodex',
             chains: [{ id: '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4', url: 'https://wax.greymass.com' }],
@@ -1069,9 +1069,9 @@ function processData(data) {
                 templateId, isPD, rarity, shine: "stone",
                 name: nft.name, img, active: false, asset_id: nft.asset_id,
                 atk: 0, def: 0, moveCost: null, moveCostReduction: null,
-                atkMult:     localData?.atk_mult     || 0,
-                defMult:     localData?.def_mult     || 0,
-                moveCostAdd: localData?.movecost_add || 0,
+                atkMult:      localData?.atk_mult      || 1,
+                defMult:      localData?.def_mult      || 1,
+                moveCostMult: localData?.movecost_mult || 1,
                 missions:    SERVICES_MISSIONS[templateId] || 0,
                 effect:      d.effect || td.effect || `+${SERVICES_MISSIONS[templateId] || 0} daily missions`,
             };
@@ -1125,9 +1125,9 @@ function processData(data) {
             atk, def,
             moveCost:          moveCostVal    || null,
             moveCostReduction: moveCostRedVal || null,
-            atkMult:     localData?.atk_mult     || 0,
-            defMult:     localData?.def_mult     || 0,
-            moveCostAdd: localData?.movecost_add || 0,
+            atkMult:      localData?.atk_mult      || 1,
+            defMult:      localData?.def_mult      || 1,
+            moveCostMult: localData?.movecost_mult || 1,
         };
 
         // Route by category from local database
@@ -1161,19 +1161,19 @@ function processData(data) {
     // Red Boar (supplies) flat atk/def always count
     const baseAtk = [...activeCrew, ...activeArms, ...creatures, ...supplies].reduce((s, x) => s + (x.atk || 0), 0);
     const baseDef = [...activeCrew, ...activeArms, ...creatures, ...supplies].reduce((s, x) => s + (x.def || 0), 0);
-    // Lava Lux: highest-mult card applies once as a % multiplier to the entire army total
-    const topLavaLux = services.filter(s => s.atkMult > 0).sort((a, b) => b.atkMult - a.atkMult)[0];
-    const lavaLuxAtkPct  = topLavaLux?.atkMult     || 0;
-    const lavaLuxDefPct  = topLavaLux?.defMult     || 0;
-    const lavaLuxMoveAdd = topLavaLux?.moveCostAdd || 0;
-    const finalAtk = Math.round(baseAtk * (1 + lavaLuxAtkPct / 100));
-    const finalDef = Math.round(baseDef * (1 + lavaLuxDefPct / 100));
+    // Lava Lux: highest-mult card applies once as a direct multiplier to the entire army total
+    const topLavaLux      = services.filter(s => s.atkMult > 1).sort((a, b) => b.atkMult - a.atkMult)[0];
+    const lavaLuxAtkMult  = topLavaLux?.atkMult      || 1;
+    const lavaLuxDefMult  = topLavaLux?.defMult      || 1;
+    const lavaLuxMoveMult = topLavaLux?.moveCostMult || 1;
+    const finalAtk = Math.round(baseAtk * lavaLuxAtkMult);
+    const finalDef = Math.round(baseDef * lavaLuxDefMult);
 
     // Move time: 3h base + (10s × each active crew moveCost) − (10s × each supply moveCostReduction)
     const BASE_MOVE_SECS = 3 * 60 * 60;
     const crewMoveSecs   = activeCrew.reduce((s, c) => s + (c.moveCost || 0) * 10, 0);
     const supplyRedSecs  = forgeEnabled ? supplies.reduce((s, c) => s + (c.moveCostReduction || 0) * 10, 0) : 0;
-    const totalMoveSecs  = Math.max(0, BASE_MOVE_SECS + crewMoveSecs - supplyRedSecs + lavaLuxMoveAdd * 10);
+    const totalMoveSecs  = Math.max(0, Math.round((BASE_MOVE_SECS + crewMoveSecs - supplyRedSecs) * lavaLuxMoveMult));
     const moveH = Math.floor(totalMoveSecs / 3600);
     const moveM = Math.floor((totalMoveSecs % 3600) / 60);
 
@@ -1209,10 +1209,10 @@ function processData(data) {
     bdSet('bd-sup',   'SUPPLIES',                  pm(supAtk),   pm(supDef),   neg(supplyRedSecs));
     bdSet('bd-base',  'BASE',                      baseAtk.toLocaleString(), baseDef.toLocaleString(), hm(BASE_MOVE_SECS + crewMoveSecs - supplyRedSecs));
     const lavaEl = document.getElementById('bd-lava');
-    if (lavaLuxAtkPct > 0 && lavaEl) {
+    if (lavaLuxAtkMult > 1 && lavaEl) {
         lavaEl.style.display = 'contents';
-        bdSet('bd-lava', 'LAVA LUX ×'+(1+lavaLuxAtkPct/100).toFixed(2),
-            pm(finalAtk - baseAtk), pm(finalDef - baseDef), '—');
+        bdSet('bd-lava', 'LAVA LUX ×'+lavaLuxAtkMult.toFixed(2),
+            pm(finalAtk - baseAtk), pm(finalDef - baseDef), '×'+lavaLuxMoveMult.toFixed(2));
     } else if (lavaEl) { lavaEl.style.display = 'none'; }
     bdSet('bd-total', 'TOTAL', finalAtk.toLocaleString(), finalDef.toLocaleString(), hm(totalMoveSecs));
     document.getElementById('breakdown-btn').style.display = 'inline-block';
@@ -1389,7 +1389,7 @@ function buildSection(title, list, root, activeMode, type, showStatus = true) {
             subText = item.missions
                 ? `<span style="color:#ffd700">+${item.missions} missions/day</span>`
                 : (item.effect || "SERVICE");
-            if (item.atkMult > 0) subText += `<br><span style="color:#ff8800">+${item.atkMult}% ⚔ &nbsp;|&nbsp; +${item.defMult}% 🛡</span>`;
+            if (item.atkMult > 1) subText += `<br><span style="color:#ff8800">×${item.atkMult.toFixed(2)} ⚔ &nbsp;|&nbsp; ×${item.defMult.toFixed(2)} 🛡 &nbsp;|&nbsp; ×${item.moveCostMult.toFixed(2)} MOVE</span>`;
         } else {
             subText = "ITEM";
         }
