@@ -319,11 +319,11 @@
             animation: rarity-bar-shimmer 3s linear infinite;
         }
         .nft-card img {
-            width: 100%; height: 162px; object-fit: contain;
+            width: 100%; aspect-ratio: 1 / 1; height: auto; object-fit: contain;
             background: #000; display: block;
         }
         .no-img {
-            height: 162px; background: #0a0800;
+            aspect-ratio: 1 / 1; height: auto; background: #0a0800;
             display: flex; align-items: center; justify-content: center;
             color: #333; font-size: 0.7em;
         }
@@ -599,7 +599,7 @@
             .bd-head, .bd-label { font-size: 0.75em; letter-spacing: 0; }
             /* Card grid: 2 fixed columns */
             .card-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px; }
-            .nft-card img, .no-img { height: 120px; }
+            .nft-card img, .no-img { aspect-ratio: 1/1; height: auto; }
             .card-info { padding: 6px; }
             .card-name { font-size: 0.7em; height: 26px; }
             .card-subtext { font-size: 0.72em; }
@@ -1659,7 +1659,6 @@ function makeNFTCard(item, activeMode, type, showStatus) {
                     ${!item.isPD && item.shine ? `<div class="card-shine-label" style="color:var(--shine-${item.shine},#888)">${item.shine.toUpperCase()}</div>` : ''}
                     ${showStatus ? `<div class="card-status ${statusClass}">${statusText}</div>` : ''}
                     ${item.linkedItem ? `<div class="link-badge">⟷ ${item.linkedItem}</div>` : ''}
-                    ${item.asset_id ? `<a class="card-tpl-link" href="https://wax.atomichub.io/explorer/asset/wax-mainnet/${item.asset_id}" target="_blank" onclick="event.stopPropagation()">#${item.asset_id}</a>` : ''}
                 </div>
             </div>
             <div class="card-face card-back" style="border-top-color:${barColor}">
@@ -1671,6 +1670,7 @@ function makeNFTCard(item, activeMode, type, showStatus) {
                     <a class="cb-link" href="https://wax.atomichub.io/market?template_id=${item.templateId}&order=asc&sort=price&symbol=WAX" target="_blank" onclick="event.stopPropagation()">⟳ ATOMICHUB</a>
                     <a class="cb-link" href="https://neftyblocks.com/marketplace/listing?template_id=${item.templateId}" target="_blank" onclick="event.stopPropagation()">⟳ NEFTY BLOCKS</a>
                 </div>` : ''}
+                ${item.asset_id ? `<a class="cb-link" style="font-size:0.6em;opacity:0.45;margin-top:2px" href="https://wax.atomichub.io/explorer/asset/wax-mainnet/${item.asset_id}" target="_blank" onclick="event.stopPropagation()">asset #${item.asset_id}</a>` : ''}
             </div>
         </div>`;
     card.addEventListener('click', e => {
