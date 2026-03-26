@@ -270,17 +270,37 @@
         /* ── NFT card grid ── */
         .card-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
             gap: 12px; padding: 16px;
             overflow: visible;
         }
         .nft-card {
             background: rgba(15,12,0,0.95); border: 2px solid rgba(255,170,0,0.15);
-            position: relative; overflow: hidden; text-align: center;
+            position: relative; overflow: visible; text-align: center;
             transition: border-color 0.2s, box-shadow 0.2s, transform 0.18s ease;
             transform-origin: center center;
+            perspective: 700px; cursor: pointer;
         }
-        .nft-card:hover { border-color: var(--theme-color); box-shadow: var(--theme-shadow); transform: scale(1.07); z-index: 10; }
+        .nft-card:hover { border-color: var(--theme-color); box-shadow: var(--theme-shadow); transform: scale(1.06); z-index: 10; }
+        /* Card flip */
+        .card-inner { position: relative; transform-style: preserve-3d; transition: transform 0.36s ease; }
+        .nft-card.card-flipped .card-inner { transform: rotateY(180deg); }
+        .card-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+        .card-front { overflow: hidden; }
+        .card-back {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            transform: rotateY(180deg);
+            background: rgba(4,3,0,0.98);
+            border-top: 4px solid;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 8px; padding: 14px; text-align: center;
+        }
+        .cb-tpl { font-size: 1.4em; font-weight: bold; color: var(--theme-color); letter-spacing: 3px; }
+        .cb-rarity { font-size: 0.68em; letter-spacing: 2px; font-weight: bold; }
+        .cb-name { font-size: 0.67em; color: #666; letter-spacing: 1px; line-height: 1.4; }
+        .cb-links { display: flex; flex-direction: column; gap: 5px; width: 100%; margin-top: 4px; }
+        .cb-link { display: block; padding: 5px 8px; font-size: 0.65em; letter-spacing: 1px; color: var(--theme-color); border: 1px dashed rgba(255,170,0,0.35); text-decoration: none; font-family: monospace; transition: background 0.2s; }
+        .cb-link:hover { background: rgba(255,170,0,0.1); border-color: var(--theme-color); }
         .nft-card.inactive { opacity: 0.25; filter: grayscale(1); }
 
         .qty-badge {
@@ -299,11 +319,11 @@
             animation: rarity-bar-shimmer 3s linear infinite;
         }
         .nft-card img {
-            width: 100%; height: 148px; object-fit: contain;
+            width: 100%; height: 162px; object-fit: contain;
             background: #000; display: block;
         }
         .no-img {
-            height: 148px; background: #0a0800;
+            height: 162px; background: #0a0800;
             display: flex; align-items: center; justify-content: center;
             color: #333; font-size: 0.7em;
         }
@@ -327,8 +347,8 @@
         .division-block { margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.15); }
         .division-title-bar { padding: 5px 10px; background: rgba(0,0,0,0.5); border-bottom: 1px solid rgba(255,255,255,0.06); font-family: 'Courier New',monospace; font-size: 0.71em; letter-spacing: 1.5px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
         .division-body { display: flex; align-items: flex-start; gap: 10px; padding: 10px; }
-        .division-commander-col { flex: 0 0 140px; }
-        .division-units-area { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; align-content: start; }
+        .division-commander-col { flex: 0 0 165px; }
+        .division-units-area { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 6px; align-content: start; }
         .unit-cell { display: flex; flex-direction: column; gap: 3px; }
         .unit-cell .nft-card { margin: 0; }
         .unit-arm-sep { height: 2px; background: linear-gradient(to right,transparent,rgba(255,255,255,0.07),transparent); margin: 0 3px; }
@@ -579,7 +599,7 @@
             .bd-head, .bd-label { font-size: 0.75em; letter-spacing: 0; }
             /* Card grid: 2 fixed columns */
             .card-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px; }
-            .nft-card img, .no-img { height: 110px; }
+            .nft-card img, .no-img { height: 120px; }
             .card-info { padding: 6px; }
             .card-name { font-size: 0.7em; height: 26px; }
             .card-subtext { font-size: 0.72em; }
@@ -1626,34 +1646,46 @@ function makeNFTCard(item, activeMode, type, showStatus) {
         : null;
     const card = document.createElement('div');
     card.className = `nft-card${!isActive ? ' inactive' : ''}`;
-    card.style.borderTopColor = barColor;
-    card.style.borderTopWidth = '4px';
-    if (item.linkedItem) card.dataset.cardName = item.name;
+    card.dataset.cardName = item.name;
     card.innerHTML = `
-        ${item.qty > 1 ? `<div class="qty-badge">×${item.qty}</div>` : ''}
-        <div class="shine-bar" style="background:${barGradient};background-size:200% 100%;color:${barTextColor}">${barLabel}</div>
-        ${imgSrc ? `<img src="${imgSrc}" onerror="this.onerror=null;this.src='${imgFallback}'" loading="lazy" alt="${item.name}">` : '<div class="no-img">NO IMAGE</div>'}
-        <div class="card-info">
-            <div class="card-subtext">${subText}</div>
-            <div class="card-name">${item.name}</div>
-            ${!item.isPD && item.shine ? `<div class="card-shine-label" style="color:var(--shine-${item.shine},#888)">${item.shine.toUpperCase()}</div>` : ''}
-            ${showStatus ? `<div class="card-status ${statusClass}">${statusText}</div>` : ''}
-            ${item.linkedItem ? `<div class="link-badge">⟷ ${item.linkedItem}</div>` : ''}
-            ${item.asset_id ? `<a class="card-tpl-link" href="https://wax.atomichub.io/explorer/asset/wax-mainnet/${item.asset_id}" target="_blank" onclick="event.stopPropagation()">#${item.asset_id}</a>` : ''}
+        <div class="card-inner">
+            <div class="card-face card-front" style="border-top:4px solid ${barColor}">
+                ${item.qty > 1 ? `<div class="qty-badge">×${item.qty}</div>` : ''}
+                <div class="shine-bar" style="background:${barGradient};background-size:200% 100%;color:${barTextColor}">${barLabel}</div>
+                ${imgSrc ? `<img src="${imgSrc}" onerror="this.onerror=null;this.src='${imgFallback}'" loading="lazy" alt="${item.name}">` : '<div class="no-img">NO IMAGE</div>'}
+                <div class="card-info">
+                    <div class="card-subtext">${subText}</div>
+                    <div class="card-name">${item.name}</div>
+                    ${!item.isPD && item.shine ? `<div class="card-shine-label" style="color:var(--shine-${item.shine},#888)">${item.shine.toUpperCase()}</div>` : ''}
+                    ${showStatus ? `<div class="card-status ${statusClass}">${statusText}</div>` : ''}
+                    ${item.linkedItem ? `<div class="link-badge">⟷ ${item.linkedItem}</div>` : ''}
+                    ${item.asset_id ? `<a class="card-tpl-link" href="https://wax.atomichub.io/explorer/asset/wax-mainnet/${item.asset_id}" target="_blank" onclick="event.stopPropagation()">#${item.asset_id}</a>` : ''}
+                </div>
+            </div>
+            <div class="card-face card-back" style="border-top-color:${barColor}">
+                <div class="cb-rarity" style="color:${barColor}">${barLabel}</div>
+                <div class="cb-tpl">#${item.templateId || '—'}</div>
+                <div class="cb-name">${item.name}</div>
+                ${item.templateId ? `
+                <div class="cb-links">
+                    <a class="cb-link" href="https://wax.atomichub.io/market?template_id=${item.templateId}&order=asc&sort=price&symbol=WAX" target="_blank" onclick="event.stopPropagation()">⟳ ATOMICHUB</a>
+                    <a class="cb-link" href="https://neftyblocks.com/marketplace/listing?template_id=${item.templateId}" target="_blank" onclick="event.stopPropagation()">⟳ NEFTY BLOCKS</a>
+                </div>` : ''}
+            </div>
         </div>`;
-    if (item.linkedItem) {
-        card.addEventListener('click', e => {
-            if (e.target.closest('a')) return;
-            const wasSelected = card.classList.contains('link-selected');
-            document.querySelectorAll('.nft-card.link-selected,.nft-card.link-highlight').forEach(c => c.classList.remove('link-selected','link-highlight'));
-            if (!wasSelected) {
-                card.classList.add('link-selected');
-                document.querySelectorAll('.nft-card[data-card-name]').forEach(c => {
-                    if (c.dataset.cardName === item.linkedItem) c.classList.add('link-highlight');
-                });
-            }
-        });
-    }
+    card.addEventListener('click', e => {
+        if (e.target.closest('a')) return;
+        const wasFlipped = card.classList.contains('card-flipped');
+        document.querySelectorAll('.nft-card.card-flipped').forEach(c => { if (c !== card) c.classList.remove('card-flipped'); });
+        card.classList.toggle('card-flipped', !wasFlipped);
+        document.querySelectorAll('.nft-card.link-selected,.nft-card.link-highlight').forEach(c => c.classList.remove('link-selected','link-highlight'));
+        if (item.linkedItem && !wasFlipped) {
+            card.classList.add('link-selected');
+            document.querySelectorAll('.nft-card[data-card-name]').forEach(c => {
+                if (c.dataset.cardName === item.linkedItem) c.classList.add('link-highlight');
+            });
+        }
+    });
     return card;
 }
 
