@@ -375,7 +375,8 @@
         .ubuff-mini-img { flex-shrink: 0; width: 2em; height: 2em; object-fit: contain; border-radius: 2px; opacity: 0.9; }
         .ubuff-mini-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
         .ubuff-mini-name { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ubuff-mini-stat { color: #bbb; margin-top: 1px; }
+        .ubuff-mini-stat { color: #bbb; margin-top: 1px; display: flex; flex-direction: column; gap: 1px; }
+        .ubuff-mini-stat span { white-space: nowrap; }
         #view-toggle-btn.div-active { color: #00ff95; border-color: rgba(0,255,149,0.5); }
         @media (max-width: 640px) { .division-body { flex-direction: column; } .division-commander-col { flex: 0 0 auto; width: 100%; } }
 
@@ -737,7 +738,7 @@
         <div class="stat-box">GEAR EQUIPPED<span class="stat-val val-arms" id="armsCount">—</span></div>
         <div class="stat-box">TOTAL ATTACK<span class="stat-val val-atk" id="totalAtk">—</span></div>
         <div class="stat-box">TOTAL DEFENSE<span class="stat-val val-def" id="totalDef">—</span></div>
-        <div class="stat-box">EST. MOVE TIME<span class="stat-val val-move" id="totalMoveTime">—</span></div>
+        <div class="stat-box">EST. >> TIME<span class="stat-val val-move" id="totalMoveTime">—</span></div>
     </div>
     <button id="breakdown-btn" class="cyber-btn" onclick="toggleBreakdown()" style="display:none;">∑ SCORE BREAKDOWN</button>
     <button id="view-toggle-btn" class="cyber-btn" onclick="toggleArmyView()" style="display:none;">⊞ DIVISIONS</button>
@@ -746,7 +747,7 @@
     <button class="cyber-btn" onclick="adjustFontSize(-1)" title="Decrease font size" style="padding:8px 11px;letter-spacing:0">A−</button>
     <div id="score-breakdown">
         <div class="bd-grid">
-            <div class="bd-head"></div><div class="bd-head">⚔ ATK</div><div class="bd-head">🛡 DEF</div><div class="bd-head">⏱ MOVE</div>
+            <div class="bd-head"></div><div class="bd-head">⚔ ATK</div><div class="bd-head">🛡 DEF</div><div class="bd-head">⏱ >></div>
             <div id="bd-crew" class="bd-row"><div class="bd-label">CREW &amp; MERCS</div><div class="bd-atk">—</div><div class="bd-def">—</div><div class="bd-move">—</div></div>
             <div id="bd-arms" class="bd-row"><div class="bd-label">ARMS &amp; EQUIP</div><div class="bd-atk">—</div><div class="bd-def">—</div><div class="bd-move">—</div></div>
             <div id="bd-creat" class="bd-row"><div class="bd-label">CREATURES</div><div class="bd-atk">—</div><div class="bd-def">—</div><div class="bd-move">—</div></div>
@@ -1521,7 +1522,7 @@ function buildDivisions(divisions, root, forgeEnabled, creatures, supplies, serv
             <span style="color:#999">${cmd.name}</span>
             <span style="margin-left:auto;display:flex;gap:12px">
                 <span>${Math.floor(cmd.slots || 0)} SLOTS</span>
-                ${shineRed > 0 ? `<span style="color:${shineColor}">▼ -${shineRed} MOVE</span>` : ''}
+                ${shineRed > 0 ? `<span style="color:${shineColor}">▼ -${shineRed} >></span>` : ''}
                 <span style="color:${isEmpty ? '#555' : div.units.length < Math.floor(cmd.slots || 0) ? '#ff8800' : '#00cc66'}">${div.units.length}/${Math.floor(cmd.slots || 0)} CREW</span>
             </span>`;
         titleBar.addEventListener('click', () => {
@@ -1569,7 +1570,7 @@ function buildDivisions(divisions, root, forgeEnabled, creatures, supplies, serv
                 if (unit.supply) {
                     const su = unit.supply;
                     const suRar = RARITY_COLORS[su.rarity] || '#888';
-                    const suMove = su.moveCostReduction ? `<span style="color:#ffd700">▼ -${su.moveCostReduction} MOVE</span>` : '';
+                    const suMove = su.moveCostReduction ? `<span style="color:#ffd700">▼ -${su.moveCostReduction} >></span>` : '';
                     const suAtk  = su.atk ? `<span style="color:#ff4444">⚔ +${Math.floor(su.atk)}</span>` : '';
                     const suDef  = su.def ? `<span style="color:#4488ff">🛡 +${Math.floor(su.def)}</span>` : '';
                     const suStat = [suMove, suAtk, suDef].filter(Boolean).join(' ');
@@ -1700,7 +1701,7 @@ function makeNFTCard(item, activeMode, type, showStatus) {
     if (type === "slots") {
         subText = `${Math.floor(item.slots || 0)} SLOTS`;
         const shineRed = (FACE_SHINE_REDUCTION[item.rarity] || {})[item.shine] || 0;
-        if (shineRed > 0) subText += `<br><span style="color:var(--shine-${item.shine},#888)">✦ -${shineRed} MOVE</span>`;
+        if (shineRed > 0) subText += `<br><span style="color:var(--shine-${item.shine},#888)">✦ -${shineRed} >></span>`;
     } else if (type === "stats") {
         subText = `<span style="color:#ff4444">⚔ ${Math.floor(item.atk)}</span> &nbsp;|&nbsp; <span style="color:#4488ff">🛡 ${Math.floor(item.def)}</span>`;
         if (item.moveCost) subText += `<br><span class="card-move-cost">&gt;&gt; ${item.moveCost}</span>`;
@@ -1711,7 +1712,7 @@ function makeNFTCard(item, activeMode, type, showStatus) {
         subText = parts.join('<br>');
     } else if (type === "missions") {
         subText = item.missions ? `<span style="color:#ffd700">+${item.missions} missions/day</span>` : (item.effect || "SERVICE");
-        if (item.atkMult > 1) subText += `<br><span style="color:#ff8800">×${item.atkMult.toFixed(2)} ⚔ &nbsp;|&nbsp; ×${item.defMult.toFixed(2)} 🛡 &nbsp;|&nbsp; ×${item.moveCostMult.toFixed(2)} MOVE</span>`;
+        if (item.atkMult > 1) subText += `<br><span style="color:#ff8800">×${item.atkMult.toFixed(2)} ⚔ &nbsp;|&nbsp; ×${item.defMult.toFixed(2)} 🛡 &nbsp;|&nbsp; ×${item.moveCostMult.toFixed(2)} >></span>`;
     } else { subText = "ITEM"; }
     const imgHash = item.img;
     const imgFallback = imgHash ? `https://ipfs.io/ipfs/${imgHash}` : null;
