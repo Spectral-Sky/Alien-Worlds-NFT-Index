@@ -359,11 +359,19 @@
         .unit-arm-sep { display: flex; align-items: center; gap: 5px; margin: 1px 2px; color: rgba(255,170,0,0.4); font-size: 0.62em; letter-spacing: 1px; }
         .unit-arm-sep::before, .unit-arm-sep::after { content: ''; flex: 1; height: 1px; background: rgba(255,170,0,0.15); }
         .div-empty { color: #2a2a3a; font-family: monospace; font-size: 0.75em; padding: 14px 6px; letter-spacing: 1px; }
-        .unit-buff-row { display: flex; flex-wrap: wrap; gap: 3px; padding: 3px 4px 2px; }
+        .unit-buff-row { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 4px 2px; }
+        /* Lava Lux — stays as a simple badge */
         .ubuff { font-size: 0.6em; letter-spacing: 0.5px; padding: 1px 5px; border-radius: 2px; white-space: nowrap; }
-        .ubuff-creature { color: #00cc66; border: 1px solid rgba(0,204,102,0.25); }
-        .ubuff-supply   { color: #4488ff; border: 1px solid rgba(68,136,255,0.25); }
-        .ubuff-lava     { color: #ff8800; border: 1px solid rgba(255,136,0,0.35); }
+        .ubuff-lava { color: #ff8800; border: 1px solid rgba(255,136,0,0.35); }
+        /* Pet + supply — mini card boxes, each ~half the cell width */
+        .ubuff-mini {
+            flex: 0 0 calc(50% - 2px); min-width: 0;
+            background: rgba(6,5,0,0.95); border: 1px solid rgba(255,255,255,0.07);
+            border-top: 2px solid #555; padding: 3px 5px 4px;
+            font-size: 0.58em; letter-spacing: 0.5px; box-sizing: border-box;
+        }
+        .ubuff-mini-name { color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ubuff-mini-stat { font-weight: bold; margin-top: 2px; }
         #view-toggle-btn.div-active { color: #00ff95; border-color: rgba(0,255,149,0.5); }
         @media (max-width: 640px) { .division-body { flex-direction: column; } .division-commander-col { flex: 0 0 auto; width: 100%; } }
 
@@ -1509,12 +1517,21 @@ function buildDivisions(divisions, root, forgeEnabled, creatures, supplies, serv
                 // Buff indicators — each is 1:1 assigned to this unit
                 const buffParts = [];
                 if (unit.creature) {
-                    buffParts.push(`<span class="ubuff ubuff-creature" title="${unit.creature.name}">🐾 ${unit.creature.name}</span>`);
+                    const cr = unit.creature;
+                    const crRar = RARITY_COLORS[cr.rarity] || '#888';
+                    const crAtk = cr.atk ? `<span style="color:#ff4444">⚔ +${Math.floor(cr.atk)}</span>` : '';
+                    const crDef = cr.def ? `<span style="color:#4488ff">🛡 +${Math.floor(cr.def)}</span>` : '';
+                    const crStat = [crAtk, crDef].filter(Boolean).join(' ');
+                    buffParts.push(`<div class="ubuff-mini" style="border-top-color:${crRar}"><div class="ubuff-mini-name">🐾 ${cr.name}</div>${crStat ? `<div class="ubuff-mini-stat">${crStat}</div>` : ''}</div>`);
                 }
-                if (unit.supply && unit.supply.moveCostReduction) {
-                    buffParts.push(`<span class="ubuff ubuff-supply" title="${unit.supply.name}">▼ -${unit.supply.moveCostReduction} MOVE</span>`);
-                } else if (unit.supply) {
-                    buffParts.push(`<span class="ubuff ubuff-supply" title="${unit.supply.name}">⚡ ${unit.supply.name}</span>`);
+                if (unit.supply) {
+                    const su = unit.supply;
+                    const suRar = RARITY_COLORS[su.rarity] || '#888';
+                    const suMove = su.moveCostReduction ? `<span style="color:#ffd700">▼ -${su.moveCostReduction} MOVE</span>` : '';
+                    const suAtk  = su.atk ? `<span style="color:#ff4444">⚔ +${Math.floor(su.atk)}</span>` : '';
+                    const suDef  = su.def ? `<span style="color:#4488ff">🛡 +${Math.floor(su.def)}</span>` : '';
+                    const suStat = [suMove, suAtk, suDef].filter(Boolean).join(' ');
+                    buffParts.push(`<div class="ubuff-mini" style="border-top-color:${suRar}"><div class="ubuff-mini-name">${su.name}</div>${suStat ? `<div class="ubuff-mini-stat">${suStat}</div>` : ''}</div>`);
                 }
                 if (unit.service) {
                     buffParts.push(`<span class="ubuff ubuff-lava" title="${unit.service.name}">✦ LAVA LUX</span>`);
