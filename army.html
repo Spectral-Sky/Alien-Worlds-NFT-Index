@@ -1580,8 +1580,11 @@ function buildDivisions(divisions, root, forgeEnabled, creatures, supplies, serv
                 if (unit.service) {
                     const svc = unit.service;
                     const svcImgSrc = svc.img ? `https://wsrv.nl/?url=${encodeURIComponent('ipfs.io/ipfs/' + svc.img)}&w=68&h=68&output=webp&fit=contain` : '';
-                    const svcMult = svc.atkMult > 1 ? `<span style="color:#ff4444">⚔ ×${svc.atkMult.toFixed(2)}</span>` : '';
-                    buffParts.push(`<div class="ubuff-mini">${svcImgSrc ? `<img class="ubuff-mini-img" src="${svcImgSrc}" alt="">` : ''}<div class="ubuff-mini-text"><div class="ubuff-mini-name" style="color:#ff8800">✦ ${svc.name}</div>${svcMult ? `<div class="ubuff-mini-stat">${svcMult}</div>` : ''}</div></div>`);
+                    const svcStats = [
+                        svc.atkMult > 1 ? `<span style="color:#ff4444">⚔ ×${svc.atkMult.toFixed(2)}</span>` : '',
+                        svc.defMult > 1 ? `<span style="color:#4488ff">🛡 ×${svc.defMult.toFixed(2)}</span>` : '',
+                    ].filter(Boolean).join('');
+                    buffParts.push(`<div class="ubuff-mini">${svcImgSrc ? `<img class="ubuff-mini-img" src="${svcImgSrc}" alt="">` : ''}<div class="ubuff-mini-text"><div class="ubuff-mini-name" style="color:#ff8800">✦ ${svc.name}</div>${svcStats ? `<div class="ubuff-mini-stat">${svcStats}</div>` : ''}</div></div>`);
                 }
                 if (buffParts.length) {
                     const buffRow = document.createElement('div');
