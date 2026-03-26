@@ -732,7 +732,7 @@
     <div class="stats-grid">
         <div class="stat-box">LOGISTICS (SLOTS)<span class="stat-val val-slots" id="totalSlots">—</span></div>
         <div class="stat-box">ACTIVE UNITS<span class="stat-val val-crew" id="crewCount">—</span></div>
-        <div class="stat-box">ARMS EQUIPPED<span class="stat-val val-arms" id="armsCount">—</span></div>
+        <div class="stat-box">GEAR EQUIPPED<span class="stat-val val-arms" id="armsCount">—</span></div>
         <div class="stat-box">TOTAL ATTACK<span class="stat-val val-atk" id="totalAtk">—</span></div>
         <div class="stat-box">TOTAL DEFENSE<span class="stat-val val-def" id="totalDef">—</span></div>
         <div class="stat-box">EST. MOVE TIME<span class="stat-val val-move" id="totalMoveTime">—</span></div>
@@ -1281,33 +1281,25 @@ function processData(data) {
     const activeCrew = crew.slice(0, Math.floor(totalSlots));
     activeCrew.forEach(c => c.active = true);
 
-    let activeArms = [];
+    // Gear: AW arms and PD equipment share one slot per unit (forge required)
+    let activeGear = [];
+    arms.forEach(a => a._gearCat = 'arm');
+    equipment.forEach(e => e._gearCat = 'equip');
     if (forgeEnabled) {
-        arms.sort((a, b) => (b.atk + b.def) - (a.atk + a.def));
-        activeArms = arms.slice(0, activeCrew.length);
-        activeArms.forEach(a => a.active = true);
-        // Tag arm↔crew pairs (best arm → best crew by index)
+        const allGear = [...arms, ...equipment];
+        allGear.sort((a, b) => (b.atk + b.def) - (a.atk + a.def));
+        activeGear = allGear.slice(0, activeCrew.length);
+        activeGear.forEach(g => g.active = true);
+        allGear.slice(activeCrew.length).forEach(g => g.active = false);
         activeCrew.forEach((c, i) => {
-            if (activeArms[i]) {
-                c.linkedItem = activeArms[i].name;
-                activeArms[i].linkedItem = c.name;
-            }
-        });
-    }
-
-    // Equipment: each piece equips to one crew unit (forge required), like arms
-    let activeEquipment = [];
-    if (forgeEnabled) {
-        equipment.sort((a, b) => (b.atk + b.def) - (a.atk + a.def));
-        activeEquipment = equipment.slice(0, activeCrew.length);
-        activeEquipment.forEach(e => e.active = true);
-        equipment.slice(activeCrew.length).forEach(e => e.active = false);
-        activeCrew.forEach((c, i) => {
-            if (activeEquipment[i]) {
-                c.linkedEquipment = activeEquipment[i];
+            if (activeGear[i]) {
+                c.linkedItem = activeGear[i].name;
+                activeGear[i].linkedItem = c.name;
+                c.linkedGear = activeGear[i];
             }
         });
     } else {
+        arms.forEach(a => a.active = false);
         equipment.forEach(e => e.active = false);
     }
 
@@ -1346,7 +1338,7 @@ function processData(data) {
     });
 
     // Base stats: only capped creatures and supplies count
-    const allActive = [...activeCrew, ...activeArms, ...activeCreatures, ...activeSupplies];
+    const allActive = [...activeCrew, ...activeGear, ...activeCreatures, ...activeSupplies];
     const baseAtk = allActive.reduce((s, x) => s + (x.atk || 0), 0);
     const baseDef = allActive.reduce((s, x) => s + (x.def || 0), 0);
 
@@ -1374,7 +1366,7 @@ function processData(data) {
 
     document.getElementById('totalSlots').innerText    = Math.floor(totalSlots);
     document.getElementById('crewCount').innerText     = activeCrew.length;
-    document.getElementById('armsCount').innerText     = activeArms.length;
+    document.getElementById('armsCount').innerText     = activeGear.length;
     document.getElementById('totalAtk').innerText      = Math.floor(finalAtk).toLocaleString();
     document.getElementById('totalDef').innerText      = Math.floor(finalDef).toLocaleString();
     document.getElementById('totalMoveTime').innerText = `${moveH}h ${moveM}m`;
@@ -1382,8 +1374,8 @@ function processData(data) {
     // ── Score breakdown panel ──────────────────────────────────────────────────
     const crewAtk  = activeCrew.reduce((s,x) => s + (x.atk||0), 0);
     const crewDef  = activeCrew.reduce((s,x) => s + (x.def||0), 0);
-    const armsAtk  = activeArms.reduce((s,x) => s + (x.atk||0), 0);
-    const armsDef  = activeArms.reduce((s,x) => s + (x.def||0), 0);
+    const armsAtk  = activeGear.reduce((s,x) => s + (x.atk||0), 0);
+    const armsDef  = activeGear.reduce((s,x) => s + (x.def||0), 0);
     const creatAtk = activeCreatures.reduce((s,x) => s + (x.atk||0), 0);
     const creatDef = activeCreatures.reduce((s,x) => s + (x.def||0), 0);
     const supAtk   = activeSupplies.reduce((s,x)  => s + (x.atk||0), 0);
@@ -1429,7 +1421,7 @@ function processData(data) {
         const units = [];
         for (let i = 0; i < slots && crewIdx < activeCrew.length; i++, crewIdx++) {
             const c = activeCrew[crewIdx];
-            units.push({ crew: c, arm: activeArms[crewIdx] || null, equipment: c.linkedEquipment || null, creature: c.linkedCreature || null, supply: c.linkedSupply || null, service: c.linkedService || null });
+            units.push({ crew: c, gear: c.linkedGear || null, creature: c.linkedCreature || null, supply: c.linkedSupply || null, service: c.linkedService || null });
         }
         divisions.push({ commander: face, units });
     });
@@ -1454,7 +1446,6 @@ function render(faces, crew, arms, creatures, supplies, equipment, services, for
         emptyBtn.textContent = '▶ SHOW EMPTY DIVISIONS';
     }
 
-    const equipTagged = equipment.map(e => ({ ...e, active: forgeEnabled }));
     const reserveCrew = crew.filter(c => !c.active);
 
     if (hasDivisions && armyViewMode === 'divisions') {
@@ -1468,8 +1459,8 @@ function render(faces, crew, arms, creatures, supplies, equipment, services, for
         // ── Flat army view (old layout) ─────────────────────────────────────
         if (faces.length) buildSection("COMMANDERS", faces, root, "always", "slots", false);
         buildSection("ARMY — CREW & MERCENARIES", crew.filter(c => c.active), root, "always", "stats", false);
-        buildSection(`ARSENAL — ARMS${!forgeEnabled ? ' (FORGE OFFLINE)' : ''}`, arms.filter(a => a.active), root, forgeEnabled ? "always" : "never", "stats", false);
-        if (equipTagged.length) buildSection(`ARSENAL — EQUIPMENT${!forgeEnabled ? ' (FORGE OFFLINE)' : ''}`, equipTagged, root, "partial", "stats", false);
+        buildSection(`ARSENAL — ARMS${!forgeEnabled ? ' (FORGE OFFLINE)' : ''}`, arms, root, "partial", "stats", false);
+        if (equipment.length) buildSection(`ARSENAL — EQUIPMENT${!forgeEnabled ? ' (FORGE OFFLINE)' : ''}`, equipment, root, "partial", "stats", false);
         buildSection("CREATURES — PLANETARY DEFENSE", creatures, root, "partial", "stats", false);
         buildSection(`SUPPLIES${!forgeEnabled ? ' (FORGE OFFLINE)' : ''}`, supplies, root, "partial", "reduction", false);
         if (services.length) buildSection("SERVICES — LAVA LUX HOTELS", services, root, "always", "missions", false);
@@ -1546,19 +1537,12 @@ function buildDivisions(divisions, root, forgeEnabled, creatures, supplies, serv
                 const cell = document.createElement('div');
                 cell.className = 'unit-cell';
                 cell.appendChild(makeNFTCard(unit.crew, "always", "stats", false));
-                if (unit.arm && forgeEnabled) {
+                if (unit.gear && forgeEnabled) {
                     const sep = document.createElement('div');
                     sep.className = 'unit-arm-sep';
-                    sep.textContent = '⚔';
+                    sep.textContent = unit.gear._gearCat === 'equip' ? '⚙' : '⚔';
                     cell.appendChild(sep);
-                    cell.appendChild(makeNFTCard(unit.arm, "always", "stats", false));
-                }
-                if (unit.equipment && forgeEnabled) {
-                    const sep = document.createElement('div');
-                    sep.className = 'unit-arm-sep';
-                    sep.textContent = '⚙';
-                    cell.appendChild(sep);
-                    cell.appendChild(makeNFTCard(unit.equipment, "always", "stats", false));
+                    cell.appendChild(makeNFTCard(unit.gear, "always", "stats", false));
                 }
                 // Buff indicators — each is 1:1 assigned to this unit
                 const buffParts = [];
