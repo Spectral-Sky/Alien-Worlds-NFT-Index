@@ -1244,38 +1244,64 @@ function processData(data) {
         });
     }
 
-    // Red Boar (supplies) flat atk/def always count
-    const allActive = [...activeCrew, ...activeArms, ...creatures, ...supplies];
+    // Each pet applies to one unit (best creatures → best crew by ATK+DEF; no forge required)
+    creatures.sort((a, b) => (b.atk + b.def) - (a.atk + a.def));
+    const activeCreatures = creatures.slice(0, activeCrew.length);
+    activeCreatures.forEach(c => c.active = true);
+    creatures.slice(activeCrew.length).forEach(c => c.active = false);
+
+    // Each supply applies to one unit (best supplies → best crew; forge required)
+    supplies.sort((a, b) => ((b.atk||0)+(b.def||0)+(b.moveCostReduction||0)) - ((a.atk||0)+(a.def||0)+(a.moveCostReduction||0)));
+    const activeSupplies = forgeEnabled ? supplies.slice(0, activeCrew.length) : [];
+    if (forgeEnabled) {
+        activeSupplies.forEach(s => s.active = true);
+        supplies.slice(activeCrew.length).forEach(s => s.active = false);
+    } else {
+        supplies.forEach(s => s.active = false);
+    }
+
+    // Each Lava Lux keycard applies to one unit (top N keycards → top N crew by ATK)
+    const crewByAtk = [...activeCrew].sort((a, b) => (b.atk||0) - (a.atk||0));
+    const lavaLuxList = lavaLuxEnabled
+        ? services.filter(s => s.atkMult > 1).sort((a, b) => b.atkMult - a.atkMult).slice(0, activeCrew.length)
+        : [];
+    lavaLuxList.forEach((svc, i) => {
+        const unit = crewByAtk[i]; if (!unit) return;
+        svc.linkedItem  = unit.name;
+        unit.linkedItem = (unit.linkedItem ? unit.linkedItem + ' + ' : '') + svc.name;
+        unit.linkedService = svc;
+    });
+
+    // Link creature + supply to each crew unit by rank index
+    activeCrew.forEach((c, i) => {
+        c.linkedCreature = activeCreatures[i] || null;
+        c.linkedSupply   = activeSupplies[i]  || null;
+    });
+
+    // Base stats: only capped creatures and supplies count
+    const allActive = [...activeCrew, ...activeArms, ...activeCreatures, ...activeSupplies];
     const baseAtk = allActive.reduce((s, x) => s + (x.atk || 0), 0);
     const baseDef = allActive.reduce((s, x) => s + (x.def || 0), 0);
-    // Lava Lux: equips to the single highest-ATK unit — multiplier applies only to that unit's stats
-    const topLavaLux      = lavaLuxEnabled ? services.filter(s => s.atkMult > 1).sort((a, b) => b.atkMult - a.atkMult)[0] : null;
-    const lavaLuxAtkMult  = topLavaLux?.atkMult      || 1;
-    const lavaLuxDefMult  = topLavaLux?.defMult      || 1;
-    const lavaLuxMoveMult = topLavaLux?.moveCostMult || 1;
-    // Find the unit with the highest ATK to receive the Lava Lux buff
-    const lavaTarget      = topLavaLux ? [...allActive].sort((a, b) => (b.atk || 0) - (a.atk || 0))[0] : null;
-    // Tag Lava Lux↔target pair
-    if (topLavaLux && lavaTarget) {
-        topLavaLux.linkedItem = lavaTarget.name;
-        lavaTarget.linkedItem = (lavaTarget.linkedItem ? lavaTarget.linkedItem + ' + ' : '') + topLavaLux.name;
-    }
-    const lavaTargetAtk   = lavaTarget?.atk  || 0;
-    const lavaTargetDef   = lavaTarget?.def  || 0;
-    const lavaTargetMove  = lavaTarget?.moveCost || 0;
-    const finalAtk = Math.round((baseAtk - lavaTargetAtk) + lavaTargetAtk * lavaLuxAtkMult);
-    const finalDef = Math.round((baseDef - lavaTargetDef) + lavaTargetDef * lavaLuxDefMult);
+
+    // Lava Lux total bonus across all assigned keycards
+    let lavaAtkBonus = 0, lavaDefBonus = 0, lavaMoveDelta = 0;
+    lavaLuxList.forEach((svc, i) => {
+        const unit = crewByAtk[i]; if (!unit) return;
+        lavaAtkBonus  += (unit.atk      || 0) * (svc.atkMult      - 1);
+        lavaDefBonus  += (unit.def      || 0) * (svc.defMult      - 1);
+        lavaMoveDelta += (unit.moveCost || 0) * 10 * (svc.moveCostMult - 1);
+    });
+    const finalAtk = Math.round(baseAtk + lavaAtkBonus);
+    const finalDef = Math.round(baseDef + lavaDefBonus);
 
     // Move time: 3h base + (10s × each active crew moveCost) − reductions
     const BASE_MOVE_SECS  = 3 * 60 * 60;
     const crewMoveSecs    = activeCrew.reduce((s, c) => s + (c.moveCost || 0) * 10, 0);
-    const supplyRedSecs   = forgeEnabled ? supplies.reduce((s, c) => s + (c.moveCostReduction || 0) * 10, 0) : 0;
+    const supplyRedSecs   = activeSupplies.reduce((s, c) => s + (c.moveCostReduction || 0) * 10, 0);
     // Face shine: each shined commander reduces the division's total move cost (flat, cumulative)
-    const faceShineRed    = faces.reduce((s, f) => s + ((FACE_SHINE_REDUCTION[f.rarity] || {})[f.shine] || 0), 0);
+    const faceShineRed     = faces.reduce((s, f) => s + ((FACE_SHINE_REDUCTION[f.rarity] || {})[f.shine] || 0), 0);
     const faceShineRedSecs = faceShineRed * 10;
-    // Lava Lux move cost: only the target unit's move cost contribution is multiplied
-    const lavaMoveDelta   = lavaTargetMove * 10 * (lavaLuxMoveMult - 1);
-    const totalMoveSecs   = Math.max(0, Math.round(BASE_MOVE_SECS + crewMoveSecs - supplyRedSecs - faceShineRedSecs + lavaMoveDelta));
+    const totalMoveSecs    = Math.max(0, Math.round(BASE_MOVE_SECS + crewMoveSecs - supplyRedSecs - faceShineRedSecs + lavaMoveDelta));
     const moveH = Math.floor(totalMoveSecs / 3600);
     const moveM = Math.floor((totalMoveSecs % 3600) / 60);
 
@@ -1291,10 +1317,10 @@ function processData(data) {
     const crewDef  = activeCrew.reduce((s,x) => s + (x.def||0), 0);
     const armsAtk  = activeArms.reduce((s,x) => s + (x.atk||0), 0);
     const armsDef  = activeArms.reduce((s,x) => s + (x.def||0), 0);
-    const creatAtk = creatures.reduce((s,x)  => s + (x.atk||0), 0);
-    const creatDef = creatures.reduce((s,x)  => s + (x.def||0), 0);
-    const supAtk   = supplies.reduce((s,x)   => s + (x.atk||0), 0);
-    const supDef   = supplies.reduce((s,x)   => s + (x.def||0), 0);
+    const creatAtk = activeCreatures.reduce((s,x) => s + (x.atk||0), 0);
+    const creatDef = activeCreatures.reduce((s,x) => s + (x.def||0), 0);
+    const supAtk   = activeSupplies.reduce((s,x)  => s + (x.atk||0), 0);
+    const supDef   = activeSupplies.reduce((s,x)  => s + (x.def||0), 0);
     const pm  = v => v > 0 ? '+' + v.toLocaleString() : v === 0 ? '—' : v.toLocaleString();
     const neg = v => v > 0 ? '-' + Math.round(v/60) + 'm' : '—';
     const hm  = s => { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60); return h+'h '+m+'m'; };
@@ -1317,11 +1343,13 @@ function processData(data) {
     } else if (facesEl) { facesEl.style.display = 'none'; }
     bdSet('bd-base',  'BASE',                      baseAtk.toLocaleString(), baseDef.toLocaleString(), hm(BASE_MOVE_SECS + crewMoveSecs - supplyRedSecs - faceShineRedSecs));
     const lavaEl = document.getElementById('bd-lava');
-    if (lavaLuxAtkMult > 1 && lavaEl) {
+    if (lavaLuxList.length > 0 && lavaEl) {
         lavaEl.style.display = 'contents';
-        const lavaLabel = 'LAVA LUX ×'+lavaLuxAtkMult.toFixed(2) + (lavaTarget ? ' → '+lavaTarget.name : '');
+        const lavaLabel = lavaLuxList.length === 1
+            ? 'LAVA LUX ×' + lavaLuxList[0].atkMult.toFixed(2) + ' → ' + lavaLuxList[0].linkedItem
+            : `LAVA LUX ×${lavaLuxList.length} SUITES`;
         const lavaMoveStr = lavaMoveDelta !== 0 ? (lavaMoveDelta > 0 ? '+' : '') + Math.round(lavaMoveDelta/60) + 'm' : '—';
-        bdSet('bd-lava', lavaLabel, pm(finalAtk - baseAtk), pm(finalDef - baseDef), lavaMoveStr);
+        bdSet('bd-lava', lavaLabel, pm(Math.round(lavaAtkBonus)), pm(Math.round(lavaDefBonus)), lavaMoveStr);
     } else if (lavaEl) { lavaEl.style.display = 'none'; }
     bdSet('bd-total', 'TOTAL', finalAtk.toLocaleString(), finalDef.toLocaleString(), hm(totalMoveSecs));
     document.getElementById('breakdown-btn').style.display = 'inline-block';
@@ -1333,7 +1361,8 @@ function processData(data) {
         const slots = Math.floor(face.slots || 0);
         const units = [];
         for (let i = 0; i < slots && crewIdx < activeCrew.length; i++, crewIdx++) {
-            units.push({ crew: activeCrew[crewIdx], arm: activeArms[crewIdx] || null });
+            const c = activeCrew[crewIdx];
+            units.push({ crew: c, arm: activeArms[crewIdx] || null, creature: c.linkedCreature || null, supply: c.linkedSupply || null, service: c.linkedService || null });
         }
         divisions.push({ commander: face, units });
     });
@@ -1359,8 +1388,8 @@ function render(faces, crew, arms, creatures, supplies, equipment, services, for
         buildDivisions(divisions, root, forgeEnabled, creatures, supplies, services);
         if (reserveCrew.length) buildSection("RESERVE — CREW & MERCS", reserveCrew, root, "never", "stats", false);
         if (equipTagged.length) buildSection(`ARSENAL — EQUIPMENT${!forgeEnabled ? ' (FORGE OFFLINE)' : ''}`, equipTagged, root, "partial", "stats", false);
-        buildSection("CREATURES — PLANETARY DEFENSE", creatures, root, "always", "stats", false);
-        buildSection(`SUPPLIES${!forgeEnabled ? ' (FORGE OFFLINE)' : ''}`, supplies, root, forgeEnabled ? "always" : "never", "reduction", false);
+        buildSection("CREATURES — PLANETARY DEFENSE", creatures, root, "partial", "stats", false);
+        buildSection(`SUPPLIES${!forgeEnabled ? ' (FORGE OFFLINE)' : ''}`, supplies, root, "partial", "reduction", false);
         if (services.length) buildSection("SERVICES — LAVA LUX HOTELS", services, root, "always", "missions", false);
     } else {
         // ── Flat army view (old layout) ─────────────────────────────────────
@@ -1368,8 +1397,8 @@ function render(faces, crew, arms, creatures, supplies, equipment, services, for
         buildSection("ARMY — CREW & MERCENARIES", crew.filter(c => c.active), root, "always", "stats", false);
         buildSection(`ARSENAL — ARMS${!forgeEnabled ? ' (FORGE OFFLINE)' : ''}`, arms.filter(a => a.active), root, forgeEnabled ? "always" : "never", "stats", false);
         if (equipTagged.length) buildSection(`ARSENAL — EQUIPMENT${!forgeEnabled ? ' (FORGE OFFLINE)' : ''}`, equipTagged, root, "partial", "stats", false);
-        buildSection("CREATURES — PLANETARY DEFENSE", creatures, root, "always", "stats", false);
-        buildSection(`SUPPLIES${!forgeEnabled ? ' (FORGE OFFLINE)' : ''}`, supplies, root, forgeEnabled ? "always" : "never", "reduction", false);
+        buildSection("CREATURES — PLANETARY DEFENSE", creatures, root, "partial", "stats", false);
+        buildSection(`SUPPLIES${!forgeEnabled ? ' (FORGE OFFLINE)' : ''}`, supplies, root, "partial", "reduction", false);
         if (services.length) buildSection("SERVICES — LAVA LUX HOTELS", services, root, "always", "missions", false);
         if (reserveCrew.length) buildSection("RESERVE — CREW & MERCS", reserveCrew, root, "never", "stats", false);
     }
@@ -1430,11 +1459,7 @@ function buildDivisions(divisions, root, forgeEnabled, creatures, supplies, serv
         cmdCol.appendChild(makeNFTCard(cmd, "always", "slots", false));
         body.appendChild(cmdCol);
 
-        // Unit cells (crew + optional arm + buff row)
-        const lavaLuxSvc    = services.find(s => s.atkMult > 1);
-        const lavaTargetName = lavaLuxSvc ? lavaLuxSvc.linkedItem : null;
-        const supplyMoveRed  = forgeEnabled ? supplies.reduce((s, x) => s + (x.moveCostReduction || 0), 0) : 0;
-
+        // Unit cells (crew + optional arm + per-unit buff row)
         if (div.units.length) {
             const unitsArea = document.createElement('div');
             unitsArea.className = 'division-units-area';
@@ -1448,19 +1473,18 @@ function buildDivisions(divisions, root, forgeEnabled, creatures, supplies, serv
                     cell.appendChild(sep);
                     cell.appendChild(makeNFTCard(unit.arm, "always", "stats", false));
                 }
-                // Buff indicators
+                // Buff indicators — each is 1:1 assigned to this unit
                 const buffParts = [];
-                if (creatures.length === 1) {
-                    buffParts.push(`<span class="ubuff ubuff-creature" title="${creatures[0].name}">🐾 ${creatures[0].name}</span>`);
-                } else if (creatures.length > 1) {
-                    buffParts.push(`<span class="ubuff ubuff-creature" title="${creatures.map(c=>c.name).join(', ')}">🐾 ×${creatures.length} CREATURES</span>`);
+                if (unit.creature) {
+                    buffParts.push(`<span class="ubuff ubuff-creature" title="${unit.creature.name}">🐾 ${unit.creature.name}</span>`);
                 }
-                if (supplyMoveRed > 0) {
-                    const supNames = supplies.filter(s => s.moveCostReduction).map(s => s.name).join(', ');
-                    buffParts.push(`<span class="ubuff ubuff-supply" title="${supNames}">▼ -${supplyMoveRed} MOVE</span>`);
+                if (unit.supply && unit.supply.moveCostReduction) {
+                    buffParts.push(`<span class="ubuff ubuff-supply" title="${unit.supply.name}">▼ -${unit.supply.moveCostReduction} MOVE</span>`);
+                } else if (unit.supply) {
+                    buffParts.push(`<span class="ubuff ubuff-supply" title="${unit.supply.name}">⚡ ${unit.supply.name}</span>`);
                 }
-                if (lavaTargetName && unit.crew.name === lavaTargetName) {
-                    buffParts.push(`<span class="ubuff ubuff-lava" title="${lavaLuxSvc.name}">✦ LAVA LUX</span>`);
+                if (unit.service) {
+                    buffParts.push(`<span class="ubuff ubuff-lava" title="${unit.service.name}">✦ LAVA LUX</span>`);
                 }
                 if (buffParts.length) {
                     const buffRow = document.createElement('div');
