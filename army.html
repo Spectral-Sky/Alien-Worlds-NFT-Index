@@ -629,6 +629,7 @@
             <div id="bd-arms" class="bd-row"><div class="bd-label">ARMS &amp; EQUIP</div><div class="bd-atk">—</div><div class="bd-def">—</div><div class="bd-move">—</div></div>
             <div id="bd-creat" class="bd-row"><div class="bd-label">CREATURES</div><div class="bd-atk">—</div><div class="bd-def">—</div><div class="bd-move">—</div></div>
             <div id="bd-sup" class="bd-row"><div class="bd-label">SUPPLIES</div><div class="bd-atk">—</div><div class="bd-def">—</div><div class="bd-move">—</div></div>
+            <div id="bd-faces" class="bd-row" style="display:none"><div class="bd-label">COMMANDERS</div><div class="bd-atk">—</div><div class="bd-def">—</div><div class="bd-move">—</div></div>
             <div id="bd-base" class="bd-row bd-sub"><div class="bd-label">BASE</div><div class="bd-atk">—</div><div class="bd-def">—</div><div class="bd-move">—</div></div>
             <div id="bd-lava" class="bd-row bd-mult" style="display:none"><div class="bd-label">LAVA LUX</div><div class="bd-atk">—</div><div class="bd-def">—</div><div class="bd-move">—</div></div>
             <div id="bd-total" class="bd-row bd-total"><div class="bd-label">TOTAL</div><div class="bd-atk">—</div><div class="bd-def">—</div><div class="bd-move">—</div></div>
@@ -884,6 +885,13 @@ async function sendTip() {
 // ── Army optimizer constants ─────────────────────────────────────────────────
 const SHINE_MULT = {
     "stone": 1, "gold": 3, "stardust": 5, "antimatter": 7, "xdimension": 9
+};
+// Flat move-cost reduction granted by a shined commander (Face Era guide)
+const FACE_SHINE_REDUCTION = {
+    "common":    { "gold": 10,  "stardust": 15 },
+    "rare":      { "gold": 20,  "stardust": 30,  "antimatter": 40,  "xdimension": 50  },
+    "epic":      { "gold": 40,  "stardust": 60,  "antimatter": 80,  "xdimension": 100 },
+    "legendary": { "gold": 80,  "stardust": 120, "antimatter": 160, "xdimension": 200 },
 };
 const RARITY_BONUS = {
     "mythical": 50, "mythic": 50, "legendary": 25,
@@ -1167,13 +1175,16 @@ function processData(data) {
     const finalAtk = Math.round((baseAtk - lavaTargetAtk) + lavaTargetAtk * lavaLuxAtkMult);
     const finalDef = Math.round((baseDef - lavaTargetDef) + lavaTargetDef * lavaLuxDefMult);
 
-    // Move time: 3h base + (10s × each active crew moveCost) − (10s × each supply moveCostReduction)
-    const BASE_MOVE_SECS = 3 * 60 * 60;
-    const crewMoveSecs   = activeCrew.reduce((s, c) => s + (c.moveCost || 0) * 10, 0);
-    const supplyRedSecs  = forgeEnabled ? supplies.reduce((s, c) => s + (c.moveCostReduction || 0) * 10, 0) : 0;
+    // Move time: 3h base + (10s × each active crew moveCost) − reductions
+    const BASE_MOVE_SECS  = 3 * 60 * 60;
+    const crewMoveSecs    = activeCrew.reduce((s, c) => s + (c.moveCost || 0) * 10, 0);
+    const supplyRedSecs   = forgeEnabled ? supplies.reduce((s, c) => s + (c.moveCostReduction || 0) * 10, 0) : 0;
+    // Face shine: each shined commander reduces the division's total move cost (flat, cumulative)
+    const faceShineRed    = faces.reduce((s, f) => s + ((FACE_SHINE_REDUCTION[f.rarity] || {})[f.shine] || 0), 0);
+    const faceShineRedSecs = faceShineRed * 10;
     // Lava Lux move cost: only the target unit's move cost contribution is multiplied
-    const lavaMoveDelta  = lavaTargetMove * 10 * (lavaLuxMoveMult - 1);
-    const totalMoveSecs  = Math.max(0, Math.round(BASE_MOVE_SECS + crewMoveSecs - supplyRedSecs + lavaMoveDelta));
+    const lavaMoveDelta   = lavaTargetMove * 10 * (lavaLuxMoveMult - 1);
+    const totalMoveSecs   = Math.max(0, Math.round(BASE_MOVE_SECS + crewMoveSecs - supplyRedSecs - faceShineRedSecs + lavaMoveDelta));
     const moveH = Math.floor(totalMoveSecs / 3600);
     const moveM = Math.floor((totalMoveSecs % 3600) / 60);
 
@@ -1207,7 +1218,13 @@ function processData(data) {
     bdSet('bd-arms',  'ARMS & EQUIP'+(forgeEnabled?'':' (OFFLINE)'), pm(armsAtk), pm(armsDef), '—');
     bdSet('bd-creat', 'CREATURES',                 pm(creatAtk), pm(creatDef), '—');
     bdSet('bd-sup',   'SUPPLIES',                  pm(supAtk),   pm(supDef),   neg(supplyRedSecs));
-    bdSet('bd-base',  'BASE',                      baseAtk.toLocaleString(), baseDef.toLocaleString(), hm(BASE_MOVE_SECS + crewMoveSecs - supplyRedSecs));
+    const facesEl = document.getElementById('bd-faces');
+    if (faceShineRed > 0 && facesEl) {
+        facesEl.style.display = 'contents';
+        const shineLabel = 'COMMANDERS ✦ SHINE (' + faceShineRed + ')';
+        bdSet('bd-faces', shineLabel, '—', '—', '-' + Math.round(faceShineRedSecs/60) + 'm');
+    } else if (facesEl) { facesEl.style.display = 'none'; }
+    bdSet('bd-base',  'BASE',                      baseAtk.toLocaleString(), baseDef.toLocaleString(), hm(BASE_MOVE_SECS + crewMoveSecs - supplyRedSecs - faceShineRedSecs));
     const lavaEl = document.getElementById('bd-lava');
     if (lavaLuxAtkMult > 1 && lavaEl) {
         lavaEl.style.display = 'contents';
@@ -1379,6 +1396,8 @@ function buildSection(title, list, root, activeMode, type, showStatus = true) {
         let subText = "";
         if (type === "slots") {
             subText = `${Math.floor(item.slots || 0)} SLOTS`;
+            const shineRed = (FACE_SHINE_REDUCTION[item.rarity] || {})[item.shine] || 0;
+            if (shineRed > 0) subText += `<br><span style="color:var(--shine-${item.shine},#888)">✦ -${shineRed} MOVE</span>`;
         } else if (type === "stats") {
             subText = `<span style="color:#ff4444">⚔ ${Math.floor(item.atk)}</span> &nbsp;|&nbsp; <span style="color:#4488ff">🛡 ${Math.floor(item.def)}</span>`;
             if (item.moveCost) subText += `<br><span class="card-move-cost">&gt;&gt; ${item.moveCost}</span>`;
