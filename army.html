@@ -741,7 +741,7 @@
         <div class="stat-box">EST. >> TIME<span class="stat-val val-move" id="totalMoveTime">—</span></div>
     </div>
     <button id="breakdown-btn" class="cyber-btn" onclick="toggleBreakdown()" style="display:none;">∑ SCORE BREAKDOWN</button>
-    <button id="view-toggle-btn" class="cyber-btn" onclick="toggleArmyView()" style="display:none;">⊞ DIVISIONS</button>
+    <button id="view-toggle-btn" class="cyber-btn div-active" onclick="toggleArmyView()" style="display:none;">☰ ARMY VIEW</button>
     <button id="empty-div-btn" class="cyber-btn" onclick="toggleEmptyDivisions()" style="display:none;">▶ SHOW EMPTY DIVISIONS</button>
     <button class="cyber-btn" onclick="adjustFontSize(1)" title="Increase font size" style="padding:8px 11px;letter-spacing:0">A+</button>
     <button class="cyber-btn" onclick="adjustFontSize(-1)" title="Decrease font size" style="padding:8px 11px;letter-spacing:0">A−</button>
@@ -810,6 +810,11 @@
     </div>
 
 </div><!-- end .page-wrap -->
+
+<!-- ══ IMAGE ZOOM OVERLAY ════════════════════════════════════════════════════ -->
+<div id="img-zoom-overlay" onclick="closeImgZoom()" style="display:none;position:fixed;inset:0;z-index:99997;background:rgba(0,0,0,0.9);align-items:center;justify-content:center;cursor:zoom-out;">
+    <img id="img-zoom-el" style="max-width:min(512px,90vw);max-height:90vh;object-fit:contain;border:2px solid rgba(255,170,0,0.35);pointer-events:none;">
+</div>
 
 <!-- ══ CHEST MODAL ═══════════════════════════════════════════════════════════ -->
 <div id="chest-modal-backdrop">
@@ -1041,7 +1046,7 @@ const RARITY_GRADIENTS = {
 // PD Equipment template IDs (Gadgets, Weapons, Protection)
 // Desktop gets full-res/animated IPFS source; mobile gets wsrv.nl thumbnail
 const IS_MOBILE = window.innerWidth < 768 || window.matchMedia('(pointer: coarse)').matches;
-let armyViewMode = 'army'; // 'army' | 'divisions'
+let armyViewMode = 'divisions'; // 'army' | 'divisions'
 
 function toggleArmyView() {
     armyViewMode = armyViewMode === 'army' ? 'divisions' : 'army';
@@ -1449,7 +1454,11 @@ function render(faces, crew, arms, creatures, supplies, equipment, services, for
 
     const hasDivisions = divisions && divisions.length > 0;
     const vtBtn = document.getElementById('view-toggle-btn');
-    if (vtBtn) vtBtn.style.display = hasDivisions ? 'inline-block' : 'none';
+    if (vtBtn) {
+        vtBtn.style.display = hasDivisions ? 'inline-block' : 'none';
+        vtBtn.textContent = armyViewMode === 'army' ? '⊞ DIVISIONS' : '☰ ARMY VIEW';
+        vtBtn.classList.toggle('div-active', armyViewMode === 'divisions');
+    }
     const emptyBtn = document.getElementById('empty-div-btn');
     if (emptyBtn) {
         const inDivView = hasDivisions && armyViewMode === 'divisions';
@@ -1753,6 +1762,16 @@ function makeNFTCard(item, activeMode, type, showStatus) {
                 ${item.asset_id ? `<a class="cb-link" style="margin-top:2px" href="https://wax.atomichub.io/explorer/asset/wax-mainnet/${item.asset_id}" target="_blank" onclick="event.stopPropagation()">asset #${item.asset_id}</a>` : ''}
             </div>
         </div>`;
+    if (imgHash) {
+        const imgEl = card.querySelector('img');
+        if (imgEl) {
+            imgEl.style.cursor = 'zoom-in';
+            imgEl.addEventListener('click', e => {
+                e.stopPropagation();
+                openImgZoom(`https://wsrv.nl/?url=${encodeURIComponent('ipfs.io/ipfs/' + imgHash)}&w=512&h=512&fit=contain`);
+            });
+        }
+    }
     card.addEventListener('click', e => {
         if (e.target.closest('a')) return;
         const wasFlipped = card.classList.contains('card-flipped');
@@ -1937,6 +1956,14 @@ async function fetchChest(id, log, linkWrap, linkEl, emptyEl) {
 function closeChestModal() {
     document.getElementById("chest-modal-backdrop").classList.remove("active");
 }
+function openImgZoom(src) {
+    document.getElementById('img-zoom-el').src = src;
+    document.getElementById('img-zoom-overlay').style.display = 'flex';
+}
+function closeImgZoom() {
+    document.getElementById('img-zoom-overlay').style.display = 'none';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeImgZoom(); });
 document.getElementById("chest-modal-backdrop").addEventListener("click", function(e) {
     if (e.target === this) closeChestModal();
 });
