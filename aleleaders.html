@@ -99,6 +99,10 @@
     .rank-2  td:first-child { color:#c0c0c0; }
     .rank-3  td:first-child { color:#cd7f32; }
     .zero { color:#2a3040 !important; }
+    .nft-cell { text-align:left; white-space:nowrap; padding:4px 8px; }
+    .nft-th { text-align:left; cursor:default !important; }
+    .nft-thumb { width:34px; height:34px; object-fit:cover; border-radius:3px; border:1px solid rgba(255,255,255,0.08); vertical-align:middle; margin-right:3px; background:#0a0d1a; }
+    .nft-thumb:last-child { margin-right:0; }
 
     /* EMPTY / ERROR */
     .lb-empty { padding:40px 28px; text-align:center; font-size:0.75em; color:var(--muted); letter-spacing:2px; }
@@ -251,6 +255,8 @@
     var _sortKey     = 'dungeons_won';
     var _sortDir     = 1; // 1 = desc for numeric, asc alpha for tag
     var _extraCols   = []; // discovered permstats keys not in COLUMNS
+    var _templateImgCache = {};
+    try { _templateImgCache = JSON.parse(localStorage.getItem('ale_lb_templates') || '{}'); } catch(e) {}
 
     var COL_GROUPS = {
         actions: [
@@ -312,6 +318,21 @@
     }
 
     // ── FLATTEN ROW ──────────────────────────────────────────────────────────
+    function extractNFTs(row) {
+        var nfts = { armsTemplate: null, crewTemplate: null };
+        Object.keys(row).forEach(function(field) {
+            if (field === 'permstats') return;
+            var v = row[field];
+            if (Array.isArray(v) && v.length && v[0] && typeof v[0] === 'object' && 'first' in v[0]) {
+                v.forEach(function(item) {
+                    if (item.first === 'arms.worlds.template_id') nfts.armsTemplate = String(item.second);
+                    if (item.first === 'crew.worlds.template_id') nfts.crewTemplate = String(item.second);
+                });
+            }
+        });
+        return nfts;
+    }
+
     function flattenPlayer(row) {
         var perm = {};
         if (row.permstats) {
@@ -326,7 +347,8 @@
                 credits:       Number(active.credits       || 0),
                 gems:          Number(active.gems          || 0),
                 action_points: Number(active.action_points || 0),
-            }
+            },
+            nfts: extractNFTs(row),
         };
     }
 
@@ -365,6 +387,44 @@
             return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
         }
         return v.toLocaleString();
+    }
+
+    // ── BATTLE NFT TEMPLATE IMAGES ───────────────────────────────────────────
+    async function fetchTemplateImages(templateIds) {
+        var needed = templateIds.filter(function(id) { return id && !_templateImgCache[id]; });
+        if (!needed.length) return;
+        for (var i = 0; i < needed.length; i += 100) {
+            var chunk = needed.slice(i, i + 100);
+            try {
+                var r = await fetch('https://wax.api.atomicassets.io/atomicassets/v1/templates?collection_name=alien.worlds&ids=' + chunk.join(',') + '&limit=100');
+                if (!r.ok) continue;
+                var data = await r.json();
+                (data.data || []).forEach(function(t) {
+                    var img = t.immutable_data && t.immutable_data.img;
+                    if (img) _templateImgCache[String(t.template_id)] = 'https://atomichub-ipfs.com/ipfs/' + img;
+                });
+            } catch(e) {}
+        }
+        try { localStorage.setItem('ale_lb_templates', JSON.stringify(_templateImgCache)); } catch(e) {}
+    }
+
+    function refreshNFTImages() {
+        document.querySelectorAll('img.nft-thumb[data-tid]').forEach(function(img) {
+            var url = _templateImgCache[img.dataset.tid];
+            if (url) img.src = url;
+        });
+    }
+
+    function collectTemplateIds(players) {
+        var seen = {}, ids = [];
+        players.forEach(function(fp) {
+            if (fp.nfts) {
+                [fp.nfts.armsTemplate, fp.nfts.crewTemplate].forEach(function(tid) {
+                    if (tid && !seen[tid]) { seen[tid] = true; ids.push(tid); }
+                });
+            }
+        });
+        return ids;
     }
 
     // ── DISCOVER EXTRA COLUMNS ───────────────────────────────────────────────
@@ -481,7 +541,8 @@
 
         // thead
         var thHtml = '<tr><th onclick="sortBy(\'rank\')" id="th-rank">#</th>' +
-            '<th onclick="sortBy(\'tag\')" id="th-tag" class="' + sortClass('tag') + '" title="wallet / playertag">PLAYER</th>';
+            '<th onclick="sortBy(\'tag\')" id="th-tag" class="' + sortClass('tag') + '" title="wallet / playertag">PLAYER</th>' +
+            '<th class="nft-th" title="Equipped battle NFTs (arms + crew)">BATTLE NFTs</th>';
         visCols.forEach(function(c) {
             thHtml += '<th onclick="sortBy(\'' + c.key + '\')" id="th-' + c.key + '" class="' + sortClass(c.key) + '" title="' + (c.title || (c.key + ' (' + c.src + ')')) + '">' +
                 c.label.toUpperCase() + '</th>';
@@ -498,6 +559,17 @@
             rows += '<tr class="' + rankCls + ' ' + meCls + '">';
             rows += '<td>' + rank + '</td>';
             rows += '<td>' + escHtml(fp.tag) + '</td>';
+            var nftCell = '<td class="nft-cell">';
+            if (fp.nfts && fp.nfts.armsTemplate) {
+                var aUrl = _templateImgCache[fp.nfts.armsTemplate] || '';
+                nftCell += '<img class="nft-thumb" data-tid="' + fp.nfts.armsTemplate + '"' + (aUrl ? ' src="' + aUrl + '"' : '') + ' title="Arms (template ' + fp.nfts.armsTemplate + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
+            }
+            if (fp.nfts && fp.nfts.crewTemplate) {
+                var cUrl = _templateImgCache[fp.nfts.crewTemplate] || '';
+                nftCell += '<img class="nft-thumb" data-tid="' + fp.nfts.crewTemplate + '"' + (cUrl ? ' src="' + cUrl + '"' : '') + ' title="Crew (template ' + fp.nfts.crewTemplate + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
+            }
+            nftCell += '</td>';
+            rows += nftCell;
             visCols.forEach(function(c) {
                 var v = getVal(fp, c.key, c.src);
                 rows += '<td class="' + (v === 0 || v === null ? 'zero' : '') + '">' + formatVal(c.key, v) + '</td>';
@@ -594,6 +666,7 @@
                     renderTable();
                     setCacheInfo(cached.ts, cached.players.length);
                     btn.disabled = false;
+                    fetchTemplateImages(collectTemplateIds(_allPlayers)).then(refreshNFTImages);
                     return;
                 }
             } catch(e) {}
@@ -618,6 +691,7 @@
             initVisibility();
             buildColToggles();
             renderTable();
+            fetchTemplateImages(collectTemplateIds(_allPlayers)).then(refreshNFTImages);
 
             var ts = Date.now();
             localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: ts, players: _allPlayers }));
