@@ -190,36 +190,58 @@
     // src: 'perm' = permstats key | 'active' = activestats key | 'tag' = player tag
     var COLUMNS = [
         // Dungeons
-        { key:'dungeons_won',          label:'Dungeons Won',    src:'perm',   def:true  },
-        { key:'dungeons_played',       label:'Dungeons Played', src:'perm',   def:false },
-        { key:'dungeon_win_rate',      label:'Dungeon Win %',   src:'calc',   def:true,  title:'dungeons_won ÷ dungeons_played × 100' },
+        { key:'dungeons_won',               label:'Dungeons Won',            src:'perm',   def:true  },
+        { key:'dungeons_played',            label:'Dungeons Played',         src:'perm',   def:false },
+        { key:'dungeon_win_rate',           label:'Dungeon Win %',           src:'calc',   def:true,  title:'dungeons_won ÷ dungeons_played × 100' },
+        { key:'dungeon_leaderboard_claims', label:'LB Claims',               src:'perm',   def:false },
+        { key:'total_dungeon_difficulty',   label:'Total Difficulty',        src:'perm',   def:false },
         // Arenas
-        { key:'arenas_won',            label:'Arenas Won',      src:'perm',   def:true  },
-        { key:'arenas_played',         label:'Arenas Played',   src:'perm',   def:false },
-        { key:'arena_win_rate',        label:'Arena Win %',     src:'calc',   def:true,  title:'arenas_won ÷ arenas_played × 100' },
+        { key:'arenas_won',                 label:'Arenas Won',              src:'perm',   def:true  },
+        { key:'arenas_played',              label:'Arenas Played',           src:'perm',   def:false },
+        { key:'arena_win_rate',             label:'Arena Win %',             src:'calc',   def:true,  title:'arenas_won ÷ arenas_played × 100' },
         // Travel
-        { key:'portals_used',          label:'Portals',         src:'perm',   def:true  },
-        { key:'total_travel_distance', label:'Travel',          src:'perm',   def:true  },
+        { key:'portals_used',               label:'Portals',                 src:'perm',   def:true  },
+        { key:'total_travel_distance',      label:'Travel',                  src:'perm',   def:true  },
         // Fighters
-        { key:'recruits',              label:'Recruited',       src:'perm',   def:true  },
-        { key:'fighters_sold',         label:'Sold',            src:'perm',   def:false },
-        { key:'level_ups',             label:'Lvl Ups',         src:'perm',   def:false },
-        { key:'nfts_staked',           label:'Staked',          src:'perm',   def:false },
-        // Quests / Buildings
-        { key:'quests_completed',      label:'Quests',          src:'perm',   def:true  },
-        { key:'buildings_constructed', label:'Buildings',       src:'perm',   def:false },
-        // Credits (lifetime then current)
-        { key:'credits_gained',        label:'Credits',              src:'perm',   def:true  },
-        { key:'credits',               label:'Cur Credits',          src:'active', def:false },
-        // Farming credits
-        { key:'alf_credits',           label:'Farming Credits',      src:'perm',   def:false },
-        { key:'alf_credits_claimed',   label:'Farming Credits Claimed', src:'perm', def:false },
-        // Gems (lifetime then current)
-        { key:'gems_gained',           label:'Gems',            src:'perm',   def:true  },
-        { key:'gems',                  label:'Cur Gems',        src:'active', def:false },
-        // Energy (lifetime then current)
-        { key:'energy_gained',         label:'Total Energy',    src:'perm',   def:false },
-        { key:'action_points',         label:'Cur Energy',      src:'active', def:false },
+        { key:'recruits',                   label:'Recruited',               src:'perm',   def:true  },
+        { key:'energy_saved_recruiting',    label:'Energy Saved (Recruit)',  src:'perm',   def:false },
+        { key:'fighters_sold',              label:'Sold',                    src:'perm',   def:false },
+        { key:'level_ups',                  label:'Lvl Ups',                 src:'perm',   def:false },
+        { key:'ascensions_completed',       label:'Ascensions',              src:'perm',   def:false },
+        { key:'nfts_staked',                label:'Staked',                  src:'perm',   def:false },
+        // Combat
+        { key:'damage_dealt',               label:'Damage Dealt',            src:'perm',   def:false },
+        { key:'damage_taken',               label:'Damage Taken',            src:'perm',   def:false },
+        { key:'damage_blocked',             label:'Damage Blocked',          src:'perm',   def:false },
+        { key:'damage_blocked_by_enemy',    label:'Enemy Dmg Blocked',       src:'perm',   def:false },
+        { key:'knockouts',                  label:'Knockouts',               src:'perm',   def:false },
+        // Quests
+        { key:'quests_completed',           label:'Quests',                  src:'perm',   def:true  },
+        { key:'quests_rerolled',            label:'Quests Rerolled',         src:'perm',   def:false },
+        // Construction
+        { key:'buildings_constructed',      label:'Buildings',               src:'perm',   def:false },
+        { key:'arenas_constructed',         label:'Arenas Built',            src:'perm',   def:false },
+        { key:'dungeons_constructed',       label:'Dungeons Built',          src:'perm',   def:false },
+        { key:'taverns_constructed',        label:'Taverns Built',           src:'perm',   def:false },
+        { key:'boosting_applied',           label:'Boosts Applied',          src:'perm',   def:false },
+        // Misc
+        { key:'premium_account_months',     label:'Premium Months',          src:'perm',   def:false },
+        // Credits
+        { key:'credits_gained',             label:'Credits',                 src:'perm',   def:true  },
+        { key:'credits',                    label:'Cur Credits',             src:'active', def:false },
+        { key:'alf_credits',                label:'Farming Credits',         src:'perm',   def:false },
+        { key:'alf_credits_claimed',        label:'Farming Credits Claimed', src:'perm',   def:false },
+        // Gems
+        { key:'gems_gained',                label:'Gems',                    src:'perm',   def:true  },
+        { key:'gems',                       label:'Cur Gems',                src:'active', def:false },
+        { key:'gems_in_candle',             label:'Gems in Candle',          src:'perm',   def:false },
+        // Energy
+        { key:'energy_gained',              label:'Total Energy',            src:'perm',   def:false },
+        { key:'action_points',              label:'Cur Energy',              src:'active', def:false },
+        // Token currencies
+        { key:'shards_earned',              label:'Shards',                  src:'perm',   def:false },
+        { key:'tlm_earned',                 label:'TLM Earned',              src:'perm',   def:false },
+        { key:'wax_earned',                 label:'WAX Earned',              src:'perm',   def:false },
     ];
 
     // visible set (keys)
@@ -227,14 +249,26 @@
     var _allPlayers  = [];
     var _filtered    = [];
     var _sortKey     = 'dungeons_won';
-    var _sortDir     = -1; // -1 = desc
+    var _sortDir     = 1; // 1 = desc for numeric, asc alpha for tag
     var _extraCols   = []; // discovered permstats keys not in COLUMNS
 
     var COL_GROUPS = {
-        actions:    ['dungeons_won','dungeons_played','dungeon_win_rate','arenas_won','arenas_played','arena_win_rate',
-                     'portals_used','total_travel_distance','recruits','fighters_sold','quests_completed',
-                     'level_ups','nfts_staked','buildings_constructed'],
-        currencies: ['credits_gained','credits','alf_credits','alf_credits_claimed','gems_gained','gems','energy_gained','action_points'],
+        actions: [
+            'dungeons_won','dungeons_played','dungeon_win_rate','dungeon_leaderboard_claims','total_dungeon_difficulty',
+            'arenas_won','arenas_played','arena_win_rate',
+            'portals_used','total_travel_distance',
+            'recruits','energy_saved_recruiting','fighters_sold','level_ups','ascensions_completed','nfts_staked',
+            'damage_dealt','damage_taken','damage_blocked','damage_blocked_by_enemy','knockouts',
+            'quests_completed','quests_rerolled',
+            'buildings_constructed','arenas_constructed','dungeons_constructed','taverns_constructed','boosting_applied',
+            'premium_account_months',
+        ],
+        currencies: [
+            'credits_gained','credits','alf_credits','alf_credits_claimed',
+            'gems_gained','gems','gems_in_candle',
+            'energy_gained','action_points',
+            'shards_earned','tlm_earned','wax_earned',
+        ],
     };
 
     // ── API ──────────────────────────────────────────────────────────────────
@@ -489,7 +523,7 @@
             _sortDir = -_sortDir;
         } else {
             _sortKey = key;
-            _sortDir = key === 'tag' ? 1 : -1;
+            _sortDir = 1;
         }
         renderTable();
     };
