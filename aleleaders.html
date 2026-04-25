@@ -181,7 +181,7 @@
 
 <script>
 (function() {
-    var CACHE_KEY = 'ale_lb_data';
+    var CACHE_KEY = 'ale_lb_data_v2';
     var CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
     var WAX_ENDPOINTS = [
@@ -320,15 +320,24 @@
     // ── FLATTEN ROW ──────────────────────────────────────────────────────────
     function extractNFTs(row) {
         var nfts = { armsTemplate: null, crewTemplate: null };
+        function scanPairs(arr) {
+            arr.forEach(function(item) {
+                if (item && item.first === 'arms.worlds.template_id') nfts.armsTemplate = String(item.second);
+                if (item && item.first === 'crew.worlds.template_id') nfts.crewTemplate = String(item.second);
+            });
+        }
+        function scan(v) {
+            if (!v || typeof v !== 'object') return;
+            if (Array.isArray(v)) {
+                if (v.length && v[0] && typeof v[0] === 'object' && 'first' in v[0]) scanPairs(v);
+                else v.forEach(scan);
+            } else {
+                Object.keys(v).forEach(function(k) { scan(v[k]); });
+            }
+        }
         Object.keys(row).forEach(function(field) {
             if (field === 'permstats') return;
-            var v = row[field];
-            if (Array.isArray(v) && v.length && v[0] && typeof v[0] === 'object' && 'first' in v[0]) {
-                v.forEach(function(item) {
-                    if (item.first === 'arms.worlds.template_id') nfts.armsTemplate = String(item.second);
-                    if (item.first === 'crew.worlds.template_id') nfts.crewTemplate = String(item.second);
-                });
-            }
+            scan(row[field]);
         });
         return nfts;
     }
