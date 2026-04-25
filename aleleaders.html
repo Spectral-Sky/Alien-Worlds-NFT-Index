@@ -103,6 +103,7 @@
     .nft-th { text-align:left; cursor:default !important; }
     .nft-thumb { width:34px; height:34px; object-fit:cover; border-radius:3px; border:1px solid rgba(255,255,255,0.08); vertical-align:middle; margin-right:3px; background:#0a0d1a; }
     .nft-thumb:last-child { margin-right:0; }
+    .nft-sep { display:inline-block; width:1px; height:28px; background:rgba(255,255,255,0.1); vertical-align:middle; margin:0 4px; }
 
     /* EMPTY / ERROR */
     .lb-empty { padding:40px 28px; text-align:center; font-size:0.75em; color:var(--muted); letter-spacing:2px; }
@@ -256,7 +257,9 @@
     var _sortDir     = 1; // 1 = desc for numeric, asc alpha for tag
     var _extraCols   = []; // discovered permstats keys not in COLUMNS
     var _templateImgCache = {};
+    var _assetImgCache = {};
     try { _templateImgCache = JSON.parse(localStorage.getItem('ale_lb_templates') || '{}'); } catch(e) {}
+    try { _assetImgCache   = JSON.parse(localStorage.getItem('ale_lb_assets')    || '{}'); } catch(e) {}
 
     var COL_GROUPS = {
         actions: [
@@ -319,26 +322,14 @@
 
     // ── FLATTEN ROW ──────────────────────────────────────────────────────────
     function extractNFTs(row) {
-        var nfts = { armsTemplate: null, crewTemplate: null };
-        function scanPairs(arr) {
-            arr.forEach(function(item) {
-                if (item && item.first === 'arms.worlds.template_id') nfts.armsTemplate = String(item.second);
-                if (item && item.first === 'crew.worlds.template_id') nfts.crewTemplate = String(item.second);
-            });
-        }
-        function scan(v) {
-            if (!v || typeof v !== 'object') return;
-            if (Array.isArray(v)) {
-                if (v.length && v[0] && typeof v[0] === 'object' && 'first' in v[0]) scanPairs(v);
-                else v.forEach(scan);
-            } else {
-                Object.keys(v).forEach(function(k) { scan(v[k]); });
-            }
-        }
-        Object.keys(row).forEach(function(field) {
-            if (field === 'permstats') return;
-            scan(row[field]);
+        var nfts = { armsTemplate: null, crewTemplate: null, mineAssets: [] };
+        // battle_nfts: [{first:'arms.worlds.template_id', second:19607}, ...]
+        (row.battle_nfts || []).forEach(function(item) {
+            if (item.first === 'arms.worlds.template_id') nfts.armsTemplate = String(item.second);
+            if (item.first === 'crew.worlds.template_id') nfts.crewTemplate = String(item.second);
         });
+        // mine_nfts: ["1099527218421", ...]
+        nfts.mineAssets = (row.mine_nfts || []).map(String).filter(Boolean);
         return nfts;
     }
 
@@ -417,9 +408,32 @@
         try { localStorage.setItem('ale_lb_templates', JSON.stringify(_templateImgCache)); } catch(e) {}
     }
 
+    async function fetchAssetImages(assetIds) {
+        var needed = assetIds.filter(function(id) { return id && !_assetImgCache[id]; });
+        if (!needed.length) return;
+        for (var i = 0; i < needed.length; i += 100) {
+            var chunk = needed.slice(i, i + 100);
+            try {
+                var r = await fetch('https://wax.api.atomicassets.io/atomicassets/v1/assets?ids=' + chunk.join(',') + '&limit=100');
+                if (!r.ok) continue;
+                var data = await r.json();
+                (data.data || []).forEach(function(a) {
+                    var img = (a.template && a.template.immutable_data && a.template.immutable_data.img) ||
+                              (a.immutable_data && a.immutable_data.img);
+                    if (img) _assetImgCache[String(a.asset_id)] = 'https://atomichub-ipfs.com/ipfs/' + img;
+                });
+            } catch(e) {}
+        }
+        try { localStorage.setItem('ale_lb_assets', JSON.stringify(_assetImgCache)); } catch(e) {}
+    }
+
     function refreshNFTImages() {
         document.querySelectorAll('img.nft-thumb[data-tid]').forEach(function(img) {
             var url = _templateImgCache[img.dataset.tid];
+            if (url) img.src = url;
+        });
+        document.querySelectorAll('img.nft-thumb[data-aid]').forEach(function(img) {
+            var url = _assetImgCache[img.dataset.aid];
             if (url) img.src = url;
         });
     }
@@ -430,6 +444,18 @@
             if (fp.nfts) {
                 [fp.nfts.armsTemplate, fp.nfts.crewTemplate].forEach(function(tid) {
                     if (tid && !seen[tid]) { seen[tid] = true; ids.push(tid); }
+                });
+            }
+        });
+        return ids;
+    }
+
+    function collectAssetIds(players) {
+        var seen = {}, ids = [];
+        players.forEach(function(fp) {
+            if (fp.nfts && fp.nfts.mineAssets) {
+                fp.nfts.mineAssets.forEach(function(id) {
+                    if (id && !seen[id]) { seen[id] = true; ids.push(id); }
                 });
             }
         });
@@ -551,7 +577,7 @@
         // thead
         var thHtml = '<tr><th onclick="sortBy(\'rank\')" id="th-rank">#</th>' +
             '<th onclick="sortBy(\'tag\')" id="th-tag" class="' + sortClass('tag') + '" title="wallet / playertag">PLAYER</th>' +
-            '<th class="nft-th" title="Equipped battle NFTs (arms + crew)">BATTLE NFTs</th>';
+            '<th class="nft-th" title="Battle NFTs (arms + crew) and Mine NFTs (tools)">NFTs</th>';
         visCols.forEach(function(c) {
             thHtml += '<th onclick="sortBy(\'' + c.key + '\')" id="th-' + c.key + '" class="' + sortClass(c.key) + '" title="' + (c.title || (c.key + ' (' + c.src + ')')) + '">' +
                 c.label.toUpperCase() + '</th>';
@@ -569,6 +595,7 @@
             rows += '<td>' + rank + '</td>';
             rows += '<td>' + escHtml(fp.tag) + '</td>';
             var nftCell = '<td class="nft-cell">';
+            var hasBattle = fp.nfts && (fp.nfts.armsTemplate || fp.nfts.crewTemplate);
             if (fp.nfts && fp.nfts.armsTemplate) {
                 var aUrl = _templateImgCache[fp.nfts.armsTemplate] || '';
                 nftCell += '<img class="nft-thumb" data-tid="' + fp.nfts.armsTemplate + '"' + (aUrl ? ' src="' + aUrl + '"' : '') + ' title="Arms (template ' + fp.nfts.armsTemplate + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
@@ -576,6 +603,13 @@
             if (fp.nfts && fp.nfts.crewTemplate) {
                 var cUrl = _templateImgCache[fp.nfts.crewTemplate] || '';
                 nftCell += '<img class="nft-thumb" data-tid="' + fp.nfts.crewTemplate + '"' + (cUrl ? ' src="' + cUrl + '"' : '') + ' title="Crew (template ' + fp.nfts.crewTemplate + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
+            }
+            if (fp.nfts && fp.nfts.mineAssets && fp.nfts.mineAssets.length) {
+                if (hasBattle) nftCell += '<span class="nft-sep"></span>';
+                fp.nfts.mineAssets.forEach(function(aid) {
+                    var mUrl = _assetImgCache[aid] || '';
+                    nftCell += '<img class="nft-thumb" data-aid="' + aid + '"' + (mUrl ? ' src="' + mUrl + '"' : '') + ' title="Mine tool (asset ' + aid + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
+                });
             }
             nftCell += '</td>';
             rows += nftCell;
@@ -675,7 +709,9 @@
                     renderTable();
                     setCacheInfo(cached.ts, cached.players.length);
                     btn.disabled = false;
-                    fetchTemplateImages(collectTemplateIds(_allPlayers)).then(refreshNFTImages);
+                    fetchTemplateImages(collectTemplateIds(_allPlayers))
+                        .then(function() { return fetchAssetImages(collectAssetIds(_allPlayers)); })
+                        .then(refreshNFTImages);
                     return;
                 }
             } catch(e) {}
@@ -700,7 +736,9 @@
             initVisibility();
             buildColToggles();
             renderTable();
-            fetchTemplateImages(collectTemplateIds(_allPlayers)).then(refreshNFTImages);
+            fetchTemplateImages(collectTemplateIds(_allPlayers))
+                .then(function() { return fetchAssetImages(collectAssetIds(_allPlayers)); })
+                .then(refreshNFTImages);
 
             var ts = Date.now();
             localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: ts, players: _allPlayers }));
