@@ -199,9 +199,9 @@
         { key:'arena_win_rate',        label:'Arena Win %',     src:'calc',   def:true,  title:'arenas_won ÷ arenas_played × 100' },
         // Travel
         { key:'portals_used',          label:'Portals',         src:'perm',   def:true  },
-        { key:'travel_distance',       label:'Travel',          src:'perm',   def:true  },
+        { key:'total_travel_distance', label:'Travel',          src:'perm',   def:true  },
         // Fighters
-        { key:'fighters_recruited',    label:'Recruited',       src:'perm',   def:true  },
+        { key:'recruits',              label:'Recruited',       src:'perm',   def:true  },
         { key:'fighters_sold',         label:'Sold',            src:'perm',   def:false },
         { key:'level_ups',             label:'Lvl Ups',         src:'perm',   def:false },
         { key:'nfts_staked',           label:'Staked',          src:'perm',   def:false },
@@ -232,7 +232,7 @@
 
     var COL_GROUPS = {
         actions:    ['dungeons_won','dungeons_played','dungeon_win_rate','arenas_won','arenas_played','arena_win_rate',
-                     'portals_used','travel_distance','fighters_recruited','fighters_sold','quests_completed',
+                     'portals_used','total_travel_distance','recruits','fighters_sold','quests_completed',
                      'level_ups','nfts_staked','buildings_constructed'],
         currencies: ['credits_gained','credits','alf_credits','alf_credits_claimed','gems_gained','gems','energy_gained','action_points'],
     };
