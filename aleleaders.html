@@ -118,6 +118,16 @@
     .nft-thumb { width:32px; height:45px; object-fit:cover; object-position:center top; border-radius:3px; border:1px solid rgba(255,255,255,0.1); vertical-align:middle; margin-right:3px; background:#0a0d1a; }
     .nft-thumb:last-child { margin-right:0; }
 
+    /* COMPARE SNAPSHOT */
+    .col-toggle-teal { border-color:rgba(40,180,170,0.45); color:#38c8b8; }
+    .col-toggle-teal:hover { background:rgba(40,180,170,0.1); border-color:#38c8b8; color:#50ddd0; }
+    .col-toggle-teal.on { border-color:#38c8b8; color:#38c8b8; background:rgba(40,180,170,0.12); }
+    .snap-age { font-size:0.6em; color:var(--muted); letter-spacing:1px; align-self:center; white-space:nowrap; }
+    .snap-delta { font-size:0.68em; margin-left:4px; letter-spacing:0; }
+    .snap-pos { color:#38c870; }
+    .snap-neg { color:#e05858; }
+    .snap-new { color:#5898e8; letter-spacing:1px; }
+
     /* EMPTY / ERROR */
     .lb-empty { padding:40px 28px; text-align:center; font-size:0.75em; color:var(--muted); letter-spacing:2px; }
 
@@ -275,6 +285,70 @@
     var _assetInfoCache = {};
     try { _templateRarityCache = JSON.parse(localStorage.getItem('ale_lb_tpl_rarity')  || '{}'); } catch(e) {}
     try { _assetInfoCache      = JSON.parse(localStorage.getItem('ale_lb_asset_info')   || '{}'); } catch(e) {}
+
+    // ── COMPARE SNAPSHOTS ────────────────────────────────────────────────────
+    var SNAP_KEYS = { daily: 'ale_lb_snap_d_v1', weekly: 'ale_lb_snap_w_v1', monthly: 'ale_lb_snap_m_v1' };
+    var SNAP_TTL  = { daily: 20 * 3600e3, weekly: 6 * 86400e3, monthly: 25 * 86400e3 };
+    var _snapDaily = null, _snapWeekly = null, _snapMonthly = null;
+    var _snapMode  = null; // null | 'daily' | 'weekly' | 'monthly'
+
+    function loadSnaps() {
+        try { _snapDaily   = JSON.parse(localStorage.getItem(SNAP_KEYS.daily)   || 'null'); } catch(e) {}
+        try { _snapWeekly  = JSON.parse(localStorage.getItem(SNAP_KEYS.weekly)  || 'null'); } catch(e) {}
+        try { _snapMonthly = JSON.parse(localStorage.getItem(SNAP_KEYS.monthly) || 'null'); } catch(e) {}
+    }
+
+    function buildSnapEntry(fp) {
+        var e = Object.assign({}, fp.perm);
+        e.credits = fp.active.credits; e.gems = fp.active.gems; e.action_points = fp.active.action_points;
+        return e;
+    }
+
+    function autoSaveSnaps() {
+        var now = Date.now();
+        var snapData = null;
+        function getData() {
+            if (!snapData) {
+                snapData = {};
+                _allPlayers.forEach(function(fp) { snapData[fp.tag] = buildSnapEntry(fp); });
+            }
+            return snapData;
+        }
+        var changed = false;
+        if (!_snapDaily   || (now - _snapDaily.ts)   > SNAP_TTL.daily)   { _snapDaily   = { ts: now, data: getData() }; try { localStorage.setItem(SNAP_KEYS.daily,   JSON.stringify(_snapDaily));   } catch(e) {} changed = true; }
+        if (!_snapWeekly  || (now - _snapWeekly.ts)  > SNAP_TTL.weekly)  { _snapWeekly  = { ts: now, data: getData() }; try { localStorage.setItem(SNAP_KEYS.weekly,  JSON.stringify(_snapWeekly));  } catch(e) {} changed = true; }
+        if (!_snapMonthly || (now - _snapMonthly.ts) > SNAP_TTL.monthly) { _snapMonthly = { ts: now, data: getData() }; try { localStorage.setItem(SNAP_KEYS.monthly, JSON.stringify(_snapMonthly)); } catch(e) {} changed = true; }
+        if (changed) buildColToggles();
+    }
+
+    function snapAge(snap) {
+        if (!snap) return '—';
+        var ms = Date.now() - snap.ts;
+        var h = Math.floor(ms / 3600e3);
+        if (h < 1) return 'just now';
+        if (h < 24) return h + 'h ago';
+        return Math.floor(h / 24) + 'd ago';
+    }
+
+    function getActiveSnap() {
+        return _snapMode === 'daily' ? _snapDaily : _snapMode === 'weekly' ? _snapWeekly : _snapMode === 'monthly' ? _snapMonthly : null;
+    }
+
+    function fmtDelta(curr, refV) {
+        if (curr === null || curr === undefined || refV === null || refV === undefined) return '';
+        if (refV === 0) return curr > 0 ? '<span class="snap-delta snap-new">NEW</span>' : '';
+        var pct = (curr - refV) / Math.abs(refV) * 100;
+        if (Math.abs(pct) < 0.1) return '';
+        var cls = pct > 0 ? 'snap-pos' : 'snap-neg';
+        var sign = pct > 0 ? '+' : '';
+        return '<span class="snap-delta ' + cls + '">' + sign + pct.toFixed(Math.abs(pct) < 10 ? 1 : 0) + '%</span>';
+    }
+
+    window.setSnapMode = function(mode) {
+        _snapMode = (_snapMode === mode) ? null : mode;
+        buildColToggles();
+        renderTable();
+    };
 
     var COL_GROUPS = {
         actions: [
@@ -554,6 +628,25 @@
         wrap.appendChild(makeGroupBtn('GAME ACTIONS', 'col-toggle-pink', function() { toggleGroup('actions'); }, COL_GROUPS.actions.join(', ')));
         wrap.appendChild(makeGroupBtn('CURRENCIES', 'col-toggle-orange', function() { toggleGroup('currencies'); }, COL_GROUPS.currencies.join(', ')));
 
+        // Compare section
+        var cmpSep = document.createElement('span'); cmpSep.className = 'col-toggles-sep'; wrap.appendChild(cmpSep);
+        var cmpLabel = document.createElement('span'); cmpLabel.className = 'col-toggle-label'; cmpLabel.style.marginLeft='2px'; cmpLabel.textContent = 'Compare:'; wrap.appendChild(cmpLabel);
+        var snapMap = { daily: _snapDaily, weekly: _snapWeekly, monthly: _snapMonthly };
+        ['daily','weekly','monthly'].forEach(function(mode) {
+            var snap = snapMap[mode];
+            var btn = document.createElement('button');
+            btn.className = 'col-toggle col-toggle-teal' + (_snapMode === mode ? ' on' : '');
+            btn.textContent = mode.toUpperCase();
+            btn.title = snap ? ('Snapshot taken ' + new Date(snap.ts).toLocaleString() + ' — ' + snapAge(snap)) : 'No snapshot yet — load data first';
+            if (!snap) { btn.style.opacity = '0.35'; btn.style.cursor = 'not-allowed'; }
+            else { btn.onclick = function() { window.setSnapMode(mode); }; }
+            wrap.appendChild(btn);
+        });
+        var activeSnap = getActiveSnap();
+        if (_snapMode && activeSnap) {
+            var ageEl = document.createElement('span'); ageEl.className = 'snap-age'; ageEl.textContent = 'vs ' + snapAge(activeSnap); wrap.appendChild(ageEl);
+        }
+
         var sep = document.createElement('span');
         sep.className = 'col-toggles-sep';
         wrap.appendChild(sep);
@@ -654,7 +747,22 @@
             rows += battleCell + mineCell;
             visCols.forEach(function(c) {
                 var v = getVal(fp, c.key, c.src);
-                rows += '<td class="' + (v === 0 || v === null ? 'zero' : '') + '">' + formatVal(c.key, v) + '</td>';
+                var deltaHtml = '';
+                if (_snapMode) {
+                    var ref = getActiveSnap();
+                    if (ref && ref.data[fp.tag]) {
+                        var rv = ref.data[fp.tag];
+                        var refV;
+                        if (c.src === 'calc') {
+                            var rfp = { perm: rv, active: { credits: rv.credits||0, gems: rv.gems||0, action_points: rv.action_points||0 }, tag: fp.tag, nfts: fp.nfts };
+                            var fn = CALC_COLS[c.key]; refV = fn ? fn(rfp) : null;
+                        } else {
+                            refV = rv[c.key];
+                        }
+                        deltaHtml = fmtDelta(v, refV);
+                    }
+                }
+                rows += '<td class="' + (v === 0 || v === null ? 'zero' : '') + '">' + formatVal(c.key, v) + deltaHtml + '</td>';
             });
             rows += '</tr>';
         });
@@ -746,6 +854,7 @@
                     initVisibility();
                     buildColToggles();
                     renderTable();
+                    autoSaveSnaps();
                     setCacheInfo(cached.ts, cached.players.length);
                     btn.disabled = false;
                     fetchBattleNFTRarities(collectBattleTemplateIds(_allPlayers))
@@ -775,6 +884,7 @@
             initVisibility();
             buildColToggles();
             renderTable();
+            autoSaveSnaps();
             fetchBattleNFTRarities(collectBattleTemplateIds(_allPlayers))
                         .then(function() { return fetchMineAssetInfo(collectMineAssetIds(_allPlayers)); })
                         .then(refreshNFTImages);
@@ -820,6 +930,7 @@
     };
 
     // ── INIT ─────────────────────────────────────────────────────────────────
+    loadSnaps();
     loadLeaderboard(false);
 })();
 </script>
