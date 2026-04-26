@@ -103,7 +103,6 @@
     .nft-th { text-align:left; cursor:default !important; }
     .nft-thumb { width:32px; height:45px; object-fit:cover; object-position:center top; border-radius:3px; border:1px solid rgba(255,255,255,0.1); vertical-align:middle; margin-right:3px; background:#0a0d1a; }
     .nft-thumb:last-child { margin-right:0; }
-    .nft-sep { display:inline-block; width:1px; height:36px; background:rgba(255,255,255,0.1); vertical-align:middle; margin:0 4px; }
 
     /* EMPTY / ERROR */
     .lb-empty { padding:40px 28px; text-align:center; font-size:0.75em; color:var(--muted); letter-spacing:2px; }
@@ -547,7 +546,8 @@
         // thead
         var thHtml = '<tr><th onclick="sortBy(\'rank\')" id="th-rank">#</th>' +
             '<th onclick="sortBy(\'tag\')" id="th-tag" class="' + sortClass('tag') + '" title="wallet / playertag">PLAYER</th>' +
-            '<th class="nft-th" title="Battle NFTs (arms + crew) and Mine NFTs (tools)">NFTs</th>';
+            '<th class="nft-th" title="Equipped arms + crew (battle_nfts)">BATTLE NFTs</th>' +
+            '<th class="nft-th" title="Equipped mining tools (mine_nfts)">MINE NFTs</th>';
         visCols.forEach(function(c) {
             thHtml += '<th onclick="sortBy(\'' + c.key + '\')" id="th-' + c.key + '" class="' + sortClass(c.key) + '" title="' + (c.title || (c.key + ' (' + c.src + ')')) + '">' +
                 c.label.toUpperCase() + '</th>';
@@ -564,23 +564,23 @@
             rows += '<tr class="' + rankCls + ' ' + meCls + '">';
             rows += '<td>' + rank + '</td>';
             rows += '<td>' + escHtml(fp.tag) + '</td>';
-            var nftCell = '<td class="nft-cell">';
-            var hasBattle = fp.nfts && (fp.nfts.armsTemplate || fp.nfts.crewTemplate);
+            var battleCell = '<td class="nft-cell">';
             if (fp.nfts && fp.nfts.armsTemplate) {
-                nftCell += '<img class="nft-thumb" src="arms.worlds/' + fp.nfts.armsTemplate + '.webp" title="Arms (template ' + fp.nfts.armsTemplate + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
+                battleCell += '<img class="nft-thumb" src="arms.worlds/' + fp.nfts.armsTemplate + '.webp" title="Arms (template ' + fp.nfts.armsTemplate + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
             }
             if (fp.nfts && fp.nfts.crewTemplate) {
-                nftCell += '<img class="nft-thumb" src="crew.worlds/' + fp.nfts.crewTemplate + '.webp" title="Crew (template ' + fp.nfts.crewTemplate + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
+                battleCell += '<img class="nft-thumb" src="crew.worlds/' + fp.nfts.crewTemplate + '.webp" title="Crew (template ' + fp.nfts.crewTemplate + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
             }
-            if (fp.nfts && fp.nfts.mineAssets && fp.nfts.mineAssets.length) {
-                if (hasBattle) nftCell += '<span class="nft-sep"></span>';
+            battleCell += '</td>';
+            var mineCell = '<td class="nft-cell">';
+            if (fp.nfts && fp.nfts.mineAssets) {
                 fp.nfts.mineAssets.forEach(function(aid) {
                     var tid = _assetTemplateCache[aid];
-                    nftCell += '<img class="nft-thumb" data-aid="' + aid + '"' + (tid ? ' src="tool.worlds/' + tid + '.webp"' : '') + ' title="Mine tool (asset ' + aid + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
+                    mineCell += '<img class="nft-thumb" data-aid="' + aid + '"' + (tid ? ' src="tool.worlds/' + tid + '.webp"' : '') + ' title="Mine tool (asset ' + aid + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
                 });
             }
-            nftCell += '</td>';
-            rows += nftCell;
+            mineCell += '</td>';
+            rows += battleCell + mineCell;
             visCols.forEach(function(c) {
                 var v = getVal(fp, c.key, c.src);
                 rows += '<td class="' + (v === 0 || v === null ? 'zero' : '') + '">' + formatVal(c.key, v) + '</td>';
