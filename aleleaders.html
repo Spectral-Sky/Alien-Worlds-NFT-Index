@@ -14,7 +14,8 @@
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { min-height: 100vh; background: var(--bg); color: var(--text); font-family: 'Courier New', Courier, monospace; }
-    body { display: flex; flex-direction: column; }
+    html { height:100%; }
+    body { display: flex; flex-direction: column; height:100%; }
     ::-webkit-scrollbar { height: 8px; width: 8px; }
     ::-webkit-scrollbar-track { background: #050510; }
     ::-webkit-scrollbar-thumb { background: #333; border: 1px solid var(--gold); }
@@ -80,16 +81,16 @@
     .progress-label { font-size:0.65em; color:var(--muted); letter-spacing:2px; }
 
     /* TABLE */
-    .table-wrap { overflow-x:auto; flex:1; }
+    .table-wrap { overflow:auto; flex:1; min-height:0; }
     .lb-table { width:100%; border-collapse:separate; border-spacing:0; font-size:0.76em; }
-    .lb-table th { background:#090912; border-bottom:2px solid var(--gold); padding:9px 12px; text-align:right; cursor:pointer; letter-spacing:1px; text-transform:uppercase; color:#667; font-weight:normal; white-space:nowrap; user-select:none; transition:color 0.15s; }
+    .lb-table th { position:sticky; top:0; z-index:2; background:#090912; border-bottom:2px solid var(--gold); padding:9px 12px; text-align:right; cursor:pointer; letter-spacing:1px; text-transform:uppercase; color:#667; font-weight:normal; white-space:nowrap; user-select:none; transition:color 0.15s; }
     .lb-table th:first-child, .lb-table th:nth-child(2) { text-align:left; }
     .lb-table th:hover { color:var(--gold); }
     .lb-table th.sort-asc::after { content:' ▲'; color:var(--gold); }
     .lb-table th.sort-desc::after { content:' ▼'; color:var(--gold); }
     .lb-table th.sort-asc, .lb-table th.sort-desc { color:var(--gold); }
     .lb-table td { padding:7px 12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.03); white-space:nowrap; color:#9098a8; }
-    .lb-table td:first-child { text-align:left; color:var(--muted); font-size:0.88em; width:36px; }
+    .lb-table td:first-child { text-align:left; color:var(--muted); font-size:0.88em; min-width:44px; width:44px; }
     .lb-table td:nth-child(2) { text-align:left; color:var(--gold); }
     .lb-table tr:hover td { background:var(--hover); }
     .lb-table tr.me td { background:rgba(232,160,32,0.06); }
@@ -99,6 +100,19 @@
     .rank-2  td:first-child { color:#c0c0c0; }
     .rank-3  td:first-child { color:#cd7f32; }
     .zero { color:#2a3040 !important; }
+    /* frozen rank + player columns */
+    .lb-table td:first-child,
+    .lb-table th:first-child { position:sticky; left:0; z-index:1; background:#090912; }
+    .lb-table td:nth-child(2),
+    .lb-table th:nth-child(2) { position:sticky; left:44px; z-index:1; background:#090912; box-shadow:2px 0 6px rgba(0,0,0,0.6); }
+    /* header intersection cells sit above both axes */
+    .lb-table thead th:first-child,
+    .lb-table thead th:nth-child(2) { z-index:3; }
+    /* hover/me overrides need opaque bg too */
+    .lb-table tr:hover td:first-child,
+    .lb-table tr:hover td:nth-child(2) { background:#0f1220; }
+    .lb-table tr.me td:first-child,
+    .lb-table tr.me td:nth-child(2) { background:#130f08; }
     .nft-cell { text-align:left; white-space:nowrap; padding:3px 8px; }
     .nft-th { text-align:left; cursor:pointer; }
     .nft-thumb { width:32px; height:45px; object-fit:cover; object-position:center top; border-radius:3px; border:1px solid rgba(255,255,255,0.1); vertical-align:middle; margin-right:3px; background:#0a0d1a; }
