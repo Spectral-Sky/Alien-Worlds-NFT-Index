@@ -100,7 +100,7 @@
     .rank-3  td:first-child { color:#cd7f32; }
     .zero { color:#2a3040 !important; }
     .nft-cell { text-align:left; white-space:nowrap; padding:3px 8px; }
-    .nft-th { text-align:left; cursor:default !important; }
+    .nft-th { text-align:left; cursor:pointer; }
     .nft-thumb { width:32px; height:45px; object-fit:cover; object-position:center top; border-radius:3px; border:1px solid rgba(255,255,255,0.1); vertical-align:middle; margin-right:3px; background:#0a0d1a; }
     .nft-thumb:last-child { margin-right:0; }
 
@@ -255,9 +255,12 @@
     var _sortKey     = 'dungeons_won';
     var _sortDir     = 1; // 1 = desc for numeric, asc alpha for tag
     var _extraCols   = []; // discovered permstats keys not in COLUMNS
-    // asset_id → template_id (for mine_nfts only; needed to resolve local file path)
-    var _assetTemplateCache = {};
-    try { _assetTemplateCache = JSON.parse(localStorage.getItem('ale_lb_asset_tpl') || '{}'); } catch(e) {}
+    // templateId → { rarity }  — for arms/crew battle NFTs
+    var _templateRarityCache = {};
+    // assetId → { tid, rarity, shine }  — for mine tools
+    var _assetInfoCache = {};
+    try { _templateRarityCache = JSON.parse(localStorage.getItem('ale_lb_tpl_rarity')  || '{}'); } catch(e) {}
+    try { _assetInfoCache      = JSON.parse(localStorage.getItem('ale_lb_asset_info')   || '{}'); } catch(e) {}
 
     var COL_GROUPS = {
         actions: [
@@ -350,6 +353,9 @@
         };
     }
 
+    var RARITY_WEIGHT = { Mythic:6, Legendary:5, Epic:4, Rare:3, Common:2, Abundant:1 };
+    var SHINE_WEIGHT  = { Gold:4, Stardust:3, Antimatter:2, Stone:1 };
+
     var CALC_COLS = {
         dungeon_win_rate: function(fp) {
             var p = fp.perm['dungeons_played'] || 0;
@@ -358,6 +364,23 @@
         arena_win_rate: function(fp) {
             var p = fp.perm['arenas_played'] || 0;
             return p > 0 ? (fp.perm['arenas_won'] || 0) / p * 100 : null;
+        },
+        battle_nft_score: function(fp) {
+            if (!fp.nfts || (!fp.nfts.armsTemplate && !fp.nfts.crewTemplate)) return null;
+            var score = 0;
+            [fp.nfts.armsTemplate, fp.nfts.crewTemplate].forEach(function(tid) {
+                if (tid) { var t = _templateRarityCache[tid]; score += t ? (RARITY_WEIGHT[t.rarity] || 0) : 0; }
+            });
+            return score;
+        },
+        mine_nft_score: function(fp) {
+            if (!fp.nfts || !fp.nfts.mineAssets || !fp.nfts.mineAssets.length) return null;
+            var score = 0;
+            fp.nfts.mineAssets.forEach(function(aid) {
+                var info = _assetInfoCache[aid];
+                score += info ? (RARITY_WEIGHT[info.rarity] || 0) * 10 + (SHINE_WEIGHT[info.shine] || 0) : 0;
+            });
+            return score;
         },
     };
 
@@ -387,12 +410,30 @@
         return v.toLocaleString();
     }
 
-    // ── BATTLE / MINE NFT IMAGES (local webp files by template ID) ──────────
-    // Battle NFTs: template IDs known directly → arms.worlds/<tid>.webp, crew.worlds/<tid>.webp
-    // Mine NFTs:   only asset IDs known → fetch template ID from AtomicAssets → tool.worlds/<tid>.webp
+    // ── BATTLE / MINE NFT IMAGES + RARITY DATA ──────────────────────────────
+    // Battle: template IDs direct → arms/crew.worlds/<tid>.webp; fetch rarity from AtomicAssets templates
+    // Mine:   asset IDs → fetch {tid, rarity, shine} from AtomicAssets assets → tool.worlds/<tid>.webp
 
-    async function fetchMineAssetTemplates(assetIds) {
-        var needed = assetIds.filter(function(id) { return id && !_assetTemplateCache[id]; });
+    async function fetchBattleNFTRarities(templateIds) {
+        var needed = templateIds.filter(function(id) { return id && !_templateRarityCache[id]; });
+        if (!needed.length) return;
+        for (var i = 0; i < needed.length; i += 100) {
+            var chunk = needed.slice(i, i + 100);
+            try {
+                var r = await fetch('https://wax.api.atomicassets.io/atomicassets/v1/templates?collection_name=alien.worlds&ids=' + chunk.join(',') + '&limit=100');
+                if (!r.ok) continue;
+                var data = await r.json();
+                (data.data || []).forEach(function(t) {
+                    var rarity = t.immutable_data && t.immutable_data.rarity;
+                    _templateRarityCache[String(t.template_id)] = { rarity: rarity || '' };
+                });
+            } catch(e) {}
+        }
+        try { localStorage.setItem('ale_lb_tpl_rarity', JSON.stringify(_templateRarityCache)); } catch(e) {}
+    }
+
+    async function fetchMineAssetInfo(assetIds) {
+        var needed = assetIds.filter(function(id) { return id && !_assetInfoCache[id]; });
         if (!needed.length) return;
         for (var i = 0; i < needed.length; i += 100) {
             var chunk = needed.slice(i, i + 100);
@@ -401,22 +442,35 @@
                 if (!r.ok) continue;
                 var data = await r.json();
                 (data.data || []).forEach(function(a) {
-                    if (a.template && a.template.template_id) {
-                        _assetTemplateCache[String(a.asset_id)] = String(a.template.template_id);
-                    }
+                    var tid    = a.template && String(a.template.template_id);
+                    var rarity = (a.template && a.template.immutable_data && a.template.immutable_data.rarity) || '';
+                    var shine  = (a.data && a.data.shine) || (a.mutable_data && a.mutable_data.shine) || '';
+                    if (tid) _assetInfoCache[String(a.asset_id)] = { tid: tid, rarity: rarity, shine: shine };
                 });
             } catch(e) {}
         }
-        try { localStorage.setItem('ale_lb_asset_tpl', JSON.stringify(_assetTemplateCache)); } catch(e) {}
+        try { localStorage.setItem('ale_lb_asset_info', JSON.stringify(_assetInfoCache)); } catch(e) {}
     }
 
     function refreshNFTImages() {
         document.querySelectorAll('img.nft-thumb[data-aid]').forEach(function(img) {
             if (!img.getAttribute('src')) {
-                var tid = _assetTemplateCache[img.dataset.aid];
-                if (tid) img.src = 'tool.worlds/' + tid + '.webp';
+                var info = _assetInfoCache[img.dataset.aid];
+                if (info && info.tid) img.src = 'tool.worlds/' + info.tid + '.webp';
             }
         });
+    }
+
+    function collectBattleTemplateIds(players) {
+        var seen = {}, ids = [];
+        players.forEach(function(fp) {
+            if (fp.nfts) {
+                [fp.nfts.armsTemplate, fp.nfts.crewTemplate].forEach(function(tid) {
+                    if (tid && !seen[tid]) { seen[tid] = true; ids.push(tid); }
+                });
+            }
+        });
+        return ids;
     }
 
     function collectMineAssetIds(players) {
@@ -546,8 +600,8 @@
         // thead
         var thHtml = '<tr><th onclick="sortBy(\'rank\')" id="th-rank">#</th>' +
             '<th onclick="sortBy(\'tag\')" id="th-tag" class="' + sortClass('tag') + '" title="wallet / playertag">PLAYER</th>' +
-            '<th class="nft-th" title="Equipped arms + crew (battle_nfts)">BATTLE NFTs</th>' +
-            '<th class="nft-th" title="Equipped mining tools (mine_nfts)">MINE NFTs</th>';
+            '<th class="nft-th ' + sortClass('battle_nft_score') + '" onclick="sortBy(\'battle_nft_score\')" title="Sort by rarity (battle_nfts: arms + crew)">BATTLE NFTs</th>' +
+            '<th class="nft-th ' + sortClass('mine_nft_score') + '" onclick="sortBy(\'mine_nft_score\')" title="Sort by rarity + shine (mine_nfts: tools)">MINE NFTs</th>';
         visCols.forEach(function(c) {
             thHtml += '<th onclick="sortBy(\'' + c.key + '\')" id="th-' + c.key + '" class="' + sortClass(c.key) + '" title="' + (c.title || (c.key + ' (' + c.src + ')')) + '">' +
                 c.label.toUpperCase() + '</th>';
@@ -566,17 +620,20 @@
             rows += '<td>' + escHtml(fp.tag) + '</td>';
             var battleCell = '<td class="nft-cell">';
             if (fp.nfts && fp.nfts.armsTemplate) {
-                battleCell += '<img class="nft-thumb" src="arms.worlds/' + fp.nfts.armsTemplate + '.webp" title="Arms (template ' + fp.nfts.armsTemplate + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
+                var at = _templateRarityCache[fp.nfts.armsTemplate];
+                battleCell += '<img class="nft-thumb" src="arms.worlds/' + fp.nfts.armsTemplate + '.webp" title="Arms' + (at && at.rarity ? ' — ' + at.rarity : '') + ' (template ' + fp.nfts.armsTemplate + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
             }
             if (fp.nfts && fp.nfts.crewTemplate) {
-                battleCell += '<img class="nft-thumb" src="crew.worlds/' + fp.nfts.crewTemplate + '.webp" title="Crew (template ' + fp.nfts.crewTemplate + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
+                var ct = _templateRarityCache[fp.nfts.crewTemplate];
+                battleCell += '<img class="nft-thumb" src="crew.worlds/' + fp.nfts.crewTemplate + '.webp" title="Crew' + (ct && ct.rarity ? ' — ' + ct.rarity : '') + ' (template ' + fp.nfts.crewTemplate + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
             }
             battleCell += '</td>';
             var mineCell = '<td class="nft-cell">';
             if (fp.nfts && fp.nfts.mineAssets) {
                 fp.nfts.mineAssets.forEach(function(aid) {
-                    var tid = _assetTemplateCache[aid];
-                    mineCell += '<img class="nft-thumb" data-aid="' + aid + '"' + (tid ? ' src="tool.worlds/' + tid + '.webp"' : '') + ' title="Mine tool (asset ' + aid + ')" loading="lazy" onerror="this.style.opacity=\'0\'">';
+                    var info = _assetInfoCache[aid];
+                    var label = info ? (info.rarity + (info.shine ? ' / ' + info.shine : '') + ' (asset ' + aid + ')') : 'asset ' + aid;
+                    mineCell += '<img class="nft-thumb" data-aid="' + aid + '"' + (info && info.tid ? ' src="tool.worlds/' + info.tid + '.webp"' : '') + ' title="' + label + '" loading="lazy" onerror="this.style.opacity=\'0\'">';
                 });
             }
             mineCell += '</td>';
@@ -677,7 +734,9 @@
                     renderTable();
                     setCacheInfo(cached.ts, cached.players.length);
                     btn.disabled = false;
-                    fetchMineAssetTemplates(collectMineAssetIds(_allPlayers)).then(refreshNFTImages);
+                    fetchBattleNFTRarities(collectBattleTemplateIds(_allPlayers))
+                        .then(function() { return fetchMineAssetInfo(collectMineAssetIds(_allPlayers)); })
+                        .then(refreshNFTImages);
                     return;
                 }
             } catch(e) {}
@@ -702,7 +761,9 @@
             initVisibility();
             buildColToggles();
             renderTable();
-            fetchMineAssetTemplates(collectMineAssetIds(_allPlayers)).then(refreshNFTImages);
+            fetchBattleNFTRarities(collectBattleTemplateIds(_allPlayers))
+                        .then(function() { return fetchMineAssetInfo(collectMineAssetIds(_allPlayers)); })
+                        .then(refreshNFTImages);
 
             var ts = Date.now();
             localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: ts, players: _allPlayers }));
