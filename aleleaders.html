@@ -844,6 +844,11 @@
         var btn = document.getElementById('refresh-btn');
         btn.disabled = true;
 
+        // Forced refresh: wipe cached data so nothing stale can be used
+        if (forceRefresh) {
+            try { localStorage.removeItem(CACHE_KEY); } catch(e) {}
+        }
+
         // Try cache
         if (!forceRefresh) {
             try {
