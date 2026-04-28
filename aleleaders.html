@@ -724,7 +724,7 @@
             var meCls = ''; // could highlight logged-in player here
             rows += '<tr class="' + rankCls + ' ' + meCls + '">';
             rows += '<td>' + rank + '</td>';
-            rows += '<td>' + escHtml(fp.tag) + '</td>';
+            rows += '<td title="' + escHtml(fp.wallet) + '">' + escHtml(fp.tag) + '</td>';
             var battleCell = '<td class="nft-cell">';
             if (fp.nfts && fp.nfts.armsTemplate) {
                 var at = _templateRarityCache[fp.nfts.armsTemplate];
