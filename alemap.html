@@ -354,6 +354,7 @@
     <div class="pd-block"><span class="pd-label">Dungeons</span><span class="pd-value" id="pd-dungeons">—</span></div>
     <div class="pd-block"><span class="pd-label">Arenas</span><span class="pd-value" id="pd-arenas">—</span></div>
     <div class="pd-block"><span class="pd-label">Portals Used</span><span class="pd-value" id="pd-portals">—</span></div>
+    <div class="pd-block"><span class="pd-label">Travel</span><span class="pd-value" id="pd-travel">—</span></div>
     <div class="pd-block" id="pd-legend-block" style="display:none;"><span class="pd-value" id="pd-legend"></span></div>
 </div>
 
@@ -1458,6 +1459,8 @@
         if (arenaEl) arenaEl.textContent = (perm['arenas_won'] || 0) + ' / ' + (perm['arenas_played'] || 0);
         var portEl = document.getElementById('pd-portals');
         if (portEl) portEl.textContent = (perm['portals_used'] || 0).toLocaleString();
+        var travelEl = document.getElementById('pd-travel');
+        if (travelEl) travelEl.textContent = (perm['total_travel_distance'] || 0).toLocaleString();
 
         // Legend access
         var legendBlock = document.getElementById('pd-legend-block');
