@@ -82,7 +82,7 @@
 
     /* TABLE */
     .table-wrap { overflow:auto; flex:1; min-height:0; }
-    .lb-table { width:100%; border-collapse:separate; border-spacing:0; font-size:0.76em; }
+    .lb-table { border-collapse:separate; border-spacing:0; font-size:0.76em; }
     .lb-table th { position:sticky; top:0; z-index:2; background:#090912; border-bottom:2px solid var(--gold); padding:9px 12px; text-align:right; cursor:pointer; letter-spacing:1px; text-transform:uppercase; color:#667; font-weight:normal; white-space:nowrap; user-select:none; transition:color 0.15s; }
     .lb-table th:first-child, .lb-table th:nth-child(2) { text-align:left; }
     .lb-table th:hover { color:var(--gold); }
@@ -91,7 +91,7 @@
     .lb-table th.sort-asc, .lb-table th.sort-desc { color:var(--gold); }
     .lb-table td { padding:7px 12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.03); white-space:nowrap; color:#9098a8; }
     .lb-table td:first-child { text-align:left; color:var(--muted); font-size:0.88em; min-width:44px; width:44px; }
-    .lb-table td:nth-child(2) { text-align:left; color:var(--gold); max-width:120px; overflow:hidden; text-overflow:ellipsis; }
+    .lb-table td:nth-child(2) { text-align:left; color:var(--gold); width:130px; max-width:130px; overflow:hidden; text-overflow:ellipsis; }
     .lb-table tr:hover td { background:var(--hover); }
     .lb-table tr.me td { background:rgba(232,160,32,0.06); }
     .lb-table tr.me td:nth-child(2) { color:#fff; text-shadow:0 0 8px rgba(232,160,32,0.5); }
@@ -100,21 +100,31 @@
     .rank-2  td:first-child { color:#c0c0c0; }
     .rank-3  td:first-child { color:#cd7f32; }
     .zero { color:#2a3040 !important; }
-    /* frozen rank + player columns */
+    /* frozen columns: rank | player | battle NFTs | mine NFTs */
     .lb-table td:first-child,
     .lb-table th:first-child { position:sticky; left:0; z-index:1; background:#090912; }
     .lb-table td:nth-child(2),
-    .lb-table th:nth-child(2) { position:sticky; left:44px; z-index:1; background:#090912; box-shadow:2px 0 6px rgba(0,0,0,0.6); }
+    .lb-table th:nth-child(2) { position:sticky; left:44px; z-index:1; background:#090912; width:130px; max-width:130px; }
+    .lb-table td:nth-child(3),
+    .lb-table th:nth-child(3) { position:sticky; left:174px; z-index:1; background:#090912; width:104px; max-width:104px; }
+    .lb-table td:nth-child(4),
+    .lb-table th:nth-child(4) { position:sticky; left:278px; z-index:1; background:#090912; width:88px; max-width:88px; box-shadow:2px 0 6px rgba(0,0,0,0.6); }
     /* header intersection cells sit above both axes */
     .lb-table thead th:first-child,
-    .lb-table thead th:nth-child(2) { z-index:3; }
-    /* hover/me overrides need opaque bg too */
+    .lb-table thead th:nth-child(2),
+    .lb-table thead th:nth-child(3),
+    .lb-table thead th:nth-child(4) { z-index:3; }
+    /* hover/me overrides need opaque bg for frozen cols */
     .lb-table tr:hover td:first-child,
-    .lb-table tr:hover td:nth-child(2) { background:#0f1220; }
+    .lb-table tr:hover td:nth-child(2),
+    .lb-table tr:hover td:nth-child(3),
+    .lb-table tr:hover td:nth-child(4) { background:#0f1220; }
     .lb-table tr.me td:first-child,
-    .lb-table tr.me td:nth-child(2) { background:#130f08; }
-    .lb-table td.nft-cell { text-align:left; white-space:nowrap; padding:3px 5px; width:82px; max-width:82px; overflow:hidden; }
-    .lb-table th.nft-th { text-align:left; cursor:pointer; padding-left:5px; padding-right:5px; width:82px; max-width:82px; }
+    .lb-table tr.me td:nth-child(2),
+    .lb-table tr.me td:nth-child(3),
+    .lb-table tr.me td:nth-child(4) { background:#130f08; }
+    .lb-table td.nft-cell { text-align:left; white-space:nowrap; padding:3px 5px; overflow:hidden; }
+    .lb-table th.nft-th { text-align:left; cursor:pointer; padding-left:5px; padding-right:5px; }
     .nft-thumb { width:24px; height:34px; object-fit:cover; object-position:center top; border-radius:2px; border:1px solid rgba(255,255,255,0.1); vertical-align:middle; margin-right:2px; background:#0a0d1a; }
     .nft-thumb:last-child { margin-right:0; }
 
@@ -207,6 +217,7 @@
 (function() {
     var CACHE_KEY = 'ale_lb_data_v2';
     var CACHE_TTL = 60 * 60 * 1000; // 1 hour
+    var COLS_KEY  = 'ale_lb_cols_v1';
 
     var WAX_ENDPOINTS = [
         'https://wax.eosusa.io',
@@ -597,6 +608,7 @@
         var cols = allColsList();
         var anyOn = cols.some(function(c) { return _visibleCols[c.key]; });
         cols.forEach(function(c) { _visibleCols[c.key] = !anyOn; });
+        saveVisibility();
         buildColToggles();
         renderTable();
     }
@@ -605,6 +617,7 @@
         var keys = COL_GROUPS[group] || [];
         var anyOn = keys.some(function(k) { return _visibleCols[k]; });
         keys.forEach(function(k) { _visibleCols[k] = !anyOn; });
+        saveVisibility();
         buildColToggles();
         renderTable();
     }
@@ -661,6 +674,7 @@
             btn.onclick = function() {
                 _visibleCols[col.key] = !_visibleCols[col.key];
                 btn.classList.toggle('on', _visibleCols[col.key]);
+                saveVisibility();
                 renderTable();
             };
             wrap.appendChild(btn);
@@ -906,13 +920,20 @@
         }
     };
 
+    function saveVisibility() {
+        try { localStorage.setItem(COLS_KEY, JSON.stringify(_visibleCols)); } catch(e) {}
+    }
+
     function initVisibility() {
-        // Only run once; preserve user toggles on re-render
+        var saved = null;
+        try { saved = JSON.parse(localStorage.getItem(COLS_KEY) || 'null'); } catch(e) {}
         COLUMNS.forEach(function(c) {
-            if (_visibleCols[c.key] === undefined) _visibleCols[c.key] = c.def;
+            if (_visibleCols[c.key] === undefined)
+                _visibleCols[c.key] = (saved && saved[c.key] !== undefined) ? saved[c.key] : c.def;
         });
         _extraCols.forEach(function(k) {
-            if (_visibleCols[k] === undefined) _visibleCols[k] = false;
+            if (_visibleCols[k] === undefined)
+                _visibleCols[k] = (saved && saved[k] !== undefined) ? saved[k] : false;
         });
     }
 
