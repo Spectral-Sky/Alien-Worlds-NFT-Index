@@ -1950,8 +1950,8 @@
             var delta   = q.task_end_value - q.task_start_value;
             var current = perm[q.task_type] || 0;
             var gained  = Math.max(0, current - q.task_start_value);
-            var pct     = delta > 0 ? Math.min(1, gained / delta) : (q.mine_completed ? 1 : 0);
-            var done    = pct >= 1 || q.mine_completed;
+            var pct     = delta > 0 ? Math.min(1, gained / delta) : 0;
+            var done    = pct >= 1;
             var barPct  = Math.round(pct * 100);
 
             var reward = '';
