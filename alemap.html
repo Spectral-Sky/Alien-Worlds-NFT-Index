@@ -1972,18 +1972,18 @@
             if (done) {
                 html += '<span class="quest-done-badge">✓ DONE</span>';
             } else {
-                html += '<button class="quest-reroll-btn" onclick="rerollQuest(\'' + _esc(q.quest_scope) + '\',\'' + _esc(q.quest_name) + '\')" title="Reroll this quest (costs 10 credits)">↺ REROLL (10 cr)</button>';
+                html += '<button class="quest-reroll-btn" onclick="rerollQuest(\'' + _esc(q.quest_scope) + '\',\'' + _esc(q.quest_name) + '\',' + Number(q.reward_amount) + ',' + Number(q.task_end_value) + ')" title="Reroll this quest (costs 10 credits)">↺ REROLL (10 cr)</button>';
             }
             html += '</div></div>';
         });
         list.innerHTML = html;
     }
 
-    window.rerollQuest = async function(scope, questName) {
+    window.rerollQuest = async function(scope, questName, rewardAmount, taskEndValue) {
         var wallet = getActiveWallet();
         if (!wallet) { setQuestStatus('✗ Please log in to reroll.'); return; }
         setQuestStatus('Sending reroll…');
-        var actions = [{ account:'quests.ale', name:'reroll', authorization:[{ actor:wallet, permission:'active' }], data:{ wallet:wallet, scope:scope, quest_name:questName, reward_amount:0, task_end_value:0 } }];
+        var actions = [{ account:'quests.ale', name:'reroll', authorization:[{ actor:wallet, permission:'active' }], data:{ wallet:wallet, scope:scope, quest_name:questName, reward_amount:rewardAmount, task_end_value:taskEndValue } }];
         try {
             if (window.walletSession) {
                 await window.walletSession.transact({ actions:actions });
