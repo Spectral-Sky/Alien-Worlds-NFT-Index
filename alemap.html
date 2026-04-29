@@ -1956,7 +1956,7 @@
 
             var reward = '';
             if (q.reward_type === 'tlm')    reward = '<span class="quest-reward-tlm">'    + (q.reward_amount / 10000).toFixed(2) + ' TLM</span>';
-            else                            reward = '<span class="quest-reward-shards">'  + Number(q.reward_amount).toLocaleString() + ' SHARDS</span>';
+            else                            reward = '<span class="quest-reward-shards">'  + (q.reward_amount / 10).toLocaleString(undefined, {minimumFractionDigits:1, maximumFractionDigits:1}) + ' SHARDS</span>';
             if (q.mine_power > 0)           reward += ' <span class="quest-reward-mp">+ ' + Number(q.mine_power).toLocaleString() + ' MP</span>';
 
             var progressText = done ? '✓ Complete' : gained.toLocaleString() + ' / ' + delta.toLocaleString();
