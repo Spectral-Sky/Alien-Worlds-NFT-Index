@@ -1532,7 +1532,15 @@
         bar.style.display = 'flex';
         var qs = document.getElementById('quest-section');
         if (qs) qs.style.display = '';
-        if (document.getElementById('quest-panel') && document.getElementById('quest-panel').classList.contains('open')) renderQuests();
+        var qp = document.getElementById('quest-panel');
+        var qb = document.getElementById('quest-toggle-btn');
+        if (qp && !qp.classList.contains('open')) {
+            qp.classList.add('open');
+            if (qb) qb.classList.add('open');
+        }
+        if (qp && qp.classList.contains('open')) {
+            if (!_questData) loadQuestData(); else renderQuests();
+        }
     }
 
     function clearPlayerData() {
