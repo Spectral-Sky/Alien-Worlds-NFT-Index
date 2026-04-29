@@ -260,6 +260,34 @@
         .route-mode-btn:hover { color:#998; border-color:rgba(232,160,32,0.5); }
         .route-mode-btn.active { border-color:var(--theme-color); color:var(--theme-color); background:rgba(232,160,32,0.08); }
 
+        /* quest tracker */
+        .quest-section { padding:16px 20px; background:#06050e; border-top:1px solid rgba(232,160,32,0.1); }
+        .quest-panel { display:none; margin-top:14px; background:rgba(0,0,0,0.5); border:1px solid rgba(232,160,32,0.2); border-radius:4px; padding:14px 18px; max-width:900px; }
+        .quest-panel.open { display:block; }
+        .quest-scope-tabs { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+        .quest-scope-tab { background:transparent; border:1px solid rgba(232,160,32,0.2); color:#667; font-family:'Courier New',monospace; font-size:0.72em; letter-spacing:1px; padding:4px 14px; cursor:crosshair; border-radius:2px; transition:all 0.15s; white-space:nowrap; }
+        .quest-scope-tab:hover { border-color:rgba(232,160,32,0.5); color:#998; }
+        .quest-scope-tab.active { border-color:var(--theme-color); color:var(--theme-color); background:rgba(232,160,32,0.08); }
+        .quest-list { display:flex; flex-direction:column; gap:6px; }
+        .quest-item { background:rgba(232,160,32,0.03); border:1px solid rgba(232,160,32,0.1); border-radius:3px; padding:10px 12px; font-family:'Courier New',monospace; }
+        .quest-item.completed { border-color:rgba(60,180,80,0.3); background:rgba(60,180,80,0.03); }
+        .quest-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:5px; }
+        .quest-title { font-size:0.8em; color:#b0b8c8; letter-spacing:1px; flex:1; }
+        .quest-reward-tlm    { font-size:0.72em; color:#60c0e0; white-space:nowrap; }
+        .quest-reward-shards { font-size:0.72em; color:#c060e0; white-space:nowrap; }
+        .quest-reward-mp     { font-size:0.72em; color:#446; white-space:nowrap; margin-left:4px; }
+        .quest-progress-wrap { display:flex; align-items:center; gap:10px; margin-bottom:5px; }
+        .quest-progress-bar  { flex:1; height:4px; background:rgba(255,255,255,0.06); border-radius:2px; overflow:hidden; }
+        .quest-progress-fill { height:100%; background:var(--theme-color); border-radius:2px; }
+        .quest-progress-fill.done { background:#40c070; }
+        .quest-progress-text { font-size:0.68em; color:#667; white-space:nowrap; min-width:90px; text-align:right; }
+        .quest-bottom { display:flex; justify-content:space-between; align-items:center; }
+        .quest-desc { font-size:0.65em; color:#446; flex:1; }
+        .quest-reroll-btn { background:transparent; border:1px solid rgba(80,100,180,0.4); color:#5070b0; font-family:'Courier New',monospace; font-size:0.65em; letter-spacing:1px; padding:2px 10px; cursor:crosshair; border-radius:2px; transition:all 0.15s; white-space:nowrap; margin-left:8px; }
+        .quest-reroll-btn:hover { border-color:#7090d0; color:#90b0f0; background:rgba(70,100,200,0.1); }
+        .quest-reroll-btn:disabled { opacity:0.3; cursor:not-allowed !important; }
+        .quest-done-badge { font-size:0.68em; color:#40c070; letter-spacing:1px; white-space:nowrap; margin-left:8px; }
+
         /* legend */
         .map-legend { display:flex; gap:14px; flex-wrap:wrap; padding:10px 20px; background:#06050e; border-top:1px solid rgba(232,160,32,0.08); font-family:'Courier New',monospace; font-size:0.7em; }
         .legend-item { display:flex; align-items:center; gap:6px; color:#606070; }
@@ -438,6 +466,28 @@
             <button class="conf-btn add-btn" onclick="addToRoute()">+ ADD SELECTION</button>
             <button class="conf-btn exec-btn" id="execute-route-btn" onclick="executeRoute()" disabled>▶ EXECUTE ROUTE (0)</button>
         </div>
+    </div>
+</div>
+
+<!-- ══ QUEST TRACKER ══════════════════════════════════════════════════════ -->
+<div class="quest-section" id="quest-section" style="display:none;">
+    <button class="route-toggle-btn" id="quest-toggle-btn" onclick="toggleQuestTracker()">⬡ QUEST TRACKER</button>
+    <div class="quest-panel" id="quest-panel">
+        <div class="route-header">
+            ACTIVE QUESTS
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button class="route-clear-btn" onclick="loadQuestData(true)">↻ REFRESH</button>
+            </div>
+        </div>
+        <div class="quest-scope-tabs">
+            <button class="quest-scope-tab active" data-scope="day"   onclick="filterQuestScope('day')"  >DAY<span   id="qt-day-timer"   style="font-size:0.85em;opacity:0.6;margin-left:4px;"></span></button>
+            <button class="quest-scope-tab"        data-scope="week"  onclick="filterQuestScope('week')" >WEEK<span  id="qt-week-timer"  style="font-size:0.85em;opacity:0.6;margin-left:4px;"></span></button>
+            <button class="quest-scope-tab"        data-scope="month" onclick="filterQuestScope('month')">MONTH<span id="qt-month-timer" style="font-size:0.85em;opacity:0.6;margin-left:4px;"></span></button>
+        </div>
+        <div id="quest-list" class="quest-list">
+            <div class="route-empty">Loading quests...</div>
+        </div>
+        <div id="quest-status" class="dg-status" style="margin-top:8px;min-height:1.2em;"></div>
     </div>
 </div>
 
@@ -1480,10 +1530,17 @@
         }
 
         bar.style.display = 'flex';
+        var qs = document.getElementById('quest-section');
+        if (qs) qs.style.display = '';
+        if (document.getElementById('quest-panel') && document.getElementById('quest-panel').classList.contains('open')) renderQuests();
     }
 
     function clearPlayerData() {
         _playerData = null;
+        _questData  = null;
+        var qs = document.getElementById('quest-section'); if (qs) qs.style.display = 'none';
+        var qp = document.getElementById('quest-panel');   if (qp) qp.classList.remove('open');
+        var qb = document.getElementById('quest-toggle-btn'); if (qb) qb.classList.remove('open');
         // Clear only player-specific locations (taverns); dungeon locations come from chain data and persist
         Object.keys(ALE_LOCATIONS).forEach(function(p) { ALE_LOCATIONS[p].taverns = []; });
         Object.keys(_rendered).forEach(function(planet) {
@@ -1827,6 +1884,137 @@
         if (dd) dd.classList.toggle('open');
     };
 
+    // ── QUEST TRACKER ────────────────────────────────────────────────────────
+    var _questData  = null;
+    var _qScopes    = {};
+    var _questScope = 'day';
+    var _questTimer = null;
+
+    function _esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    async function loadQScopes() {
+        try {
+            var d = await fetchTableRows({ code:'quests.ale', scope:'quests.ale', table:'qscopes', limit:10, json:true });
+            (d.rows || []).forEach(function(s) { _qScopes[s.scopename] = s; });
+            updateQuestTimers();
+            if (!_questTimer) _questTimer = setInterval(updateQuestTimers, 1000);
+        } catch(e) {}
+    }
+
+    window.toggleQuestTracker = function() {
+        var panel = document.getElementById('quest-panel');
+        var btn   = document.getElementById('quest-toggle-btn');
+        var isOpen = panel.classList.toggle('open');
+        btn.classList.toggle('open', isOpen);
+        if (isOpen && !_questData) loadQuestData();
+    };
+
+    window.filterQuestScope = function(scope) {
+        _questScope = scope;
+        document.querySelectorAll('.quest-scope-tab').forEach(function(t) {
+            t.classList.toggle('active', t.dataset.scope === scope);
+        });
+        renderQuests();
+    };
+
+    window.loadQuestData = async function(forceRefresh) {
+        var wallet = getActiveWallet();
+        if (!wallet) { document.getElementById('quest-list').innerHTML = '<div class="route-empty">Log in to view your quests.</div>'; return; }
+        setQuestStatus('Loading quests…');
+        try {
+            var d = await fetchTableRows({ code:'quests.ale', scope:'quests.ale', table:'activequests', lower_bound:wallet, upper_bound:wallet, limit:1, json:true });
+            _questData = (d.rows && d.rows[0] && d.rows[0].player === wallet) ? d.rows[0] : null;
+            setQuestStatus('');
+            renderQuests();
+        } catch(e) { setQuestStatus('✗ ' + (e.message || e)); }
+    };
+
+    function renderQuests() {
+        var list = document.getElementById('quest-list');
+        if (!list) return;
+        if (!_questData || !_questData.quests || !_questData.quests.length) {
+            list.innerHTML = '<div class="route-empty">No active quests found. Open the game to receive quests.</div>';
+            return;
+        }
+        var scopeQuests = _questData.quests.filter(function(q) { return q.quest_scope === _questScope; });
+        if (!scopeQuests.length) {
+            list.innerHTML = '<div class="route-empty">No ' + _questScope + ' quests assigned.</div>';
+            return;
+        }
+        var perm = {};
+        if (_playerData && _playerData.permstats) {
+            _playerData.permstats.forEach(function(s) { perm[s.first] = Number(s.second); });
+        }
+        var html = '';
+        scopeQuests.forEach(function(q) {
+            var delta   = q.task_end_value - q.task_start_value;
+            var current = perm[q.task_type] || 0;
+            var gained  = Math.max(0, current - q.task_start_value);
+            var pct     = delta > 0 ? Math.min(1, gained / delta) : (q.mine_completed ? 1 : 0);
+            var done    = pct >= 1 || q.mine_completed;
+            var barPct  = Math.round(pct * 100);
+
+            var reward = '';
+            if (q.reward_type === 'tlm')    reward = '<span class="quest-reward-tlm">'    + (q.reward_amount / 10000).toFixed(2) + ' TLM</span>';
+            else                            reward = '<span class="quest-reward-shards">'  + Number(q.reward_amount).toLocaleString() + ' SHARDS</span>';
+            if (q.mine_power > 0)           reward += ' <span class="quest-reward-mp">+ ' + Number(q.mine_power).toLocaleString() + ' MP</span>';
+
+            var progressText = done ? '✓ Complete' : gained.toLocaleString() + ' / ' + delta.toLocaleString();
+            var desc = (q.quest_description || '').replace('[amount]', delta.toLocaleString());
+
+            html += '<div class="quest-item' + (done ? ' completed' : '') + '">';
+            html += '<div class="quest-top"><span class="quest-title">' + _esc(q.quest_title) + '</span>' + reward + '</div>';
+            html += '<div class="quest-progress-wrap">';
+            html += '<div class="quest-progress-bar"><div class="quest-progress-fill' + (done ? ' done' : '') + '" style="width:' + barPct + '%"></div></div>';
+            html += '<span class="quest-progress-text">' + progressText + '</span>';
+            html += '</div>';
+            html += '<div class="quest-bottom"><span class="quest-desc">' + _esc(desc) + '</span>';
+            if (done) {
+                html += '<span class="quest-done-badge">✓ DONE</span>';
+            } else {
+                html += '<button class="quest-reroll-btn" onclick="rerollQuest(\'' + _esc(q.quest_scope) + '\',\'' + _esc(q.quest_name) + '\')" title="Reroll this quest (costs 10 credits)">↺ REROLL (10 cr)</button>';
+            }
+            html += '</div></div>';
+        });
+        list.innerHTML = html;
+    }
+
+    window.rerollQuest = async function(scope, questName) {
+        var wallet = getActiveWallet();
+        if (!wallet) { setQuestStatus('✗ Please log in to reroll.'); return; }
+        setQuestStatus('Sending reroll…');
+        var actions = [{ account:'quests.ale', name:'reroll', authorization:[{ actor:wallet, permission:'active' }], data:{ wallet:wallet, scope:scope, quest_name:questName, reward_amount:0, task_end_value:0 } }];
+        try {
+            if (window.walletSession) {
+                await window.walletSession.transact({ actions:actions });
+            } else if (typeof wax !== 'undefined' && wax && wax.api) {
+                await wax.api.transact({ actions:actions }, { blocksBehind:3, expireSeconds:90 });
+            } else { throw new Error('No wallet session'); }
+            setQuestStatus('✓ Quest rerolled! Refreshing…');
+            setTimeout(function() { window.loadQuestData(true); setQuestStatus(''); }, 2500);
+        } catch(e) {
+            var msg = (e && e.message) || String(e);
+            setQuestStatus(msg.toLowerCase().includes('cancel') || msg.toLowerCase().includes('user') ? '' : '✗ ' + msg.slice(0,100));
+        }
+    };
+
+    function setQuestStatus(msg) { var el = document.getElementById('quest-status'); if (el) el.textContent = msg; }
+
+    function updateQuestTimers() {
+        var now = Date.now();
+        ['day','week','month'].forEach(function(scope) {
+            var el = document.getElementById('qt-' + scope + '-timer');
+            if (!el) return;
+            var sc = _qScopes[scope];
+            if (!sc) { el.textContent = ''; return; }
+            var t = new Date((sc.quest_new_times || sc.quest_end) + 'Z').getTime();
+            var diff = t - now;
+            if (diff <= 0) { el.textContent = ''; return; }
+            var h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
+            el.textContent = h > 0 ? h + 'h ' + m + 'm' : m + 'm ' + s + 's';
+        });
+    }
+
     // ── CLICK EFFECT ─────────────────────────────────────────────────────────
     document.addEventListener('click', function(e) {
         var el = document.createElement('div');
@@ -1838,6 +2026,7 @@
     });
 
     // ── INIT ─────────────────────────────────────────────────────────────────
+    loadQScopes();
     buildRulers();
     buildMap('magor');
     initGlobe();
