@@ -687,7 +687,7 @@
             return { key:k, src:'perm' };
         }));
         var col = allCols.find(function(c) { return c.key === key; });
-        var src = col ? col.src : 'perm';
+        var src = col ? col.src : (CALC_COLS[key] ? 'calc' : 'perm');
 
         if (key === 'tag') {
             return players.slice().sort(function(a, b) {
