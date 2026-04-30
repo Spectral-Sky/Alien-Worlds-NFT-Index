@@ -355,16 +355,23 @@
         .wallet-btn.logged-in:hover { border-color: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
         .wallet-area { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
 
-        /* ── MY CONTRIBUTION ROW ─────────────────────────────────────────── */
-        .my-contrib {
-            margin-top:8px; padding:7px 10px;
-            background: rgba(255,170,0,0.07); border: 1px solid rgba(255,170,0,0.25);
-            border-radius: 3px; font-size: 0.68em; letter-spacing: 1px;
-            color: var(--gold); display: flex; align-items: center; gap: 8px;
+        /* ── CONTRIBUTOR LIST ─────────────────────────────────────────────── */
+        .contrib-section { margin-top:10px; border-top:1px solid rgba(255,68,204,0.15); padding-top:8px; }
+        .contrib-title { font-size:0.58em; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:5px; }
+        .contrib-row {
+            display:flex; align-items:center; gap:6px;
+            padding:3px 4px; font-size:0.64em; letter-spacing:0.5px;
+            border-bottom:1px solid rgba(255,68,204,0.06);
         }
-        .my-contrib strong { color: #ffe066; font-size: 1.1em; }
-        .my-contrib .mc-pct { color: var(--gold-dim); font-size: 0.85em; margin-left: auto; }
-        .my-contrib.no-contrib { color: var(--muted); background: transparent; border-color: rgba(255,68,204,0.1); }
+        .contrib-row:last-child { border-bottom:none; }
+        .contrib-row.contrib-me { background:rgba(255,170,0,0.08); border-radius:2px; padding:3px 5px; border-bottom:none; margin-bottom:2px; }
+        .contrib-wallet { flex:1; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .contrib-row.contrib-me .contrib-wallet { color:var(--gold); }
+        .contrib-amt { color:var(--pink-dim); white-space:nowrap; }
+        .contrib-row.contrib-me .contrib-amt { color:var(--gold-dim); }
+        .contrib-share { color:var(--muted); font-size:0.85em; min-width:36px; text-align:right; }
+        .contrib-row.contrib-me .contrib-share { color:var(--gold-dim); }
+        .contrib-empty { font-size:0.62em; color:var(--muted); letter-spacing:1px; padding:4px 0; }
     </style>
     <script src="waxjs.js"></script>
     <script type="module">
@@ -482,8 +489,8 @@
     let _gemToTlm    = 1900 / 1100;
     let _gemToShards = (1900 / 1100) * SHARDS_PER_TLM;
     let _reqMap      = {};   // requirement_type → display name
-    let _offersCache = [];   // last fetched offers, used for contribution re-render
-    let _userContribs = {};  // offer_id → logged-in user's gem amount
+    let _offersCache  = [];   // last fetched offers, used for contribution re-render
+    let _allContribs  = {};  // offer_id → [{wallet, amount}] sorted by amount desc
 
     const LOGO_GEMS   = 'Ale%20images/gems.png';
     const LOGO_SHARDS = 'Ale%20images/coin.png';
@@ -755,18 +762,24 @@
         return `<span class="offer-state-badge badge-pending">◌ ${(state||'UNKNOWN').toUpperCase()}</span>`;
     }
 
-    function myContribHtml(offerId, totalGems) {
-        const wallet = localStorage.getItem('naron_wallet');
-        if (!wallet) return '';
-        const myAmt = _userContribs[offerId];
-        if (myAmt === undefined) {
-            return `<div class="my-contrib no-contrib"><span>◈ MY GEMS:</span><strong>—</strong></div>`;
-        }
-        const pct = totalGems > 0 ? Math.round(myAmt / totalGems * 100) : 0;
-        return `<div class="my-contrib">
-            <img src="${LOGO_GEMS}" style="width:12px;height:12px;object-fit:contain;opacity:0.85;">
-            <span>MY GEMS:</span><strong>${fmtBig(myAmt)}</strong>
-            <span class="mc-pct">${pct}% of cap</span>
+    function contribListHtml(offerId, totalGems) {
+        const me   = localStorage.getItem('naron_wallet') || '';
+        const list = _allContribs[offerId];
+        if (!list) return '';
+        if (!list.length) return `<div class="contrib-section"><div class="contrib-empty">No contributions yet</div></div>`;
+        const rows = list.map(c => {
+            const isMe = me && c.wallet === me;
+            const pct  = totalGems > 0 ? Math.round(c.amount / totalGems * 100) : 0;
+            return `<div class="contrib-row${isMe ? ' contrib-me' : ''}">
+                <img src="${LOGO_GEMS}" style="width:11px;height:11px;object-fit:contain;opacity:0.7;flex-shrink:0;">
+                <span class="contrib-wallet">${isMe ? '◈ ' : ''}${c.wallet}</span>
+                <span class="contrib-amt">${fmtBig(c.amount)}</span>
+                <span class="contrib-share">${pct}%</span>
+            </div>`;
+        }).join('');
+        return `<div class="contrib-section">
+            <div class="contrib-title">Contributors (${list.length})</div>
+            ${rows}
         </div>`;
     }
 
@@ -830,7 +843,7 @@
                 ${rewardValueHtml(o)}
                 ${contributedValueHtml(contrib)}
                 ${dealBarHtml(o)}
-                ${myContribHtml(o.offer_id, gems)}
+                ${contribListHtml(o.offer_id, gems)}
             </div>`;
         });
 
@@ -959,8 +972,7 @@
             ]);
             renderRequirements(reqData);   // build _reqMap first
             renderOffers(offersData);      // then render offers with names
-            const w = localStorage.getItem('naron_wallet');
-            if (w) fetchUserContributions(w);
+            fetchAllContributions();       // load all contributor lists (async, re-renders when done)
             setStatus('Updated ' + new Date().toLocaleTimeString(), 'ok');
         } catch(e) {
             setStatus('✗ ' + (e.message || String(e)), 'err');
@@ -981,14 +993,12 @@
             if (btnA)   { btnA.textContent = '[ ' + account + ' ]'; btnA.style.display = ''; }
             if (btnAnc) btnAnc.style.display = 'none';
             if (btnWCC) btnWCC.style.display = 'none';
-            if (_offersCache.length) fetchUserContributions(account);
         } else {
             if (btnA)   { btnA.style.display = 'none'; }
             if (btnAnc) btnAnc.style.display = '';
             if (btnWCC) btnWCC.style.display = '';
-            _userContribs = {};
-            if (_offersCache.length) renderOffers(_offersCache);
         }
+        if (_offersCache.length) renderOffers(_offersCache);
     }
     window.loginWithAnchor = async function() {
         try {
@@ -1015,18 +1025,18 @@
         checkWalletState();
     };
 
-    async function fetchUserContributions(wallet) {
-        _userContribs = {};
-        if (!wallet || !_offersCache.length) return;
+    async function fetchAllContributions() {
+        _allContribs = {};
+        if (!_offersCache.length) return;
         await Promise.all(_offersCache.map(async (o) => {
             try {
-                const resp = await fetchRows({
-                    code: 'recovery.ale', scope: o.offer_id,
-                    table: 'contribution', limit: 100
+                const resp = await fetchAllRows({
+                    code: 'recovery.ale', scope: o.offer_id, table: 'contribution'
                 });
-                const row = (resp.rows || []).find(r => r.wallet === wallet);
-                if (row) _userContribs[o.offer_id] = row.amount;
-            } catch(e) {}
+                _allContribs[o.offer_id] = (resp || [])
+                    .slice()
+                    .sort((a, b) => b.amount - a.amount);
+            } catch(e) { _allContribs[o.offer_id] = []; }
         }));
         renderOffers(_offersCache);
     }
