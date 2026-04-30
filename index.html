@@ -659,6 +659,16 @@
                 <div class="card-status" style="background:#050e20;color:#e8a020;border:1px solid #e8a020;">ALPHA</div>
             </div>
         </a>
+        <div class="module-card" style="border-color:rgba(232,160,32,0.7);background:linear-gradient(135deg,#100a00,#1a1000);cursor:default;">
+            <span class="rgb-text-badge" style="position:absolute;top:8px;right:8px;font-size:0.65em;transform:rotate(-15deg);z-index:10;">EVENT</span>
+            <div style="position:relative;z-index:10;padding:2px 0;">
+                <div class="card-title" style="font-size:1.05em;color:#ffd080;">⚔ AW COMPETITION</div>
+                <span class="card-schema" style="color:#a07830;">Alien Legends · 28-day event</span>
+                <p style="font-size:0.7em;color:#c09050;margin:7px 0 4px;line-height:1.5;">Sign up before <strong style="color:#ffd080;">May 2nd, 2026!</strong><br>~2,000,000 TLM &amp; 10,000,000+ Shards in prizes!</p>
+                <button id="comp-reg-btn" onclick="registerForComp()" style="pointer-events:all;margin-top:4px;background:transparent;border:1px solid rgba(232,160,32,0.6);color:#e8a020;font-family:'Courier New',monospace;font-size:0.72em;letter-spacing:1px;padding:5px 12px;cursor:pointer;text-transform:uppercase;transition:all 0.2s;" onmouseover="this.style.borderColor='#e8a020';this.style.background='rgba(232,160,32,0.12)'" onmouseout="this.style.borderColor='rgba(232,160,32,0.6)';this.style.background='transparent'">[ REGISTER ]</button>
+                <div id="comp-reg-status" style="font-size:0.68em;margin-top:5px;color:#888;font-family:'Courier New',monospace;min-height:1em;"></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1163,6 +1173,45 @@
             }
             localStorage.removeItem("naron_wallet");
             checkWalletState();
+        }
+
+    // ── AW Competition registration ──────────────────────────────────────────
+        async function registerForComp() {
+            var wallet = (window.walletSession ? String(window.walletSession.actor) : null)
+                      || (typeof wax !== 'undefined' && wax && wax.userAccount ? wax.userAccount : null)
+                      || localStorage.getItem('naron_wallet');
+            var btn    = document.getElementById('comp-reg-btn');
+            var status = document.getElementById('comp-reg-status');
+            if (!wallet) {
+                status.style.color = '#e06060';
+                status.textContent = 'Please log in first.';
+                return;
+            }
+            btn.disabled = true;
+            btn.textContent = '[ SIGNING… ]';
+            status.style.color = '#888';
+            status.textContent = '';
+            var actions = [{ account:'comp.worlds', name:'regplayer',
+                authorization:[{ actor:wallet, permission:'active' }],
+                data:{ id:42, player:wallet }
+            }];
+            try {
+                if (window.walletSession) {
+                    await window.walletSession.transact({ actions });
+                } else if (typeof wax !== 'undefined' && wax && wax.api) {
+                    await wax.api.transact({ actions }, { blocksBehind:3, expireSeconds:90 });
+                } else { throw new Error('No wallet session'); }
+                btn.textContent = '[ ✓ REGISTERED ]';
+                btn.style.borderColor = '#60c870';
+                btn.style.color = '#60c870';
+                status.style.color = '#60c870';
+                status.textContent = 'Good luck on May 2nd!';
+            } catch(e) {
+                btn.disabled = false;
+                btn.textContent = '[ REGISTER ]';
+                status.style.color = '#e06060';
+                status.textContent = '✗ ' + (e.message || String(e));
+            }
         }
 
     // ── Chest system ────────────────────────────────────────────────────────
