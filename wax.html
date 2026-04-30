@@ -3,63 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RECOVERY.ALE // RESTRICTED</title>
+    <title>RECOVERY.ALE // CANDLE INTERFACE</title>
     <link rel="icon" type="image/png" href="NCico.png">
     <style>
         :root {
-            --pcb-bg:    #020408;
-            --pcb-trace: rgba(0,200,80,0.06);
-            --green:     #00cc66;
-            --green-dim: #007a3d;
-            --green-glow:#00ff8844;
-            --green-text:#88ffaa;
-            --muted:     #2a5a3a;
-            --cyan:      #00ffcc;
-            --red:       #ff4444;
-            --amber:     #ffaa00;
-            --panel-bg:  rgba(0,12,6,0.92);
-            --border:    rgba(0,200,80,0.2);
-            --border-hi: rgba(0,200,80,0.5);
+            --bg:         #08000c;
+            --trace:      rgba(255,60,200,0.05);
+            --pink:       #ff44cc;
+            --pink-dim:   #992288;
+            --pink-glow:  rgba(255,68,204,0.3);
+            --gold:       #ffaa00;
+            --gold-dim:   #997700;
+            --gold-glow:  rgba(255,170,0,0.3);
+            --text:       #ffe8ff;
+            --muted:      #7a4488;
+            --panel-bg:   rgba(12,0,18,0.95);
+            --border:     rgba(255,68,204,0.18);
+            --border-hi:  rgba(255,68,204,0.5);
+            --border-gold:rgba(255,170,0,0.4);
+            --red:        #ff4466;
         }
         *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 
         html, body {
             height:100%; width:100%;
-            background: var(--pcb-bg);
-            color: var(--green-text);
+            background: var(--bg);
+            color: var(--text);
             font-family: 'Courier New', Courier, monospace;
             overflow-x: hidden;
         }
 
-        /* ── CIRCUIT BOARD BACKGROUND ─────────────────────────────────────── */
+        /* ── CANDLE FANTASY CIRCUIT BACKGROUND ───────────────────────────── */
         body::before {
             content:'';
             position:fixed; inset:0; z-index:0; pointer-events:none;
             background-image:
-                linear-gradient(var(--pcb-trace) 1px, transparent 1px),
-                linear-gradient(90deg, var(--pcb-trace) 1px, transparent 1px),
-                linear-gradient(rgba(0,200,80,0.02) 2px, transparent 2px),
-                linear-gradient(90deg, rgba(0,200,80,0.02) 2px, transparent 2px);
+                linear-gradient(var(--trace) 1px, transparent 1px),
+                linear-gradient(90deg, var(--trace) 1px, transparent 1px),
+                linear-gradient(rgba(255,60,200,0.02) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(255,60,200,0.02) 2px, transparent 2px);
             background-size: 40px 40px, 40px 40px, 200px 200px, 200px 200px;
         }
         body::after {
             content:'';
             position:fixed; inset:0; z-index:0; pointer-events:none;
             background:
-                radial-gradient(ellipse 60% 40% at 15% 20%, rgba(0,180,80,0.04) 0%, transparent 70%),
-                radial-gradient(ellipse 40% 60% at 85% 80%, rgba(0,60,180,0.03) 0%, transparent 70%),
-                radial-gradient(ellipse 30% 30% at 50% 50%, rgba(0,255,120,0.02) 0%, transparent 70%);
+                radial-gradient(ellipse 50% 60% at 50% 100%, rgba(255,100,0,0.06) 0%, transparent 70%),
+                radial-gradient(ellipse 60% 30% at 20% 10%, rgba(255,68,204,0.05) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 40% at 80% 20%, rgba(255,170,0,0.04) 0%, transparent 60%);
         }
 
-        /* Scan-line flicker overlay */
         .scanlines {
             position:fixed; inset:0; z-index:1; pointer-events:none;
             background: repeating-linear-gradient(
-                to bottom,
-                transparent 0px,
-                transparent 3px,
-                rgba(0,0,0,0.08) 3px,
-                rgba(0,0,0,0.08) 4px
+                to bottom, transparent 0px, transparent 3px,
+                rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px
             );
         }
 
@@ -69,125 +67,91 @@
             display:flex; align-items:center; justify-content:center;
             transition: opacity 0.6s ease, transform 0.6s ease;
         }
-        #lock-screen.unlocking {
-            opacity:0; transform:scale(1.03);
-            pointer-events:none;
-        }
+        #lock-screen.unlocking { opacity:0; transform:scale(1.03); pointer-events:none; }
 
         .lock-flavor {
             position:absolute; top:10%; left:50%; transform:translateX(-50%);
             text-align:center; user-select:none;
         }
         .lock-flavor h1 {
-            font-size:1.2em; letter-spacing:6px; color:var(--muted);
-            text-transform:uppercase; margin-bottom:6px;
+            font-size:1.3em; letter-spacing:6px; color:var(--pink-dim);
+            text-transform:uppercase; margin-bottom:8px;
+            text-shadow: 0 0 20px var(--pink-glow);
         }
-        .lock-flavor .lock-sub {
-            font-size:0.65em; color:rgba(0,140,60,0.35);
-            letter-spacing:3px; text-transform:uppercase;
-        }
+        .lock-flavor .lock-sub { font-size:0.65em; color:rgba(255,68,204,0.25); letter-spacing:3px; text-transform:uppercase; }
 
-        /* PCB corner decorations */
         .pcb-corner {
             position:absolute; width:80px; height:80px;
-            border:1px solid var(--muted); opacity:0.3; pointer-events:none;
+            border:1px solid var(--pink-dim); opacity:0.2; pointer-events:none;
         }
         .pcb-corner.tl { top:20px; left:20px; border-right:none; border-bottom:none; }
         .pcb-corner.tr { top:20px; right:20px; border-left:none; border-bottom:none; }
         .pcb-corner.bl { bottom:20px; left:20px; border-right:none; border-top:none; }
         .pcb-corner.br { bottom:20px; right:20px; border-left:none; border-top:none; }
 
-        /* Floating circuit nodes */
-        .node {
-            position:absolute; width:6px; height:6px; border-radius:50%;
-            background:var(--muted); opacity:0.25; pointer-events:none;
-        }
+        .node { position:absolute; width:6px; height:6px; border-radius:50%; background:var(--pink-dim); opacity:0.2; pointer-events:none; }
 
         /* ── KEYPAD ───────────────────────────────────────────────────────── */
         #keypad {
             position:absolute; bottom:32px; right:32px;
-            background: rgba(0,8,4,0.95);
+            background: rgba(8,0,12,0.97);
             border:1px solid var(--border-hi);
-            box-shadow: 0 0 20px rgba(0,200,80,0.15), inset 0 0 30px rgba(0,0,0,0.5);
-            padding:14px 16px 12px;
-            border-radius:3px;
-            min-width:174px;
+            box-shadow: 0 0 24px var(--pink-glow), inset 0 0 30px rgba(0,0,0,0.6);
+            padding:14px 16px 12px; border-radius:3px; min-width:174px;
         }
         #keypad::before {
             content:'◈ ACCESS TERMINAL';
             display:block; font-size:0.55em; letter-spacing:3px;
             color:var(--muted); text-align:center; margin-bottom:10px;
         }
-
         #kp-display {
-            background:#000; border:1px solid var(--border);
+            background:#030003; border:1px solid var(--border);
             padding:6px 10px; margin-bottom:10px;
-            font-size:1.0em; letter-spacing:8px; color:var(--green);
+            font-size:1.0em; letter-spacing:8px; color:var(--pink);
             text-align:center; min-height:34px;
-            box-shadow:inset 0 0 8px rgba(0,0,0,0.8);
-            border-radius:1px;
+            box-shadow:inset 0 0 10px rgba(0,0,0,0.9);
+            text-shadow: 0 0 8px var(--pink-glow);
         }
-        #kp-display.error { color:var(--red); animation:kp-shake 0.4s; }
-        #kp-display.ok    { color:var(--cyan); }
+        #kp-display.error { color:var(--red); animation:kp-shake 0.4s; text-shadow:0 0 8px rgba(255,60,60,0.5); }
+        #kp-display.ok    { color:var(--gold); text-shadow:0 0 10px var(--gold-glow); }
 
         @keyframes kp-shake {
-            0%,100%{transform:translateX(0)}
-            20%{transform:translateX(-5px)}
-            40%{transform:translateX(5px)}
-            60%{transform:translateX(-4px)}
-            80%{transform:translateX(4px)}
+            0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)}
+            40%{transform:translateX(5px)}   60%{transform:translateX(-4px)} 80%{transform:translateX(4px)}
         }
 
-        .kp-grid {
-            display:grid; grid-template-columns:repeat(3,1fr); gap:5px;
-            margin-bottom:5px;
-        }
+        .kp-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; margin-bottom:5px; }
         .kp-btn {
-            background:rgba(0,20,10,0.8);
-            border:1px solid var(--border);
-            color:var(--green-text); cursor:pointer;
-            padding:7px 2px 5px;
-            text-align:center; border-radius:2px;
-            transition:all 0.1s; user-select:none;
-            display:flex; flex-direction:column; align-items:center;
-            line-height:1;
+            background:rgba(20,0,24,0.9); border:1px solid var(--border);
+            color:var(--text); cursor:pointer; padding:7px 2px 5px;
+            text-align:center; border-radius:2px; transition:all 0.1s; user-select:none;
+            display:flex; flex-direction:column; align-items:center; line-height:1;
         }
-        .kp-btn:hover  { background:rgba(0,100,50,0.4); border-color:var(--green); }
-        .kp-btn:active { background:rgba(0,180,80,0.3); transform:scale(0.95); }
-        .kp-num  { font-size:1.05em; font-weight:bold; color:#ccffdd; }
+        .kp-btn:hover  { background:rgba(80,0,80,0.4); border-color:var(--pink); }
+        .kp-btn:active { background:rgba(180,0,140,0.3); transform:scale(0.95); }
+        .kp-num  { font-size:1.05em; font-weight:bold; color:#ffccee; }
         .kp-abc  { font-size:0.45em; letter-spacing:1px; color:var(--muted); margin-top:2px; }
 
-        .kp-row-bottom {
-            display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;
-        }
-        .kp-btn.clr  { color:var(--amber); border-color:rgba(255,170,0,0.3); }
-        .kp-btn.clr:hover { background:rgba(80,50,0,0.5); border-color:var(--amber); }
-        .kp-btn.ent  { color:var(--cyan); border-color:rgba(0,255,200,0.3); font-size:0.72em; letter-spacing:1px; }
-        .kp-btn.ent:hover { background:rgba(0,60,50,0.5); border-color:var(--cyan); }
+        .kp-row-bottom { display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; }
+        .kp-btn.clr  { color:var(--gold); border-color:rgba(255,170,0,0.3); }
+        .kp-btn.clr:hover { background:rgba(60,40,0,0.5); border-color:var(--gold); }
+        .kp-btn.ent  { color:var(--gold); border-color:var(--border-gold); font-size:0.72em; letter-spacing:1px; }
+        .kp-btn.ent:hover { background:rgba(60,40,0,0.5); border-color:var(--gold); box-shadow:0 0 8px var(--gold-glow); }
 
-        #kp-status {
-            margin-top:7px; font-size:0.6em; letter-spacing:2px;
-            text-align:center; color:var(--muted); min-height:1em;
-        }
+        #kp-status { margin-top:7px; font-size:0.6em; letter-spacing:2px; text-align:center; color:var(--muted); min-height:1em; }
 
         /* ── MAIN CONTENT ─────────────────────────────────────────────────── */
-        #main {
-            display:none; position:relative; z-index:10;
-            min-height:100vh; padding:0 0 40px;
-        }
+        #main { display:none; position:relative; z-index:10; min-height:100vh; padding:0 0 40px; }
         #main.visible { display:block; animation:fade-in 0.7s ease; }
         @keyframes fade-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 
         .main-header {
-            background:rgba(0,8,4,0.97); border-bottom:1px solid var(--border-hi);
+            background:rgba(8,0,12,0.98); border-bottom:1px solid var(--border-hi);
             padding:12px 24px; display:flex; align-items:center; gap:16px;
             position:sticky; top:0; z-index:50;
-            box-shadow:0 2px 20px rgba(0,200,80,0.1);
+            box-shadow:0 2px 20px var(--pink-glow);
         }
-        .main-header h1 {
-            font-size:0.85em; letter-spacing:4px; color:var(--green);
-            text-transform:uppercase; flex:1;
-        }
+        .main-header h1 { font-size:0.85em; letter-spacing:4px; color:var(--pink); text-transform:uppercase; flex:1; text-shadow:0 0 12px var(--pink-glow); }
         .main-header .hdr-sub { font-size:0.6em; color:var(--muted); letter-spacing:2px; }
         .refresh-btn {
             background:transparent; border:1px solid var(--border);
@@ -195,219 +159,189 @@
             font-size:0.68em; letter-spacing:2px; padding:5px 14px;
             cursor:pointer; transition:all 0.2s; text-transform:uppercase;
         }
-        .refresh-btn:hover { color:var(--green); border-color:var(--green); }
+        .refresh-btn:hover { color:var(--gold); border-color:var(--gold); box-shadow:0 0 8px var(--gold-glow); }
         .lock-btn {
             background:transparent; border:1px solid rgba(255,60,60,0.2);
-            color:rgba(255,80,80,0.4); font-family:'Courier New',monospace;
-            font-size:0.62em; letter-spacing:2px; padding:5px 10px;
-            cursor:pointer; transition:all 0.2s;
+            color:rgba(255,80,80,0.35); font-family:'Courier New',monospace;
+            font-size:0.62em; letter-spacing:2px; padding:5px 10px; cursor:pointer; transition:all 0.2s;
         }
         .lock-btn:hover { color:var(--red); border-color:var(--red); }
 
         .content-wrap { padding:20px 24px; }
 
-        /* ── OFFERS ROW ───────────────────────────────────────────────────── */
+        /* ── OFFERS GRID ──────────────────────────────────────────────────── */
         .offers-row {
             display:grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px,1fr)) 220px;
-            gap:14px; margin-bottom:24px; align-items:start;
+            grid-template-columns: repeat(auto-fill, minmax(260px,1fr)) 230px;
+            gap:16px; margin-bottom:24px; align-items:start;
         }
 
         .offer-box {
             background:var(--panel-bg); border:1px solid var(--border);
-            border-radius:3px; padding:14px 16px;
-            box-shadow:0 0 12px rgba(0,0,0,0.5);
-            transition:border-color 0.2s;
+            border-radius:4px; padding:16px 18px;
+            box-shadow:0 0 16px rgba(0,0,0,0.6);
+            transition:border-color 0.2s, box-shadow 0.2s;
         }
-        .offer-box:hover { border-color:var(--border-hi); }
-        .offer-box.active-offer { border-color:rgba(0,200,80,0.4); }
+        .offer-box:hover { border-color:var(--border-hi); box-shadow:0 0 20px var(--pink-glow); }
+        .offer-box.active-offer { border-color:var(--border-gold); box-shadow:0 0 16px var(--gold-glow); }
 
-        .offer-id {
-            font-size:0.6em; letter-spacing:3px; color:var(--muted);
-            text-transform:uppercase; margin-bottom:6px;
-        }
-        .offer-title {
-            font-size:0.85em; color:#ccffdd; letter-spacing:1px;
-            margin-bottom:10px; line-height:1.4;
-        }
-        .offer-timer {
-            font-size:1.1em; color:var(--cyan); letter-spacing:2px;
-            margin-bottom:8px; font-weight:bold;
-        }
-        .offer-timer.urgent { color:var(--amber); animation:pulse 1s infinite; }
-        .offer-timer.expired { color:var(--red); }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
-
-        .offer-bar-wrap { margin:8px 0 4px; }
-        .offer-bar-track {
-            height:6px; background:rgba(0,50,20,0.8);
-            border-radius:3px; overflow:hidden;
-        }
-        .offer-bar-fill {
-            height:100%; background:linear-gradient(90deg,var(--green-dim),var(--green));
-            border-radius:3px; transition:width 0.5s;
-            box-shadow:0 0 6px var(--green-glow);
-        }
-        .offer-bar-label {
-            font-size:0.62em; color:var(--muted); text-align:right;
-            margin-top:2px; letter-spacing:1px;
-        }
-        .offer-gems {
-            margin:8px 0 4px; font-size:0.72em; color:var(--green-text);
-        }
-        .offer-gems span { color:var(--green); font-size:1.1em; }
-
-        .offer-reward {
-            margin-top:8px; padding-top:8px;
-            border-top:1px solid rgba(0,100,40,0.3);
-            font-size:0.68em; color:var(--muted); letter-spacing:1px;
-        }
-        .offer-reward strong { color:var(--green-text); }
-
-        .offer-values {
-            margin-top:8px; padding:8px;
-            background:rgba(0,20,10,0.6); border:1px solid rgba(0,80,30,0.4);
-            border-radius:2px;
-        }
-        .offer-val-row {
-            display:flex; align-items:center; gap:6px;
-            font-size:0.68em; margin-bottom:4px; color:var(--muted);
-        }
-        .offer-val-row:last-child { margin-bottom:0; }
-        .offer-val-row .cur-logo {
-            width:14px; height:14px; object-fit:contain; border-radius:50%;
-            opacity:0.85; flex-shrink:0;
-        }
-        .offer-val-row .cur-lbl { flex:1; letter-spacing:1px; }
-        .offer-val-row .cur-val { color:var(--green-text); font-size:1.05em; }
+        .offer-id-row { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+        .offer-id { font-size:0.58em; letter-spacing:3px; color:var(--muted); text-transform:uppercase; }
 
         .offer-state-badge {
-            display:inline-block; font-size:0.58em; letter-spacing:2px;
-            padding:2px 8px; border-radius:1px; margin-bottom:6px;
-            text-transform:uppercase;
+            display:inline-block; font-size:0.55em; letter-spacing:2px;
+            padding:2px 8px; border-radius:1px; text-transform:uppercase;
         }
-        .badge-active  { background:rgba(0,120,50,0.3); color:#44ee88; border:1px solid rgba(0,180,60,0.4); }
-        .badge-ended   { background:rgba(60,0,0,0.4);   color:#aa4444; border:1px solid rgba(180,0,0,0.3); }
-        .badge-pending { background:rgba(50,40,0,0.4);  color:#bbaa44; border:1px solid rgba(180,150,0,0.3); }
+        .badge-active  { background:rgba(255,170,0,0.15); color:#ffcc44; border:1px solid rgba(255,170,0,0.4); }
+        .badge-ended   { background:rgba(80,0,30,0.4); color:#aa4466; border:1px solid rgba(180,0,60,0.3); }
+        .badge-pending { background:rgba(50,0,60,0.4); color:#aa66cc; border:1px solid rgba(150,0,180,0.3); }
 
-        /* no offers placeholder */
+        .offer-name {
+            font-size:0.92em; color:#ffccee; letter-spacing:1px;
+            margin:4px 0 2px; line-height:1.3; font-weight:bold;
+        }
+        .offer-req-type { font-size:0.6em; color:var(--muted); letter-spacing:1px; margin-bottom:10px; }
+
+        /* timestamps */
+        .offer-times { font-size:0.64em; color:var(--muted); margin:6px 0 10px; line-height:2; }
+        .offer-times .t-lbl { letter-spacing:1px; }
+        .offer-times .t-val { color:var(--text); margin-left:4px; }
+        .offer-times .t-remain { color:var(--gold); font-weight:bold; letter-spacing:2px; font-size:1.15em; display:block; margin-top:2px; }
+        .offer-times .t-remain.urgent  { color:#ff8844; animation:pulse 1s infinite; }
+        .offer-times .t-remain.expired { color:var(--red); }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.55} }
+
+        /* gem fill bar */
+        .offer-bar-wrap { margin:8px 0 4px; }
+        .offer-bar-track { height:5px; background:rgba(50,0,50,0.8); border-radius:3px; overflow:hidden; }
+        .offer-bar-fill {
+            height:100%; border-radius:3px; transition:width 0.5s;
+            background:linear-gradient(90deg,var(--pink-dim),var(--pink));
+            box-shadow:0 0 6px var(--pink-glow);
+        }
+        .offer-bar-label { font-size:0.6em; color:var(--muted); text-align:right; margin-top:2px; letter-spacing:1px; }
+
+        .offer-gems { margin:8px 0 4px; font-size:0.7em; color:var(--muted); }
+        .offer-gems span { color:var(--text); }
+
+        /* value sections */
+        .offer-values {
+            margin-top:8px; padding:8px 10px;
+            background:rgba(20,0,24,0.7); border:1px solid rgba(255,68,204,0.12);
+            border-radius:2px;
+        }
+        .val-section-label {
+            font-size:0.58em; letter-spacing:2px; color:var(--muted);
+            text-transform:uppercase; margin-bottom:5px;
+            padding-bottom:3px; border-bottom:1px solid rgba(255,68,204,0.1);
+        }
+        .offer-val-row { display:flex; align-items:center; gap:6px; font-size:0.68em; margin-bottom:4px; }
+        .offer-val-row:last-child { margin-bottom:0; }
+        .offer-val-row .cur-logo { width:13px; height:13px; object-fit:contain; border-radius:50%; opacity:0.85; flex-shrink:0; }
+        .offer-val-row .cur-lbl { flex:1; letter-spacing:1px; color:var(--muted); }
+        .offer-val-row .cur-val { color:var(--text); font-size:1.0em; }
+
+        /* DEAL bar */
+        .deal-section { margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,68,204,0.12); }
+        .deal-label {
+            display:flex; justify-content:space-between; align-items:baseline;
+            font-size:0.6em; letter-spacing:2px; color:var(--muted);
+            margin-bottom:6px; text-transform:uppercase;
+        }
+        .deal-multiplier { font-size:1.6em; font-weight:bold; letter-spacing:2px; }
+        .deal-bad   { color:#ff4466; }
+        .deal-low   { color:#ff7744; }
+        .deal-fair  { color:var(--gold); }
+        .deal-good  { color:#ffdd44; text-shadow:0 0 8px rgba(255,220,0,0.5); }
+        .deal-great { color:var(--pink); text-shadow:0 0 10px var(--pink-glow); }
+        .deal-bar-track { height:8px; background:rgba(30,0,30,0.9); border-radius:4px; overflow:hidden; }
+        .deal-bar-fill  { height:100%; border-radius:4px; transition:width 0.5s; }
+        .deal-scale {
+            display:flex; justify-content:space-between;
+            font-size:0.55em; color:rgba(120,40,140,0.6);
+            margin-top:3px; letter-spacing:1px;
+        }
+
         .no-offers {
             grid-column:1/-1; text-align:center;
             font-size:0.75em; color:var(--muted); padding:30px;
-            border:1px dashed rgba(0,100,40,0.3); border-radius:3px;
+            border:1px dashed rgba(255,68,204,0.15); border-radius:3px;
         }
 
         /* ── GEM CALCULATOR ───────────────────────────────────────────────── */
         #calc-box {
-            background:var(--panel-bg); border:1px solid var(--border-hi);
-            border-radius:3px; padding:14px 16px;
-            box-shadow:0 0 15px rgba(0,200,80,0.08);
+            background:var(--panel-bg); border:1px solid var(--border-gold);
+            border-radius:4px; padding:16px 18px;
+            box-shadow:0 0 18px var(--gold-glow);
         }
         .calc-title {
-            font-size:0.6em; letter-spacing:3px; color:var(--green);
+            font-size:0.6em; letter-spacing:3px; color:var(--gold);
             text-transform:uppercase; margin-bottom:10px;
-            padding-bottom:6px; border-bottom:1px solid var(--border);
+            padding-bottom:6px; border-bottom:1px solid var(--border-gold);
+            text-shadow:0 0 8px var(--gold-glow);
         }
-        .calc-input-wrap {
-            display:flex; align-items:center; gap:6px; margin-bottom:12px;
-        }
-        .calc-input-wrap .cur-logo {
-            width:18px; height:18px; object-fit:contain;
-            border-radius:50%; opacity:0.9; flex-shrink:0;
-        }
+        .calc-input-wrap { display:flex; align-items:center; gap:6px; margin-bottom:12px; }
+        .calc-input-wrap .cur-logo { width:18px; height:18px; object-fit:contain; border-radius:50%; opacity:0.9; flex-shrink:0; }
         #calc-gems {
-            flex:1; background:rgba(0,20,10,0.9);
-            border:1px solid var(--border); color:var(--green-text);
+            flex:1; background:rgba(20,0,24,0.9);
+            border:1px solid var(--border); color:var(--text);
             font-family:'Courier New',monospace; font-size:0.88em;
             padding:6px 8px; outline:none; border-radius:2px; width:100%;
         }
-        #calc-gems:focus { border-color:var(--green); box-shadow:0 0 6px rgba(0,200,80,0.2); }
+        #calc-gems:focus { border-color:var(--pink); box-shadow:0 0 6px var(--pink-glow); }
         #calc-gems::placeholder { color:var(--muted); }
 
-        .calc-row {
-            display:flex; align-items:center; gap:8px;
-            padding:5px 0; border-bottom:1px solid rgba(0,60,20,0.3);
-            font-size:0.72em;
-        }
+        .calc-row { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid rgba(255,68,204,0.1); font-size:0.72em; }
         .calc-row:last-child { border-bottom:none; }
-        .calc-row .cur-logo { width:16px; height:16px; object-fit:contain; border-radius:50%; opacity:0.85; flex-shrink:0; }
+        .calc-row .cur-logo { width:15px; height:15px; object-fit:contain; border-radius:50%; opacity:0.85; flex-shrink:0; }
         .calc-row .c-lbl { flex:1; color:var(--muted); letter-spacing:1px; }
-        .calc-row .c-val { color:var(--green-text); font-size:1.1em; letter-spacing:1px; min-width:80px; text-align:right; }
+        .calc-row .c-val { color:var(--text); font-size:1.1em; letter-spacing:1px; min-width:80px; text-align:right; }
 
         .calc-note {
-            margin-top:10px; font-size:0.58em; color:rgba(0,120,50,0.6);
-            letter-spacing:1px; line-height:1.5; border-top:1px solid rgba(0,60,20,0.3);
+            margin-top:10px; font-size:0.58em; color:rgba(180,100,160,0.5);
+            letter-spacing:1px; line-height:1.6; border-top:1px solid rgba(255,68,204,0.12);
             padding-top:8px;
         }
 
         /* ── REQUIREMENTS TABLE ───────────────────────────────────────────── */
-        .req-section {
-            background:var(--panel-bg); border:1px solid var(--border);
-            border-radius:3px; overflow:hidden;
-        }
+        .req-section { background:var(--panel-bg); border:1px solid var(--border); border-radius:4px; overflow:hidden; }
         .req-header {
-            background:rgba(0,20,10,0.95); padding:10px 16px;
+            background:rgba(12,0,16,0.98); padding:10px 16px;
             border-bottom:1px solid var(--border);
             display:flex; align-items:center; gap:12px;
         }
-        .req-header h2 {
-            font-size:0.72em; letter-spacing:3px; color:var(--green);
-            text-transform:uppercase; flex:1;
-        }
-        .req-count {
-            font-size:0.6em; color:var(--muted); letter-spacing:2px;
-        }
-        .req-scroll {
-            overflow-y:auto; max-height:420px;
-        }
-        .req-table {
-            width:100%; border-collapse:collapse;
-            font-size:0.7em;
-        }
+        .req-header h2 { font-size:0.72em; letter-spacing:3px; color:var(--pink); text-transform:uppercase; flex:1; }
+        .req-count { font-size:0.6em; color:var(--muted); letter-spacing:2px; }
+        .req-scroll { overflow-y:auto; max-height:440px; }
+        .req-table { width:100%; border-collapse:collapse; font-size:0.7em; }
         .req-table thead th {
             position:sticky; top:0;
-            background:rgba(0,15,8,0.98); color:var(--muted);
+            background:rgba(10,0,14,0.99); color:var(--muted);
             font-size:0.85em; letter-spacing:2px; text-transform:uppercase;
             padding:8px 14px; text-align:left;
             border-bottom:1px solid var(--border);
         }
-        .req-table tbody tr {
-            border-bottom:1px solid rgba(0,60,20,0.2);
-            transition:background 0.1s;
-        }
-        .req-table tbody tr:hover { background:rgba(0,50,20,0.3); }
-        .req-table tbody td {
-            padding:7px 14px; color:var(--green-text);
-            vertical-align:middle;
-        }
-        .req-table tbody td:first-child { color:var(--muted); }
-        .req-table .gem-cell {
-            display:flex; align-items:center; gap:5px; white-space:nowrap;
-        }
+        .req-table thead th:first-child { color:var(--pink); }
+        .req-table tbody tr { border-bottom:1px solid rgba(255,68,204,0.1); transition:background 0.1s; }
+        .req-table tbody tr:hover { background:rgba(60,0,60,0.3); }
+        .req-table tbody td { padding:7px 14px; color:var(--text); vertical-align:middle; }
+        .req-table tbody td.name-cell { color:#ffccee; font-weight:bold; }
+        .req-type-sub { display:block; font-size:0.75em; color:var(--muted); letter-spacing:1px; font-weight:normal; }
+        .req-table .gem-cell { display:flex; align-items:center; gap:5px; white-space:nowrap; }
         .req-table .gem-cell img { width:13px; height:13px; object-fit:contain; }
-        .req-empty {
-            padding:30px; text-align:center; color:var(--muted);
-            font-size:0.75em; letter-spacing:2px;
-        }
+        .req-empty { padding:30px; text-align:center; color:var(--muted); font-size:0.75em; letter-spacing:2px; }
 
-        /* loading state */
-        .loading-pulse {
-            display:inline-block; animation:fade-pulse 1.2s infinite;
-        }
+        /* loading */
+        .loading-pulse { display:inline-block; animation:fade-pulse 1.2s infinite; }
         @keyframes fade-pulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
 
-        /* Status bar */
-        #fetch-status {
-            font-size:0.62em; color:var(--muted); letter-spacing:2px;
-            text-align:right; padding:4px 0;
-        }
-        #fetch-status.ok  { color:var(--green-dim); }
+        #fetch-status { font-size:0.62em; color:var(--muted); letter-spacing:2px; text-align:right; padding:4px 0; }
+        #fetch-status.ok  { color:var(--gold-dim); }
         #fetch-status.err { color:var(--red); }
 
-        /* scrollbar */
         ::-webkit-scrollbar { width:5px; }
-        ::-webkit-scrollbar-track { background:#010604; }
-        ::-webkit-scrollbar-thumb { background:var(--green-dim); border-radius:2px; }
+        ::-webkit-scrollbar-track { background:#030003; }
+        ::-webkit-scrollbar-thumb { background:var(--pink-dim); border-radius:2px; }
     </style>
 </head>
 <body>
@@ -416,13 +350,10 @@
 
 <!-- ══ LOCK SCREEN ══════════════════════════════════════════════════════ -->
 <div id="lock-screen">
-    <!-- PCB corner brackets -->
     <div class="pcb-corner tl"></div>
     <div class="pcb-corner tr"></div>
     <div class="pcb-corner bl"></div>
     <div class="pcb-corner br"></div>
-
-    <!-- Flavor nodes scattered around -->
     <div class="node" style="top:18%;left:8%"></div>
     <div class="node" style="top:24%;left:12%"></div>
     <div class="node" style="top:75%;left:6%"></div>
@@ -430,14 +361,12 @@
     <div class="node" style="top:60%;right:14%"></div>
     <div class="node" style="bottom:22%;right:22%"></div>
 
-    <!-- Center flavor text -->
     <div class="lock-flavor">
-        <h1>Recovery.ALE</h1>
+        <h1>🕯 Recovery.ALE</h1>
         <div class="lock-sub">Candle Operations Interface</div>
-        <div class="lock-sub" style="margin-top:8px;font-size:0.55em;opacity:0.5;">◈ UNAUTHORIZED ACCESS RESTRICTED ◈</div>
+        <div class="lock-sub" style="margin-top:8px;font-size:0.55em;opacity:0.4;">◈ UNAUTHORIZED ACCESS RESTRICTED ◈</div>
     </div>
 
-    <!-- Keypad (bottom-right corner) -->
     <div id="keypad">
         <div id="kp-display">_</div>
         <div class="kp-grid">
@@ -464,7 +393,7 @@
 <div id="main">
     <div class="main-header">
         <div>
-            <h1>◈ Recovery.ALE — Candle Interface</h1>
+            <h1>🕯 Recovery.ALE — Candle Interface</h1>
             <div class="hdr-sub" id="fetch-status">Loading chain data…</div>
         </div>
         <button class="refresh-btn" onclick="refreshAll()">⟳ REFRESH</button>
@@ -472,15 +401,12 @@
     </div>
 
     <div class="content-wrap">
-
-        <!-- Active offers + calculator row -->
         <div class="offers-row" id="offers-row">
             <div class="offer-box" style="grid-column:1/-1">
                 <div class="offer-id"><span class="loading-pulse">Querying recovery.ale::offers…</span></div>
             </div>
         </div>
 
-        <!-- Requirements table -->
         <div class="req-section">
             <div class="req-header">
                 <h2>◆ Requirements Registry</h2>
@@ -488,93 +414,70 @@
             </div>
             <div class="req-scroll">
                 <table class="req-table" id="req-table">
-                    <thead>
-                        <tr id="req-head"></tr>
-                    </thead>
+                    <thead><tr id="req-head"></tr></thead>
                     <tbody id="req-body">
                         <tr><td><div class="req-empty"><span class="loading-pulse">Loading requirements…</span></div></td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
-
-    </div><!-- /content-wrap -->
-</div><!-- /main -->
+    </div>
+</div>
 
 <script>
     // ── CONVERSION RATES ─────────────────────────────────────────────────────
-    // GEM_TO_WAX: fixed by ALE shop (500 WAX = 1100 Gems)
-    const GEM_TO_WAX       = 500 / 1100;   // ≈ 0.4545 — shop rate, never changes
-    const SHARDS_PER_TLM   = 3;            // Zapps "good" price: 300 shards / 100 TLM
-    // TLM and Shards rates are derived live from market prices
+    const GEM_TO_WAX     = 500 / 1100;  // fixed shop rate
+    const SHARDS_PER_TLM = 3;           // Zapps "good" price: 300 shards / 100 TLM
     let _liveWaxUsd  = null;
     let _liveTlmUsd  = null;
-    let _gemToTlm    = 1900 / 1100;        // fallback until prices load
-    let _gemToShards = (1900 / 1100) * SHARDS_PER_TLM; // fallback
-
-    async function fetchLivePrices() {
-        try {
-            const r = await fetch(
-                'https://api.coingecko.com/api/v3/simple/price?ids=wax,alien-worlds&vs_currencies=usd',
-                { cache: 'no-store' }
-            );
-            if (!r.ok) throw new Error('CoinGecko ' + r.status);
-            const d = await r.json();
-            _liveWaxUsd  = d['wax']?.usd || null;
-            _liveTlmUsd  = d['alien-worlds']?.usd || null;
-            if (_liveWaxUsd && _liveTlmUsd) {
-                const waxPerTlm = _liveWaxUsd / _liveTlmUsd;   // TLM per 1 WAX
-                _gemToTlm    = GEM_TO_WAX * waxPerTlm;
-                _gemToShards = _gemToTlm * SHARDS_PER_TLM;
-                updateCalcRateDisplay();
-            }
-        } catch(e) { /* silent — fallback rates stay active */ }
-    }
-
-    function updateCalcRateDisplay() {
-        const el = document.getElementById('calc-price-info');
-        if (!el) return;
-        if (!_liveWaxUsd || !_liveTlmUsd) {
-            el.textContent = 'prices: fallback (offline)';
-            return;
-        }
-        const ratio = (_liveWaxUsd / _liveTlmUsd).toFixed(2);
-        el.innerHTML =
-            `<img src="${LOGO_WAX}" style="width:10px;height:10px;vertical-align:middle;border-radius:50%;margin-right:2px;">` +
-            `$${_liveWaxUsd.toFixed(5)} &nbsp;` +
-            `<img src="${LOGO_TLM}" style="width:10px;height:10px;vertical-align:middle;border-radius:50%;margin-right:2px;">` +
-            `$${_liveTlmUsd.toFixed(5)}<br>` +
-            `1 WAX = ${ratio} TLM (live)`;
-    }
+    let _gemToTlm    = 1900 / 1100;
+    let _gemToShards = (1900 / 1100) * SHARDS_PER_TLM;
+    let _reqMap      = {};   // requirement_type → display name
 
     const LOGO_GEMS   = 'Ale%20images/gems.png';
     const LOGO_SHARDS = 'Ale%20images/coin.png';
     const LOGO_WAX    = 'https://s2.coinmarketcap.com/static/img/coins/64x64/2300.png';
     const LOGO_TLM    = 'https://s2.coinmarketcap.com/static/img/coins/64x64/9119.png';
 
-    // ── PHONE KEYPAD MAPPING ─────────────────────────────────────────────────
+    async function fetchLivePrices() {
+        try {
+            const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=wax,alien-worlds&vs_currencies=usd', { cache:'no-store' });
+            if (!r.ok) throw new Error('CoinGecko ' + r.status);
+            const d = await r.json();
+            _liveWaxUsd = d['wax']?.usd || null;
+            _liveTlmUsd = d['alien-worlds']?.usd || null;
+            if (_liveWaxUsd && _liveTlmUsd) {
+                _gemToTlm    = GEM_TO_WAX * (_liveWaxUsd / _liveTlmUsd);
+                _gemToShards = _gemToTlm * SHARDS_PER_TLM;
+                updateCalcRateDisplay();
+            }
+        } catch(e) {}
+    }
+
+    function updateCalcRateDisplay() {
+        const el = document.getElementById('calc-price-info');
+        if (!el) return;
+        if (!_liveWaxUsd || !_liveTlmUsd) { el.textContent = 'prices: fallback (offline)'; return; }
+        const ratio = (_liveWaxUsd / _liveTlmUsd).toFixed(2);
+        el.innerHTML =
+            `<img src="${LOGO_WAX}" style="width:10px;height:10px;vertical-align:middle;border-radius:50%;margin-right:2px;">` +
+            `$${_liveWaxUsd.toFixed(5)} &nbsp;` +
+            `<img src="${LOGO_TLM}" style="width:10px;height:10px;vertical-align:middle;border-radius:50%;margin-right:2px;">` +
+            `$${_liveTlmUsd.toFixed(5)}<br>1 WAX = ${ratio} TLM (live)`;
+    }
+
+    // ── KEYPAD ────────────────────────────────────────────────────────────────
     const ALPHA_MAP = {
-        A:'2',B:'2',C:'2', D:'3',E:'3',F:'3',
-        G:'4',H:'4',I:'4', J:'5',K:'5',L:'5',
-        M:'6',N:'6',O:'6', P:'7',Q:'7',R:'7',S:'7',
+        A:'2',B:'2',C:'2', D:'3',E:'3',F:'3', G:'4',H:'4',I:'4',
+        J:'5',K:'5',L:'5', M:'6',N:'6',O:'6', P:'7',Q:'7',R:'7',S:'7',
         T:'8',U:'8',V:'8', W:'9',X:'9',Y:'9',Z:'9',
     };
-    // Valid numeric codes: N4R0N → 6-4-7-0-6, plus user-specified alt 6-2-7-6-6
     const VALID_CODES = ['64706', '62766'];
     const MAX_DIGITS  = 8;
-
     let _kpInput = '';
 
-    function kpPress(d) {
-        if (_kpInput.length >= MAX_DIGITS) return;
-        _kpInput += d;
-        updateKpDisplay();
-    }
-    function kpClear() {
-        _kpInput = '';
-        updateKpDisplay();
-        setKpStatus('');
-    }
+    function kpPress(d) { if (_kpInput.length < MAX_DIGITS) { _kpInput += d; updateKpDisplay(); } }
+    function kpClear()  { _kpInput = ''; updateKpDisplay(); setKpStatus(''); }
     function updateKpDisplay() {
         const el = document.getElementById('kp-display');
         el.className = '';
@@ -583,55 +486,40 @@
     function setKpStatus(msg, cls) {
         const el = document.getElementById('kp-status');
         el.textContent = msg;
-        el.style.color = cls === 'err' ? 'var(--red)' : cls === 'ok' ? 'var(--cyan)' : 'var(--muted)';
+        el.style.color = cls === 'err' ? 'var(--red)' : cls === 'ok' ? 'var(--gold)' : 'var(--muted)';
     }
     function kpEnter() {
         if (!_kpInput) return;
         if (VALID_CODES.includes(_kpInput)) {
-            unlockSuccess();
+            const el = document.getElementById('kp-display');
+            el.className = 'ok'; el.textContent = '✓ ACCESS GRANTED';
+            setKpStatus('WELCOME BACK', 'ok');
+            sessionStorage.setItem('rcv_unlocked', '1');
+            setTimeout(() => {
+                document.getElementById('lock-screen').classList.add('unlocking');
+                setTimeout(() => {
+                    document.getElementById('lock-screen').style.display = 'none';
+                    document.getElementById('main').classList.add('visible');
+                    refreshAll();
+                }, 600);
+            }, 600);
         } else {
             const el = document.getElementById('kp-display');
             el.className = 'error';
             setKpStatus('ACCESS DENIED', 'err');
-            setTimeout(() => {
-                _kpInput = '';
-                el.className = '';
-                el.textContent = '_';
-                setKpStatus('');
-            }, 1200);
+            setTimeout(() => { _kpInput = ''; el.className = ''; el.textContent = '_'; setKpStatus(''); }, 1200);
         }
-    }
-    function unlockSuccess() {
-        const el = document.getElementById('kp-display');
-        el.className = 'ok';
-        el.textContent = '✓ ACCESS GRANTED';
-        setKpStatus('WELCOME BACK', 'ok');
-        sessionStorage.setItem('rcv_unlocked', '1');
-        setTimeout(() => {
-            document.getElementById('lock-screen').classList.add('unlocking');
-            setTimeout(() => {
-                document.getElementById('lock-screen').style.display = 'none';
-                document.getElementById('main').classList.add('visible');
-                refreshAll();
-            }, 600);
-        }, 600);
     }
     function lockScreen() {
         sessionStorage.removeItem('rcv_unlocked');
         document.getElementById('main').classList.remove('visible');
         document.getElementById('main').style.display = 'none';
         const ls = document.getElementById('lock-screen');
-        ls.style.display = '';
-        ls.classList.remove('unlocking');
-        _kpInput = '';
-        updateKpDisplay();
-        setKpStatus('');
+        ls.style.display = ''; ls.classList.remove('unlocking');
+        _kpInput = ''; updateKpDisplay(); setKpStatus('');
     }
-
-    // Keyboard support
     document.addEventListener('keydown', function(e) {
-        const ls = document.getElementById('lock-screen');
-        if (ls.style.display === 'none') return;
+        if (document.getElementById('lock-screen').style.display === 'none') return;
         const k = e.key.toUpperCase();
         if (ALPHA_MAP[k]) { kpPress(ALPHA_MAP[k]); return; }
         if (/^[0-9]$/.test(e.key)) { kpPress(e.key); return; }
@@ -639,19 +527,13 @@
         if (e.key === 'Backspace') { _kpInput = _kpInput.slice(0,-1); updateKpDisplay(); }
         if (e.key === 'Escape')    { kpClear(); }
     });
-
-    // Auto-unlock if session active
     if (sessionStorage.getItem('rcv_unlocked') === '1') {
         document.getElementById('lock-screen').style.display = 'none';
         document.getElementById('main').classList.add('visible');
     }
 
     // ── WAX API ───────────────────────────────────────────────────────────────
-    const ENDPOINTS = [
-        'https://wax.greymass.com',
-        'https://wax.eosusa.io',
-        'https://api.wax.alohaeos.com',
-    ];
+    const ENDPOINTS = ['https://wax.greymass.com','https://wax.eosusa.io','https://api.wax.alohaeos.com'];
     async function fetchRows(params) {
         let last;
         for (const ep of ENDPOINTS) {
@@ -665,7 +547,6 @@
         }
         throw last || new Error('WAX API unavailable');
     }
-
     async function fetchAllRows(params) {
         let rows = [], lb = '';
         while (true) {
@@ -673,34 +554,27 @@
             if (!d.rows || !d.rows.length) break;
             rows = rows.concat(d.rows);
             if (!d.more) break;
-            lb = d.next_key || '';
-            if (!lb) break;
+            lb = d.next_key || ''; if (!lb) break;
         }
         return rows;
     }
 
-    // ── RENDER HELPERS ────────────────────────────────────────────────────────
+    // ── FORMAT HELPERS ────────────────────────────────────────────────────────
     function fmtWax(n)    { return Number(n).toLocaleString(undefined,{minimumFractionDigits:8,maximumFractionDigits:8}); }
     function fmtTlm(n)    { return Number(n).toLocaleString(undefined,{minimumFractionDigits:4,maximumFractionDigits:4}); }
     function fmtShards(n) { return Number(n).toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1}); }
     function fmtBig(n)    { return Number(n).toLocaleString(undefined,{maximumFractionDigits:0}); }
 
-    function gemValueHtml(gems, hideType) {
-        // hideType: 'wax'|'tlm'|'shards'|null — skip that row if it's the reward currency
-        if (!gems || gems <= 0) return '';
-        const rows = [];
-        if (hideType !== 'wax')
-            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_WAX}" onerror="this.style.display='none'"><span class="cur-lbl">WAX</span><span class="cur-val">${fmtWax(gems * GEM_TO_WAX)}</span></div>`);
-        if (hideType !== 'tlm')
-            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_TLM}" onerror="this.style.display='none'"><span class="cur-lbl">TLM</span><span class="cur-val">${fmtTlm(gems * _gemToTlm)}</span></div>`);
-        if (hideType !== 'shards')
-            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_SHARDS}" onerror="this.style.display='none'"><span class="cur-lbl">SHARDS</span><span class="cur-val">${fmtShards(gems * _gemToShards)}</span></div>`);
-        return rows.length ? `<div class="offer-values">${rows.join('')}</div>` : '';
+    function fmtTimestamp(ts) {
+        if (!ts) return '—';
+        try {
+            const d = new Date(Number(ts) * 1000);
+            return d.toUTCString().replace('GMT','UTC');
+        } catch(e) { return String(ts); }
     }
 
     function countdown(endSec) {
-        const now  = Math.floor(Date.now() / 1000);
-        const diff = endSec - now;
+        const diff = Number(endSec) - Math.floor(Date.now() / 1000);
         if (diff <= 0) return { text:'EXPIRED', cls:'expired' };
         const h = Math.floor(diff / 3600);
         const m = Math.floor((diff % 3600) / 60);
@@ -708,51 +582,110 @@
         const text = h > 0
             ? `${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`
             : `${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
-        const cls  = diff < 300 ? 'urgent' : '';
-        return { text, cls };
+        return { text, cls: diff < 300 ? 'urgent' : '' };
     }
+
+    // ── REWARD PARSING ────────────────────────────────────────────────────────
+    function parseReward(offer) {
+        const rawAmt = offer.reward_amount || offer.winnings || offer.reward || '';
+        const rawTyp = offer.reward_type   || offer.type     || '';
+        let amount = 0, type = '';
+        if (typeof rawAmt === 'string' && /\s/.test(rawAmt.trim())) {
+            const p = rawAmt.trim().split(/\s+/);
+            amount = parseFloat(p[0].replace(/,/g,'')) || 0;
+            type   = (p[1] || '').toLowerCase();
+        } else {
+            amount = parseFloat(rawAmt) || 0;
+            type   = String(rawTyp).toLowerCase();
+        }
+        return { amount, type };
+    }
+
+    function rewardToWax(amount, type) {
+        if (!amount) return 0;
+        const tlmPerWax = (_liveWaxUsd && _liveTlmUsd) ? _liveTlmUsd / _liveWaxUsd : 0.25;
+        if (type.includes('wax'))   return amount;
+        if (type.includes('tlm'))   return amount * tlmPerWax;
+        if (type.includes('shard')) return (amount / SHARDS_PER_TLM) * tlmPerWax;
+        if (type.includes('gem'))   return amount * GEM_TO_WAX;
+        return 0;
+    }
+
+    function valRow(logo, lbl, val) {
+        return `<div class="offer-val-row">
+            <img class="cur-logo" src="${logo}" onerror="this.style.display='none'">
+            <span class="cur-lbl">${lbl}</span>
+            <span class="cur-val">${val}</span>
+        </div>`;
+    }
+
+    function allCurrencyRows(waxAmt) {
+        // Given a value in WAX, render all 3 currency equivalents
+        const tlmPerWax = (_liveWaxUsd && _liveTlmUsd) ? _liveWaxUsd / _liveTlmUsd : 3.8;
+        return [
+            valRow(LOGO_WAX,    'WAX',    fmtWax(waxAmt)),
+            valRow(LOGO_TLM,    'TLM',    fmtTlm(waxAmt * tlmPerWax)),
+            valRow(LOGO_SHARDS, 'SHARDS', fmtShards(waxAmt * tlmPerWax * SHARDS_PER_TLM)),
+        ].join('');
+    }
+
+    function rewardValueHtml(offer) {
+        const { amount, type } = parseReward(offer);
+        if (!amount) return '';
+        const waxVal = rewardToWax(amount, type);
+        const tlmPerWax = (_liveWaxUsd && _liveTlmUsd) ? _liveWaxUsd / _liveTlmUsd : 3.8;
+        const rows = [
+            valRow(LOGO_WAX,    'WAX',    fmtWax(waxVal)),
+            valRow(LOGO_TLM,    'TLM',    fmtTlm(waxVal * tlmPerWax)),
+            valRow(LOGO_SHARDS, 'SHARDS', fmtShards(waxVal * tlmPerWax * SHARDS_PER_TLM)),
+        ].join('');
+        return `<div class="offer-values"><div class="val-section-label">REWARD ≈ VALUE</div>${rows}</div>`;
+    }
+
+    function contributedValueHtml(contrib) {
+        if (!contrib || contrib <= 0) return '';
+        const waxVal = contrib * GEM_TO_WAX;
+        return `<div class="offer-values"><div class="val-section-label">CONTRIBUTED ≈ VALUE (${fmtBig(contrib)} GEMS)</div>${allCurrencyRows(waxVal)}</div>`;
+    }
+
+    function dealBarHtml(offer) {
+        const { amount, type } = parseReward(offer);
+        const gems = offerGems(offer);
+        if (!amount || !gems) return '';
+        const rewardWax = rewardToWax(amount, type);
+        const costWax   = gems * GEM_TO_WAX;
+        if (!rewardWax || !costWax) return '';
+        const deal = rewardWax / costWax;
+        const barPct = Math.min(100, Math.max(0, (Math.log10(Math.max(0.01, deal)) + 1) / 2 * 100));
+        const displayX = deal >= 10 ? deal.toFixed(1) + 'x+' : deal.toFixed(2) + 'x';
+        let dealClass, barStyle;
+        if      (deal < 0.5) { dealClass = 'deal-bad';   barStyle = 'background:#ff4466'; }
+        else if (deal < 1.0) { dealClass = 'deal-low';   barStyle = 'background:#ff7744'; }
+        else if (deal < 2.0) { dealClass = 'deal-fair';  barStyle = 'background:#ffaa00'; }
+        else if (deal < 5.0) { dealClass = 'deal-good';  barStyle = 'background:linear-gradient(90deg,#ffaa00,#ffdd44)'; }
+        else                  { dealClass = 'deal-great'; barStyle = 'background:linear-gradient(90deg,#ffaa00,#ff44cc)'; }
+        return `<div class="deal-section">
+            <div class="deal-label"><span>◈ DEAL METER</span><span class="deal-multiplier ${dealClass}">${displayX}</span></div>
+            <div class="deal-bar-track"><div class="deal-bar-fill" style="width:${barPct.toFixed(1)}%;${barStyle}"></div></div>
+            <div class="deal-scale"><span>0.1×</span><span>1×</span><span>10×+</span></div>
+        </div>`;
+    }
+
+    // ── OFFER FIELD EXTRACTORS ────────────────────────────────────────────────
+    function offerGems(o) {
+        return o.gem_target || o.gems_required || o.required_gems || o.total_gems || o.target_gems || o.gems || o.gem_amount || 0;
+    }
+    function offerContributed(o) {
+        return o.current_gems || o.gems_contributed || o.total_contributed || o.contributed || o.gem_count || o.contributions || 0;
+    }
+    function offerEndTime(o)   { return o.end_time  || o.end   || o.expiry  || o.expires  || null; }
+    function offerStartTime(o) { return o.start_time|| o.start || o.start_at|| null; }
 
     function badgeHtml(state) {
         const s = String(state || '').toLowerCase();
-        if (s === 'active')   return '<span class="offer-state-badge badge-active">● ACTIVE</span>';
-        if (s === 'ended' || s === 'paying' || s === 'paid')
-                              return '<span class="offer-state-badge badge-ended">■ ENDED</span>';
+        if (s === 'active')                         return '<span class="offer-state-badge badge-active">● ACTIVE</span>';
+        if (['ended','paying','paid'].includes(s))  return '<span class="offer-state-badge badge-ended">■ ENDED</span>';
         return `<span class="offer-state-badge badge-pending">◌ ${(state||'UNKNOWN').toUpperCase()}</span>`;
-    }
-
-    // Determine reward type string for gemValueHtml hideType
-    function rewardHideType(offer) {
-        const rt = String(offer.reward_type || offer.type || offer.currency || '').toLowerCase();
-        if (rt.includes('wax'))    return 'wax';
-        if (rt.includes('tlm'))    return 'tlm';
-        if (rt.includes('shard'))  return 'shards';
-        // check asset string
-        const ra = String(offer.reward_amount || offer.winnings || '');
-        if (ra.toLowerCase().includes('wax'))   return 'wax';
-        if (ra.toLowerCase().includes('tlm'))   return 'tlm';
-        if (ra.toLowerCase().includes('shard')) return 'shards';
-        return null;
-    }
-
-    // Extract gem count from offer — try many possible field names
-    function offerGems(offer) {
-        return offer.gem_target || offer.gems_required || offer.required_gems
-            || offer.total_gems || offer.target_gems || offer.gems
-            || offer.gem_amount || 0;
-    }
-    function offerContributed(offer) {
-        return offer.current_gems || offer.gems_contributed || offer.total_contributed
-            || offer.contributed || offer.gem_count || offer.contributions || 0;
-    }
-    function offerEndTime(offer) {
-        return offer.end_time || offer.end || offer.expiry || offer.expires || null;
-    }
-    function offerRewardStr(offer) {
-        const amt = offer.reward_amount || offer.winnings || offer.reward || '';
-        const typ = offer.reward_type   || offer.type     || '';
-        if (amt && typ) return `${fmtBig(amt)} ${String(typ).toUpperCase()}`;
-        if (amt) return String(amt);
-        return '—';
     }
 
     // ── RENDER OFFERS ─────────────────────────────────────────────────────────
@@ -760,102 +693,110 @@
     function renderOffers(offers) {
         _offerTimerIds.forEach(clearInterval);
         _offerTimerIds = [];
-
         const row = document.getElementById('offers-row');
         if (!offers || !offers.length) {
-            row.innerHTML = '<div class="no-offers">No active offers found in recovery.ale</div>';
-            return;
+            row.innerHTML = '<div class="no-offers">No offers found in recovery.ale</div>'; return;
         }
 
         let html = '';
         offers.forEach((o, idx) => {
-            const id      = o.id ?? idx;
-            const title   = o.title || o.name || o.offer_name || `Offer #${id}`;
-            const state   = o.state || o.status || 'unknown';
-            const gems    = offerGems(o);
-            const contrib = offerContributed(o);
-            const endSec  = offerEndTime(o);
-            const pct     = gems > 0 ? Math.min(100, Math.round(contrib / gems * 100)) : 0;
-            const hideType = rewardHideType(o);
-            const timerId = `timer-${id}`;
+            const id       = o.id ?? idx;
+            const reqType  = o.requirement_type || o.req_type || '';
+            const name     = _reqMap[reqType] || o.title || o.name || o.offer_name || `Offer #${id}`;
+            const state    = o.state || o.status || 'unknown';
+            const gems     = offerGems(o);
+            const contrib  = offerContributed(o);
+            const pct      = gems > 0 ? Math.min(100, Math.round(contrib / gems * 100)) : 0;
+            const endSec   = offerEndTime(o);
+            const startSec = offerStartTime(o);
+            const timerId  = `timer-${id}`;
 
-            let timerHtml = '';
+            const { amount: rwdAmt, type: rwdType } = parseReward(o);
+            const rwdDisplay = rwdAmt
+                ? `${fmtBig(rwdAmt)} ${rwdType.toUpperCase() || '?'}`
+                : '—';
+
+            let timesHtml = `<div class="offer-times">`;
+            if (startSec) timesHtml += `<span class="t-lbl">START:</span><span class="t-val">${fmtTimestamp(startSec)}</span><br>`;
             if (endSec) {
-                const cd = countdown(Number(endSec));
-                timerHtml = `<div class="offer-timer ${cd.cls}" id="${timerId}">${cd.text}</div>`;
+                timesHtml += `<span class="t-lbl">END:</span><span class="t-val">${fmtTimestamp(endSec)}</span><br>`;
+                const cd = countdown(endSec);
+                timesHtml += `<span class="t-remain ${cd.cls}" id="${timerId}">${cd.text}</span>`;
             }
+            timesHtml += `</div>`;
 
-            html += `
-            <div class="offer-box ${String(state).toLowerCase() === 'active' ? 'active-offer' : ''}">
-                <div class="offer-id">OFFER #${id}</div>
-                ${badgeHtml(state)}
-                <div class="offer-title">${title}</div>
-                ${timerHtml}
+            html += `<div class="offer-box ${String(state).toLowerCase() === 'active' ? 'active-offer' : ''}">
+                <div class="offer-id-row">
+                    <span class="offer-id">OFFER #${id}</span>
+                    ${badgeHtml(state)}
+                </div>
+                <div class="offer-name">${name}</div>
+                ${reqType ? `<div class="offer-req-type">${reqType}</div>` : ''}
+                ${timesHtml}
                 <div class="offer-gems">Contributed: <span>${fmtBig(contrib)}</span>
-                    <img src="${LOGO_GEMS}" style="width:12px;height:12px;vertical-align:middle;margin:0 2px;">
+                    <img src="${LOGO_GEMS}" style="width:12px;height:12px;vertical-align:middle;margin:0 2px;" onerror="this.style.display='none'">
                     / <span>${fmtBig(gems)}</span>
-                    <img src="${LOGO_GEMS}" style="width:12px;height:12px;vertical-align:middle;margin:0 2px;">
+                    <img src="${LOGO_GEMS}" style="width:12px;height:12px;vertical-align:middle;margin:0 2px;" onerror="this.style.display='none'">
                 </div>
                 <div class="offer-bar-wrap">
                     <div class="offer-bar-track"><div class="offer-bar-fill" style="width:${pct}%"></div></div>
                     <div class="offer-bar-label">${pct}% FILLED</div>
                 </div>
-                <div class="offer-reward">REWARD: <strong>${offerRewardStr(o)}</strong></div>
-                ${gemValueHtml(gems - contrib, hideType)}
+                <div style="font-size:0.7em;color:var(--muted);margin:6px 0 4px;">REWARD: <strong style="color:#ffccee;">${rwdDisplay}</strong></div>
+                ${rewardValueHtml(o)}
+                ${contributedValueHtml(contrib)}
+                ${dealBarHtml(o)}
             </div>`;
         });
 
         // Calculator panel (last column)
-        html += `
-        <div id="calc-box">
-            <div class="calc-title">◈ Gem Value Calc</div>
+        html += `<div id="calc-box">
+            <div class="calc-title">🕯 Gem Value Calc</div>
             <div class="calc-input-wrap">
                 <img class="cur-logo" src="${LOGO_GEMS}" onerror="this.style.display='none'">
                 <input id="calc-gems" type="number" min="0" placeholder="Enter gems…" oninput="calcUpdate()">
             </div>
             <div class="calc-row">
                 <img class="cur-logo" src="${LOGO_WAX}" onerror="this.style.display='none'">
-                <span class="c-lbl">WAX</span>
-                <span class="c-val" id="calc-wax">—</span>
+                <span class="c-lbl">WAX</span><span class="c-val" id="calc-wax">—</span>
             </div>
             <div class="calc-row">
                 <img class="cur-logo" src="${LOGO_TLM}" onerror="this.style.display='none'">
-                <span class="c-lbl">TLM</span>
-                <span class="c-val" id="calc-tlm">—</span>
+                <span class="c-lbl">TLM</span><span class="c-val" id="calc-tlm">—</span>
             </div>
             <div class="calc-row">
                 <img class="cur-logo" src="${LOGO_SHARDS}" onerror="this.style.display='none'">
-                <span class="c-lbl">SHARDS</span>
-                <span class="c-val" id="calc-shards">—</span>
+                <span class="c-lbl">SHARDS</span><span class="c-val" id="calc-shards">—</span>
             </div>
             <div class="calc-note">
                 SHOP: 500 WAX = 1,100 GEMS (fixed)<br>
-                TLM/SHARDS via live market<br>
+                TLM &amp; SHARDS via live market<br>
                 <span id="calc-price-info" style="color:var(--muted);font-size:0.9em;"><span class="loading-pulse">fetching prices…</span></span>
             </div>
         </div>`;
 
         row.innerHTML = html;
+        updateCalcRateDisplay();
 
         // Start countdown timers
         offers.forEach((o, idx) => {
             const endSec = offerEndTime(o);
-            const id     = o.id ?? idx;
+            const id = o.id ?? idx;
             if (!endSec) return;
-            const timerId = `timer-${id}`;
             const tid = setInterval(() => {
-                const el = document.getElementById(timerId);
+                const el = document.getElementById(`timer-${id}`);
                 if (!el) { clearInterval(tid); return; }
-                const cd = countdown(Number(endSec));
+                const cd = countdown(endSec);
                 el.textContent = cd.text;
-                el.className   = `offer-timer ${cd.cls}`;
+                el.className   = `t-remain ${cd.cls}`;
             }, 1000);
             _offerTimerIds.push(tid);
         });
     }
 
     // ── RENDER REQUIREMENTS ───────────────────────────────────────────────────
-    const GEM_FIELDS   = new Set(['gem_cost','gems','required_gems','gems_required','gem_target','gem_amount','amount']);
+    const GEM_FIELDS = new Set(['gem_cost','gems','required_gems','gems_required','gem_target','gem_amount','amount']);
+    const HIDE_COLS  = new Set(['name','requirement_type','req_type']);  // handled specially
 
     function renderRequirements(rows) {
         const tbody = document.getElementById('req-body');
@@ -864,60 +805,63 @@
         if (!rows || !rows.length) {
             thead.innerHTML = '<th>—</th>';
             tbody.innerHTML = '<tr><td><div class="req-empty">No requirements data found.</div></td></tr>';
-            count.textContent = '0 ENTRIES';
-            return;
+            count.textContent = '0 ENTRIES'; return;
         }
         count.textContent = rows.length + ' ENTRIES';
 
-        // Collect all unique keys in order of first appearance
-        const keySet = new Set();
-        const keys   = [];
-        rows.forEach(r => Object.keys(r).forEach(k => { if (!keySet.has(k)) { keySet.add(k); keys.push(k); } }));
+        // Build requirement map for offer name lookup
+        _reqMap = {};
+        rows.forEach(r => {
+            const key = r.requirement_type || r.req_type || r.id;
+            if (key && r.name) _reqMap[String(key)] = r.name;
+        });
 
-        // Header
-        thead.innerHTML = keys.map(k =>
-            `<th>${k.replace(/_/g,' ').toUpperCase()}</th>`
-        ).join('');
+        // Collect keys excluding the ones we'll show specially
+        const keySet = new Set(); const keys = [];
+        rows.forEach(r => Object.keys(r).forEach(k => {
+            if (!keySet.has(k) && !HIDE_COLS.has(k)) { keySet.add(k); keys.push(k); }
+        }));
 
-        // Rows
+        // Name + type are first two columns
+        thead.innerHTML =
+            `<th>NAME</th>` +
+            keys.map(k => `<th>${k.replace(/_/g,' ').toUpperCase()}</th>`).join('');
+
         const html = rows.map(r => {
-            const cells = keys.map(k => {
+            const name    = r.name || '—';
+            const subtype = r.requirement_type || r.req_type || '';
+            const nameTd  = `<td class="name-cell">${name}${subtype ? `<span class="req-type-sub">${subtype}</span>` : ''}</td>`;
+            const cells   = keys.map(k => {
                 const v = r[k];
                 if (v === null || v === undefined || v === '') return '<td>—</td>';
-                if (GEM_FIELDS.has(k)) {
-                    return `<td><div class="gem-cell"><img src="${LOGO_GEMS}">${fmtBig(v)}</div></td>`;
-                }
+                if (GEM_FIELDS.has(k)) return `<td><div class="gem-cell"><img src="${LOGO_GEMS}">${fmtBig(v)}</div></td>`;
                 return `<td>${v}</td>`;
             }).join('');
-            return `<tr>${cells}</tr>`;
+            return `<tr>${nameTd}${cells}</tr>`;
         }).join('');
         tbody.innerHTML = html;
     }
 
     // ── CALCULATOR ────────────────────────────────────────────────────────────
     window.calcUpdate = function() {
-        const v = parseFloat(document.getElementById('calc-gems').value);
-        if (isNaN(v) || v <= 0) {
-            ['calc-wax','calc-tlm','calc-shards'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = '—';
-            });
-            return;
-        }
+        const v = parseFloat(document.getElementById('calc-gems')?.value);
         const wEl = document.getElementById('calc-wax');
         const tEl = document.getElementById('calc-tlm');
         const sEl = document.getElementById('calc-shards');
-        if (wEl) wEl.textContent = fmtWax(v * GEM_TO_WAX);
-        if (tEl) tEl.textContent = fmtTlm(v * _gemToTlm);
-        if (sEl) sEl.textContent = fmtShards(v * _gemToShards);
+        if (isNaN(v) || v <= 0) {
+            [wEl,tEl,sEl].forEach(el => { if (el) el.textContent = '—'; }); return;
+        }
+        const tlmPerWax = (_liveWaxUsd && _liveTlmUsd) ? _liveWaxUsd / _liveTlmUsd : 3.8;
+        const wax = v * GEM_TO_WAX;
+        if (wEl) wEl.textContent = fmtWax(wax);
+        if (tEl) tEl.textContent = fmtTlm(wax * tlmPerWax);
+        if (sEl) sEl.textContent = fmtShards(wax * tlmPerWax * SHARDS_PER_TLM);
     };
 
     // ── FETCH & REFRESH ───────────────────────────────────────────────────────
     function setStatus(msg, cls) {
         const el = document.getElementById('fetch-status');
-        if (!el) return;
-        el.textContent = msg;
-        el.className = cls || '';
+        if (el) { el.textContent = msg; el.className = cls || ''; }
     }
 
     async function refreshAll() {
@@ -928,25 +872,18 @@
                 fetchAllRows({ code:'recovery.ale', scope:'recovery.ale', table:'requirements' }),
                 fetchLivePrices(),
             ]);
-
-            renderOffers(offersData);
-            renderRequirements(reqData);
-            updateCalcRateDisplay();
+            renderRequirements(reqData);   // build _reqMap first
+            renderOffers(offersData);      // then render offers with names
             setStatus('Updated ' + new Date().toLocaleTimeString(), 'ok');
         } catch(e) {
             setStatus('✗ ' + (e.message || String(e)), 'err');
             document.getElementById('offers-row').innerHTML =
-                '<div class="no-offers">Failed to load offers: ' + (e.message || e) + '</div>';
+                '<div class="no-offers">Error: ' + (e.message || e) + '</div>';
         }
     }
 
-    // Auto-refresh prices every 5 minutes
     setInterval(fetchLivePrices, 5 * 60 * 1000);
-
-    // Auto-load if already unlocked
-    if (sessionStorage.getItem('rcv_unlocked') === '1') {
-        refreshAll();
-    }
+    if (sessionStorage.getItem('rcv_unlocked') === '1') refreshAll();
 </script>
 </body>
 </html>
