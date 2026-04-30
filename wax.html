@@ -342,7 +342,51 @@
         ::-webkit-scrollbar { width:5px; }
         ::-webkit-scrollbar-track { background:#030003; }
         ::-webkit-scrollbar-thumb { background:var(--pink-dim); border-radius:2px; }
+
+        /* ── WALLET BUTTONS ───────────────────────────────────────────────── */
+        .wallet-btn {
+            background: rgba(8,0,12,0.95); color: var(--pink);
+            border: 1px dashed var(--pink-dim); padding: 5px 13px;
+            font-family: 'Courier New', monospace; font-size: 0.68em;
+            letter-spacing: 1px; cursor: pointer; transition: all 0.2s; border-radius: 2px;
+        }
+        .wallet-btn:hover { border-color: var(--pink); box-shadow: 0 0 8px var(--pink-glow); }
+        .wallet-btn.logged-in { background: rgba(255,170,0,0.08); color: var(--gold); border: 1px solid var(--gold-dim); }
+        .wallet-btn.logged-in:hover { border-color: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
+        .wallet-area { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+
+        /* ── MY CONTRIBUTION ROW ─────────────────────────────────────────── */
+        .my-contrib {
+            margin-top:8px; padding:7px 10px;
+            background: rgba(255,170,0,0.07); border: 1px solid rgba(255,170,0,0.25);
+            border-radius: 3px; font-size: 0.68em; letter-spacing: 1px;
+            color: var(--gold); display: flex; align-items: center; gap: 8px;
+        }
+        .my-contrib strong { color: #ffe066; font-size: 1.1em; }
+        .my-contrib .mc-pct { color: var(--gold-dim); font-size: 0.85em; margin-left: auto; }
+        .my-contrib.no-contrib { color: var(--muted); background: transparent; border-color: rgba(255,68,204,0.1); }
     </style>
+    <script src="waxjs.js"></script>
+    <script type="module">
+        import { SessionKit } from 'https://esm.sh/@wharfkit/session@1';
+        import { WebRenderer } from 'https://esm.sh/@wharfkit/web-renderer@1';
+        import { WalletPluginAnchor } from 'https://esm.sh/@wharfkit/wallet-plugin-anchor@1';
+        const kit = new SessionKit({
+            appName: 'naroncodex',
+            chains: [{ id: '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4', url: 'https://wax.greymass.com' }],
+            ui: new WebRenderer(),
+            walletPlugins: [new WalletPluginAnchor()],
+        });
+        window.walletKit = kit;
+        try {
+            const session = await kit.restore();
+            if (session) {
+                window.walletSession = session;
+                localStorage.setItem('naron_wallet', String(session.actor));
+                if (typeof checkWalletState === 'function') checkWalletState();
+            }
+        } catch(e) { console.warn('Session restore failed:', e); }
+    </script>
 </head>
 <body>
 
@@ -396,6 +440,11 @@
             <h1>🕯 Recovery.ALE — Candle Interface</h1>
             <div class="hdr-sub" id="fetch-status">Loading chain data…</div>
         </div>
+        <div class="wallet-area">
+            <button id="wallet-connect-btn" class="wallet-btn logged-in" onclick="disconnectWallet()" style="display:none;"></button>
+            <button id="wallet-btn-anchor" class="wallet-btn" onclick="loginWithAnchor()">[ ⚓ ANCHOR ]</button>
+            <button id="wallet-btn-wcc" class="wallet-btn" onclick="loginWithWCC()">[ ☁ CLOUD ]</button>
+        </div>
         <button class="refresh-btn" onclick="refreshAll()">⟳ REFRESH</button>
         <button class="lock-btn" onclick="lockScreen()">⌁ LOCK</button>
     </div>
@@ -433,6 +482,8 @@
     let _gemToTlm    = 1900 / 1100;
     let _gemToShards = (1900 / 1100) * SHARDS_PER_TLM;
     let _reqMap      = {};   // requirement_type → display name
+    let _offersCache = [];   // last fetched offers, used for contribution re-render
+    let _userContribs = {};  // offer_id → logged-in user's gem amount
 
     const LOGO_GEMS   = 'Ale%20images/gems.png';
     const LOGO_SHARDS = 'Ale%20images/coin.png';
@@ -697,6 +748,21 @@
         return `<span class="offer-state-badge badge-pending">◌ ${(state||'UNKNOWN').toUpperCase()}</span>`;
     }
 
+    function myContribHtml(offerId, totalGems) {
+        const wallet = localStorage.getItem('naron_wallet');
+        if (!wallet) return '';
+        const myAmt = _userContribs[offerId];
+        if (myAmt === undefined) {
+            return `<div class="my-contrib no-contrib"><span>◈ MY GEMS:</span><strong>—</strong></div>`;
+        }
+        const pct = totalGems > 0 ? Math.round(myAmt / totalGems * 100) : 0;
+        return `<div class="my-contrib">
+            <img src="${LOGO_GEMS}" style="width:12px;height:12px;object-fit:contain;opacity:0.85;">
+            <span>MY GEMS:</span><strong>${fmtBig(myAmt)}</strong>
+            <span class="mc-pct">${pct}% of cap</span>
+        </div>`;
+    }
+
     // ── RENDER OFFERS ─────────────────────────────────────────────────────────
     let _offerTimerIds = [];
     function renderOffers(offers) {
@@ -706,6 +772,7 @@
         if (!offers || !offers.length) {
             row.innerHTML = '<div class="no-offers">No offers found in recovery.ale</div>'; return;
         }
+        _offersCache = offers;
 
         let html = '';
         offers.forEach((o, idx) => {
@@ -756,6 +823,7 @@
                 ${rewardValueHtml(o)}
                 ${contributedValueHtml(contrib)}
                 ${dealBarHtml(o)}
+                ${myContribHtml(o.offer_id, gems)}
             </div>`;
         });
 
@@ -884,6 +952,8 @@
             ]);
             renderRequirements(reqData);   // build _reqMap first
             renderOffers(offersData);      // then render offers with names
+            const w = localStorage.getItem('naron_wallet');
+            if (w) fetchUserContributions(w);
             setStatus('Updated ' + new Date().toLocaleTimeString(), 'ok');
         } catch(e) {
             setStatus('✗ ' + (e.message || String(e)), 'err');
@@ -892,8 +962,70 @@
         }
     }
 
+    // ── WALLET ────────────────────────────────────────────────────────────────
+    var wax = new waxjs.WaxJS({ rpcEndpoint: 'https://wax.greymass.com', userAccount: localStorage.getItem('naron_wallet') || '', tryAutoLogin: false });
+
+    function checkWalletState() { updateWalletUI(localStorage.getItem('naron_wallet') || null); }
+    function updateWalletUI(account) {
+        const btnA   = document.getElementById('wallet-connect-btn');
+        const btnAnc = document.getElementById('wallet-btn-anchor');
+        const btnWCC = document.getElementById('wallet-btn-wcc');
+        if (account) {
+            if (btnA)   { btnA.textContent = '[ ' + account + ' ]'; btnA.style.display = ''; }
+            if (btnAnc) btnAnc.style.display = 'none';
+            if (btnWCC) btnWCC.style.display = 'none';
+            if (_offersCache.length) fetchUserContributions(account);
+        } else {
+            if (btnA)   { btnA.style.display = 'none'; }
+            if (btnAnc) btnAnc.style.display = '';
+            if (btnWCC) btnWCC.style.display = '';
+            _userContribs = {};
+            if (_offersCache.length) renderOffers(_offersCache);
+        }
+    }
+    window.loginWithAnchor = async function() {
+        try {
+            const r = await window.walletKit.login();
+            window.walletSession = r.session;
+            localStorage.setItem('naron_wallet', String(r.session.actor));
+            checkWalletState();
+        } catch(e) { console.error('Anchor login failed:', e); }
+    };
+    window.loginWithWCC = async function() {
+        try {
+            const account = await wax.login();
+            localStorage.setItem('naron_wallet', account);
+            checkWalletState();
+        } catch(e) { console.error('WCC login failed:', e); }
+    };
+    window.disconnectWallet = function() {
+        if (window.walletKit && window.walletSession) {
+            window.walletKit.logout(window.walletSession).catch(function(){});
+            window.walletSession = null;
+        }
+        localStorage.removeItem('naron_wallet');
+        if (wax) wax.userAccount = '';
+        checkWalletState();
+    };
+
+    async function fetchUserContributions(wallet) {
+        _userContribs = {};
+        if (!wallet || !_offersCache.length) return;
+        await Promise.all(_offersCache.map(async (o) => {
+            try {
+                const resp = await fetchRows({
+                    code: 'recovery.ale', scope: o.offer_id,
+                    table: 'contribution', limit: 100
+                });
+                const row = (resp.rows || []).find(r => r.wallet === wallet);
+                if (row) _userContribs[o.offer_id] = row.amount;
+            } catch(e) {}
+        }));
+        renderOffers(_offersCache);
+    }
+
     setInterval(fetchLivePrices, 5 * 60 * 1000);
-    if (sessionStorage.getItem('rcv_unlocked') === '1') refreshAll();
+    if (sessionStorage.getItem('rcv_unlocked') === '1') { refreshAll(); checkWalletState(); }
 </script>
 </body>
 </html>
