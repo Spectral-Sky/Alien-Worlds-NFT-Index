@@ -616,16 +616,23 @@
     function fmtShards(n) { return Number(n).toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1}); }
     function fmtBig(n)    { return Number(n).toLocaleString(undefined,{maximumFractionDigits:0}); }
 
+    function tsToMs(ts) {
+        if (!ts) return null;
+        const n = Number(ts);
+        return isNaN(n) ? new Date(ts + 'Z').getTime() : n * 1000;
+    }
     function fmtTimestamp(ts) {
         if (!ts) return '—';
         try {
-            const d = new Date(Number(ts) * 1000);
-            return d.toUTCString().replace('GMT','UTC');
+            const ms = tsToMs(ts);
+            return new Date(ms).toUTCString().replace('GMT','UTC');
         } catch(e) { return String(ts); }
     }
 
-    function countdown(endSec) {
-        const diff = Number(endSec) - Math.floor(Date.now() / 1000);
+    function countdown(endTs) {
+        const ms = tsToMs(endTs);
+        if (!ms) return { text:'—', cls:'' };
+        const diff = Math.floor((ms - Date.now()) / 1000);
         if (diff <= 0) return { text:'EXPIRED', cls:'expired' };
         const h = Math.floor(diff / 3600);
         const m = Math.floor((diff % 3600) / 60);
@@ -738,8 +745,8 @@
     function offerContributed(o) {
         return o.current_gems || o.gems_contributed || o.total_contributed || o.contributed || o.gem_count || o.contributions || 0;
     }
-    function offerEndTime(o)   { return o.end_time  || o.end   || o.expiry  || o.expires  || null; }
-    function offerStartTime(o) { return o.start_time|| o.start || o.start_at|| null; }
+    function offerEndTime(o)   { return o.offer_end   || o.end_time  || o.end   || o.expiry  || o.expires  || null; }
+    function offerStartTime(o) { return o.offer_start || o.start_time|| o.start || o.start_at|| null; }
 
     function badgeHtml(state) {
         const s = String(state || '').toLowerCase();
