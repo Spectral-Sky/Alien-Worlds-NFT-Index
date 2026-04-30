@@ -1501,7 +1501,7 @@
                 if (!_allPlayerPos[planet]) _allPlayerPos[planet] = {};
                 var key = row.x + ',' + row.y;
                 if (!_allPlayerPos[planet][key]) _allPlayerPos[planet][key] = [];
-                _allPlayerPos[planet][key].push({ name: row.name || '', wallet: row.wallet });
+                _allPlayerPos[planet][key].push({ name: row.playertag || row.wallet, wallet: row.wallet });
             });
             _allPlayersLoaded = true;
             Object.keys(_rendered).forEach(function(p) { if (_rendered[p]) applyPlayerDots(p); });
