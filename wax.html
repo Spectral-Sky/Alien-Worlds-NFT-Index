@@ -763,18 +763,32 @@
 
     // ── OFFER FIELD EXTRACTORS ────────────────────────────────────────────────
     function offerGems(o) {
-        return o.gem_target || o.gems_required || o.required_gems || o.total_gems || o.target_gems || o.gems || o.gem_amount || 0;
+        return o.total_gems || o.gem_target || o.gems_required || o.required_gems || o.target_gems || o.gems || o.gem_amount || 0;
     }
     function offerContributed(o) {
-        return o.current_gems || o.gems_contributed || o.total_contributed || o.contributed || o.gem_count || o.contributions || 0;
+        // Sum from fetched contribution data if available; chain offer row has no contributed field
+        const cached = _allContribs[o.offer_id];
+        if (cached) return cached.reduce((s, c) => s + c.amount, 0);
+        return o.current_gems || o.gems_contributed || o.total_contributed || o.contributed || 0;
     }
     function offerEndTime(o)   { return o.offer_end   || o.end_time  || o.end   || o.expiry  || o.expires  || null; }
     function offerStartTime(o) { return o.offer_start || o.start_time|| o.start || o.start_at|| null; }
+
+    function deriveState(o) {
+        const now = Date.now();
+        const startMs = tsToMs(offerStartTime(o));
+        const endMs   = tsToMs(offerEndTime(o));
+        if (o.state && o.state !== 'unknown') return o.state;
+        if (endMs   && now > endMs)   return 'ended';
+        if (startMs && now < startMs) return 'pending';
+        return 'active';
+    }
 
     function badgeHtml(state) {
         const s = String(state || '').toLowerCase();
         if (s === 'active')                         return '<span class="offer-state-badge badge-active">● ACTIVE</span>';
         if (['ended','paying','paid'].includes(s))  return '<span class="offer-state-badge badge-ended">■ ENDED</span>';
+        if (s === 'pending')                        return '<span class="offer-state-badge badge-pending">◌ PENDING</span>';
         return `<span class="offer-state-badge badge-pending">◌ ${(state||'UNKNOWN').toUpperCase()}</span>`;
     }
 
@@ -838,8 +852,8 @@
         offers.forEach((o, idx) => {
             const id       = o.id ?? idx;
             const reqType  = o.requirement_type || o.req_type || '';
-            const name     = _reqMap[reqType] || o.title || o.name || o.offer_name || `Offer #${id}`;
-            const state    = o.state || o.status || 'unknown';
+            const name     = o.requirements || _reqMap[reqType] || o.title || o.name || reqType || `Offer #${id}`;
+            const state    = deriveState(o);
             const gems     = offerGems(o);
             const contrib  = offerContributed(o);
             const pct      = gems > 0 ? Math.min(100, Math.round(contrib / gems * 100)) : 0;
@@ -864,7 +878,7 @@
 
             html += `<div class="offer-box ${String(state).toLowerCase() === 'active' ? 'active-offer' : ''}">
                 <div class="offer-id-row">
-                    <span class="offer-id">OFFER #${id}</span>
+                    <span class="offer-id">${o.offer_id || ('#' + id)}</span>
                     ${badgeHtml(state)}
                 </div>
                 <div class="offer-name">${name}</div>
