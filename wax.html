@@ -460,9 +460,9 @@
         if (!_liveWaxUsd || !_liveTlmUsd) { el.textContent = 'prices: fallback (offline)'; return; }
         const ratio = (_liveWaxUsd / _liveTlmUsd).toFixed(2);
         el.innerHTML =
-            `<img src="${LOGO_WAX}" style="width:10px;height:10px;vertical-align:middle;border-radius:50%;margin-right:2px;">` +
+            `<img src="${LOGO_WAX}" style="width:14px;height:14px;vertical-align:middle;border-radius:50%;margin-right:3px;">` +
             `$${_liveWaxUsd.toFixed(5)} &nbsp;` +
-            `<img src="${LOGO_TLM}" style="width:10px;height:10px;vertical-align:middle;border-radius:50%;margin-right:2px;">` +
+            `<img src="${LOGO_TLM}" style="width:14px;height:14px;vertical-align:middle;border-radius:50%;margin-right:3px;">` +
             `$${_liveTlmUsd.toFixed(5)}<br>1 WAX = ${ratio} TLM (live)`;
     }
 
@@ -721,8 +721,9 @@
             const timerId  = `timer-${id}`;
 
             const { amount: rwdAmt, type: rwdType } = parseReward(o);
+            const _rwdFmt = rwdType.includes('wax') ? fmtWax : rwdType.includes('tlm') ? fmtTlm : rwdType.includes('shard') ? fmtShards : fmtBig;
             const rwdDisplay = rwdAmt
-                ? `${fmtBig(rwdAmt)} ${rwdType.toUpperCase() || '?'}`
+                ? `${_rwdFmt(rwdAmt)} ${rwdType.toUpperCase() || '?'}`
                 : '—';
 
             let timesHtml = `<div class="offer-times">`;
@@ -780,7 +781,7 @@
             <div class="calc-note">
                 SHOP: 500 WAX = 1,100 GEMS (fixed)<br>
                 TLM &amp; SHARDS via live market<br>
-                <span id="calc-price-info" style="color:var(--muted);font-size:0.9em;"><span class="loading-pulse">fetching prices…</span></span>
+                <span id="calc-price-info" style="color:var(--muted);font-size:1.05em;line-height:1.6;"><span class="loading-pulse">fetching prices…</span></span>
             </div>
         </div>`;
 
