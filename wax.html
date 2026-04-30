@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RECOVERY.ALE // RESTRICTED</title>
+    <link rel="icon" type="image/png" href="NCico.png">
+    <style>
+        :root {
+            --pcb-bg:    #020408;
+            --pcb-trace: rgba(0,200,80,0.06);
+            --green:     #00cc66;
+            --green-dim: #007a3d;
+            --green-glow:#00ff8844;
+            --green-text:#88ffaa;
+            --muted:     #2a5a3a;
+            --cyan:      #00ffcc;
+            --red:       #ff4444;
+            --amber:     #ffaa00;
+            --panel-bg:  rgba(0,12,6,0.92);
+            --border:    rgba(0,200,80,0.2);
+            --border-hi: rgba(0,200,80,0.5);
+        }
+        *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+        html, body {
+            height:100%; width:100%;
+            background: var(--pcb-bg);
+            color: var(--green-text);
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: hidden;
+        }
+
+        /* ── CIRCUIT BOARD BACKGROUND ─────────────────────────────────────── */
+        body::before {
+            content:'';
+            position:fixed; inset:0; z-index:0; pointer-events:none;
+            background-image:
+                linear-gradient(var(--pcb-trace) 1px, transparent 1px),
+                linear-gradient(90deg, var(--pcb-trace) 1px, transparent 1px),
+                linear-gradient(rgba(0,200,80,0.02) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(0,200,80,0.02) 2px, transparent 2px);
+            background-size: 40px 40px, 40px 40px, 200px 200px, 200px 200px;
+        }
+        body::after {
+            content:'';
+            position:fixed; inset:0; z-index:0; pointer-events:none;
+            background:
+                radial-gradient(ellipse 60% 40% at 15% 20%, rgba(0,180,80,0.04) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 60% at 85% 80%, rgba(0,60,180,0.03) 0%, transparent 70%),
+                radial-gradient(ellipse 30% 30% at 50% 50%, rgba(0,255,120,0.02) 0%, transparent 70%);
+        }
+
+        /* Scan-line flicker overlay */
+        .scanlines {
+            position:fixed; inset:0; z-index:1; pointer-events:none;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 3px,
+                rgba(0,0,0,0.08) 3px,
+                rgba(0,0,0,0.08) 4px
+            );
+        }
+
+        /* ── LOCK SCREEN ──────────────────────────────────────────────────── */
+        #lock-screen {
+            position:fixed; inset:0; z-index:100;
+            display:flex; align-items:center; justify-content:center;
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        #lock-screen.unlocking {
+            opacity:0; transform:scale(1.03);
+            pointer-events:none;
+        }
+
+        .lock-flavor {
+            position:absolute; top:10%; left:50%; transform:translateX(-50%);
+            text-align:center; user-select:none;
+        }
+        .lock-flavor h1 {
+            font-size:1.2em; letter-spacing:6px; color:var(--muted);
+            text-transform:uppercase; margin-bottom:6px;
+        }
+        .lock-flavor .lock-sub {
+            font-size:0.65em; color:rgba(0,140,60,0.35);
+            letter-spacing:3px; text-transform:uppercase;
+        }
+
+        /* PCB corner decorations */
+        .pcb-corner {
+            position:absolute; width:80px; height:80px;
+            border:1px solid var(--muted); opacity:0.3; pointer-events:none;
+        }
+        .pcb-corner.tl { top:20px; left:20px; border-right:none; border-bottom:none; }
+        .pcb-corner.tr { top:20px; right:20px; border-left:none; border-bottom:none; }
+        .pcb-corner.bl { bottom:20px; left:20px; border-right:none; border-top:none; }
+        .pcb-corner.br { bottom:20px; right:20px; border-left:none; border-top:none; }
+
+        /* Floating circuit nodes */
+        .node {
+            position:absolute; width:6px; height:6px; border-radius:50%;
+            background:var(--muted); opacity:0.25; pointer-events:none;
+        }
+
+        /* ── KEYPAD ───────────────────────────────────────────────────────── */
+        #keypad {
+            position:absolute; bottom:32px; right:32px;
+            background: rgba(0,8,4,0.95);
+            border:1px solid var(--border-hi);
+            box-shadow: 0 0 20px rgba(0,200,80,0.15), inset 0 0 30px rgba(0,0,0,0.5);
+            padding:14px 16px 12px;
+            border-radius:3px;
+            min-width:174px;
+        }
+        #keypad::before {
+            content:'◈ ACCESS TERMINAL';
+            display:block; font-size:0.55em; letter-spacing:3px;
+            color:var(--muted); text-align:center; margin-bottom:10px;
+        }
+
+        #kp-display {
+            background:#000; border:1px solid var(--border);
+            padding:6px 10px; margin-bottom:10px;
+            font-size:1.0em; letter-spacing:8px; color:var(--green);
+            text-align:center; min-height:34px;
+            box-shadow:inset 0 0 8px rgba(0,0,0,0.8);
+            border-radius:1px;
+        }
+        #kp-display.error { color:var(--red); animation:kp-shake 0.4s; }
+        #kp-display.ok    { color:var(--cyan); }
+
+        @keyframes kp-shake {
+            0%,100%{transform:translateX(0)}
+            20%{transform:translateX(-5px)}
+            40%{transform:translateX(5px)}
+            60%{transform:translateX(-4px)}
+            80%{transform:translateX(4px)}
+        }
+
+        .kp-grid {
+            display:grid; grid-template-columns:repeat(3,1fr); gap:5px;
+            margin-bottom:5px;
+        }
+        .kp-btn {
+            background:rgba(0,20,10,0.8);
+            border:1px solid var(--border);
+            color:var(--green-text); cursor:pointer;
+            padding:7px 2px 5px;
+            text-align:center; border-radius:2px;
+            transition:all 0.1s; user-select:none;
+            display:flex; flex-direction:column; align-items:center;
+            line-height:1;
+        }
+        .kp-btn:hover  { background:rgba(0,100,50,0.4); border-color:var(--green); }
+        .kp-btn:active { background:rgba(0,180,80,0.3); transform:scale(0.95); }
+        .kp-num  { font-size:1.05em; font-weight:bold; color:#ccffdd; }
+        .kp-abc  { font-size:0.45em; letter-spacing:1px; color:var(--muted); margin-top:2px; }
+
+        .kp-row-bottom {
+            display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;
+        }
+        .kp-btn.clr  { color:var(--amber); border-color:rgba(255,170,0,0.3); }
+        .kp-btn.clr:hover { background:rgba(80,50,0,0.5); border-color:var(--amber); }
+        .kp-btn.ent  { color:var(--cyan); border-color:rgba(0,255,200,0.3); font-size:0.72em; letter-spacing:1px; }
+        .kp-btn.ent:hover { background:rgba(0,60,50,0.5); border-color:var(--cyan); }
+
+        #kp-status {
+            margin-top:7px; font-size:0.6em; letter-spacing:2px;
+            text-align:center; color:var(--muted); min-height:1em;
+        }
+
+        /* ── MAIN CONTENT ─────────────────────────────────────────────────── */
+        #main {
+            display:none; position:relative; z-index:10;
+            min-height:100vh; padding:0 0 40px;
+        }
+        #main.visible { display:block; animation:fade-in 0.7s ease; }
+        @keyframes fade-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+        .main-header {
+            background:rgba(0,8,4,0.97); border-bottom:1px solid var(--border-hi);
+            padding:12px 24px; display:flex; align-items:center; gap:16px;
+            position:sticky; top:0; z-index:50;
+            box-shadow:0 2px 20px rgba(0,200,80,0.1);
+        }
+        .main-header h1 {
+            font-size:0.85em; letter-spacing:4px; color:var(--green);
+            text-transform:uppercase; flex:1;
+        }
+        .main-header .hdr-sub { font-size:0.6em; color:var(--muted); letter-spacing:2px; }
+        .refresh-btn {
+            background:transparent; border:1px solid var(--border);
+            color:var(--muted); font-family:'Courier New',monospace;
+            font-size:0.68em; letter-spacing:2px; padding:5px 14px;
+            cursor:pointer; transition:all 0.2s; text-transform:uppercase;
+        }
+        .refresh-btn:hover { color:var(--green); border-color:var(--green); }
+        .lock-btn {
+            background:transparent; border:1px solid rgba(255,60,60,0.2);
+            color:rgba(255,80,80,0.4); font-family:'Courier New',monospace;
+            font-size:0.62em; letter-spacing:2px; padding:5px 10px;
+            cursor:pointer; transition:all 0.2s;
+        }
+        .lock-btn:hover { color:var(--red); border-color:var(--red); }
+
+        .content-wrap { padding:20px 24px; }
+
+        /* ── OFFERS ROW ───────────────────────────────────────────────────── */
+        .offers-row {
+            display:grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px,1fr)) 220px;
+            gap:14px; margin-bottom:24px; align-items:start;
+        }
+
+        .offer-box {
+            background:var(--panel-bg); border:1px solid var(--border);
+            border-radius:3px; padding:14px 16px;
+            box-shadow:0 0 12px rgba(0,0,0,0.5);
+            transition:border-color 0.2s;
+        }
+        .offer-box:hover { border-color:var(--border-hi); }
+        .offer-box.active-offer { border-color:rgba(0,200,80,0.4); }
+
+        .offer-id {
+            font-size:0.6em; letter-spacing:3px; color:var(--muted);
+            text-transform:uppercase; margin-bottom:6px;
+        }
+        .offer-title {
+            font-size:0.85em; color:#ccffdd; letter-spacing:1px;
+            margin-bottom:10px; line-height:1.4;
+        }
+        .offer-timer {
+            font-size:1.1em; color:var(--cyan); letter-spacing:2px;
+            margin-bottom:8px; font-weight:bold;
+        }
+        .offer-timer.urgent { color:var(--amber); animation:pulse 1s infinite; }
+        .offer-timer.expired { color:var(--red); }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+        .offer-bar-wrap { margin:8px 0 4px; }
+        .offer-bar-track {
+            height:6px; background:rgba(0,50,20,0.8);
+            border-radius:3px; overflow:hidden;
+        }
+        .offer-bar-fill {
+            height:100%; background:linear-gradient(90deg,var(--green-dim),var(--green));
+            border-radius:3px; transition:width 0.5s;
+            box-shadow:0 0 6px var(--green-glow);
+        }
+        .offer-bar-label {
+            font-size:0.62em; color:var(--muted); text-align:right;
+            margin-top:2px; letter-spacing:1px;
+        }
+        .offer-gems {
+            margin:8px 0 4px; font-size:0.72em; color:var(--green-text);
+        }
+        .offer-gems span { color:var(--green); font-size:1.1em; }
+
+        .offer-reward {
+            margin-top:8px; padding-top:8px;
+            border-top:1px solid rgba(0,100,40,0.3);
+            font-size:0.68em; color:var(--muted); letter-spacing:1px;
+        }
+        .offer-reward strong { color:var(--green-text); }
+
+        .offer-values {
+            margin-top:8px; padding:8px;
+            background:rgba(0,20,10,0.6); border:1px solid rgba(0,80,30,0.4);
+            border-radius:2px;
+        }
+        .offer-val-row {
+            display:flex; align-items:center; gap:6px;
+            font-size:0.68em; margin-bottom:4px; color:var(--muted);
+        }
+        .offer-val-row:last-child { margin-bottom:0; }
+        .offer-val-row .cur-logo {
+            width:14px; height:14px; object-fit:contain; border-radius:50%;
+            opacity:0.85; flex-shrink:0;
+        }
+        .offer-val-row .cur-lbl { flex:1; letter-spacing:1px; }
+        .offer-val-row .cur-val { color:var(--green-text); font-size:1.05em; }
+
+        .offer-state-badge {
+            display:inline-block; font-size:0.58em; letter-spacing:2px;
+            padding:2px 8px; border-radius:1px; margin-bottom:6px;
+            text-transform:uppercase;
+        }
+        .badge-active  { background:rgba(0,120,50,0.3); color:#44ee88; border:1px solid rgba(0,180,60,0.4); }
+        .badge-ended   { background:rgba(60,0,0,0.4);   color:#aa4444; border:1px solid rgba(180,0,0,0.3); }
+        .badge-pending { background:rgba(50,40,0,0.4);  color:#bbaa44; border:1px solid rgba(180,150,0,0.3); }
+
+        /* no offers placeholder */
+        .no-offers {
+            grid-column:1/-1; text-align:center;
+            font-size:0.75em; color:var(--muted); padding:30px;
+            border:1px dashed rgba(0,100,40,0.3); border-radius:3px;
+        }
+
+        /* ── GEM CALCULATOR ───────────────────────────────────────────────── */
+        #calc-box {
+            background:var(--panel-bg); border:1px solid var(--border-hi);
+            border-radius:3px; padding:14px 16px;
+            box-shadow:0 0 15px rgba(0,200,80,0.08);
+        }
+        .calc-title {
+            font-size:0.6em; letter-spacing:3px; color:var(--green);
+            text-transform:uppercase; margin-bottom:10px;
+            padding-bottom:6px; border-bottom:1px solid var(--border);
+        }
+        .calc-input-wrap {
+            display:flex; align-items:center; gap:6px; margin-bottom:12px;
+        }
+        .calc-input-wrap .cur-logo {
+            width:18px; height:18px; object-fit:contain;
+            border-radius:50%; opacity:0.9; flex-shrink:0;
+        }
+        #calc-gems {
+            flex:1; background:rgba(0,20,10,0.9);
+            border:1px solid var(--border); color:var(--green-text);
+            font-family:'Courier New',monospace; font-size:0.88em;
+            padding:6px 8px; outline:none; border-radius:2px; width:100%;
+        }
+        #calc-gems:focus { border-color:var(--green); box-shadow:0 0 6px rgba(0,200,80,0.2); }
+        #calc-gems::placeholder { color:var(--muted); }
+
+        .calc-row {
+            display:flex; align-items:center; gap:8px;
+            padding:5px 0; border-bottom:1px solid rgba(0,60,20,0.3);
+            font-size:0.72em;
+        }
+        .calc-row:last-child { border-bottom:none; }
+        .calc-row .cur-logo { width:16px; height:16px; object-fit:contain; border-radius:50%; opacity:0.85; flex-shrink:0; }
+        .calc-row .c-lbl { flex:1; color:var(--muted); letter-spacing:1px; }
+        .calc-row .c-val { color:var(--green-text); font-size:1.1em; letter-spacing:1px; min-width:80px; text-align:right; }
+
+        .calc-note {
+            margin-top:10px; font-size:0.58em; color:rgba(0,120,50,0.6);
+            letter-spacing:1px; line-height:1.5; border-top:1px solid rgba(0,60,20,0.3);
+            padding-top:8px;
+        }
+
+        /* ── REQUIREMENTS TABLE ───────────────────────────────────────────── */
+        .req-section {
+            background:var(--panel-bg); border:1px solid var(--border);
+            border-radius:3px; overflow:hidden;
+        }
+        .req-header {
+            background:rgba(0,20,10,0.95); padding:10px 16px;
+            border-bottom:1px solid var(--border);
+            display:flex; align-items:center; gap:12px;
+        }
+        .req-header h2 {
+            font-size:0.72em; letter-spacing:3px; color:var(--green);
+            text-transform:uppercase; flex:1;
+        }
+        .req-count {
+            font-size:0.6em; color:var(--muted); letter-spacing:2px;
+        }
+        .req-scroll {
+            overflow-y:auto; max-height:420px;
+        }
+        .req-table {
+            width:100%; border-collapse:collapse;
+            font-size:0.7em;
+        }
+        .req-table thead th {
+            position:sticky; top:0;
+            background:rgba(0,15,8,0.98); color:var(--muted);
+            font-size:0.85em; letter-spacing:2px; text-transform:uppercase;
+            padding:8px 14px; text-align:left;
+            border-bottom:1px solid var(--border);
+        }
+        .req-table tbody tr {
+            border-bottom:1px solid rgba(0,60,20,0.2);
+            transition:background 0.1s;
+        }
+        .req-table tbody tr:hover { background:rgba(0,50,20,0.3); }
+        .req-table tbody td {
+            padding:7px 14px; color:var(--green-text);
+            vertical-align:middle;
+        }
+        .req-table tbody td:first-child { color:var(--muted); }
+        .req-table .gem-cell {
+            display:flex; align-items:center; gap:5px; white-space:nowrap;
+        }
+        .req-table .gem-cell img { width:13px; height:13px; object-fit:contain; }
+        .req-empty {
+            padding:30px; text-align:center; color:var(--muted);
+            font-size:0.75em; letter-spacing:2px;
+        }
+
+        /* loading state */
+        .loading-pulse {
+            display:inline-block; animation:fade-pulse 1.2s infinite;
+        }
+        @keyframes fade-pulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
+
+        /* Status bar */
+        #fetch-status {
+            font-size:0.62em; color:var(--muted); letter-spacing:2px;
+            text-align:right; padding:4px 0;
+        }
+        #fetch-status.ok  { color:var(--green-dim); }
+        #fetch-status.err { color:var(--red); }
+
+        /* scrollbar */
+        ::-webkit-scrollbar { width:5px; }
+        ::-webkit-scrollbar-track { background:#010604; }
+        ::-webkit-scrollbar-thumb { background:var(--green-dim); border-radius:2px; }
+    </style>
+</head>
+<body>
+
+<div class="scanlines"></div>
+
+<!-- ══ LOCK SCREEN ══════════════════════════════════════════════════════ -->
+<div id="lock-screen">
+    <!-- PCB corner brackets -->
+    <div class="pcb-corner tl"></div>
+    <div class="pcb-corner tr"></div>
+    <div class="pcb-corner bl"></div>
+    <div class="pcb-corner br"></div>
+
+    <!-- Flavor nodes scattered around -->
+    <div class="node" style="top:18%;left:8%"></div>
+    <div class="node" style="top:24%;left:12%"></div>
+    <div class="node" style="top:75%;left:6%"></div>
+    <div class="node" style="top:40%;right:10%"></div>
+    <div class="node" style="top:60%;right:14%"></div>
+    <div class="node" style="bottom:22%;right:22%"></div>
+
+    <!-- Center flavor text -->
+    <div class="lock-flavor">
+        <h1>Recovery.ALE</h1>
+        <div class="lock-sub">Candle Operations Interface</div>
+        <div class="lock-sub" style="margin-top:8px;font-size:0.55em;opacity:0.5;">◈ UNAUTHORIZED ACCESS RESTRICTED ◈</div>
+    </div>
+
+    <!-- Keypad (bottom-right corner) -->
+    <div id="keypad">
+        <div id="kp-display">_</div>
+        <div class="kp-grid">
+            <button class="kp-btn" onclick="kpPress('1')"><span class="kp-num">1</span><span class="kp-abc">&nbsp;</span></button>
+            <button class="kp-btn" onclick="kpPress('2')"><span class="kp-num">2</span><span class="kp-abc">ABC</span></button>
+            <button class="kp-btn" onclick="kpPress('3')"><span class="kp-num">3</span><span class="kp-abc">DEF</span></button>
+            <button class="kp-btn" onclick="kpPress('4')"><span class="kp-num">4</span><span class="kp-abc">GHI</span></button>
+            <button class="kp-btn" onclick="kpPress('5')"><span class="kp-num">5</span><span class="kp-abc">JKL</span></button>
+            <button class="kp-btn" onclick="kpPress('6')"><span class="kp-num">6</span><span class="kp-abc">MNO</span></button>
+            <button class="kp-btn" onclick="kpPress('7')"><span class="kp-num">7</span><span class="kp-abc">PQRS</span></button>
+            <button class="kp-btn" onclick="kpPress('8')"><span class="kp-num">8</span><span class="kp-abc">TUV</span></button>
+            <button class="kp-btn" onclick="kpPress('9')"><span class="kp-num">9</span><span class="kp-abc">WXYZ</span></button>
+        </div>
+        <div class="kp-row-bottom">
+            <button class="kp-btn clr" onclick="kpClear()"><span class="kp-num" style="font-size:0.8em;">CLR</span></button>
+            <button class="kp-btn" onclick="kpPress('0')"><span class="kp-num">0</span><span class="kp-abc">&nbsp;</span></button>
+            <button class="kp-btn ent" onclick="kpEnter()">ENTER</button>
+        </div>
+        <div id="kp-status"></div>
+    </div>
+</div>
+
+<!-- ══ MAIN CONTENT ═════════════════════════════════════════════════════ -->
+<div id="main">
+    <div class="main-header">
+        <div>
+            <h1>◈ Recovery.ALE — Candle Interface</h1>
+            <div class="hdr-sub" id="fetch-status">Loading chain data…</div>
+        </div>
+        <button class="refresh-btn" onclick="refreshAll()">⟳ REFRESH</button>
+        <button class="lock-btn" onclick="lockScreen()">⌁ LOCK</button>
+    </div>
+
+    <div class="content-wrap">
+
+        <!-- Active offers + calculator row -->
+        <div class="offers-row" id="offers-row">
+            <div class="offer-box" style="grid-column:1/-1">
+                <div class="offer-id"><span class="loading-pulse">Querying recovery.ale::offers…</span></div>
+            </div>
+        </div>
+
+        <!-- Requirements table -->
+        <div class="req-section">
+            <div class="req-header">
+                <h2>◆ Requirements Registry</h2>
+                <span class="req-count" id="req-count">—</span>
+            </div>
+            <div class="req-scroll">
+                <table class="req-table" id="req-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name / Type</th>
+                            <th>Gems</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="req-body">
+                        <tr><td colspan="4"><div class="req-empty"><span class="loading-pulse">Loading requirements…</span></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div><!-- /content-wrap -->
+</div><!-- /main -->
+
+<script>
+    // ── CONVERSION RATES ─────────────────────────────────────────────────────
+    // Base: 500 WAX = 1100 Gems = 1900 TLM = 6000 Shards
+    const GEM_TO_WAX    = 500   / 1100;   // ≈ 0.4545
+    const GEM_TO_TLM    = 1900  / 1100;   // ≈ 1.7273
+    const GEM_TO_SHARDS = 6000  / 1100;   // ≈ 5.4545
+
+    const LOGO_GEMS   = 'Ale%20images/gems.png';
+    const LOGO_SHARDS = 'Ale%20images/coin.png';
+    const LOGO_WAX    = 'https://s2.coinmarketcap.com/static/img/coins/64x64/2300.png';
+    const LOGO_TLM    = 'https://s2.coinmarketcap.com/static/img/coins/64x64/9119.png';
+
+    // ── PHONE KEYPAD MAPPING ─────────────────────────────────────────────────
+    const ALPHA_MAP = {
+        A:'2',B:'2',C:'2', D:'3',E:'3',F:'3',
+        G:'4',H:'4',I:'4', J:'5',K:'5',L:'5',
+        M:'6',N:'6',O:'6', P:'7',Q:'7',R:'7',S:'7',
+        T:'8',U:'8',V:'8', W:'9',X:'9',Y:'9',Z:'9',
+    };
+    // Valid numeric codes: N4R0N → 6-4-7-0-6, plus user-specified alt 6-2-7-6-6
+    const VALID_CODES = ['64706', '62766'];
+    const MAX_DIGITS  = 8;
+
+    let _kpInput = '';
+
+    function kpPress(d) {
+        if (_kpInput.length >= MAX_DIGITS) return;
+        _kpInput += d;
+        updateKpDisplay();
+    }
+    function kpClear() {
+        _kpInput = '';
+        updateKpDisplay();
+        setKpStatus('');
+    }
+    function updateKpDisplay() {
+        const el = document.getElementById('kp-display');
+        el.className = '';
+        el.textContent = _kpInput.length ? '●'.repeat(_kpInput.length) : '_';
+    }
+    function setKpStatus(msg, cls) {
+        const el = document.getElementById('kp-status');
+        el.textContent = msg;
+        el.style.color = cls === 'err' ? 'var(--red)' : cls === 'ok' ? 'var(--cyan)' : 'var(--muted)';
+    }
+    function kpEnter() {
+        if (!_kpInput) return;
+        if (VALID_CODES.includes(_kpInput)) {
+            unlockSuccess();
+        } else {
+            const el = document.getElementById('kp-display');
+            el.className = 'error';
+            setKpStatus('ACCESS DENIED', 'err');
+            setTimeout(() => {
+                _kpInput = '';
+                el.className = '';
+                el.textContent = '_';
+                setKpStatus('');
+            }, 1200);
+        }
+    }
+    function unlockSuccess() {
+        const el = document.getElementById('kp-display');
+        el.className = 'ok';
+        el.textContent = '✓ ACCESS GRANTED';
+        setKpStatus('WELCOME BACK', 'ok');
+        sessionStorage.setItem('rcv_unlocked', '1');
+        setTimeout(() => {
+            document.getElementById('lock-screen').classList.add('unlocking');
+            setTimeout(() => {
+                document.getElementById('lock-screen').style.display = 'none';
+                document.getElementById('main').classList.add('visible');
+                refreshAll();
+            }, 600);
+        }, 600);
+    }
+    function lockScreen() {
+        sessionStorage.removeItem('rcv_unlocked');
+        document.getElementById('main').classList.remove('visible');
+        document.getElementById('main').style.display = 'none';
+        const ls = document.getElementById('lock-screen');
+        ls.style.display = '';
+        ls.classList.remove('unlocking');
+        _kpInput = '';
+        updateKpDisplay();
+        setKpStatus('');
+    }
+
+    // Keyboard support
+    document.addEventListener('keydown', function(e) {
+        const ls = document.getElementById('lock-screen');
+        if (ls.style.display === 'none') return;
+        const k = e.key.toUpperCase();
+        if (ALPHA_MAP[k]) { kpPress(ALPHA_MAP[k]); return; }
+        if (/^[0-9]$/.test(e.key)) { kpPress(e.key); return; }
+        if (e.key === 'Enter')     { kpEnter(); return; }
+        if (e.key === 'Backspace') { _kpInput = _kpInput.slice(0,-1); updateKpDisplay(); }
+        if (e.key === 'Escape')    { kpClear(); }
+    });
+
+    // Auto-unlock if session active
+    if (sessionStorage.getItem('rcv_unlocked') === '1') {
+        document.getElementById('lock-screen').style.display = 'none';
+        document.getElementById('main').classList.add('visible');
+    }
+
+    // ── WAX API ───────────────────────────────────────────────────────────────
+    const ENDPOINTS = [
+        'https://wax.greymass.com',
+        'https://wax.eosusa.io',
+        'https://api.wax.alohaeos.com',
+    ];
+    async function fetchRows(params) {
+        let last;
+        for (const ep of ENDPOINTS) {
+            try {
+                const r = await fetch(ep + '/v1/chain/get_table_rows', {
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ json:true, ...params })
+                });
+                if (r.ok) return await r.json();
+            } catch(e) { last = e; }
+        }
+        throw last || new Error('WAX API unavailable');
+    }
+
+    async function fetchAllRows(params) {
+        let rows = [], lb = '';
+        while (true) {
+            const d = await fetchRows({ ...params, lower_bound: lb || undefined, limit:200 });
+            if (!d.rows || !d.rows.length) break;
+            rows = rows.concat(d.rows);
+            if (!d.more) break;
+            lb = d.next_key || '';
+            if (!lb) break;
+        }
+        return rows;
+    }
+
+    // ── RENDER HELPERS ────────────────────────────────────────────────────────
+    function fmt(n) { return Number(n).toLocaleString(undefined,{maximumFractionDigits:2}); }
+    function fmtBig(n) { return Number(n).toLocaleString(undefined,{maximumFractionDigits:0}); }
+
+    function gemValueHtml(gems, hideType) {
+        // hideType: 'wax'|'tlm'|'shards'|null — skip that row if it's the reward currency
+        if (!gems || gems <= 0) return '';
+        const rows = [];
+        if (hideType !== 'wax')
+            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_WAX}" onerror="this.style.display='none'"><span class="cur-lbl">WAX</span><span class="cur-val">${fmt(gems * GEM_TO_WAX)}</span></div>`);
+        if (hideType !== 'tlm')
+            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_TLM}" onerror="this.style.display='none'"><span class="cur-lbl">TLM</span><span class="cur-val">${fmt(gems * GEM_TO_TLM)}</span></div>`);
+        if (hideType !== 'shards')
+            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_SHARDS}" onerror="this.style.display='none'"><span class="cur-lbl">SHARDS</span><span class="cur-val">${fmtBig(gems * GEM_TO_SHARDS)}</span></div>`);
+        return rows.length ? `<div class="offer-values">${rows.join('')}</div>` : '';
+    }
+
+    function countdown(endSec) {
+        const now  = Math.floor(Date.now() / 1000);
+        const diff = endSec - now;
+        if (diff <= 0) return { text:'EXPIRED', cls:'expired' };
+        const h = Math.floor(diff / 3600);
+        const m = Math.floor((diff % 3600) / 60);
+        const s = diff % 60;
+        const text = h > 0
+            ? `${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`
+            : `${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+        const cls  = diff < 300 ? 'urgent' : '';
+        return { text, cls };
+    }
+
+    function badgeHtml(state) {
+        const s = String(state || '').toLowerCase();
+        if (s === 'active')   return '<span class="offer-state-badge badge-active">● ACTIVE</span>';
+        if (s === 'ended' || s === 'paying' || s === 'paid')
+                              return '<span class="offer-state-badge badge-ended">■ ENDED</span>';
+        return `<span class="offer-state-badge badge-pending">◌ ${(state||'UNKNOWN').toUpperCase()}</span>`;
+    }
+
+    // Determine reward type string for gemValueHtml hideType
+    function rewardHideType(offer) {
+        const rt = String(offer.reward_type || offer.type || offer.currency || '').toLowerCase();
+        if (rt.includes('wax'))    return 'wax';
+        if (rt.includes('tlm'))    return 'tlm';
+        if (rt.includes('shard'))  return 'shards';
+        // check asset string
+        const ra = String(offer.reward_amount || offer.winnings || '');
+        if (ra.toLowerCase().includes('wax'))   return 'wax';
+        if (ra.toLowerCase().includes('tlm'))   return 'tlm';
+        if (ra.toLowerCase().includes('shard')) return 'shards';
+        return null;
+    }
+
+    // Extract gem count from offer — try many possible field names
+    function offerGems(offer) {
+        return offer.gem_target || offer.gems_required || offer.required_gems
+            || offer.total_gems || offer.target_gems || offer.gems
+            || offer.gem_amount || 0;
+    }
+    function offerContributed(offer) {
+        return offer.current_gems || offer.gems_contributed || offer.total_contributed
+            || offer.contributed || offer.gem_count || offer.contributions || 0;
+    }
+    function offerEndTime(offer) {
+        return offer.end_time || offer.end || offer.expiry || offer.expires || null;
+    }
+    function offerRewardStr(offer) {
+        const amt = offer.reward_amount || offer.winnings || offer.reward || '';
+        const typ = offer.reward_type   || offer.type     || '';
+        if (amt && typ) return `${fmtBig(amt)} ${String(typ).toUpperCase()}`;
+        if (amt) return String(amt);
+        return '—';
+    }
+
+    // ── RENDER OFFERS ─────────────────────────────────────────────────────────
+    let _offerTimerIds = [];
+    function renderOffers(offers) {
+        _offerTimerIds.forEach(clearInterval);
+        _offerTimerIds = [];
+
+        const row = document.getElementById('offers-row');
+        if (!offers || !offers.length) {
+            row.innerHTML = '<div class="no-offers">No active offers found in recovery.ale</div>';
+            return;
+        }
+
+        let html = '';
+        offers.forEach((o, idx) => {
+            const id      = o.id ?? idx;
+            const title   = o.title || o.name || o.offer_name || `Offer #${id}`;
+            const state   = o.state || o.status || 'unknown';
+            const gems    = offerGems(o);
+            const contrib = offerContributed(o);
+            const endSec  = offerEndTime(o);
+            const pct     = gems > 0 ? Math.min(100, Math.round(contrib / gems * 100)) : 0;
+            const hideType = rewardHideType(o);
+            const timerId = `timer-${id}`;
+
+            let timerHtml = '';
+            if (endSec) {
+                const cd = countdown(Number(endSec));
+                timerHtml = `<div class="offer-timer ${cd.cls}" id="${timerId}">${cd.text}</div>`;
+            }
+
+            html += `
+            <div class="offer-box ${String(state).toLowerCase() === 'active' ? 'active-offer' : ''}">
+                <div class="offer-id">OFFER #${id}</div>
+                ${badgeHtml(state)}
+                <div class="offer-title">${title}</div>
+                ${timerHtml}
+                <div class="offer-gems">Contributed: <span>${fmtBig(contrib)}</span>
+                    <img src="${LOGO_GEMS}" style="width:12px;height:12px;vertical-align:middle;margin:0 2px;">
+                    / <span>${fmtBig(gems)}</span>
+                    <img src="${LOGO_GEMS}" style="width:12px;height:12px;vertical-align:middle;margin:0 2px;">
+                </div>
+                <div class="offer-bar-wrap">
+                    <div class="offer-bar-track"><div class="offer-bar-fill" style="width:${pct}%"></div></div>
+                    <div class="offer-bar-label">${pct}% FILLED</div>
+                </div>
+                <div class="offer-reward">REWARD: <strong>${offerRewardStr(o)}</strong></div>
+                ${gemValueHtml(gems - contrib, hideType)}
+            </div>`;
+        });
+
+        // Calculator panel (last column)
+        html += `
+        <div id="calc-box">
+            <div class="calc-title">◈ Gem Value Calc</div>
+            <div class="calc-input-wrap">
+                <img class="cur-logo" src="${LOGO_GEMS}" onerror="this.style.display='none'">
+                <input id="calc-gems" type="number" min="0" placeholder="Enter gems…" oninput="calcUpdate()">
+            </div>
+            <div class="calc-row">
+                <img class="cur-logo" src="${LOGO_WAX}" onerror="this.style.display='none'">
+                <span class="c-lbl">WAX</span>
+                <span class="c-val" id="calc-wax">—</span>
+            </div>
+            <div class="calc-row">
+                <img class="cur-logo" src="${LOGO_TLM}" onerror="this.style.display='none'">
+                <span class="c-lbl">TLM</span>
+                <span class="c-val" id="calc-tlm">—</span>
+            </div>
+            <div class="calc-row">
+                <img class="cur-logo" src="${LOGO_SHARDS}" onerror="this.style.display='none'">
+                <span class="c-lbl">SHARDS</span>
+                <span class="c-val" id="calc-shards">—</span>
+            </div>
+            <div class="calc-note">
+                RATES: 500 WAX = 1,100 GEMS<br>
+                = 1,900 TLM = 6,000 SHARDS
+            </div>
+        </div>`;
+
+        row.innerHTML = html;
+
+        // Start countdown timers
+        offers.forEach((o, idx) => {
+            const endSec = offerEndTime(o);
+            const id     = o.id ?? idx;
+            if (!endSec) return;
+            const timerId = `timer-${id}`;
+            const tid = setInterval(() => {
+                const el = document.getElementById(timerId);
+                if (!el) { clearInterval(tid); return; }
+                const cd = countdown(Number(endSec));
+                el.textContent = cd.text;
+                el.className   = `offer-timer ${cd.cls}`;
+            }, 1000);
+            _offerTimerIds.push(tid);
+        });
+    }
+
+    // ── RENDER REQUIREMENTS ───────────────────────────────────────────────────
+    function renderRequirements(rows) {
+        const tbody = document.getElementById('req-body');
+        const count = document.getElementById('req-count');
+        if (!rows || !rows.length) {
+            tbody.innerHTML = '<tr><td colspan="4"><div class="req-empty">No requirements data found.</div></td></tr>';
+            count.textContent = '0 ENTRIES';
+            return;
+        }
+        count.textContent = rows.length + ' ENTRIES';
+
+        // Determine best columns from actual data
+        const html = rows.map((r, i) => {
+            const name    = r.name || r.title || r.offer_name || r.type || r.requirement || '—';
+            const gems    = r.gem_cost || r.gems || r.required_gems || r.gems_required || r.gem_target || r.amount || '—';
+            const details = [];
+            // Collect any other interesting fields
+            const skip = new Set(['name','title','offer_name','type','requirement','id',
+                                   'gem_cost','gems','required_gems','gems_required','gem_target','amount']);
+            Object.entries(r).forEach(([k,v]) => {
+                if (!skip.has(k) && v !== null && v !== undefined && v !== '') {
+                    details.push(`${k}: ${v}`);
+                }
+            });
+            const gemsHtml = gems !== '—'
+                ? `<div class="gem-cell"><img src="${LOGO_GEMS}">${fmtBig(gems)}</div>`
+                : '—';
+            return `<tr>
+                <td>${r.id ?? i+1}</td>
+                <td>${name}</td>
+                <td>${gemsHtml}</td>
+                <td style="font-size:0.85em;color:var(--muted)">${details.join(' · ') || '—'}</td>
+            </tr>`;
+        }).join('');
+        tbody.innerHTML = html;
+    }
+
+    // ── CALCULATOR ────────────────────────────────────────────────────────────
+    window.calcUpdate = function() {
+        const v = parseFloat(document.getElementById('calc-gems').value);
+        if (isNaN(v) || v <= 0) {
+            ['calc-wax','calc-tlm','calc-shards'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = '—';
+            });
+            return;
+        }
+        const wEl = document.getElementById('calc-wax');
+        const tEl = document.getElementById('calc-tlm');
+        const sEl = document.getElementById('calc-shards');
+        if (wEl) wEl.textContent = fmt(v * GEM_TO_WAX);
+        if (tEl) tEl.textContent = fmt(v * GEM_TO_TLM);
+        if (sEl) sEl.textContent = fmtBig(v * GEM_TO_SHARDS);
+    };
+
+    // ── FETCH & REFRESH ───────────────────────────────────────────────────────
+    function setStatus(msg, cls) {
+        const el = document.getElementById('fetch-status');
+        if (!el) return;
+        el.textContent = msg;
+        el.className = cls || '';
+    }
+
+    async function refreshAll() {
+        setStatus('Querying chain…', '');
+        try {
+            const [offersData, reqData] = await Promise.all([
+                fetchAllRows({ code:'recovery.ale', scope:'recovery.ale', table:'offers' }),
+                fetchAllRows({ code:'recovery.ale', scope:'recovery.ale', table:'requirements' }),
+            ]);
+
+            renderOffers(offersData);
+            renderRequirements(reqData);
+            setStatus('Updated ' + new Date().toLocaleTimeString(), 'ok');
+        } catch(e) {
+            setStatus('✗ ' + (e.message || String(e)), 'err');
+            document.getElementById('offers-row').innerHTML =
+                '<div class="no-offers">Failed to load offers: ' + (e.message || e) + '</div>';
+        }
+    }
+
+    // Auto-load if already unlocked
+    if (sessionStorage.getItem('rcv_unlocked') === '1') {
+        refreshAll();
+    }
+</script>
+</body>
+</html>
