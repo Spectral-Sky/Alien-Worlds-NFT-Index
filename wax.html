@@ -355,6 +355,20 @@
         .wallet-btn.logged-in:hover { border-color: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
         .wallet-area { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
 
+        /* ── REQUIREMENT CHECK ───────────────────────────────────────────── */
+        .req-check {
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;
+            margin:8px 0 4px; padding:6px 10px;
+            background:rgba(255,68,204,0.06); border:1px solid rgba(255,68,204,0.18);
+            border-radius:3px; font-size:0.67em; letter-spacing:1px;
+        }
+        .req-need { color:var(--muted); }
+        .req-need strong { color:var(--text); }
+        .req-yours { display:flex; align-items:center; gap:5px; }
+        .req-yours.met   { color:#60e090; }
+        .req-yours.unmet { color:var(--red); }
+        .req-yours.unknown { color:var(--muted); font-style:italic; }
+
         /* ── CONTRIBUTOR LIST ─────────────────────────────────────────────── */
         .contrib-section { margin-top:10px; border-top:1px solid rgba(255,68,204,0.15); padding-top:8px; }
         .contrib-title { font-size:0.58em; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:5px; }
@@ -491,6 +505,7 @@
     let _reqMap      = {};   // requirement_type → display name
     let _offersCache  = [];   // last fetched offers, used for contribution re-render
     let _allContribs  = {};  // offer_id → [{wallet, amount}] sorted by amount desc
+    let _playerStats  = {};  // permstat key → value for logged-in player
 
     const LOGO_GEMS   = 'Ale%20images/gems.png';
     const LOGO_SHARDS = 'Ale%20images/coin.png';
@@ -763,6 +778,30 @@
         return `<span class="offer-state-badge badge-pending">◌ ${(state||'UNKNOWN').toUpperCase()}</span>`;
     }
 
+    function reqCheckHtml(offer) {
+        const reqType = offer.requirement_type || offer.req_type || '';
+        const reqAmt  = offer.requirement_amount;
+        if (reqAmt === undefined || reqAmt === null) return '';
+        const reqName = offer.requirements || _reqMap[reqType] || reqType || 'requirement';
+        const needHtml = `<span class="req-need">NEED: <strong>${fmtBig(reqAmt)}</strong> ${reqName}</span>`;
+        const wallet = localStorage.getItem('naron_wallet');
+        if (!wallet) return `<div class="req-check">${needHtml}</div>`;
+        if (!Object.keys(_playerStats).length) {
+            return `<div class="req-check">${needHtml}<span class="req-yours unknown">YOURS: loading…</span></div>`;
+        }
+        const myVal = _playerStats[reqType];
+        if (myVal === undefined) {
+            return `<div class="req-check">${needHtml}<span class="req-yours unknown">YOURS: —</span></div>`;
+        }
+        const met = myVal >= reqAmt;
+        return `<div class="req-check">
+            ${needHtml}
+            <span class="req-yours ${met ? 'met' : 'unmet'}">
+                YOURS: <strong>${fmtBig(myVal)}</strong> ${met ? '✓' : '✗'}
+            </span>
+        </div>`;
+    }
+
     function contribListHtml(offerId, totalGems) {
         const me   = localStorage.getItem('naron_wallet') || '';
         const list = _allContribs[offerId];
@@ -830,6 +869,7 @@
                 </div>
                 <div class="offer-name">${name}</div>
                 ${reqType ? `<div class="offer-req-type">${reqType}</div>` : ''}
+                ${reqCheckHtml(o)}
                 ${timesHtml}
                 <div class="offer-gems">Contributed: <span>${fmtBig(contrib)}</span>
                     <img src="${LOGO_GEMS}" style="width:12px;height:12px;vertical-align:middle;margin:0 2px;" onerror="this.style.display='none'">
@@ -994,10 +1034,12 @@
             if (btnA)   { btnA.textContent = '[ ' + account + ' ]'; btnA.style.display = ''; }
             if (btnAnc) btnAnc.style.display = 'none';
             if (btnWCC) btnWCC.style.display = 'none';
+            fetchPlayerStats(account);  // async — re-renders when done
         } else {
             if (btnA)   { btnA.style.display = 'none'; }
             if (btnAnc) btnAnc.style.display = '';
             if (btnWCC) btnWCC.style.display = '';
+            _playerStats = {};
         }
         if (_offersCache.length) renderOffers(_offersCache);
     }
@@ -1025,6 +1067,22 @@
         if (wax) wax.userAccount = '';
         checkWalletState();
     };
+
+    async function fetchPlayerStats(wallet) {
+        _playerStats = {};
+        if (!wallet) return;
+        try {
+            const resp = await fetchRows({
+                code: 'players.ale', scope: 'players.ale', table: 'players',
+                lower_bound: wallet, upper_bound: wallet, limit: 1
+            });
+            const row = (resp.rows || []).find(r => r.wallet === wallet);
+            if (row && row.permstats) {
+                row.permstats.forEach(({ first, second }) => { _playerStats[first] = second; });
+            }
+        } catch(e) { console.warn('fetchPlayerStats failed:', e); }
+        if (_offersCache.length) renderOffers(_offersCache);
+    }
 
     async function fetchAllContributions() {
         _allContribs = {};
