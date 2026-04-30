@@ -590,13 +590,22 @@
         const rawAmt = offer.reward_amount || offer.winnings || offer.reward || '';
         const rawTyp = offer.reward_type   || offer.type     || '';
         let amount = 0, type = '';
+        let isAssetString = false;
         if (typeof rawAmt === 'string' && /\s/.test(rawAmt.trim())) {
+            // Asset string like "3113.4580 WAX" — decimal already applied
             const p = rawAmt.trim().split(/\s+/);
             amount = parseFloat(p[0].replace(/,/g,'')) || 0;
             type   = (p[1] || '').toLowerCase();
+            isAssetString = true;
         } else {
             amount = parseFloat(rawAmt) || 0;
             type   = String(rawTyp).toLowerCase();
+        }
+        // Raw integers from chain need precision normalization
+        if (!isAssetString && amount > 0) {
+            if (type.includes('wax'))        amount = amount / 1e8;
+            else if (type.includes('tlm'))   amount = amount / 1e4;
+            else if (type.includes('shard')) amount = amount / 10;
         }
         return { amount, type };
     }
