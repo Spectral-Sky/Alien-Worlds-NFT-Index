@@ -503,10 +503,49 @@
 
 <script>
     // ── CONVERSION RATES ─────────────────────────────────────────────────────
-    // Base: 500 WAX = 1100 Gems = 1900 TLM = 6000 Shards
-    const GEM_TO_WAX    = 500   / 1100;   // ≈ 0.4545
-    const GEM_TO_TLM    = 1900  / 1100;   // ≈ 1.7273
-    const GEM_TO_SHARDS = 6000  / 1100;   // ≈ 5.4545
+    // GEM_TO_WAX: fixed by ALE shop (500 WAX = 1100 Gems)
+    const GEM_TO_WAX       = 500 / 1100;   // ≈ 0.4545 — shop rate, never changes
+    const SHARDS_PER_TLM   = 3;            // Zapps "good" price: 300 shards / 100 TLM
+    // TLM and Shards rates are derived live from market prices
+    let _liveWaxUsd  = null;
+    let _liveTlmUsd  = null;
+    let _gemToTlm    = 1900 / 1100;        // fallback until prices load
+    let _gemToShards = (1900 / 1100) * SHARDS_PER_TLM; // fallback
+
+    async function fetchLivePrices() {
+        try {
+            const r = await fetch(
+                'https://api.coingecko.com/api/v3/simple/price?ids=wax,alien-worlds&vs_currencies=usd',
+                { cache: 'no-store' }
+            );
+            if (!r.ok) throw new Error('CoinGecko ' + r.status);
+            const d = await r.json();
+            _liveWaxUsd  = d['wax']?.usd || null;
+            _liveTlmUsd  = d['alien-worlds']?.usd || null;
+            if (_liveWaxUsd && _liveTlmUsd) {
+                const waxPerTlm = _liveWaxUsd / _liveTlmUsd;   // TLM per 1 WAX
+                _gemToTlm    = GEM_TO_WAX * waxPerTlm;
+                _gemToShards = _gemToTlm * SHARDS_PER_TLM;
+                updateCalcRateDisplay();
+            }
+        } catch(e) { /* silent — fallback rates stay active */ }
+    }
+
+    function updateCalcRateDisplay() {
+        const el = document.getElementById('calc-price-info');
+        if (!el) return;
+        if (!_liveWaxUsd || !_liveTlmUsd) {
+            el.textContent = 'prices: fallback (offline)';
+            return;
+        }
+        const ratio = (_liveWaxUsd / _liveTlmUsd).toFixed(2);
+        el.innerHTML =
+            `<img src="${LOGO_WAX}" style="width:10px;height:10px;vertical-align:middle;border-radius:50%;margin-right:2px;">` +
+            `$${_liveWaxUsd.toFixed(5)} &nbsp;` +
+            `<img src="${LOGO_TLM}" style="width:10px;height:10px;vertical-align:middle;border-radius:50%;margin-right:2px;">` +
+            `$${_liveTlmUsd.toFixed(5)}<br>` +
+            `1 WAX = ${ratio} TLM (live)`;
+    }
 
     const LOGO_GEMS   = 'Ale%20images/gems.png';
     const LOGO_SHARDS = 'Ale%20images/coin.png';
@@ -653,9 +692,9 @@
         if (hideType !== 'wax')
             rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_WAX}" onerror="this.style.display='none'"><span class="cur-lbl">WAX</span><span class="cur-val">${fmtWax(gems * GEM_TO_WAX)}</span></div>`);
         if (hideType !== 'tlm')
-            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_TLM}" onerror="this.style.display='none'"><span class="cur-lbl">TLM</span><span class="cur-val">${fmtTlm(gems * GEM_TO_TLM)}</span></div>`);
+            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_TLM}" onerror="this.style.display='none'"><span class="cur-lbl">TLM</span><span class="cur-val">${fmtTlm(gems * _gemToTlm)}</span></div>`);
         if (hideType !== 'shards')
-            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_SHARDS}" onerror="this.style.display='none'"><span class="cur-lbl">SHARDS</span><span class="cur-val">${fmtShards(gems * GEM_TO_SHARDS)}</span></div>`);
+            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_SHARDS}" onerror="this.style.display='none'"><span class="cur-lbl">SHARDS</span><span class="cur-val">${fmtShards(gems * _gemToShards)}</span></div>`);
         return rows.length ? `<div class="offer-values">${rows.join('')}</div>` : '';
     }
 
@@ -790,8 +829,9 @@
                 <span class="c-val" id="calc-shards">—</span>
             </div>
             <div class="calc-note">
-                RATES: 500 WAX = 1,100 GEMS<br>
-                = 1,900 TLM = 6,000 SHARDS
+                SHOP: 500 WAX = 1,100 GEMS (fixed)<br>
+                TLM/SHARDS via live market<br>
+                <span id="calc-price-info" style="color:var(--muted);font-size:0.9em;"><span class="loading-pulse">fetching prices…</span></span>
             </div>
         </div>`;
 
@@ -868,8 +908,8 @@
         const tEl = document.getElementById('calc-tlm');
         const sEl = document.getElementById('calc-shards');
         if (wEl) wEl.textContent = fmtWax(v * GEM_TO_WAX);
-        if (tEl) tEl.textContent = fmtTlm(v * GEM_TO_TLM);
-        if (sEl) sEl.textContent = fmtShards(v * GEM_TO_SHARDS);
+        if (tEl) tEl.textContent = fmtTlm(v * _gemToTlm);
+        if (sEl) sEl.textContent = fmtShards(v * _gemToShards);
     };
 
     // ── FETCH & REFRESH ───────────────────────────────────────────────────────
@@ -886,10 +926,12 @@
             const [offersData, reqData] = await Promise.all([
                 fetchAllRows({ code:'recovery.ale', scope:'recovery.ale', table:'offers' }),
                 fetchAllRows({ code:'recovery.ale', scope:'recovery.ale', table:'requirements' }),
+                fetchLivePrices(),
             ]);
 
             renderOffers(offersData);
             renderRequirements(reqData);
+            updateCalcRateDisplay();
             setStatus('Updated ' + new Date().toLocaleTimeString(), 'ok');
         } catch(e) {
             setStatus('✗ ' + (e.message || String(e)), 'err');
@@ -897,6 +939,9 @@
                 '<div class="no-offers">Failed to load offers: ' + (e.message || e) + '</div>';
         }
     }
+
+    // Auto-refresh prices every 5 minutes
+    setInterval(fetchLivePrices, 5 * 60 * 1000);
 
     // Auto-load if already unlocked
     if (sessionStorage.getItem('rcv_unlocked') === '1') {
