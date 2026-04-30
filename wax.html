@@ -489,15 +489,10 @@
             <div class="req-scroll">
                 <table class="req-table" id="req-table">
                     <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Name / Type</th>
-                            <th>Gems</th>
-                            <th>Details</th>
-                        </tr>
+                        <tr id="req-head"></tr>
                     </thead>
                     <tbody id="req-body">
-                        <tr><td colspan="4"><div class="req-empty"><span class="loading-pulse">Loading requirements…</span></div></td></tr>
+                        <tr><td><div class="req-empty"><span class="loading-pulse">Loading requirements…</span></div></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -646,19 +641,21 @@
     }
 
     // ── RENDER HELPERS ────────────────────────────────────────────────────────
-    function fmt(n) { return Number(n).toLocaleString(undefined,{maximumFractionDigits:2}); }
-    function fmtBig(n) { return Number(n).toLocaleString(undefined,{maximumFractionDigits:0}); }
+    function fmtWax(n)    { return Number(n).toLocaleString(undefined,{minimumFractionDigits:8,maximumFractionDigits:8}); }
+    function fmtTlm(n)    { return Number(n).toLocaleString(undefined,{minimumFractionDigits:4,maximumFractionDigits:4}); }
+    function fmtShards(n) { return Number(n).toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1}); }
+    function fmtBig(n)    { return Number(n).toLocaleString(undefined,{maximumFractionDigits:0}); }
 
     function gemValueHtml(gems, hideType) {
         // hideType: 'wax'|'tlm'|'shards'|null — skip that row if it's the reward currency
         if (!gems || gems <= 0) return '';
         const rows = [];
         if (hideType !== 'wax')
-            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_WAX}" onerror="this.style.display='none'"><span class="cur-lbl">WAX</span><span class="cur-val">${fmt(gems * GEM_TO_WAX)}</span></div>`);
+            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_WAX}" onerror="this.style.display='none'"><span class="cur-lbl">WAX</span><span class="cur-val">${fmtWax(gems * GEM_TO_WAX)}</span></div>`);
         if (hideType !== 'tlm')
-            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_TLM}" onerror="this.style.display='none'"><span class="cur-lbl">TLM</span><span class="cur-val">${fmt(gems * GEM_TO_TLM)}</span></div>`);
+            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_TLM}" onerror="this.style.display='none'"><span class="cur-lbl">TLM</span><span class="cur-val">${fmtTlm(gems * GEM_TO_TLM)}</span></div>`);
         if (hideType !== 'shards')
-            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_SHARDS}" onerror="this.style.display='none'"><span class="cur-lbl">SHARDS</span><span class="cur-val">${fmtBig(gems * GEM_TO_SHARDS)}</span></div>`);
+            rows.push(`<div class="offer-val-row"><img class="cur-logo" src="${LOGO_SHARDS}" onerror="this.style.display='none'"><span class="cur-lbl">SHARDS</span><span class="cur-val">${fmtShards(gems * GEM_TO_SHARDS)}</span></div>`);
         return rows.length ? `<div class="offer-values">${rows.join('')}</div>` : '';
     }
 
@@ -818,38 +815,41 @@
     }
 
     // ── RENDER REQUIREMENTS ───────────────────────────────────────────────────
+    const GEM_FIELDS   = new Set(['gem_cost','gems','required_gems','gems_required','gem_target','gem_amount','amount']);
+
     function renderRequirements(rows) {
         const tbody = document.getElementById('req-body');
+        const thead = document.getElementById('req-head');
         const count = document.getElementById('req-count');
         if (!rows || !rows.length) {
-            tbody.innerHTML = '<tr><td colspan="4"><div class="req-empty">No requirements data found.</div></td></tr>';
+            thead.innerHTML = '<th>—</th>';
+            tbody.innerHTML = '<tr><td><div class="req-empty">No requirements data found.</div></td></tr>';
             count.textContent = '0 ENTRIES';
             return;
         }
         count.textContent = rows.length + ' ENTRIES';
 
-        // Determine best columns from actual data
-        const html = rows.map((r, i) => {
-            const name    = r.name || r.title || r.offer_name || r.type || r.requirement || '—';
-            const gems    = r.gem_cost || r.gems || r.required_gems || r.gems_required || r.gem_target || r.amount || '—';
-            const details = [];
-            // Collect any other interesting fields
-            const skip = new Set(['name','title','offer_name','type','requirement','id',
-                                   'gem_cost','gems','required_gems','gems_required','gem_target','amount']);
-            Object.entries(r).forEach(([k,v]) => {
-                if (!skip.has(k) && v !== null && v !== undefined && v !== '') {
-                    details.push(`${k}: ${v}`);
+        // Collect all unique keys in order of first appearance
+        const keySet = new Set();
+        const keys   = [];
+        rows.forEach(r => Object.keys(r).forEach(k => { if (!keySet.has(k)) { keySet.add(k); keys.push(k); } }));
+
+        // Header
+        thead.innerHTML = keys.map(k =>
+            `<th>${k.replace(/_/g,' ').toUpperCase()}</th>`
+        ).join('');
+
+        // Rows
+        const html = rows.map(r => {
+            const cells = keys.map(k => {
+                const v = r[k];
+                if (v === null || v === undefined || v === '') return '<td>—</td>';
+                if (GEM_FIELDS.has(k)) {
+                    return `<td><div class="gem-cell"><img src="${LOGO_GEMS}">${fmtBig(v)}</div></td>`;
                 }
-            });
-            const gemsHtml = gems !== '—'
-                ? `<div class="gem-cell"><img src="${LOGO_GEMS}">${fmtBig(gems)}</div>`
-                : '—';
-            return `<tr>
-                <td>${r.id ?? i+1}</td>
-                <td>${name}</td>
-                <td>${gemsHtml}</td>
-                <td style="font-size:0.85em;color:var(--muted)">${details.join(' · ') || '—'}</td>
-            </tr>`;
+                return `<td>${v}</td>`;
+            }).join('');
+            return `<tr>${cells}</tr>`;
         }).join('');
         tbody.innerHTML = html;
     }
@@ -867,9 +867,9 @@
         const wEl = document.getElementById('calc-wax');
         const tEl = document.getElementById('calc-tlm');
         const sEl = document.getElementById('calc-shards');
-        if (wEl) wEl.textContent = fmt(v * GEM_TO_WAX);
-        if (tEl) tEl.textContent = fmt(v * GEM_TO_TLM);
-        if (sEl) sEl.textContent = fmtBig(v * GEM_TO_SHARDS);
+        if (wEl) wEl.textContent = fmtWax(v * GEM_TO_WAX);
+        if (tEl) tEl.textContent = fmtTlm(v * GEM_TO_TLM);
+        if (sEl) sEl.textContent = fmtShards(v * GEM_TO_SHARDS);
     };
 
     // ── FETCH & REFRESH ───────────────────────────────────────────────────────
