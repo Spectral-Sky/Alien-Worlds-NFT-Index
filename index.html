@@ -1191,6 +1191,18 @@
             btn.textContent = '[ SIGNING… ]';
             status.style.color = '#888';
             status.textContent = '';
+            // If no active signer, try to silently restore the previous session
+            if (!window.walletSession && !(typeof wax !== 'undefined' && wax && wax.api)) {
+                if (typeof wax !== 'undefined' && wax && wax.userAccount) {
+                    try { await wax.login(); } catch(e) {}
+                }
+                if (!window.walletSession && window.walletKit) {
+                    try {
+                        const s = await window.walletKit.restore();
+                        if (s) { window.walletSession = s; localStorage.setItem('naron_wallet', String(s.actor)); }
+                    } catch(e) {}
+                }
+            }
             var actions = [{ account:'comp.worlds', name:'regplayer',
                 authorization:[{ actor:wallet, permission:'active' }],
                 data:{ id:42, player:wallet }
