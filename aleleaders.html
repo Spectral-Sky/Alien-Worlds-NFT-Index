@@ -239,7 +239,7 @@
     // src: 'perm' = permstats key | 'active' = activestats key | 'tag' = player tag | 'comp' = comp.worlds
     var COLUMNS = [
         // AW Competition
-        { key:'comp_live_score', label:'AW Level-Up Competition', src:'comp', def:true, title:'live_score from comp.worlds — em dash = not registered' },
+        { key:'comp_live_score', label:'AW Level-Up Competition', header:'AW Level-Up', src:'comp', def:true, title:'live_score from comp.worlds — em dash = not registered' },
         // Dungeons
         { key:'dungeons_won',               label:'Dungeons Won',            src:'perm',   def:true  },
         { key:'dungeons_played',            label:'Dungeons Played',         src:'perm',   def:false },
@@ -757,7 +757,7 @@
             '<th class="nft-th ' + sortClass('mine_nft_score') + '" onclick="sortBy(\'mine_nft_score\')" title="Sort by rarity + shine (mine_nfts: tools)">MINE NFTs</th>';
         visCols.forEach(function(c) {
             thHtml += '<th onclick="sortBy(\'' + c.key + '\')" id="th-' + c.key + '" class="' + sortClass(c.key) + '" title="' + (c.title || (c.key + ' (' + c.src + ')')) + '">' +
-                c.label.toUpperCase() + '</th>';
+                (c.header || c.label).toUpperCase() + '</th>';
         });
         thHtml += '</tr>';
         document.getElementById('lb-thead').innerHTML = thHtml;
@@ -853,7 +853,7 @@
         });
         var sorted = sortPlayers(players, _sortKey);
         var cols = allColsList().filter(function(c) { return _visibleCols[c.key]; });
-        var headers = ['#', 'Player', 'Wallet'].concat(cols.map(function(c) { return c.label; }));
+        var headers = ['#', 'Player', 'Wallet'].concat(cols.map(function(c) { return c.header || c.label; }));
         var rows = sorted.map(function(fp, i) {
             return [i + 1, fp.tag, fp.wallet].concat(cols.map(function(c) { return getVal(fp, c.key, c.src); }));
         });
