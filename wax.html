@@ -237,7 +237,7 @@
         }
         .offer-val-row { display:flex; align-items:center; gap:6px; font-size:0.68em; margin-bottom:4px; }
         .offer-val-row:last-child { margin-bottom:0; }
-        .offer-val-row .cur-logo { width:13px; height:13px; object-fit:contain; border-radius:50%; opacity:0.85; flex-shrink:0; }
+        .offer-val-row .cur-logo { width:13px; height:13px; object-fit:contain; border-radius:50%; opacity:0.85; flex-shrink:0; filter:drop-shadow(0 0 3px rgba(255,160,80,0.55)); }
         .offer-val-row .cur-lbl { flex:1; letter-spacing:1px; color:var(--muted); }
         .offer-val-row .cur-val { color:var(--text); font-size:1.0em; }
 
@@ -293,7 +293,7 @@
 
         .calc-row { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid rgba(255,68,204,0.1); font-size:0.72em; }
         .calc-row:last-child { border-bottom:none; }
-        .calc-row .cur-logo { width:15px; height:15px; object-fit:contain; border-radius:50%; opacity:0.85; flex-shrink:0; }
+        .calc-row .cur-logo { width:15px; height:15px; object-fit:contain; border-radius:50%; opacity:0.85; flex-shrink:0; filter:drop-shadow(0 0 4px rgba(255,160,80,0.6)); }
         .calc-row .c-lbl { flex:1; color:var(--muted); letter-spacing:1px; }
         .calc-row .c-val { color:var(--text); font-size:1.1em; letter-spacing:1px; min-width:80px; text-align:right; }
 
@@ -302,6 +302,29 @@
             letter-spacing:1px; line-height:1.6; border-top:1px solid rgba(255,68,204,0.12);
             padding-top:8px;
         }
+        .calc-custom-btn {
+            width:100%; margin-top:8px; padding:5px 8px;
+            background:transparent; border:1px dashed rgba(255,170,0,0.35);
+            color:var(--gold-dim); font-family:'Courier New',monospace; font-size:0.62em;
+            letter-spacing:1px; cursor:pointer; border-radius:2px; transition:all 0.2s;
+        }
+        .calc-custom-btn:hover { border-color:var(--gold); color:var(--gold); }
+        .calc-custom-btn.active { border-color:var(--gold); color:var(--gold); background:rgba(255,170,0,0.08); }
+        .calc-custom-panel {
+            display:none; margin-top:6px; padding:8px; border:1px solid rgba(255,170,0,0.2);
+            background:rgba(255,170,0,0.05); border-radius:2px;
+        }
+        .calc-custom-panel.open { display:block; }
+        .calc-custom-panel label { font-size:0.6em; color:var(--muted); letter-spacing:1px; display:block; margin-bottom:3px; }
+        .calc-custom-panel input {
+            width:100%; background:rgba(8,0,12,0.9); border:1px solid rgba(255,170,0,0.3);
+            color:var(--gold); font-family:'Courier New',monospace; font-size:0.75em;
+            padding:4px 7px; outline:none; border-radius:2px;
+        }
+        .calc-custom-panel input:focus { border-color:var(--gold); }
+        .calc-custom-hint { font-size:0.6em; color:var(--muted); margin-top:4px; }
+        .calc-custom-clear { margin-top:5px; font-size:0.6em; color:var(--red); cursor:pointer; letter-spacing:1px; background:none; border:none; font-family:inherit; padding:0; }
+        .calc-custom-clear:hover { color:#ff8899; }
 
         /* ── REQUIREMENTS TABLE ───────────────────────────────────────────── */
         .req-section { background:var(--panel-bg); border:1px solid var(--border); border-radius:4px; overflow:hidden; }
@@ -470,6 +493,10 @@
         <button class="lock-btn" onclick="lockScreen()">⌁ LOCK</button>
     </div>
 
+    <div style="margin:0 0 10px;padding:7px 14px;background:rgba(255,170,0,0.07);border:1px solid rgba(255,170,0,0.25);border-radius:3px;font-size:0.65em;color:#bb8800;letter-spacing:1px;text-align:center;">
+        ⚠ VALUE IS AN ESTIMATE — USE YOUR OWN BEST JUDGEMENT! &nbsp;Shards may hold no value!
+    </div>
+
     <div class="content-wrap">
         <div class="offers-row" id="offers-row">
             <div class="offer-box" style="grid-column:1/-1">
@@ -503,12 +530,13 @@
     let _gemToTlm    = 1900 / 1100;
     let _gemToShards = (1900 / 1100) * SHARDS_PER_TLM;
     let _reqMap      = {};   // requirement_type → display name
-    let _offersCache  = [];   // last fetched offers, used for contribution re-render
+    let _offersCache      = [];   // last fetched offers, used for contribution re-render
+    let _customShardWax   = null; // user-pinned WAX per shard (null = use live rate)
     let _allContribs  = {};  // offer_id → [{wallet, amount}] sorted by amount desc
     let _playerStats  = {};  // permstat key → value for logged-in player
 
     const LOGO_GEMS   = 'Ale%20images/gems.png';
-    const LOGO_SHARDS = 'Ale%20images/candle.png';
+    const LOGO_SHARDS = 'Shards.png';
     const LOGO_WAX    = 'https://s2.coinmarketcap.com/static/img/coins/64x64/2300.png';
     const LOGO_TLM    = 'https://s2.coinmarketcap.com/static/img/coins/64x64/9119.png';
 
@@ -708,12 +736,17 @@
         </div>`;
     }
 
+    function shardsFromWax(waxAmt) {
+        if (_customShardWax !== null && _customShardWax > 0) return waxAmt / _customShardWax;
+        const tlmPerWax = (_liveWaxUsd && _liveTlmUsd) ? _liveWaxUsd / _liveTlmUsd : 3.8;
+        return waxAmt * tlmPerWax * SHARDS_PER_TLM;
+    }
     function allCurrencyRows(waxAmt) {
         const tlmPerWax = (_liveWaxUsd && _liveTlmUsd) ? _liveWaxUsd / _liveTlmUsd : 3.8;
         return [
             valRow(LOGO_WAX,    'WAX',    fmtWax(waxAmt)),
             valRow(LOGO_TLM,    'TLM',    fmtTlm(waxAmt * tlmPerWax)),
-            valRow(LOGO_SHARDS, 'SHARDS', fmtShards(waxAmt * tlmPerWax * SHARDS_PER_TLM)),
+            valRow(LOGO_SHARDS, _customShardWax !== null ? 'SHARDS ⚙' : 'SHARDS', fmtShards(shardsFromWax(waxAmt))),
             valRow(LOGO_GEMS,   'GEMS',   fmtBig(waxAmt / GEM_TO_WAX)),
         ].join('');
     }
@@ -895,11 +928,11 @@
                 ${reqType ? `<div class="offer-req-type">${reqType}</div>` : ''}
                 ${reqCheckHtml(o)}
                 ${timesHtml}
-                <div class="offer-gems">Pool: <span>${fmtBig(contrib)}</span>
+                <div class="offer-gems">${_myAmt !== null ? '◈ ' : ''}Pool:
+                    <span style="${_myAmt !== null ? 'color:var(--gold);' : ''}">${fmtBig(_myAmt !== null ? _myAmt : contrib)}</span>
                     <img src="${LOGO_GEMS}" style="width:12px;height:12px;vertical-align:middle;margin:0 2px;" onerror="this.style.display='none'">
                     / <span>${fmtBig(gems)}</span>
                     <img src="${LOGO_GEMS}" style="width:12px;height:12px;vertical-align:middle;margin:0 2px;" onerror="this.style.display='none'">
-                    ${_myAmt !== null ? `<span style="margin-left:8px;color:var(--gold);font-size:0.85em;">◈ MINE: ${fmtBig(_myAmt)}</span>` : ''}
                 </div>
                 <div class="offer-bar-wrap">
                     <div class="offer-bar-track"><div class="offer-bar-fill" style="width:${satBarWidth}%;background:${satColor};box-shadow:0 0 6px ${satColor}55;"></div></div>
@@ -934,6 +967,13 @@
             <div class="calc-row">
                 <img class="cur-logo" src="${LOGO_SHARDS}" onerror="this.style.display='none'">
                 <span class="c-lbl">SHARDS</span><span class="c-val" id="calc-shards">—</span>
+            </div>
+            <button class="calc-custom-btn" id="calc-custom-btn" onclick="toggleCustomShard()">⚙ CUSTOM SHARD PRICE</button>
+            <div class="calc-custom-panel" id="calc-custom-panel">
+                <label>WAX per 1 SHARD</label>
+                <input id="custom-shard-input" type="number" min="0" step="0.0001" placeholder="e.g. 0.0030" oninput="applyCustomShard()">
+                <div class="calc-custom-hint" id="custom-shard-hint"></div>
+                <button class="calc-custom-clear" onclick="clearCustomShard()">✕ RESET TO LIVE RATE</button>
             </div>
             <div class="calc-note">
                 SHOP: 500 WAX = 1,100 GEMS (fixed)<br>
@@ -1022,7 +1062,44 @@
         const wax = v * GEM_TO_WAX;
         if (wEl) wEl.textContent = fmtWax(wax);
         if (tEl) tEl.textContent = fmtTlm(wax * tlmPerWax);
-        if (sEl) sEl.textContent = fmtShards(wax * tlmPerWax * SHARDS_PER_TLM);
+        if (sEl) sEl.textContent = fmtShards(shardsFromWax(wax));
+    };
+
+    window.toggleCustomShard = function() {
+        const panel = document.getElementById('calc-custom-panel');
+        const btn   = document.getElementById('calc-custom-btn');
+        if (!panel) return;
+        const open = panel.classList.toggle('open');
+        if (btn) btn.classList.toggle('active', open);
+    };
+    window.applyCustomShard = function() {
+        const v = parseFloat(document.getElementById('custom-shard-input')?.value);
+        const hint = document.getElementById('custom-shard-hint');
+        if (!isNaN(v) && v > 0) {
+            _customShardWax = v;
+            if (hint) {
+                const tlmPerWax = (_liveWaxUsd && _liveTlmUsd) ? _liveWaxUsd / _liveTlmUsd : 3.8;
+                hint.textContent = `≈ ${(v * tlmPerWax).toFixed(6)} TLM per shard`;
+            }
+        } else {
+            _customShardWax = null;
+            if (hint) hint.textContent = '';
+        }
+        calcUpdate();
+        if (_offersCache.length) renderOffers(_offersCache);
+    };
+    window.clearCustomShard = function() {
+        _customShardWax = null;
+        const inp = document.getElementById('custom-shard-input');
+        const hint = document.getElementById('custom-shard-hint');
+        if (inp) inp.value = '';
+        if (hint) hint.textContent = '';
+        const panel = document.getElementById('calc-custom-panel');
+        const btn   = document.getElementById('calc-custom-btn');
+        if (panel) panel.classList.remove('open');
+        if (btn) btn.classList.remove('active');
+        calcUpdate();
+        if (_offersCache.length) renderOffers(_offersCache);
     };
 
     // ── FETCH & REFRESH ───────────────────────────────────────────────────────
