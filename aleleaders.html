@@ -72,6 +72,17 @@
     .col-toggle-orange { border-color:rgba(232,120,40,0.45); color:#f08040; }
     .col-toggle-orange:hover { background:rgba(232,120,40,0.1); border-color:#f08040; color:#f0a060; }
     .col-toggles-sep { width:1px; height:16px; background:rgba(255,255,255,0.08); align-self:center; flex-shrink:0; }
+    @keyframes rgb-cycle {
+        0%   { border-color:#ff3366; color:#ff3366; box-shadow:0 0 7px #ff336655; }
+        16%  { border-color:#ff8800; color:#ff8800; box-shadow:0 0 7px #ff880055; }
+        33%  { border-color:#ddcc00; color:#ddcc00; box-shadow:0 0 7px #ddcc0055; }
+        50%  { border-color:#33cc55; color:#33cc55; box-shadow:0 0 7px #33cc5555; }
+        66%  { border-color:#3399ff; color:#3399ff; box-shadow:0 0 7px #3399ff55; }
+        83%  { border-color:#aa44ff; color:#aa44ff; box-shadow:0 0 7px #aa44ff55; }
+        100% { border-color:#ff3366; color:#ff3366; box-shadow:0 0 7px #ff336655; }
+    }
+    .col-toggle-rgb { animation: rgb-cycle 2.5s linear infinite; font-weight:bold; letter-spacing:1.5px; }
+    .col-toggle-rgb.on { animation: rgb-cycle 2.5s linear infinite; background:rgba(255,255,255,0.06); }
 
     /* PROGRESS */
     .progress-wrap { padding:18px 28px; display:none; }
@@ -225,8 +236,10 @@
     ];
 
     // ── COLUMNS DEFINITION ───────────────────────────────────────────────────
-    // src: 'perm' = permstats key | 'active' = activestats key | 'tag' = player tag
+    // src: 'perm' = permstats key | 'active' = activestats key | 'tag' = player tag | 'comp' = comp.worlds
     var COLUMNS = [
+        // AW Competition
+        { key:'comp_live_score', label:'AW Level-Up Competition', src:'comp', def:true, title:'live_score from comp.worlds — em dash = not registered' },
         // Dungeons
         { key:'dungeons_won',               label:'Dungeons Won',            src:'perm',   def:true  },
         { key:'dungeons_played',            label:'Dungeons Played',         src:'perm',   def:false },
@@ -289,6 +302,7 @@
     var _sortKey     = 'dungeons_won';
     var _sortDir     = 1; // 1 = desc for numeric, asc alpha for tag
     var _extraCols   = []; // discovered permstats keys not in COLUMNS
+    var _compData    = {}; // wallet → live_score from comp.worlds competition
     // templateId → { rarity }  — for arms/crew battle NFTs
     var _templateRarityCache = {};
     // assetId → { tid, rarity, shine }  — for mine tools
@@ -419,6 +433,23 @@
         return all;
     }
 
+    // ── FETCH COMPETITION DATA ───────────────────────────────────────────────
+    async function fetchCompData() {
+        _compData = {};
+        var lb = undefined;
+        while (true) {
+            var params = { code:'comp.worlds', scope:'...........2e', table:'players', limit:500, json:true, reverse:false };
+            if (lb) params.lower_bound = lb;
+            var d = await fetchTableRows(params);
+            (d.rows || []).forEach(function(r) {
+                if (r.wallet) _compData[r.wallet] = r.live_score || 0;
+            });
+            if (!d.more || !(d.rows || []).length) break;
+            lb = d.next_key;
+        }
+        renderTable();
+    }
+
     // ── FLATTEN ROW ──────────────────────────────────────────────────────────
     function extractNFTs(row) {
         var nfts = { armsTemplate: null, crewTemplate: null, mineAssets: [] };
@@ -486,6 +517,7 @@
         if (src === 'calc')   { var fn = CALC_COLS[key]; return fn ? fn(fp) : null; }
         if (src === 'perm')   return fp.perm[key]   || 0;
         if (src === 'active') return fp.active[key] || 0;
+        if (src === 'comp')   return _compData.hasOwnProperty(fp.wallet) ? _compData[fp.wallet] : null;
         return 0;
     }
 
@@ -670,6 +702,7 @@
             btn.textContent = col.label.toUpperCase();
             btn.title = col.title || col.key;
             btn.dataset.key = col.key;
+            if (col.key === 'comp_live_score') btn.classList.add('col-toggle-rgb');
             btn.onclick = function() {
                 _visibleCols[col.key] = !_visibleCols[col.key];
                 btn.classList.toggle('on', _visibleCols[col.key]);
@@ -893,6 +926,7 @@
                     fetchBattleNFTRarities(collectBattleTemplateIds(_allPlayers))
                         .then(function() { return fetchMineAssetInfo(collectMineAssetIds(_allPlayers)); })
                         .then(refreshNFTImages);
+                    fetchCompData();
                     return;
                 }
             } catch(e) {}
@@ -921,6 +955,7 @@
             fetchBattleNFTRarities(collectBattleTemplateIds(_allPlayers))
                         .then(function() { return fetchMineAssetInfo(collectMineAssetIds(_allPlayers)); })
                         .then(refreshNFTImages);
+            fetchCompData();
 
             var ts = Date.now();
             localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: ts, players: _allPlayers }));
