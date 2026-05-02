@@ -187,6 +187,7 @@
     <span id="count-display"></span>
     <button class="dl-btn" id="dl-csv-btn" onclick="downloadCSV()" disabled title="Download visible columns as CSV">&#8659; CSV</button>
     <button class="dl-btn" id="dl-xlsx-btn" onclick="downloadXLSX()" disabled title="Download visible columns as Excel spreadsheet">&#8659; XLSX</button>
+    <button class="dl-btn" id="dl-json-btn" onclick="downloadJSON()" disabled title="Download full player data as JSON">&#8659; JSON</button>
 </div>
 
 <div class="col-toggles" id="col-toggles">
@@ -785,6 +786,7 @@
         document.getElementById('count-display').textContent = sorted.length + ' / ' + _allPlayers.length + ' PLAYERS';
         document.getElementById('dl-csv-btn').disabled = false;
         document.getElementById('dl-xlsx-btn').disabled = false;
+        document.getElementById('dl-json-btn').disabled = false;
     }
 
     function sortClass(key) {
@@ -818,11 +820,11 @@
         });
         var sorted = sortPlayers(players, _sortKey);
         var cols = allColsList().filter(function(c) { return _visibleCols[c.key]; });
-        var headers = ['#', 'Player (wallet)'].concat(cols.map(function(c) { return c.label; }));
+        var headers = ['#', 'Player', 'Wallet'].concat(cols.map(function(c) { return c.label; }));
         var rows = sorted.map(function(fp, i) {
-            return [i + 1, fp.tag].concat(cols.map(function(c) { return getVal(fp, c.key, c.src); }));
+            return [i + 1, fp.tag, fp.wallet].concat(cols.map(function(c) { return getVal(fp, c.key, c.src); }));
         });
-        return { headers: headers, rows: rows };
+        return { headers: headers, rows: rows, sorted: sorted, cols: cols };
     }
 
     window.downloadCSV = function() {
@@ -849,6 +851,20 @@
         XLSX.utils.book_append_sheet(wb, ws, 'Leaderboard');
         ws['!freeze'] = { xSplit: 0, ySplit: 1 };
         XLSX.writeFile(wb, 'ale-leaderboard_' + dlTimestamp() + '.xlsx');
+    };
+
+    window.downloadJSON = function() {
+        if (!_allPlayers.length) return;
+        var d = getDownloadData();
+        var out = d.sorted.map(function(fp, i) {
+            var obj = { rank: i + 1, player: fp.tag, wallet: fp.wallet };
+            d.cols.forEach(function(c) { obj[c.key] = getVal(fp, c.key, c.src); });
+            return obj;
+        });
+        var blob = new Blob([JSON.stringify({ exported: new Date().toISOString(), players: out }, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a'); a.href = url; a.download = 'ale-leaderboard_' + dlTimestamp() + '.json'; a.click();
+        URL.revokeObjectURL(url);
     };
 
     // ── LOAD ─────────────────────────────────────────────────────────────────
