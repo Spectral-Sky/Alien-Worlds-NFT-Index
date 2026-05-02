@@ -442,7 +442,7 @@
             if (lb) params.lower_bound = lb;
             var d = await fetchTableRows(params);
             (d.rows || []).forEach(function(r) {
-                if (r.wallet) _compData[r.wallet] = r.live_score || 0;
+                if (r.player) _compData[r.player] = r.live_score || 0;
             });
             if (!d.more || !(d.rows || []).length) break;
             lb = d.next_key;
