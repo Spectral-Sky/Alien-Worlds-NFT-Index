@@ -508,7 +508,7 @@
     let _playerStats  = {};  // permstat key → value for logged-in player
 
     const LOGO_GEMS   = 'Ale%20images/gems.png';
-    const LOGO_SHARDS = 'Ale%20images/coin.png';
+    const LOGO_SHARDS = 'Ale%20images/candle.png';
     const LOGO_WAX    = 'https://s2.coinmarketcap.com/static/img/coins/64x64/2300.png';
     const LOGO_TLM    = 'https://s2.coinmarketcap.com/static/img/coins/64x64/9119.png';
 
@@ -856,16 +856,26 @@
             const state    = deriveState(o);
             const gems     = offerGems(o);
             const contrib  = offerContributed(o);
-            const pct      = gems > 0 ? Math.min(100, Math.round(contrib / gems * 100)) : 0;
             const endSec   = offerEndTime(o);
             const startSec = offerStartTime(o);
             const timerId  = `timer-${id}`;
 
             const { amount: rwdAmt, type: rwdType } = parseReward(o);
-            const _rwdFmt = rwdType.includes('wax') ? fmtWax : rwdType.includes('tlm') ? fmtTlm : rwdType.includes('shard') ? fmtShards : fmtBig;
-            const rwdDisplay = rwdAmt
-                ? `${_rwdFmt(rwdAmt)} ${rwdType.toUpperCase() || '?'}`
-                : '—';
+            const _rwdFmt  = rwdType.includes('wax') ? fmtWax : rwdType.includes('tlm') ? fmtTlm : rwdType.includes('shard') ? fmtShards : fmtBig;
+            const rwdLogo  = rwdType.includes('wax') ? LOGO_WAX : rwdType.includes('tlm') ? LOGO_TLM : rwdType.includes('shard') ? LOGO_SHARDS : LOGO_GEMS;
+            const rwdDisplay = rwdAmt ? `${_rwdFmt(rwdAmt)} ${rwdType.toUpperCase() || '?'}` : '—';
+
+            // Value saturation: how much of the reward value has been contributed
+            const rewardWax = rewardToWax(rwdAmt, rwdType);
+            const contribWax = contrib * GEM_TO_WAX;
+            const satPct = rewardWax > 0 ? Math.round(contribWax / rewardWax * 100) : 0;
+            const satBarWidth = Math.min(100, satPct);
+            const satColor = satPct < 80 ? '#60e090' : satPct < 100 ? '#ffaa00' : '#ff4466';
+
+            // Logged-in user's own contribution
+            const _me = localStorage.getItem('naron_wallet');
+            const _myRow = (_me && _allContribs[o.offer_id]) ? _allContribs[o.offer_id].find(c => c.wallet === _me) : null;
+            const _myAmt = _myRow ? _myRow.amount : null;
 
             let timesHtml = `<div class="offer-times">`;
             if (startSec) timesHtml += `<span class="t-lbl">START:</span><span class="t-val">${fmtTimestamp(startSec)}</span><br>`;
@@ -885,16 +895,20 @@
                 ${reqType ? `<div class="offer-req-type">${reqType}</div>` : ''}
                 ${reqCheckHtml(o)}
                 ${timesHtml}
-                <div class="offer-gems">Contributed: <span>${fmtBig(contrib)}</span>
+                <div class="offer-gems">Pool: <span>${fmtBig(contrib)}</span>
                     <img src="${LOGO_GEMS}" style="width:12px;height:12px;vertical-align:middle;margin:0 2px;" onerror="this.style.display='none'">
                     / <span>${fmtBig(gems)}</span>
                     <img src="${LOGO_GEMS}" style="width:12px;height:12px;vertical-align:middle;margin:0 2px;" onerror="this.style.display='none'">
+                    ${_myAmt !== null ? `<span style="margin-left:8px;color:var(--gold);font-size:0.85em;">◈ MINE: ${fmtBig(_myAmt)}</span>` : ''}
                 </div>
                 <div class="offer-bar-wrap">
-                    <div class="offer-bar-track"><div class="offer-bar-fill" style="width:${pct}%"></div></div>
-                    <div class="offer-bar-label">${pct}% FILLED</div>
+                    <div class="offer-bar-track"><div class="offer-bar-fill" style="width:${satBarWidth}%;background:${satColor};box-shadow:0 0 6px ${satColor}55;"></div></div>
+                    <div class="offer-bar-label" style="color:${satColor};">${satPct}% VALUE SATURATED</div>
                 </div>
-                <div style="font-size:0.7em;color:var(--muted);margin:6px 0 4px;">REWARD: <strong style="color:#ffccee;">${rwdDisplay}</strong></div>
+                <div style="font-size:0.82em;color:var(--muted);margin:6px 0 4px;display:flex;align-items:center;gap:6px;">
+                    <img src="${rwdLogo}" style="width:14px;height:14px;object-fit:contain;border-radius:50%;opacity:0.9;" onerror="this.style.display='none'">
+                    REWARD: <strong style="color:#ffccee;font-size:1.05em;">${rwdDisplay}</strong>
+                </div>
                 ${rewardValueHtml(o)}
                 ${contributedValueHtml(contrib)}
                 ${dealBarHtml(o)}
