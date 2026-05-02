@@ -325,6 +325,17 @@
         .calc-custom-hint { font-size:0.6em; color:var(--muted); margin-top:4px; }
         .calc-custom-clear { margin-top:5px; font-size:0.6em; color:var(--red); cursor:pointer; letter-spacing:1px; background:none; border:none; font-family:inherit; padding:0; }
         .calc-custom-clear:hover { color:#ff8899; }
+        .calc-pack-label { font-size:0.58em; color:var(--muted); letter-spacing:2px; margin:10px 0 5px; text-transform:uppercase; }
+        .calc-pack-btns { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-bottom:6px; }
+        .calc-pack-btn {
+            padding:5px 2px; background:transparent;
+            border:1px solid rgba(255,170,0,0.25); border-radius:2px;
+            color:rgba(180,120,60,0.7); font-family:'Courier New',monospace;
+            font-size:0.6em; letter-spacing:1px; cursor:pointer;
+            text-align:center; transition:all 0.15s; line-height:1.4;
+        }
+        .calc-pack-btn:hover { border-color:var(--gold); color:var(--gold); }
+        .calc-pack-btn.active { border-color:var(--gold); color:var(--gold); background:rgba(255,170,0,0.1); font-weight:bold; }
 
         /* ── REQUIREMENTS TABLE ───────────────────────────────────────────── */
         .req-section { background:var(--panel-bg); border:1px solid var(--border); border-radius:4px; overflow:hidden; }
@@ -523,7 +534,14 @@
 
 <script>
     // ── CONVERSION RATES ─────────────────────────────────────────────────────
-    const GEM_TO_WAX     = 500 / 1100;  // fixed shop rate
+    const GEM_PACKS = {
+        S:  { gems: 100,    wax: 49,    rate: 49/100 },
+        M:  { gems: 1100,   wax: 499,   rate: 499/1100 },
+        L:  { gems: 12500,  wax: 4999,  rate: 4999/12500 },
+        XL: { gems: 140000, wax: 49999, rate: 49999/140000 },
+    };
+    let _activeGemPack = 'M';
+    let GEM_TO_WAX     = GEM_PACKS.M.rate;
     const SHARDS_PER_TLM = 3;           // Zapps "good" price: 300 shards / 100 TLM
     let _liveWaxUsd  = null;
     let _liveTlmUsd  = null;
@@ -557,6 +575,11 @@
 
     function updateCalcRateDisplay() {
         const el = document.getElementById('calc-price-info');
+        const pn = document.getElementById('calc-pack-note');
+        if (pn) {
+            const p = GEM_PACKS[_activeGemPack];
+            pn.textContent = `PACK ${_activeGemPack}: ${p.wax} WAX = ${p.gems.toLocaleString()} GEMS`;
+        }
         if (!el) return;
         if (!_liveWaxUsd || !_liveTlmUsd) { el.textContent = 'prices: fallback (offline)'; return; }
         const ratio = (_liveWaxUsd / _liveTlmUsd).toFixed(2);
@@ -968,6 +991,12 @@
                 <img class="cur-logo" src="${LOGO_SHARDS}" onerror="this.style.display='none'">
                 <span class="c-lbl">SHARDS</span><span class="c-val" id="calc-shards">—</span>
             </div>
+            <div class="calc-pack-label">◈ GEM PACK RATE</div>
+            <div class="calc-pack-btns">
+                ${Object.entries(GEM_PACKS).map(([k,p]) =>
+                    `<button class="calc-pack-btn${_activeGemPack===k?' active':''}" data-pack="${k}" onclick="setGemPack('${k}')" title="${p.gems.toLocaleString()} gems · ${p.wax} WAX">${k}<br><span style="font-size:0.85em;opacity:0.75;">${p.wax}W</span></button>`
+                ).join('')}
+            </div>
             <button class="calc-custom-btn" id="calc-custom-btn" onclick="toggleCustomShard()">⚙ CUSTOM SHARD PRICE</button>
             <div class="calc-custom-panel" id="calc-custom-panel">
                 <label>WAX per 1 SHARD</label>
@@ -976,7 +1005,7 @@
                 <button class="calc-custom-clear" onclick="clearCustomShard()">✕ RESET TO LIVE RATE</button>
             </div>
             <div class="calc-note">
-                SHOP: 500 WAX = 1,100 GEMS (fixed)<br>
+                <span id="calc-pack-note">PACK M: 499 WAX = 1,100 GEMS</span><br>
                 TLM &amp; SHARDS via live market<br>
                 <span id="calc-price-info" style="color:var(--muted);font-size:1.05em;line-height:1.6;"><span class="loading-pulse">fetching prices…</span></span>
             </div>
@@ -1100,6 +1129,22 @@
         if (btn) btn.classList.remove('active');
         calcUpdate();
         if (_offersCache.length) renderOffers(_offersCache);
+    };
+
+    window.setGemPack = function(key) {
+        if (!GEM_PACKS[key]) return;
+        _activeGemPack = key;
+        GEM_TO_WAX = GEM_PACKS[key].rate;
+        if (_liveWaxUsd && _liveTlmUsd) {
+            _gemToTlm    = GEM_TO_WAX * (_liveWaxUsd / _liveTlmUsd);
+            _gemToShards = _gemToTlm * SHARDS_PER_TLM;
+        }
+        updateCalcRateDisplay();
+        calcUpdate();
+        if (_offersCache.length) renderOffers(_offersCache);
+        document.querySelectorAll('.calc-pack-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.pack === key);
+        });
     };
 
     // ── FETCH & REFRESH ───────────────────────────────────────────────────────
