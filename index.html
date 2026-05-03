@@ -252,6 +252,8 @@
         .rgb-text-badge { animation: rgb-badge 2s linear infinite; text-shadow: 0 0 5px currentColor; pointer-events:none; font-style:italic; }
         @keyframes rgb-border { 0%{border-color:#ff3366;box-shadow:0 0 10px #ff336688,inset 0 0 6px #ff336622}16%{border-color:#ff8800;box-shadow:0 0 10px #ff880088,inset 0 0 6px #ff880022}33%{border-color:#ddcc00;box-shadow:0 0 10px #ddcc0088,inset 0 0 6px #ddcc0022}50%{border-color:#33cc55;box-shadow:0 0 10px #33cc5588,inset 0 0 6px #33cc5522}66%{border-color:#3399ff;box-shadow:0 0 10px #3399ff88,inset 0 0 6px #3399ff22}83%{border-color:#aa44ff;box-shadow:0 0 10px #aa44ff88,inset 0 0 6px #aa44ff22}100%{border-color:#ff3366;box-shadow:0 0 10px #ff336688,inset 0 0 6px #ff336622} }
         .module-card-rgb { animation: rgb-border 2.5s linear infinite; }
+        #comp-reg-btn { pointer-events:all; margin-top:4px; background:transparent; color:#e8a020; font-family:'Courier New',monospace; font-size:0.72em; letter-spacing:1px; padding:5px 12px; cursor:pointer; text-transform:uppercase; border:1px solid; animation: rgb-border 2.5s linear infinite; }
+        #comp-reg-btn:disabled { animation:none; border-color:rgba(232,160,32,0.3); color:rgba(232,160,32,0.5); }
 
         @keyframes blackhole-spin {
             from { transform: rotate(0deg); }
@@ -502,7 +504,7 @@
             <div class="nav-dropdown-wrap">
                 <button class="nav-btn nav-dropdown-btn"><img src="Ale%20images/tavern.svg" style="height:13px;vertical-align:middle;margin-right:4px;opacity:0.85;">ALE &#9660;</button>
                 <div class="nav-dropdown-menu">
-                    <a href="ale.html" class="nav-dropdown-item">⚔ ALE CARDS</a>
+                    <a href="ale.html" class="nav-dropdown-item">⚔ ALE STATS</a>
                     <a href="alewiki.html" class="nav-dropdown-item">◈ ALE WIKI</a>
                     <a href="alements.html" class="nav-dropdown-item">&#11041; STAT EXPLORER</a>
                     <a href="aleleaders.html" class="nav-dropdown-item">&#9670; LEADERBOARD</a>
@@ -534,7 +536,7 @@
     <a href="pd.units.html" class="nav-btn">PD UNITS</a>
     <a href="pd.materials.html" class="nav-btn">PD MATS</a>
     <a href="army.html" class="nav-btn">ARMY BUILDER</a>
-    <a href="ale.html" class="nav-btn">⚔ ALE CARDS</a>
+    <a href="ale.html" class="nav-btn">⚔ ALE STATS</a>
     <a href="alewiki.html" class="nav-btn">◈ ALE WIKI</a>
     <a href="alements.html" class="nav-btn">&#11041; STAT EXPLORER</a>
     <a href="stash.html" class="nav-btn">&#11041; STASH</a>
@@ -643,7 +645,7 @@
                 <div class="card-title" style="font-size:1.05em;color:#ffd080;">⚔ AW COMPETITION</div>
                 <span class="card-schema" style="color:#a07830;">Alien Legends · 28-day event</span>
                 <p style="font-size:0.7em;color:#c09050;margin:7px 0 4px;line-height:1.5;"><strong style="color:#ffd080;">Prize Pool: 1,000,000 Shards sponsored by gHubs</strong><br><strong style="color:#ffd080;">Start Time: May 2, 2026 at 5 PM UTC &nbsp;·&nbsp; End: May 29, 2026 at 3 PM UTC</strong></p>
-                <button id="comp-reg-btn" onclick="registerForComp()" style="pointer-events:all;margin-top:4px;background:transparent;border:1px solid rgba(232,160,32,0.6);color:#e8a020;font-family:'Courier New',monospace;font-size:0.72em;letter-spacing:1px;padding:5px 12px;cursor:pointer;text-transform:uppercase;transition:all 0.2s;" onmouseover="this.style.borderColor='#e8a020';this.style.background='rgba(232,160,32,0.12)'" onmouseout="this.style.borderColor='rgba(232,160,32,0.6)';this.style.background='transparent'">[ REGISTER ]</button>
+                <button id="comp-reg-btn" onclick="registerForComp()">[ REGISTER ]</button>
                 <div id="comp-reg-status" style="font-size:0.68em;margin-top:5px;color:#888;font-family:'Courier New',monospace;min-height:1em;"></div>
             </div>
                 </div>
