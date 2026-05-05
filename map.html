@@ -224,6 +224,29 @@
         #qt-toggle.on { border-color:var(--gold); border-style:solid; color:var(--gold); background:rgba(232,160,32,0.07); }
         #qt-toggle.on::before { content:'⚡ '; }
 
+        /* ── QUEST OVERLAY ───────────────────────────────────────────────── */
+        #quest-overlay { position:fixed; bottom:16px; right:16px; z-index:550; width:268px; font-family:'Courier New',monospace; }
+        #qo-toggle { display:block; width:100%; padding:7px 12px; background:rgba(4,8,20,0.82); backdrop-filter:blur(6px); border:1px solid rgba(232,160,32,0.18); color:#557; font-family:'Courier New',monospace; font-size:0.64em; letter-spacing:2px; text-transform:uppercase; cursor:crosshair; text-align:left; transition:all 0.2s; }
+        #qo-toggle:hover,#qo-toggle.open { color:var(--gold); border-color:rgba(232,160,32,0.45); }
+        #qo-panel { display:none; background:rgba(4,8,20,0.88); backdrop-filter:blur(8px); border:1px solid rgba(232,160,32,0.18); border-top:none; max-height:420px; overflow-y:auto; }
+        #qo-panel.open { display:block; }
+        .qo-tabs { display:flex; border-bottom:1px solid rgba(232,160,32,0.1); }
+        .qo-tab { flex:1; padding:5px 0; background:transparent; border:none; color:#446; font-family:'Courier New',monospace; font-size:0.62em; letter-spacing:1px; cursor:crosshair; transition:all 0.15s; text-transform:uppercase; }
+        .qo-tab.active { color:var(--gold); background:rgba(232,160,32,0.06); }
+        .qo-tab:hover { color:#99a; }
+        #qo-list { padding:8px; display:flex; flex-direction:column; gap:5px; }
+        .qo-item { border:1px solid rgba(232,160,32,0.1); background:rgba(232,160,32,0.02); padding:8px 10px; }
+        .qo-item.done { border-color:rgba(60,180,80,0.25); background:rgba(60,180,80,0.02); }
+        .qo-title { font-size:0.68em; color:#b0b8c8; letter-spacing:0.5px; margin-bottom:5px; line-height:1.4; }
+        .qo-reward { font-size:0.65em; float:right; margin-left:6px; }
+        .qo-bar-wrap { display:flex; align-items:center; gap:6px; }
+        .qo-bar { flex:1; height:3px; background:rgba(255,255,255,0.06); border-radius:1px; overflow:hidden; }
+        .qo-bar-fill { height:100%; background:var(--gold); border-radius:1px; transition:width 0.4s; }
+        .qo-bar-fill.done { background:#40c070; }
+        .qo-pct { font-size:0.6em; color:#446; white-space:nowrap; min-width:28px; text-align:right; }
+        .qo-empty { font-size:0.68em; color:#446; padding:10px 8px; text-align:center; }
+        #qo-status { font-size:0.64em; color:#446; padding:0 8px 6px; min-height:1.1em; }
+
         /* ── MAP FOOTER — slim buffer at bottom ──────────────────────────── */
         .map-footer { height:5px; flex-shrink:0; background:rgba(0,0,0,0.35); border-top:1px solid rgba(232,160,32,0.07); }
 
@@ -267,6 +290,20 @@
 
 <!-- SKIP WARP -->
 <button id="skip-btn" onclick="skipWarp()">&#9654;&#9654; SKIP</button>
+
+<!-- QUEST OVERLAY -->
+<div id="quest-overlay" style="display:none;">
+    <button id="qo-toggle" onclick="toggleQuestOverlay()">&#x2B21; ACTIVE QUESTS &#9660;</button>
+    <div id="qo-panel">
+        <div class="qo-tabs">
+            <button class="qo-tab active" data-scope="day"   onclick="setQScope('day')">DAY</button>
+            <button class="qo-tab"        data-scope="week"  onclick="setQScope('week')">WEEK</button>
+            <button class="qo-tab"        data-scope="month" onclick="setQScope('month')">MONTH</button>
+        </div>
+        <div id="qo-list"><div class="qo-empty">Loading…</div></div>
+        <div id="qo-status"></div>
+    </div>
+</div>
 
 <!-- MAP OVERLAY: centered floating panel -->
 <div id="map-overlay" class="gone">
@@ -817,6 +854,7 @@
     function revealMap(){
         document.getElementById('skip-btn').style.display='none';
         document.getElementById('map-overlay').classList.remove('gone');
+        document.getElementById('quest-overlay').style.display='';
         buildRulers();
         buildMap(_activePlanet);
         setActiveTab(_activePlanet);
@@ -1077,6 +1115,65 @@
         document.getElementById('map-panel').classList.toggle('collapsed',!_panelOpen);
         document.getElementById('minimize-btn').textContent=_panelOpen?'― MINIMIZE MAP ―':'+ OPEN MAP +';
     }
+
+    // ── QUEST OVERLAY ─────────────────────────────────────────────────────────
+    var _qData=null, _qPerms={}, _qScope='day', _qLoaded=false;
+
+    function toggleQuestOverlay(){
+        var panel=document.getElementById('qo-panel');
+        var btn=document.getElementById('qo-toggle');
+        var open=panel.classList.toggle('open');
+        btn.classList.toggle('open',open);
+        btn.innerHTML=(open?'&#x2B21; ACTIVE QUESTS &#9650;':'&#x2B21; ACTIVE QUESTS &#9660;');
+        if(open&&!_qLoaded) loadQuestOverlay();
+    }
+
+    function setQScope(scope){
+        _qScope=scope;
+        document.querySelectorAll('.qo-tab').forEach(function(t){t.classList.toggle('active',t.dataset.scope===scope);});
+        renderQuestOverlay();
+    }
+
+    async function loadQuestOverlay(){
+        var wallet=getWallet();
+        if(!wallet){document.getElementById('qo-list').innerHTML='<div class="qo-empty">Log in to view quests.</div>';return;}
+        document.getElementById('qo-status').textContent='Loading…';
+        try{
+            var qres=await fetchRows({code:'quests.ale',scope:'quests.ale',table:'activequests',lower_bound:wallet,upper_bound:wallet,limit:1,json:true});
+            _qData=(qres&&qres.rows&&qres.rows[0]&&qres.rows[0].player===wallet)?qres.rows[0]:null;
+            var pres=await fetchRows({code:'players.ale',scope:'players.ale',table:'players',lower_bound:wallet,upper_bound:wallet,limit:1,json:true});
+            _qPerms={};
+            if(pres&&pres.rows&&pres.rows[0]) (pres.rows[0].permstats||[]).forEach(function(s){_qPerms[s.first]=Number(s.second);});
+            _qLoaded=true;
+            document.getElementById('qo-status').textContent='';
+            renderQuestOverlay();
+        }catch(e){document.getElementById('qo-status').textContent='✗ '+((e&&e.message)||'Error');}
+    }
+
+    function renderQuestOverlay(){
+        var list=document.getElementById('qo-list');
+        if(!list) return;
+        if(!_qData||!_qData.quests||!_qData.quests.length){list.innerHTML='<div class="qo-empty">No active quests.</div>';return;}
+        var scoped=_qData.quests.filter(function(q){return q.quest_scope===_qScope;});
+        if(!scoped.length){list.innerHTML='<div class="qo-empty">No '+_qScope+' quests.</div>';return;}
+        var html='';
+        scoped.forEach(function(q){
+            var delta=q.task_end_value-q.task_start_value;
+            var gained=Math.max(0,(_qPerms[q.task_type]||0)-q.task_start_value);
+            var pct=delta>0?Math.min(1,gained/delta):0;
+            var done=pct>=1;
+            var bar=Math.round(pct*100);
+            var reward=q.reward_type==='tlm'
+                ?'<span class="qo-reward" style="color:#60c0e0;">'+(q.reward_amount/10000).toFixed(2)+' TLM</span>'
+                :'<span class="qo-reward" style="color:#c060e0;">'+(q.reward_amount/10).toFixed(1)+' SHARDS</span>';
+            html+='<div class="qo-item'+(done?' done':'')+'"><div class="qo-title">'+reward+_qEsc(q.quest_title)+'</div>';
+            html+='<div class="qo-bar-wrap"><div class="qo-bar"><div class="qo-bar-fill'+(done?' done':'')+'" style="width:'+bar+'%"></div></div>';
+            html+='<span class="qo-pct">'+(done?'✓':bar+'%')+'</span></div></div>';
+        });
+        list.innerHTML=html;
+    }
+
+    function _qEsc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
     // ── INIT ──────────────────────────────────────────────────────────────────
     initStars();
