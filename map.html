@@ -183,40 +183,44 @@
 
         /* ── LEGEND COLUMN ───────────────────────────────────────────────── */
         .map-legend {
-            width:148px; flex-shrink:0;
+            width:152px; flex-shrink:0;
             background:rgba(0,0,0,0.55);
             border-left:1px solid rgba(232,160,32,0.1);
             padding:14px 12px;
             display:flex; flex-direction:column; gap:10px;
             overflow-y:auto;
         }
-        .legend-title { color:#a09060; font-size:0.62em; letter-spacing:3px; text-transform:uppercase; border-bottom:1px solid rgba(232,160,32,0.15); padding-bottom:6px; margin-bottom:2px; }
+        .legend-title { color:#a09060; font-size:0.62em; letter-spacing:3px; text-transform:uppercase; border-bottom:1px solid rgba(232,160,32,0.15); padding-bottom:6px; margin-bottom:2px; flex-shrink:0; }
         .legend-row { display:flex; align-items:center; gap:8px; font-size:0.72em; color:#8898a8; letter-spacing:1px; }
         .legend-row img { width:22px; height:22px; opacity:0.85; flex-shrink:0; filter:drop-shadow(0 0 2px rgba(0,0,0,0.8)); }
         .legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
-        .legend-swatch { width:14px; height:14px; border-radius:2px; flex-shrink:0; border:1px solid; }
 
-        /* ── CONFIRM STRIP — fixed at bottom of viewport ─────────────────── */
-        #confirm-strip {
-            display:none;
-            position:fixed; bottom:0; left:0; right:0; z-index:601;
-            background:rgba(4,8,20,0.97); border-top:1px solid rgba(232,160,32,0.4);
-            padding:10px 20px;
-            align-items:center; gap:12px; flex-wrap:wrap;
-        }
-        #confirm-strip.open { display:flex; }
-        #confirm-content { font-family:'Courier New',monospace; font-size:0.88em; color:#c8c0a0; flex:1; }
-        #confirm-content strong { color:var(--gold); }
-        .conf-btn { background:transparent; border:1px solid; padding:7px 18px; font-family:'Courier New',monospace; font-weight:bold; font-size:0.8em; letter-spacing:1px; cursor:crosshair; transition:all 0.2s; border-radius:2px; }
-        .conf-btn.confirm  { color:var(--gold); border-color:var(--gold); }
-        .conf-btn.confirm:hover  { background:var(--gold); color:#000; }
-        .conf-btn.view-map { color:#5090e0; border-color:#5090e0; }
-        .conf-btn.view-map:hover { background:#5090e0; color:#000; }
-        .conf-btn.cancel   { color:#666; border-color:#444; }
-        .conf-btn.cancel:hover   { color:#ccc; border-color:#888; }
-        #strip-status { font-family:'Courier New',monospace; font-size:0.82em; }
-        #strip-status.ok  { color:#40c070; }
-        #strip-status.err { color:#c04040; }
+        /* ── ACTION PANEL (inside legend) ────────────────────────────────── */
+        .action-divider { border:none; border-top:1px solid rgba(232,160,32,0.15); margin:4px 0 8px; flex-shrink:0; }
+        #action-panel { display:none; flex-direction:column; gap:5px; }
+        #action-panel.open { display:flex; }
+        #action-info { font-size:0.7em; color:#c8c0a0; line-height:1.5; word-break:break-word; }
+        #action-info strong { color:var(--gold); }
+        #action-coord { font-size:0.68em; color:#607080; letter-spacing:1px; }
+        .act-btn { display:block; width:100%; padding:6px 6px; font-family:'Courier New',monospace; font-size:0.7em; letter-spacing:1px; background:transparent; border:1px solid; cursor:crosshair; transition:all 0.2s; text-align:center; text-transform:uppercase; }
+        .act-btn.confirm   { color:var(--gold); border-color:var(--gold); }
+        .act-btn.confirm:hover   { background:var(--gold); color:#000; }
+        .act-btn.view-map  { color:#5090e0; border-color:#5090e0; }
+        .act-btn.view-map:hover  { background:#5090e0; color:#000; }
+        .act-btn.hire      { color:#c09060; border-color:#c09060; }
+        .act-btn.hire:hover      { background:#c09060; color:#000; }
+        .act-btn.dungeon   { color:#70a870; border-color:#70a870; }
+        .act-btn.dungeon:hover   { background:#70a870; color:#000; }
+        .act-btn.arena     { color:#c06060; border-color:#c06060; }
+        .act-btn.arena:hover     { background:#c06060; color:#000; }
+        .act-btn.cancel    { color:#555; border-color:#333; }
+        .act-btn.cancel:hover    { color:#aaa; border-color:#666; }
+        #action-status { font-family:'Courier New',monospace; font-size:0.68em; }
+        #action-status.ok  { color:#40c070; }
+        #action-status.err { color:#c04040; }
+
+        /* ── MAP FOOTER — slim buffer at bottom ──────────────────────────── */
+        .map-footer { height:5px; flex-shrink:0; background:rgba(0,0,0,0.35); border-top:1px solid rgba(232,160,32,0.07); }
 
         /* ── SCROLLBAR ───────────────────────────────────────────────────── */
         ::-webkit-scrollbar { height:6px; width:6px; }
@@ -302,7 +306,7 @@
                 </div>
             </div>
 
-            <!-- right: legend -->
+            <!-- right: legend + action panel -->
             <div class="map-legend">
                 <div class="legend-title">LEGEND</div>
                 <div class="legend-row"><img src="Ale%20images/portal.png" alt="portal"><span>Portal</span></div>
@@ -318,23 +322,30 @@
                     <span>Other player</span>
                 </div>
                 <div class="legend-row">
-                    <span class="legend-dot multi" style="background:#e06060;box-shadow:0 0 4px #e0606099;"></span>
+                    <span class="legend-dot" style="background:#e06060;box-shadow:0 0 4px #e0606099;"></span>
                     <span>Multiple players</span>
+                </div>
+
+                <!-- action panel: appears below legend when a cell is clicked -->
+                <hr class="action-divider">
+                <div id="action-panel">
+                    <div class="legend-title">SELECTED</div>
+                    <div id="action-info"></div>
+                    <div id="action-coord"></div>
+                    <button id="confirm-travel-btn" class="act-btn confirm"  onclick="doConfirm()"    style="display:none;">CONFIRM TRAVEL</button>
+                    <button id="view-map-btn"        class="act-btn view-map" onclick="doViewPlanet()" style="display:none;">VIEW MAP</button>
+                    <button id="hire-btn"            class="act-btn hire"     style="display:none;">HIRE FIGHTER</button>
+                    <button id="dungeon-btn"         class="act-btn dungeon"  style="display:none;">&#9935; PLAY DUNGEON</button>
+                    <button id="arena-btn"           class="act-btn arena"    style="display:none;">&#9876; FIGHT ARENA</button>
+                    <span id="action-status"></span>
+                    <button class="act-btn cancel" onclick="dismissStrip()">&#10005; CANCEL</button>
                 </div>
             </div>
 
         </div>
     </div>
+    <div class="map-footer"></div>
 </div>
-</div>
-
-<!-- CONFIRM STRIP: fixed at bottom, does not overlay map -->
-<div id="confirm-strip">
-    <div id="confirm-content"></div>
-    <button id="confirm-travel-btn" class="conf-btn confirm"  onclick="doConfirm()"    style="display:none;">CONFIRM TRAVEL</button>
-    <button id="view-map-btn"        class="conf-btn view-map" onclick="doViewPlanet()" style="display:none;">VIEW MAP</button>
-    <span id="strip-status"></span>
-    <button class="conf-btn cancel" onclick="dismissStrip()">&#10005;</button>
 </div>
 
 <script>
@@ -705,7 +716,8 @@
         }
     }
 
-    function loadPlanetMeshSlideIn(planetKey) {
+    // Called on tab switch: new planet zooms in from far away (warp arrival)
+    function loadPlanetMeshWarpIn(planetKey) {
         initPlanetRenderer();
         setPlanetVisible(false);
         if (_mesh){_scene.remove(_mesh);_mesh=null;}
@@ -716,23 +728,25 @@
         );
         _mesh.userData.speedMultiplier=1;
         _mesh.userData.clickCount=0;
-        _mesh.position.x=-13; // start off screen left
+        _mesh.position.x=0;
         _scene.add(_mesh);
-        _camera.position.set(off.x,off.y,4.5);
+        // Camera starts far back (warp distance), zooms in like an approach
+        _camera.position.set(off.x,off.y,26);
         _camera.lookAt(0,0,0);
         var tx=new THREE.TextureLoader().load('planets/'+planetKey+'.jpg',function(){
             if (_mesh) _mesh.material.map=tx;
             if (_mesh) _mesh.material.needsUpdate=true;
             setPlanetVisible(true);
-            // slide in from left
-            var t0=null,startX=-13;
-            (function slideIn(ts){
+            // Zoom camera in: fast punch then ease-out settle
+            var t0=null;
+            (function zoomIn(ts){
                 if(!t0)t0=ts;
-                var p=Math.min(1,(ts-t0)/520);
-                var ease=1-Math.pow(1-p,3); // ease-out cubic
-                if(_mesh)_mesh.position.x=startX+ease*(0-startX);
-                if(p<1)requestAnimationFrame(slideIn);
-                else if(_mesh)_mesh.position.x=0;
+                var p=Math.min(1,(ts-t0)/900);
+                // fast at first (warp punch), then decelerates
+                var ease=1-Math.pow(1-p,2.5);
+                if(_camera)_camera.position.z=26-ease*(26-4.5);
+                if(p<1)requestAnimationFrame(zoomIn);
+                else if(_camera)_camera.position.z=4.5;
             })(performance.now());
         });
         tx.minFilter=THREE.LinearFilter;tx.generateMipmaps=false;
@@ -742,10 +756,8 @@
     document.addEventListener('click',function(e){
         var overlay=document.getElementById('map-overlay');
         var gate=document.getElementById('login-gate');
-        var strip=document.getElementById('confirm-strip');
         if(overlay&&!overlay.classList.contains('gone')&&overlay.contains(e.target))return;
         if(gate&&!gate.classList.contains('gone')&&gate.contains(e.target))return;
-        if(strip&&strip.contains(e.target))return;
 
         if(_mesh&&_camera){
             var mouse=new THREE.Vector2();
@@ -825,24 +837,26 @@
         _arrTimer=setTimeout(function(){banner.classList.remove('visible');},4200);
     }
 
-    // ── PLANET WARP: pan out right → warp peak → load new → slide in left ─────
+    // ── PLANET WARP: pan right → warp punch → new planet zooms in ────────────
     function warpSwitch(planet,cb){
-        // Pan current planet off-screen to the right, concurrent with warp-up
+        // Pan current planet off-screen to the right while stars ramp up
         if (_mesh){
             var startX=_mesh.position.x,t0=null;
             (function panOut(ts){
                 if(!t0)t0=ts;
-                var p=Math.min(1,(ts-t0)/340);
-                if(_mesh)_mesh.position.x=startX+p*p*14; // ease-in, slide right
+                var p=Math.min(1,(ts-t0)/360);
+                if(_mesh)_mesh.position.x=startX+p*p*15; // ease-in to the right
                 if(p<1)requestAnimationFrame(panOut);
             })(performance.now());
         }
-        rampStars(18,280,function(){
-            // Warp peak: hide old planet, load new sliding in from left
+        // Stars spike hard (warp punch), then hold briefly before slowing as new planet arrives
+        rampStars(38,260,function(){
+            // At warp peak: drop old planet, load new one zooming in from far
             setPlanetVisible(false);
-            loadPlanetMeshSlideIn(planet);
+            loadPlanetMeshWarpIn(planet);
             showArrival(planet);
-            rampStars(0.35,520);
+            // Stars ramp down over 900ms matching the camera zoom-in
+            rampStars(0.35,900);
             if(cb)cb();
         });
     }
@@ -956,30 +970,53 @@
     function onCell(x,y){
         var portals=ALE_PORTALS[_activePlanet]||[],portal=null;
         for(var i=0;i<portals.length;i++){if(portals[i].x===x&&portals[i].y===y){portal=portals[i];break;}}
-        _sel={x:x,y:y,planet:_activePlanet,portal:portal};
+        // also check location type
+        var locs=ALE_LOCATIONS[_activePlanet]||{};
+        var isDungeon=(locs.dungeons||[]).some(function(d){return d.x===x&&d.y===y;});
+        var isTavern=(locs.taverns||[]).some(function(t){return t.x===x&&t.y===y;});
+        var isArena=(locs.arenas||[]).some(function(a){return a.x===x&&a.y===y;});
+        _sel={x:x,y:y,planet:_activePlanet,portal:portal,isDungeon:isDungeon,isTavern:isTavern,isArena:isArena};
         document.querySelectorAll('.ale-cell.selected').forEach(function(el){el.classList.remove('selected');});
         var container=document.getElementById('map-'+_activePlanet);
         if(container){var cell=container.querySelector('[data-x="'+x+'"][data-y="'+y+'"]');if(cell)cell.classList.add('selected');}
-        var content=document.getElementById('confirm-content');
+        var info=document.getElementById('action-info');
+        var coord=document.getElementById('action-coord');
         var tBtn=document.getElementById('confirm-travel-btn');
         var vBtn=document.getElementById('view-map-btn');
-        document.getElementById('strip-status').textContent='';
-        document.getElementById('strip-status').className='';
+        var hBtn=document.getElementById('hire-btn');
+        var dBtn=document.getElementById('dungeon-btn');
+        var aBtn=document.getElementById('arena-btn');
+        document.getElementById('action-status').textContent='';
+        document.getElementById('action-status').className='';
+        // hide all action buttons first
+        [tBtn,vBtn,hBtn,dBtn,aBtn].forEach(function(b){b.style.display='none';});
+        coord.textContent='('+x+', '+y+')';
         if(portal){
             var dest=(PLANETS[portal.to]||{name:portal.to.toUpperCase()}).name.toUpperCase();
-            content.innerHTML='<strong>PORTAL</strong> → '+dest+' &nbsp;·&nbsp; ('+x+', '+y+')';
+            info.innerHTML='<strong>PORTAL</strong><br>→ '+dest;
             tBtn.textContent='TRAVEL TO PORTAL'; tBtn.style.display='';
-            vBtn.textContent='VIEW '+dest+' MAP'; vBtn.style.display='';
+            vBtn.textContent='VIEW '+dest; vBtn.style.display='';
+        } else if(isDungeon){
+            info.innerHTML='<strong style="color:#70a870;">DUNGEON</strong>';
+            tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
+            dBtn.style.display='';
+        } else if(isTavern){
+            info.innerHTML='<strong style="color:#c09060;">TAVERN</strong>';
+            tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
+            hBtn.style.display='';
+        } else if(isArena){
+            info.innerHTML='<strong style="color:#c06060;">ARENA</strong>';
+            tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
+            aBtn.style.display='';
         } else {
-            content.innerHTML='Travel to <strong>'+(PLANETS[_activePlanet]||{name:_activePlanet}).name+'</strong> ('+x+', '+y+')';
+            info.innerHTML=(PLANETS[_activePlanet]||{name:_activePlanet}).name;
             tBtn.textContent='CONFIRM TRAVEL'; tBtn.style.display='';
-            vBtn.style.display='none';
         }
-        document.getElementById('confirm-strip').classList.add('open');
+        document.getElementById('action-panel').classList.add('open');
     }
 
     function dismissStrip(){
-        document.getElementById('confirm-strip').classList.remove('open');
+        document.getElementById('action-panel').classList.remove('open');
         document.querySelectorAll('.ale-cell.selected').forEach(function(el){el.classList.remove('selected');});
         _sel=null;
     }
@@ -993,13 +1030,13 @@
         if(!_sel)return;
         var wallet=getWallet();
         var btn=document.getElementById('confirm-travel-btn');
-        var status=document.getElementById('strip-status');
-        if(!wallet){status.textContent='⚠ PLEASE LOG IN FIRST';status.className='err';return;}
-        btn.disabled=true;btn.textContent='TRANSMITTING…';
+        var status=document.getElementById('action-status');
+        if(!wallet){status.textContent='⚠ PLEASE LOG IN';status.className='err';return;}
+        btn.disabled=true;btn.textContent='SENDING…';
         status.textContent='';status.className='';
         try{
             await signTravel(wallet,_sel.x,_sel.y);
-            status.textContent='✓ Travelled to ('+_sel.x+', '+_sel.y+')';
+            status.textContent='✓ ('+_sel.x+', '+_sel.y+')';
             status.className='ok';
             var destPlanet=_sel.portal?_sel.portal.to:_activePlanet;
             _playerPos={x:_sel.x,y:_sel.y,planet:destPlanet};
@@ -1010,7 +1047,7 @@
             }
             setTimeout(dismissStrip,3000);
         }catch(e){
-            status.textContent='✗ '+((e&&e.message)||'Transaction failed').substring(0,100);
+            status.textContent='✗ '+((e&&e.message)||'Failed').substring(0,60);
             status.className='err';
         }
         btn.disabled=false;
