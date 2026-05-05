@@ -51,26 +51,25 @@
         #stars-canvas { position:fixed; inset:0; width:100vw; height:100vh; z-index:1; pointer-events:none; }
         #planet-webgl  { display:none; position:absolute; top:-9999px; left:-9999px; }
 
-        /* ── TOP-LEFT: NARON CODEX ───────────────────────────────────────── */
-        #nc-header {
-            position: fixed; top: 14px; left: 18px; z-index: 600;
-            pointer-events: all;
+        /* ── PAGE HEADER ─────────────────────────────────────────────────── */
+        .page-header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 600;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(3,3,14,0.88); backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(232,160,32,0.25);
+            padding: 0 20px; height: 52px;
         }
-        #nc-header a {
-            color: rgba(232,160,32,0.65); font-size: 0.85em; letter-spacing: 4px;
+        .ph-logo { display: flex; align-items: center; }
+        .ph-logo a {
+            color: #e8a020; font-size: 1.3em; letter-spacing: 4px;
             text-decoration: none; text-transform: uppercase;
             font-family: 'Courier New', monospace;
-            text-shadow: 0 0 8px rgba(232,160,32,0.25);
-            transition: color 0.2s;
+            text-shadow: 0 0 10px rgba(232,160,32,0.4);
+            transition: opacity 0.2s;
         }
-        #nc-header a:hover { color: #e8a020; }
-
-        /* ── TOP-RIGHT: ALE LOGO ─────────────────────────────────────────── */
-        #ale-corner {
-            position: fixed; top: 10px; right: 14px; z-index: 600;
-            pointer-events: none;
-        }
-        #ale-corner img { height: 36px; opacity: 0.55; }
+        .ph-logo a:hover { opacity: 0.8; }
+        .ph-right { display: flex; align-items: center; }
+        .ph-right img { height: 32px; opacity: 0.6; }
 
         /* ── LOGIN GATE ──────────────────────────────────────────────────── */
         #login-gate {
@@ -262,11 +261,10 @@
 <canvas id="stars-canvas"></canvas>
 <canvas id="planet-webgl"></canvas>
 
-<!-- TOP-LEFT: NARON CODEX -->
-<div id="nc-header"><a href="index.html">NARON CODEX</a></div>
-
-<!-- TOP-RIGHT: ALE LOGO -->
-<div id="ale-corner"><img src="ALElogo.png" alt="Alien Legends"></div>
+<header class="page-header">
+    <div class="ph-logo"><a href="index.html">NARON CODEX</a></div>
+    <div class="ph-right"><img src="ALElogo.png" alt="Alien Legends"></div>
+</header>
 
 <!-- LOGIN GATE -->
 <div id="login-gate">
