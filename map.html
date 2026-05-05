@@ -37,223 +37,155 @@
         }
     </script>
     <style>
+        :root { --gold: #e8a020; }
         *, *::before, *::after { box-sizing: border-box; }
-        body {
-            margin: 0; padding: 0;
-            background: #03030e; color: #d0d0d0;
-            font-family: 'Courier New', monospace;
-            overflow: hidden; height: 100vh; width: 100vw;
-            cursor: crosshair;
-        }
-        a, button { cursor: crosshair !important; }
+        body { margin:0; padding:0; background:#03030e; color:#d0d0d0; font-family:'Courier New',monospace; overflow:hidden; height:100vh; width:100vw; cursor:crosshair; }
+        a, button { cursor:crosshair !important; }
 
-        /* ── LAYERS ──────────────────────────────────────────────────────── */
+        /* ── BACKGROUND LAYERS ─────────────────────────────────────────────── */
         #stars-canvas { position:fixed; inset:0; width:100vw; height:100vh; z-index:1; pointer-events:none; }
         #planet-webgl  { display:none; position:absolute; top:-9999px; left:-9999px; }
 
-        /* ── PAGE HEADER ─────────────────────────────────────────────────── */
+        /* ── PAGE HEADER ───────────────────────────────────────────────────── */
         .page-header {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 600;
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(3,3,14,0.88); backdrop-filter: blur(8px);
-            border-bottom: 1px solid rgba(232,160,32,0.25);
-            padding: 0 20px; height: 52px;
+            position:fixed; top:0; left:0; right:0; z-index:600;
+            display:flex; justify-content:space-between; align-items:center;
+            background:rgba(3,3,14,0.88); backdrop-filter:blur(8px);
+            border-bottom:1px solid rgba(232,160,32,0.25);
+            padding:0 20px; height:52px;
         }
-        .ph-logo { display: flex; align-items: center; }
-        .ph-logo a {
-            color: #e8a020; font-size: 1.3em; letter-spacing: 4px;
-            text-decoration: none; text-transform: uppercase;
-            font-family: 'Courier New', monospace;
-            text-shadow: 0 0 10px rgba(232,160,32,0.4);
-            transition: opacity 0.2s;
-        }
-        .ph-logo a:hover { opacity: 0.8; }
-        .ph-right { display: flex; align-items: center; }
-        .ph-right img { height: 32px; opacity: 0.6; }
+        .ph-logo a { color:var(--gold); font-size:1.3em; letter-spacing:4px; text-decoration:none; text-transform:uppercase; text-shadow:0 0 10px rgba(232,160,32,0.4); transition:opacity 0.2s; }
+        .ph-logo a:hover { opacity:0.8; }
+        .ph-right img { height:32px; opacity:0.6; }
 
-        /* ── LOGIN GATE ──────────────────────────────────────────────────── */
-        #login-gate {
-            position: fixed; inset: 0; z-index: 9000;
-            background: rgba(3,3,14,0.93); backdrop-filter: blur(8px);
-            display: flex; align-items: center; justify-content: center;
-        }
-        #login-gate.gone { display: none; }
-        .gate-box {
-            border: 1px solid rgba(232,160,32,0.4); background: rgba(10,8,2,0.97);
-            padding: 42px 52px 36px; text-align: center; max-width: 400px; width: 88%;
-            box-shadow: 0 0 50px rgba(232,160,32,0.08);
-        }
-        .gate-logo { margin-bottom: 16px; }
-        .gate-logo img { height: 52px; opacity: 0.85; }
-        .gate-title { color: #e8a020; font-size: 1.1em; letter-spacing: 5px; margin: 0 0 6px; text-transform: uppercase; }
-        .gate-sub { color: #445; font-size: 0.68em; letter-spacing: 2px; margin: 0 0 30px; }
-        .gate-btn {
-            display: block; width: 100%; padding: 13px 0; margin-bottom: 12px;
-            background: transparent; border: 1px dashed #e8a020; color: #e8a020;
-            font-family: 'Courier New', monospace; font-size: 0.88em;
-            letter-spacing: 3px; text-transform: uppercase; cursor: pointer;
-            transition: all 0.25s;
-        }
-        .gate-btn:hover { background: #e8a020; color: #000; border-style: solid; }
-        #gate-status { color: #555; font-size: 0.67em; letter-spacing: 2px; margin-top: 18px; min-height: 1.5em; }
+        /* ── LOGIN GATE ────────────────────────────────────────────────────── */
+        #login-gate { position:fixed; inset:0; z-index:9000; background:rgba(3,3,14,0.93); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; }
+        #login-gate.gone { display:none; }
+        .gate-box { border:1px solid rgba(232,160,32,0.4); background:rgba(10,8,2,0.97); padding:42px 52px 36px; text-align:center; max-width:400px; width:88%; box-shadow:0 0 50px rgba(232,160,32,0.08); }
+        .gate-logo { margin-bottom:16px; }
+        .gate-logo img { height:52px; opacity:0.85; }
+        .gate-title { color:var(--gold); font-size:1.1em; letter-spacing:5px; margin:0 0 6px; text-transform:uppercase; }
+        .gate-sub { color:#445; font-size:0.68em; letter-spacing:2px; margin:0 0 30px; }
+        .gate-btn { display:block; width:100%; padding:13px 0; margin-bottom:12px; background:transparent; border:1px dashed var(--gold); color:var(--gold); font-family:'Courier New',monospace; font-size:0.88em; letter-spacing:3px; text-transform:uppercase; cursor:pointer; transition:all 0.25s; }
+        .gate-btn:hover { background:var(--gold); color:#000; border-style:solid; }
+        #gate-status { color:#555; font-size:0.67em; letter-spacing:2px; margin-top:18px; min-height:1.5em; }
 
-        /* ── ARRIVAL BANNER ──────────────────────────────────────────────── */
-        #arrival-banner {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-            text-align: center; padding: 32px 20px 24px;
-            pointer-events: none; opacity: 0; transition: opacity 0.6s;
-        }
-        #arrival-banner.visible { opacity: 1; }
-        #arrival-planet-name {
-            font-size: 2.1em; letter-spacing: 8px; font-weight: bold;
-            color: #e8a020; text-transform: uppercase;
-            text-shadow: 0 0 30px rgba(232,160,32,0.6), 0 2px 8px #000;
-            margin-bottom: 8px;
-        }
-        #arrival-sub   { color: #ccaa88; font-size: 0.72em; letter-spacing: 3px; text-shadow: 0 1px 6px #000; margin-bottom: 4px; }
-        #arrival-status { color: #aa8866; font-size: 0.65em; letter-spacing: 2px; text-shadow: 0 1px 6px #000; }
+        /* ── ARRIVAL BANNER ────────────────────────────────────────────────── */
+        #arrival-banner { position:fixed; top:52px; left:0; right:0; z-index:200; text-align:center; padding:24px 20px 18px; pointer-events:none; opacity:0; transition:opacity 0.6s; }
+        #arrival-banner.visible { opacity:1; }
+        #arrival-planet-name { font-size:2.1em; letter-spacing:8px; font-weight:bold; color:var(--gold); text-transform:uppercase; text-shadow:0 0 30px rgba(232,160,32,0.6),0 2px 8px #000; margin-bottom:8px; }
+        #arrival-sub   { color:#ccaa88; font-size:0.72em; letter-spacing:3px; text-shadow:0 1px 6px #000; margin-bottom:4px; }
+        #arrival-status { color:#aa8866; font-size:0.65em; letter-spacing:2px; text-shadow:0 1px 6px #000; }
         @keyframes fadein-up { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
-        #arrival-banner > * { animation: fadein-up 0.7s ease both; }
-        #arrival-banner > *:nth-child(2) { animation-delay: 0.3s; }
-        #arrival-banner > *:nth-child(3) { animation-delay: 0.55s; }
+        #arrival-banner > * { animation:fadein-up 0.7s ease both; }
+        #arrival-banner > *:nth-child(2) { animation-delay:0.3s; }
+        #arrival-banner > *:nth-child(3) { animation-delay:0.55s; }
 
-        /* ── EASTER EGG ──────────────────────────────────────────────────── */
-        #egg-msg {
-            position: fixed; top: 50%; left: 50%; z-index: 300;
-            transform: translate(-50%,-50%); color: #e8a020;
-            font-size: 1.5em; letter-spacing: 4px; text-transform: uppercase;
-            text-shadow: 0 0 24px rgba(232,160,32,0.9);
-            pointer-events: none; opacity: 0; font-weight: bold;
+        /* ── EASTER EGG ────────────────────────────────────────────────────── */
+        #egg-msg { position:fixed; top:50%; left:50%; z-index:300; transform:translate(-50%,-50%); color:var(--gold); font-size:1.5em; letter-spacing:4px; text-transform:uppercase; text-shadow:0 0 24px rgba(232,160,32,0.9); pointer-events:none; opacity:0; font-weight:bold; }
+        @keyframes egg-pop { 0%{opacity:0;transform:translate(-50%,-50%) scale(0.4);} 18%{opacity:1;transform:translate(-50%,-50%) scale(1.12);} 70%{opacity:1;transform:translate(-50%,-50%) scale(1);} 100%{opacity:0;transform:translate(-50%,-62%);} }
+        #egg-msg.pop { animation:egg-pop 2s ease forwards; }
+
+        /* ── SKIP BUTTON ───────────────────────────────────────────────────── */
+        #skip-btn { position:fixed; bottom:22px; right:22px; z-index:700; padding:7px 18px; background:rgba(0,0,0,0.7); border:1px solid #2a2a3a; color:#444; font-family:'Courier New',monospace; font-size:0.66em; letter-spacing:2px; cursor:pointer; display:none; transition:all 0.2s; }
+        #skip-btn:hover { color:#888; border-color:#555; }
+
+        /* ── MAP OVERLAY: centered floating panel ──────────────────────────── */
+        #map-overlay {
+            position:fixed; top:52px; left:0; right:0; bottom:0;
+            z-index:500;
+            display:flex; align-items:center; justify-content:center;
+            pointer-events:none;
         }
-        @keyframes egg-pop {
-            0%  { opacity:0; transform:translate(-50%,-50%) scale(0.4); }
-            18% { opacity:1; transform:translate(-50%,-50%) scale(1.12); }
-            70% { opacity:1; transform:translate(-50%,-50%) scale(1); }
-            100%{ opacity:0; transform:translate(-50%,-62%); }
+        #map-overlay.gone { display:none; }
+
+        #map-box {
+            pointer-events:all;
+            display:flex; flex-direction:column;
+            background:rgba(5,8,20,0.82); backdrop-filter:blur(8px);
+            border:1px solid rgba(232,160,32,0.22);
+            box-shadow:0 0 60px rgba(0,0,0,0.9), 0 0 20px rgba(232,160,32,0.06);
+            max-width:calc(100vw - 20px);
+            max-height:calc(100vh - 72px);
+            overflow:hidden;
         }
-        #egg-msg.pop { animation: egg-pop 2s ease forwards; }
 
-        /* ── SKIP BUTTON ─────────────────────────────────────────────────── */
-        #skip-btn {
-            position: fixed; bottom: 22px; right: 22px; z-index: 700;
-            padding: 7px 18px; background: rgba(0,0,0,0.7);
-            border: 1px solid #2a2a3a; color: #444;
-            font-family: 'Courier New', monospace; font-size: 0.66em; letter-spacing: 2px;
-            cursor: pointer; display: none; transition: all 0.2s;
-        }
-        #skip-btn:hover { color: #888; border-color: #555; }
-
-        /* ── MAP OVERLAY ─────────────────────────────────────────────────── */
-        #map-overlay { position: fixed; bottom: 0; left: 0; right: 0; z-index: 500; display: flex; flex-direction: column; }
-        #map-overlay.gone { display: none; }
-
+        /* ── MINIMIZE TOGGLE ───────────────────────────────────────────────── */
         #minimize-btn {
-            display: flex; align-items: center; justify-content: center;
-            padding: 5px; background: rgba(0,8,18,0.88);
-            border-top: 1px solid rgba(0,200,255,0.15);
-            color: #336; font-size: 0.58em; letter-spacing: 3px; cursor: pointer;
-            font-family: 'Courier New', monospace; text-transform: uppercase;
-            transition: color 0.2s; user-select: none;
+            display:flex; align-items:center; justify-content:center;
+            padding:5px; background:rgba(0,0,0,0.5);
+            border-bottom:1px solid rgba(232,160,32,0.1);
+            color:#446; font-size:0.58em; letter-spacing:3px; cursor:pointer;
+            font-family:'Courier New',monospace; text-transform:uppercase;
+            transition:color 0.2s; user-select:none; flex-shrink:0;
         }
-        #minimize-btn:hover { color: #aaa; }
+        #minimize-btn:hover { color:#aaa; }
 
-        /* Planet tabs */
+        /* ── PLANET TABS ───────────────────────────────────────────────────── */
         #planet-tabs {
-            display: flex; background: rgba(0,8,18,0.9); backdrop-filter: blur(8px);
-            border-top: 1px solid rgba(0,200,255,0.2);
-            padding: 0 12px; overflow-x: auto;
+            display:flex; background:rgba(8,6,2,0.95);
+            border-bottom:2px solid rgba(232,160,32,0.15);
+            padding:0 12px; overflow-x:auto; flex-shrink:0;
         }
-        .planet-tab {
-            padding: 7px 12px; font-size: 0.6em; letter-spacing: 2px; text-transform: uppercase;
-            background: transparent; border: none; color: #334; cursor: pointer; transition: all 0.2s;
-            border-top: 2px solid transparent; white-space: nowrap; flex-shrink: 0;
-        }
-        .planet-tab:hover { color: #88aacc; }
-        .planet-tab.active { font-size: 0.78em; padding: 7px 16px; border-top-color: #e8a020; color: #e8a020; }
+        .planet-tab { padding:8px 18px 10px; font-family:'Courier New',monospace; font-weight:bold; font-size:0.82em; letter-spacing:2px; text-transform:uppercase; background:transparent; border:none; color:#555; cursor:pointer; transition:all 0.2s; border-bottom:2px solid transparent; white-space:nowrap; flex-shrink:0; }
+        .planet-tab:hover { color:var(--gold); }
+        .planet-tab.active { color:#000; background:var(--gold); border-bottom-color:var(--gold); }
 
-        /* Collapsible panel */
-        #map-panel {
-            background: rgba(0,6,14,0.88); backdrop-filter: blur(10px);
-            border-top: 1px solid rgba(0,200,255,0.18);
-            overflow: hidden; transition: max-height 0.35s ease;
-            max-height: 340px;
-        }
-        #map-panel.collapsed { max-height: 0; }
+        /* ── MAP PANEL (collapsible) ───────────────────────────────────────── */
+        #map-panel { overflow:hidden; transition:max-height 0.35s ease; max-height:700px; display:flex; flex-direction:column; }
+        #map-panel.collapsed { max-height:0; }
 
-        /* Map inner */
-        #map-inner { display: flex; height: 264px; }
+        /* ── MAP STATUS BAR ────────────────────────────────────────────────── */
+        .map-status-bar { display:flex; align-items:center; gap:16px; padding:6px 20px; background:rgba(0,0,0,0.6); border-bottom:1px solid rgba(232,160,32,0.1); font-family:'Courier New',monospace; font-size:0.78em; min-width:1260px; flex-shrink:0; }
+        #coord-display { color:var(--gold); letter-spacing:1px; min-width:130px; }
+        #active-planet-label { color:#a09060; letter-spacing:2px; }
+        #portal-hint { color:#607080; font-size:0.9em; margin-left:auto; }
 
-        /* Legend */
-        #map-legend {
-            flex-shrink: 0; width: 140px; padding: 10px 12px;
-            border-right: 1px solid rgba(0,200,255,0.1);
-            display: flex; flex-direction: column; gap: 7px;
-            font-size: 0.6em; letter-spacing: 1px; overflow: hidden;
-        }
-        .lg-title { color: #446; letter-spacing: 3px; margin-bottom: 2px; }
-        .lg-row { display: flex; align-items: center; gap: 8px; }
-        .lg-ic { width: 18px; height: 18px; flex-shrink: 0; display:flex; align-items:center; justify-content:center; }
-        .lg-ic img { width: 100%; height: 100%; object-fit: contain; }
-        .lg-lbl { color: #557; line-height: 1.3; }
+        /* ── RULER LAYOUT (exact from alemap.html) ─────────────────────────── */
+        .map-scroll { overflow-x:auto; overflow-y:hidden; flex:1; min-height:0; }
+        .map-ruler-outer { display:flex; flex-direction:row; min-width:1260px; }
+        .ruler-y { width:28px; padding-top:22px; display:flex; flex-direction:column; flex-shrink:0; background:rgba(0,0,0,0.35); border-right:1px solid rgba(232,160,32,0.08); }
+        .ruler-y .ruler-cell { height:30px; display:flex; align-items:center; justify-content:flex-end; padding-right:4px; font-size:8px; font-family:'Courier New',monospace; color:#3a5060; flex-shrink:0; line-height:1; }
+        .ruler-y .ruler-cell.marker { color:#607880; }
+        .map-right-col { display:flex; flex-direction:column; }
+        .ruler-x { display:flex; flex-direction:row; height:22px; background:rgba(0,0,0,0.35); border-bottom:1px solid rgba(232,160,32,0.08); }
+        .ruler-x .ruler-cell { width:30px; height:22px; display:flex; align-items:center; justify-content:center; font-size:8px; font-family:'Courier New',monospace; color:#3a5060; flex-shrink:0; line-height:1; }
+        .ruler-x .ruler-cell.marker { color:#607880; }
+        .maps-stack { width:1200px; position:relative; }
 
-        /* Map scroll + grid */
-        #map-scroll { flex: 1; overflow: auto; }
-        .ale-map {
-            display: grid;
-            grid-template-columns: repeat(40, 26px);
-            grid-template-rows: repeat(20, 13px);
-            width: 1040px;
-            background-size: cover;
-            background-position: center;
-        }
-        .ale-cell {
-            width: 26px; height: 13px;
-            border: 1px solid rgba(0,80,120,0.16);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; position: relative; overflow: visible;
-            transition: background 0.1s; background: transparent;
-        }
-        .ale-cell:hover { background: rgba(232,160,32,0.22); border-color: rgba(232,160,32,0.5); z-index: 2; }
-        .ale-portal { box-shadow: inset 0 0 5px rgba(0,200,255,0.3); }
-        .ale-portal img { width: 10px; height: 10px; object-fit: contain; pointer-events: none; }
-        .ale-me { background: rgba(232,160,32,0.22) !important; }
-        .ale-me::after { content:'◈'; color:#e8a020; font-size:1.5em; position:absolute; pointer-events:none; line-height:1; top:50%; left:50%; transform:translate(-50%,-50%); }
+        /* ── PLANET MAP GRID (exact from alemap.html) ──────────────────────── */
+        .ale-map { display:none; width:1200px; height:600px; background-size:cover; background-position:center; }
+        .ale-map.active-map { display:grid; grid-template-columns:repeat(40,30px); grid-template-rows:repeat(20,30px); }
+        .ale-cell { width:30px; height:30px; border:1px solid rgba(255,255,255,0.06); cursor:crosshair !important; transition:background 0.08s,border-color 0.08s; position:relative; }
+        .ale-cell:hover { background:rgba(232,160,32,0.18); border-color:rgba(232,160,32,0.5); z-index:2; }
+        .ale-cell.selected { background:rgba(232,160,32,0.15) !important; border-color:var(--gold) !important; box-shadow:inset 0 0 8px rgba(232,160,32,0.35); z-index:3; }
+        .ale-portal { border-width:1px; }
+        .ale-me { background:rgba(232,160,32,0.15) !important; border-color:var(--gold) !important; z-index:4; }
+        .ale-me::after { content:'📍'; position:absolute; top:50%; left:50%; transform:translate(-50%,-52%); font-size:15px; pointer-events:none; z-index:5; filter:drop-shadow(0 0 4px rgba(232,160,32,0.8)); }
+        .cell-icon { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; display:flex; align-items:center; justify-content:center; width:32px; height:32px; z-index:2; }
+        .cell-icon img { width:32px; height:32px; opacity:0.95; filter:drop-shadow(0 0 3px rgba(0,0,0,0.9)); }
+        .cell-icon img.icon-portal { width:42px; height:42px; }
 
-        /* Coord bar */
-        #coord-bar {
-            display: flex; align-items: center; gap: 16px;
-            padding: 5px 14px; font-size: 0.6em; letter-spacing: 2px;
-            background: rgba(0,4,10,0.92); border-top: 1px solid rgba(0,200,255,0.07);
-            color: #334; min-height: 26px;
-        }
-        #coord-xy { color: #557; }
-        #coord-planet { color: #e8a020; }
+        /* ── CONFIRM STRIP (exact from alemap.html) ─────────────────────────── */
+        .confirm-strip { min-width:1260px; background:rgba(4,8,20,0.96); border-top:1px solid rgba(232,160,32,0.4); padding:10px 20px; display:none; align-items:center; gap:12px; flex-wrap:wrap; flex-shrink:0; }
+        .confirm-strip.open { display:flex; }
+        #confirm-content { font-family:'Courier New',monospace; font-size:0.88em; color:#c8c0a0; flex:1; }
+        #confirm-content strong { color:var(--gold); }
+        .conf-btn { background:transparent; border:1px solid; padding:7px 18px; font-family:'Courier New',monospace; font-weight:bold; font-size:0.8em; letter-spacing:1px; cursor:crosshair; transition:all 0.2s; border-radius:2px; }
+        .conf-btn.confirm  { color:var(--gold); border-color:var(--gold); }
+        .conf-btn.confirm:hover  { background:var(--gold); color:#000; }
+        .conf-btn.view-map { color:#5090e0; border-color:#5090e0; }
+        .conf-btn.view-map:hover { background:#5090e0; color:#000; }
+        .conf-btn.cancel   { color:#666; border-color:#444; }
+        .conf-btn.cancel:hover   { color:#ccc; border-color:#888; }
+        #strip-status { font-family:'Courier New',monospace; font-size:0.82em; }
+        #strip-status.ok  { color:#40c070; }
+        #strip-status.err { color:#c04040; }
 
-        /* Confirm strip */
-        #confirm-strip {
-            display: flex; align-items: center; gap: 10px;
-            padding: 0 14px; overflow: hidden;
-            max-height: 0; transition: max-height 0.25s ease;
-            background: rgba(0,4,12,0.96); border-top: 1px solid rgba(0,200,255,0.18);
-        }
-        #confirm-strip.open { max-height: 48px; }
-        #confirm-text { flex: 1; font-size: 0.7em; letter-spacing: 1px; color: #aaccdd; }
-        .cs-btn {
-            padding: 5px 13px; background: transparent;
-            font-family: 'Courier New', monospace; font-size: 0.66em; letter-spacing: 2px;
-            cursor: pointer; white-space: nowrap; transition: all 0.2s; flex-shrink: 0;
-        }
-        #cs-confirm { border: 1px solid #e8a020; color: #e8a020; }
-        #cs-confirm:hover { background: rgba(232,160,32,0.15); }
-        #cs-view { border: 1px solid rgba(0,200,255,0.4); color: #0df; display: none; }
-        #cs-view:hover { background: rgba(0,200,255,0.1); }
-        #cs-dismiss { border: 1px solid #222; color: #334; }
-        #cs-dismiss:hover { border-color: #444; color: #667; }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { height: 5px; width: 5px; }
-        ::-webkit-scrollbar-track { background: rgba(0,8,18,0.5); }
-        ::-webkit-scrollbar-thumb { background: #1a2030; border: 1px solid rgba(0,200,255,0.2); }
+        /* ── SCROLLBAR ─────────────────────────────────────────────────────── */
+        ::-webkit-scrollbar { height:6px; width:6px; }
+        ::-webkit-scrollbar-track { background:rgba(0,0,0,0.4); }
+        ::-webkit-scrollbar-thumb { background:#1a2030; border:1px solid rgba(232,160,32,0.2); }
     </style>
 </head>
 <body>
@@ -291,8 +223,9 @@
 <!-- SKIP WARP -->
 <button id="skip-btn" onclick="skipWarp()">&#9654;&#9654; SKIP</button>
 
-<!-- MAP OVERLAY -->
+<!-- MAP OVERLAY: centered floating panel -->
 <div id="map-overlay" class="gone">
+<div id="map-box">
 
     <div id="minimize-btn" onclick="togglePanel()">&#8213; MINIMIZE MAP &#8213;</div>
 
@@ -306,56 +239,40 @@
     </div>
 
     <div id="map-panel">
-        <div id="map-inner">
 
-            <div id="map-legend">
-                <div class="lg-title">LEGEND</div>
-                <div class="lg-row">
-                    <div class="lg-ic"><img src="Ale images/portal.png" alt="portal"></div>
-                    <div class="lg-lbl">Portal</div>
-                </div>
-                <div class="lg-row">
-                    <div class="lg-ic"><img src="Ale images/dungeon.svg" alt="dungeon"></div>
-                    <div class="lg-lbl">Dungeon<br>(Hire here!)</div>
-                </div>
-                <div class="lg-row">
-                    <div class="lg-ic"><img src="Ale images/tavern.svg" alt="tavern"></div>
-                    <div class="lg-lbl">Tavern<br>(Hire Fighters!)</div>
-                </div>
-                <div class="lg-row">
-                    <div class="lg-ic"><img src="Ale images/Arena.svg" alt="arena"></div>
-                    <div class="lg-lbl">Arena<br>(Compete!)</div>
-                </div>
-                <div class="lg-row">
-                    <div class="lg-ic" style="color:#e8a020;font-size:1.4em;line-height:1;">&#9672;</div>
-                    <div class="lg-lbl">Your Position</div>
-                </div>
-            </div>
-
-            <div id="map-scroll">
-                <div id="map-magor"  class="ale-map" style="background-image:url('planets/magor.jpg')"></div>
-                <div id="map-naron"  class="ale-map" style="background-image:url('planets/naron.jpg');display:none;"></div>
-                <div id="map-eyeke"  class="ale-map" style="background-image:url('planets/eyeke.jpg');display:none;"></div>
-                <div id="map-kavian" class="ale-map" style="background-image:url('planets/kavian.jpg');display:none;"></div>
-                <div id="map-neri"   class="ale-map" style="background-image:url('planets/neri.jpg');display:none;"></div>
-                <div id="map-veles"  class="ale-map" style="background-image:url('planets/veles.jpg');display:none;"></div>
-            </div>
-
+        <div class="map-status-bar">
+            <span id="coord-display">X:&#8212; &nbsp;Y:&#8212;</span>
+            <span id="active-planet-label">MAGOR</span>
+            <span id="portal-hint" style="margin-left:auto"></span>
         </div>
 
-        <div id="coord-bar">
-            <span id="coord-xy">X:&#8212; &nbsp;Y:&#8212;</span>
-            <span id="coord-planet">&#8212;</span>
+        <div class="map-scroll">
+            <div class="map-ruler-outer">
+                <div class="ruler-y" id="ruler-y"></div>
+                <div class="map-right-col">
+                    <div class="ruler-x" id="ruler-x"></div>
+                    <div class="maps-stack">
+                        <div id="map-magor"  class="ale-map active-map" style="background-image:url('planets/magor.jpg')"></div>
+                        <div id="map-naron"  class="ale-map"            style="background-image:url('planets/naron.jpg')"></div>
+                        <div id="map-eyeke"  class="ale-map"            style="background-image:url('planets/eyeke.jpg')"></div>
+                        <div id="map-kavian" class="ale-map"            style="background-image:url('planets/kavian.jpg')"></div>
+                        <div id="map-neri"   class="ale-map"            style="background-image:url('planets/neri.jpg')"></div>
+                        <div id="map-veles"  class="ale-map"            style="background-image:url('planets/veles.jpg')"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div id="confirm-strip">
-            <span id="confirm-text"></span>
-            <button class="cs-btn" id="cs-confirm" onclick="doConfirm()">CONFIRM</button>
-            <button class="cs-btn" id="cs-view"    onclick="doViewPlanet()">VIEW MAP</button>
-            <button class="cs-btn" id="cs-dismiss" onclick="dismissStrip()">&#10005;</button>
+        <div class="confirm-strip" id="confirm-strip">
+            <div id="confirm-content"></div>
+            <button id="confirm-travel-btn" class="conf-btn confirm"  onclick="doConfirm()"    style="display:none;">CONFIRM TRAVEL</button>
+            <button id="view-map-btn"        class="conf-btn view-map" onclick="doViewPlanet()" style="display:none;">VIEW MAP</button>
+            <span id="strip-status"></span>
+            <button class="conf-btn cancel" onclick="dismissStrip()">&#10005;</button>
         </div>
 
     </div>
+</div>
 </div>
 
 <script>
@@ -401,7 +318,6 @@
             onWalletReady();
         } catch(e){ gateStatus('FAILED — '+(e&&e.message||String(e))); }
     }
-
     async function loginWCC() {
         gateStatus('CONNECTING TO CLOUD WALLET...');
         try {
@@ -410,7 +326,6 @@
             onWalletReady();
         } catch(e){ gateStatus('FAILED — '+(e&&e.message||String(e))); }
     }
-
     function onWalletReady() {
         document.getElementById('login-gate').classList.add('gone');
         startScene();
@@ -420,7 +335,6 @@
     var BASE_SPEED      = 0.003;
     var BOOST_PER_CLICK = 10;
     var MAX_MULTIPLIER  = 10000;
-    var DECAY_RATE      = 0.0025;
 
     var PLANETS = {
         magor:  {name:'Magor',  color:'#e05030'},
@@ -451,16 +365,14 @@
     var _playerPos     = null;
     var _panelOpen     = true;
     var _skipReq       = false;
-
-    var _renderer = null;
-    var _scene    = null;
-    var _camera   = null;
-    var _mesh     = null;
-
-    var _eggCount  = 0;
-    var _rendered  = {};
-    var _sel       = null;
-    var _arrTimer  = null;
+    var _renderer      = null;
+    var _scene         = null;
+    var _camera        = null;
+    var _mesh          = null;
+    var _eggCount      = 0;
+    var _rendered      = {};
+    var _sel           = null;
+    var _arrTimer      = null;
 
     // ── STARS ─────────────────────────────────────────────────────────────────
     var _starSpeed = 5;
@@ -481,16 +393,16 @@
                 var s=stars[i],pz=s.z;
                 s.z-=_starSpeed;
                 if(s.z<=0){s.x=(Math.random()-0.5)*W;s.y=(Math.random()-0.5)*H;s.z=W;pz=s.z;}
-                var sx=(s.x/s.z)*W+cx, sy=(s.y/s.z)*H+cy;
-                var px=(s.x/pz)*W+cx, py=(s.y/pz)*H+cy;
-                var b=1-s.z/W, sz=Math.max(0.5,b*2.5);
+                var sx=(s.x/s.z)*W+cx,sy=(s.y/s.z)*H+cy;
+                var px=(s.x/pz)*W+cx,py=(s.y/pz)*H+cy;
+                var b=1-s.z/W,sz=Math.max(0.5,b*2.5);
                 ctx.strokeStyle='rgba(180,255,235,'+b.toFixed(2)+')';
                 ctx.lineWidth=sz;
-                ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(sx,sy); ctx.stroke();
+                ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(sx,sy);ctx.stroke();
             }
-            if (_planetVisible && _renderer) {
+            if (_planetVisible&&_renderer){
                 var pw=document.getElementById('planet-webgl');
-                if (pw) ctx.drawImage(pw,0,0,W,H);
+                if(pw) ctx.drawImage(pw,0,0,W,H);
             }
             requestAnimationFrame(draw);
         }
@@ -498,12 +410,12 @@
     }
 
     function rampStars(target,ms,cb) {
-        var start=_starSpeed, t0=performance.now();
+        var start=_starSpeed,t0=performance.now();
         (function step(now){
             var t=Math.min(1,(now-t0)/ms);
             _starSpeed=start+(target-start)*(1-Math.pow(1-t,3));
             if(t<1) requestAnimationFrame(step);
-            else { _starSpeed=target; if(cb) cb(); }
+            else{_starSpeed=target;if(cb)cb();}
         })(performance.now());
     }
 
@@ -511,7 +423,7 @@
     function initPlanetRenderer() {
         if (_renderer) return;
         var canvas=document.getElementById('planet-webgl');
-        var W=window.innerWidth, H=window.innerHeight;
+        var W=window.innerWidth,H=window.innerHeight;
         _renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true,preserveDrawingBuffer:true});
         _renderer.setClearColor(0x000000,0);
         _renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
@@ -519,18 +431,19 @@
         _scene=new THREE.Scene();
         _camera=new THREE.PerspectiveCamera(55,W/H,0.1,500);
         _scene.add(new THREE.AmbientLight(0xffffff,0.55));
-        var sun=new THREE.DirectionalLight(0xfff5e0,2.8); sun.position.set(6,4,10); _scene.add(sun);
-        var rim=new THREE.DirectionalLight(0xffffff,0.3); rim.position.set(-4,-2,-5); _scene.add(rim);
+        var sun=new THREE.DirectionalLight(0xfff5e0,2.8);sun.position.set(6,4,10);_scene.add(sun);
+        var rim=new THREE.DirectionalLight(0xffffff,0.3);rim.position.set(-4,-2,-5);_scene.add(rim);
         window.addEventListener('resize',function(){
-            W=window.innerWidth; H=window.innerHeight;
-            _renderer.setSize(W,H); _camera.aspect=W/H; _camera.updateProjectionMatrix();
+            W=window.innerWidth;H=window.innerHeight;
+            _renderer.setSize(W,H);_camera.aspect=W/H;_camera.updateProjectionMatrix();
         });
         (function frame(){
             requestAnimationFrame(frame);
-            if (_mesh) {
+            if(_mesh){
                 var spd=_mesh.userData.speedMultiplier||1;
-                _mesh.rotation.y += BASE_SPEED * spd;
-                if (spd > 1) _mesh.userData.speedMultiplier = Math.max(1, spd - DECAY_RATE);
+                _mesh.rotation.y+=BASE_SPEED*spd;
+                // Multiplicative decay: ~1 second from 11x back to ~1x
+                if(spd>1) _mesh.userData.speedMultiplier=Math.max(1,spd*0.993);
             }
             _renderer.render(_scene,_camera);
         })();
@@ -538,10 +451,13 @@
 
     function loadPlanetMesh(planetKey, doApproach) {
         initPlanetRenderer();
-        if (_mesh) { _scene.remove(_mesh); _mesh=null; }
+        _planetVisible=false; // hide until new texture is loaded (prevents ghost silhouette)
+        if(_mesh){_scene.remove(_mesh);_mesh=null;}
         var off=CAM_OFFSETS[planetKey]||{x:0.6,y:-0.25};
-        var tx=new THREE.TextureLoader().load('planets/'+planetKey+'.jpg');
-        tx.minFilter=THREE.LinearFilter; tx.generateMipmaps=false;
+        var tx=new THREE.TextureLoader().load('planets/'+planetKey+'.jpg', function(){
+            _planetVisible=true; // reveal only when texture is ready
+        });
+        tx.minFilter=THREE.LinearFilter;tx.generateMipmaps=false;
         _mesh=new THREE.Mesh(
             new THREE.SphereGeometry(2.2,64,64),
             new THREE.MeshStandardMaterial({map:tx,roughness:0.75,metalness:0.05})
@@ -549,17 +465,17 @@
         _mesh.userData.speedMultiplier=1;
         _mesh.userData.clickCount=0;
         _scene.add(_mesh);
-        if (doApproach) {
+        if(doApproach){
             _camera.position.set(off.x,off.y,22);
             _camera.lookAt(0,0,0);
             var t0=null;
             (function approach(ts){
-                if(_skipReq){ _camera.position.z=4.5; return; }
-                if(!t0) t0=ts;
+                if(_skipReq){_camera.position.z=4.5;return;}
+                if(!t0)t0=ts;
                 var t=Math.min(1,(ts-t0)/1800);
                 var ease=t<0.65?Math.pow(t/0.65,2)*0.65:0.65+0.35*(1-Math.pow(1-(t-0.65)/0.35,5));
                 _camera.position.z=22-ease*(22-4.5);
-                if(t<1) requestAnimationFrame(approach);
+                if(t<1)requestAnimationFrame(approach);
             })(performance.now());
         } else {
             _camera.position.set(off.x,off.y,4.5);
@@ -567,50 +483,39 @@
         }
     }
 
-    // ── PLANET CLICK TO SPIN (raycaster) ──────────────────────────────────────
+    // ── PLANET CLICK TO SPIN ──────────────────────────────────────────────────
     document.addEventListener('click',function(e){
-        // Ignore clicks inside the map panel or login gate
         var overlay=document.getElementById('map-overlay');
         var gate=document.getElementById('login-gate');
-        if(overlay&&!overlay.classList.contains('gone')&&overlay.contains(e.target)) return;
-        if(gate&&!gate.classList.contains('gone')&&gate.contains(e.target)) return;
+        if(overlay&&!overlay.classList.contains('gone')&&overlay.contains(e.target))return;
+        if(gate&&!gate.classList.contains('gone')&&gate.contains(e.target))return;
 
-        // Raycast against planet mesh
-        if (_mesh && _camera) {
+        if(_mesh&&_camera){
             var mouse=new THREE.Vector2();
             mouse.x=(e.clientX/window.innerWidth)*2-1;
             mouse.y=-(e.clientY/window.innerHeight)*2+1;
             var rc=new THREE.Raycaster();
             rc.setFromCamera(mouse,_camera);
-            var hits=rc.intersectObject(_mesh);
-            if (hits.length>0) {
+            if(rc.intersectObject(_mesh).length>0){
                 _mesh.userData.clickCount=(_mesh.userData.clickCount||0)+1;
                 var boost=_mesh.userData.clickCount>8?50:BOOST_PER_CLICK;
                 _mesh.userData.speedMultiplier=Math.min((_mesh.userData.speedMultiplier||1)+boost,MAX_MULTIPLIER);
-                return; // click consumed — don't count as egg
+                return;
             }
         }
-
-        // Easter egg: non-planet background clicks
         _eggCount++;
-        if (_eggCount%5===0) {
-            var msgs=['SPACE IS BIG.','VERY BIG.','MIND-BOGGLINGLY BIG.','WHO ARE YOU?','◈ FOUND YOU',
-                      'NICE CLICKS.','STOP THAT.','…OKAY KEEP GOING','MAGOR APPROVES','NARON WATCHING',
-                      'YOU SPIN ME RIGHT ROUND','PLANET GO BRRR','◎ ◎ ◎','DO A BARREL ROLL',
-                      'WARP CORES NOMINAL','LIFE DETECTED…','…OR IS IT?','GREETINGS, TRAVELLER'];
+        if(_eggCount%5===0){
+            var msgs=['SPACE IS BIG.','VERY BIG.','MIND-BOGGLINGLY BIG.','WHO ARE YOU?','◈ FOUND YOU','NICE CLICKS.','STOP THAT.','…OKAY KEEP GOING','MAGOR APPROVES','NARON WATCHING','YOU SPIN ME RIGHT ROUND','PLANET GO BRRR','◎ ◎ ◎','DO A BARREL ROLL','WARP CORES NOMINAL','LIFE DETECTED…','…OR IS IT?','GREETINGS, TRAVELLER'];
             var msg=msgs[Math.floor(Math.random()*msgs.length)];
             var el=document.getElementById('egg-msg');
-            el.textContent=msg;
-            el.classList.remove('pop');
-            void el.offsetWidth;
-            el.classList.add('pop');
+            el.textContent=msg;el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');
         }
     });
 
     // ── SCENE STARTUP ─────────────────────────────────────────────────────────
     async function startScene() {
         var wallet=getWallet();
-        if(!wallet) return;
+        if(!wallet)return;
         rampStars(22,900);
         document.getElementById('skip-btn').style.display='';
         var playerPlanet='magor';
@@ -619,82 +524,99 @@
             if(res&&res.rows&&res.rows[0]&&res.rows[0].wallet===wallet){
                 var row=res.rows[0];
                 var pn=String(row.planet||'').toLowerCase().trim();
-                if(PLANETS[pn]) playerPlanet=pn;
+                if(PLANETS[pn])playerPlanet=pn;
                 _playerPos={planet:playerPlanet,x:row.x||1,y:row.y||1};
             }
-        } catch(e){}
+        }catch(e){}
         _activePlanet=playerPlanet;
-        _planetVisible=true;
         loadPlanetMesh(playerPlanet,true);
         setTimeout(function(){
             rampStars(0.35,1800,function(){
-                if(!_skipReq){
-                    showArrival(playerPlanet);
-                    setTimeout(revealMap,800);
-                }
+                if(!_skipReq){showArrival(playerPlanet);setTimeout(revealMap,800);}
             });
         },900);
     }
 
-    function revealMap() {
+    function revealMap(){
         document.getElementById('skip-btn').style.display='none';
-        var overlay=document.getElementById('map-overlay');
-        overlay.classList.remove('gone');
+        document.getElementById('map-overlay').classList.remove('gone');
+        buildRulers();
         buildMap(_activePlanet);
         setActiveTab(_activePlanet);
     }
 
-    function skipWarp() {
-        _skipReq=true; _starSpeed=0.35;
-        if(_camera) _camera.position.z=4.5;
+    function skipWarp(){
+        _skipReq=true;_starSpeed=0.35;
+        if(_camera)_camera.position.z=4.5;
         document.getElementById('skip-btn').style.display='none';
         showArrival(_activePlanet);
         revealMap();
     }
 
     // ── ARRIVAL BANNER ────────────────────────────────────────────────────────
-    function showArrival(planet) {
+    function showArrival(planet){
         var p=PLANETS[planet]||{name:planet.toUpperCase()};
         document.getElementById('arrival-planet-name').textContent=p.name.toUpperCase();
         document.getElementById('arrival-sub').textContent='LANDING SEQUENCE COMPLETE · SURFACE ACCESSIBLE';
         document.getElementById('arrival-status').textContent='PORTALS DETECTED: '+(ALE_PORTALS[planet]||[]).length+' · ENGAGE TRAVEL SYSTEMS';
         var banner=document.getElementById('arrival-banner');
         banner.classList.add('visible');
-        if(_arrTimer) clearTimeout(_arrTimer);
+        if(_arrTimer)clearTimeout(_arrTimer);
         _arrTimer=setTimeout(function(){banner.classList.remove('visible');},4200);
     }
 
     // ── PLANET WARP (tab switch) ───────────────────────────────────────────────
-    function warpSwitch(planet, cb) {
+    function warpSwitch(planet,cb){
         rampStars(18,280,function(){
             loadPlanetMesh(planet,false);
             showArrival(planet);
             rampStars(0.35,520);
-            if(cb) cb();
+            if(cb)cb();
         });
     }
 
+    // ── RULERS ────────────────────────────────────────────────────────────────
+    var _rulersBuilt=false;
+    function buildRulers(){
+        if(_rulersBuilt)return;
+        var xEl=document.getElementById('ruler-x');
+        var yEl=document.getElementById('ruler-y');
+        if(!xEl||!yEl)return;
+        var xHtml='',yHtml='';
+        for(var i=1;i<=40;i++){
+            var cls=(i%5===0)?'ruler-cell marker':'ruler-cell';
+            xHtml+='<div class="'+cls+'">'+i+'</div>';
+        }
+        for(var j=1;j<=20;j++){
+            var cls2=(j%5===0)?'ruler-cell marker':'ruler-cell';
+            yHtml+='<div class="'+cls2+'">'+j+'</div>';
+        }
+        xEl.innerHTML=xHtml;
+        yEl.innerHTML=yHtml;
+        _rulersBuilt=true;
+    }
+
     // ── MAP GRID ──────────────────────────────────────────────────────────────
-    function buildMap(planet) {
-        if(_rendered[planet]){ applyMarker(); return; }
+    function buildMap(planet){
+        if(_rendered[planet]){applyMarker();return;}
         var container=document.getElementById('map-'+planet);
-        if(!container) return;
-        var portals=ALE_PORTALS[planet]||[], pmap={};
-        portals.forEach(function(p){ pmap[p.x+','+p.y]=p; });
+        if(!container)return;
+        var portals=ALE_PORTALS[planet]||[],pmap={};
+        portals.forEach(function(p){pmap[p.x+','+p.y]=p;});
         var html='';
         for(var y=1;y<=20;y++){
             for(var x=1;x<=40;x++){
-                var key=x+','+y, portal=pmap[key];
-                var cls='ale-cell', sty='', dataTo='', icon='';
+                var key=x+','+y,portal=pmap[key];
+                var cls='ale-cell',sty='',dataTo='',icon='';
                 if(portal){
                     var c=PLANETS[portal.to].color;
                     cls+=' ale-portal';
-                    sty=' style="border-color:'+c+'80;box-shadow:inset 0 0 4px '+c+'50;"';
+                    sty=' style="border-color:'+c+'80;box-shadow:inset 0 0 6px '+c+'60;"';
                     dataTo=' data-to="'+portal.to+'"';
-                    icon='<img src="Ale images/portal.png" alt="" style="width:10px;height:10px;object-fit:contain;pointer-events:none;">';
+                    icon='<span class="cell-icon"><img src="Ale%20images/portal.png" alt="portal" class="icon-portal"></span>';
                 }
                 html+='<div class="'+cls+'" data-x="'+x+'" data-y="'+y+'"'+dataTo+sty
-                    +' onmouseenter="onHov(this,'+x+','+y+')" onmouseleave="onLeave()" onclick="onCell('+x+','+y+')">'
+                    +' onmouseenter="onHov('+x+','+y+')" onmouseleave="onLeave()" onclick="onCell('+x+','+y+')">'
                     +icon+'</div>';
             }
         }
@@ -703,95 +625,107 @@
         applyMarker();
     }
 
-    function applyMarker() {
+    function applyMarker(){
         document.querySelectorAll('.ale-me').forEach(function(el){el.classList.remove('ale-me');});
-        if(!_playerPos) return;
+        if(!_playerPos)return;
         var c=document.getElementById('map-'+_playerPos.planet);
-        if(!c) return;
+        if(!c)return;
         var cell=c.querySelector('[data-x="'+_playerPos.x+'"][data-y="'+_playerPos.y+'"]');
-        if(cell) cell.classList.add('ale-me');
+        if(cell)cell.classList.add('ale-me');
     }
 
-    function setActiveTab(planet) {
+    function setActiveTab(planet){
         document.querySelectorAll('.planet-tab').forEach(function(t){
             t.classList.toggle('active',t.dataset.planet===planet);
         });
-        ['magor','naron','eyeke','kavian','neri','veles'].forEach(function(p){
-            var m=document.getElementById('map-'+p);
-            if(m) m.style.display=(p===planet)?'':'none';
+        document.querySelectorAll('.ale-map').forEach(function(m){
+            m.classList.toggle('active-map',m.id==='map-'+planet);
         });
-        document.getElementById('coord-planet').textContent=(PLANETS[planet]||{name:planet}).name.toUpperCase();
+        document.getElementById('active-planet-label').textContent=(PLANETS[planet]||{name:planet}).name.toUpperCase();
     }
 
-    function switchPlanet(planet) {
-        if(planet===_activePlanet) return;
-        // Highlight tab immediately for feedback
+    function switchPlanet(planet){
+        if(planet===_activePlanet)return;
+        // Update tab highlight immediately for feedback
         document.querySelectorAll('.planet-tab').forEach(function(t){
             t.classList.toggle('active',t.dataset.planet===planet);
         });
         _activePlanet=planet;
         dismissStrip();
-        buildMap(planet); // pre-build (hidden) while warping
-        // Show grid only after warp completes so 3D and grid are in sync
-        warpSwitch(planet, function(){
+        buildMap(planet);
+        // Switch grid + 3D together after warp completes
+        warpSwitch(planet,function(){
             setActiveTab(planet);
         });
     }
 
     // ── CELL INTERACTION ──────────────────────────────────────────────────────
-    function onHov(el,x,y){ document.getElementById('coord-xy').textContent='X:'+x+'  Y:'+y; }
-    function onLeave(){ document.getElementById('coord-xy').textContent='X:&#8212;  Y:&#8212;'; }
+    function onHov(x,y){
+        document.getElementById('coord-display').textContent='X:'+x+'  Y:'+y;
+    }
+    function onLeave(){
+        document.getElementById('coord-display').textContent='X:&#8212;  Y:&#8212;';
+    }
 
-    function onCell(x,y) {
-        var portals=ALE_PORTALS[_activePlanet]||[], portal=null;
-        for(var i=0;i<portals.length;i++){ if(portals[i].x===x&&portals[i].y===y){portal=portals[i];break;} }
+    function onCell(x,y){
+        var portals=ALE_PORTALS[_activePlanet]||[],portal=null;
+        for(var i=0;i<portals.length;i++){if(portals[i].x===x&&portals[i].y===y){portal=portals[i];break;}}
         _sel={x:x,y:y,planet:_activePlanet,portal:portal};
-        var text=document.getElementById('confirm-text');
-        var viewBtn=document.getElementById('cs-view');
-        var confBtn=document.getElementById('cs-confirm');
+        document.querySelectorAll('.ale-cell.selected').forEach(function(el){el.classList.remove('selected');});
+        var container=document.getElementById('map-'+_activePlanet);
+        if(container){var cell=container.querySelector('[data-x="'+x+'"][data-y="'+y+'"]');if(cell)cell.classList.add('selected');}
+        var content=document.getElementById('confirm-content');
+        var tBtn=document.getElementById('confirm-travel-btn');
+        var vBtn=document.getElementById('view-map-btn');
+        document.getElementById('strip-status').textContent='';
+        document.getElementById('strip-status').className='';
         if(portal){
             var dest=(PLANETS[portal.to]||{name:portal.to.toUpperCase()}).name.toUpperCase();
-            text.textContent='▸ PORTAL → '+dest+' at ('+x+', '+y+')';
-            confBtn.textContent='TRAVEL TO PORTAL';
-            viewBtn.style.display='';
-            viewBtn.textContent='VIEW '+dest;
+            content.innerHTML='<strong>PORTAL</strong> → '+dest+' &nbsp;·&nbsp; ('+x+', '+y+')';
+            tBtn.textContent='TRAVEL TO PORTAL'; tBtn.style.display='';
+            vBtn.textContent='VIEW '+dest+' MAP'; vBtn.style.display='';
         } else {
-            text.textContent='TRAVEL TO ('+x+', '+y+') · '+_activePlanet.toUpperCase();
-            confBtn.textContent='CONFIRM TRAVEL';
-            viewBtn.style.display='none';
+            content.innerHTML='Travel to <strong>'+(PLANETS[_activePlanet]||{name:_activePlanet}).name+'</strong> ('+x+', '+y+')';
+            tBtn.textContent='CONFIRM TRAVEL'; tBtn.style.display='';
+            vBtn.style.display='none';
         }
         document.getElementById('confirm-strip').classList.add('open');
     }
 
     function dismissStrip(){
         document.getElementById('confirm-strip').classList.remove('open');
+        document.querySelectorAll('.ale-cell.selected').forEach(function(el){el.classList.remove('selected');});
         _sel=null;
     }
 
     function doViewPlanet(){
-        if(!_sel||!_sel.portal) return;
+        if(!_sel||!_sel.portal)return;
         switchPlanet(_sel.portal.to);
     }
 
-    async function doConfirm() {
-        if(!_sel) return;
+    async function doConfirm(){
+        if(!_sel)return;
         var wallet=getWallet();
-        if(!wallet){ document.getElementById('confirm-text').textContent='&#9888; PLEASE LOG IN FIRST'; return; }
-        var btn=document.getElementById('cs-confirm');
-        btn.disabled=true; btn.textContent='TRANSMITTING…';
-        try {
+        var btn=document.getElementById('confirm-travel-btn');
+        var status=document.getElementById('strip-status');
+        if(!wallet){status.textContent='⚠ PLEASE LOG IN FIRST';status.className='err';return;}
+        btn.disabled=true;btn.textContent='TRANSMITTING…';
+        status.textContent='';status.className='';
+        try{
             await signTravel(wallet,_sel.x,_sel.y);
-            document.getElementById('confirm-text').textContent='✓ TRAVELLED TO ('+_sel.x+', '+_sel.y+')';
+            status.textContent='✓ Travelled to ('+_sel.x+', '+_sel.y+')';
+            status.className='ok';
             var destPlanet=_sel.portal?_sel.portal.to:_activePlanet;
             _playerPos={x:_sel.x,y:_sel.y,planet:destPlanet};
             applyMarker();
             if(_sel.portal){
                 var to=_sel.portal.to;
-                setTimeout(function(){ switchPlanet(to); _playerPos={x:_sel.x,y:_sel.y,planet:to}; applyMarker(); },1400);
+                setTimeout(function(){switchPlanet(to);_playerPos={x:_sel.x,y:_sel.y,planet:to};applyMarker();},1400);
             }
             setTimeout(dismissStrip,3000);
-        } catch(e){
-            document.getElementById('confirm-text').textContent='✗ '+((e&&e.message)||'Transaction failed').substring(0,100);
+        }catch(e){
+            status.textContent='✗ '+((e&&e.message)||'Transaction failed').substring(0,100);
+            status.className='err';
         }
         btn.disabled=false;
         btn.textContent=(_sel&&_sel.portal)?'TRAVEL TO PORTAL':'CONFIRM TRAVEL';
@@ -806,11 +740,7 @@
 
     // ── INIT ──────────────────────────────────────────────────────────────────
     initStars();
-
-    // Auto-skip gate if already logged in
-    if (localStorage.getItem('naron_wallet')) {
-        document.getElementById('login-gate').classList.add('gone');
-    }
+    if(localStorage.getItem('naron_wallet')) document.getElementById('login-gate').classList.add('gone');
 </script>
 
 </body>
