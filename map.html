@@ -219,6 +219,17 @@
         #action-status.ok  { color:#40c070; }
         #action-status.err { color:#c04040; }
 
+        /* ── HIRE NFT SELECTOR ───────────────────────────────────────────────── */
+        #hire-nft-list { display:none; flex-direction:column; gap:3px; max-height:160px; overflow-y:auto; }
+        #hire-nft-list.open { display:flex; }
+        .hire-cost-note { font-size:0.62em; color:#706050; letter-spacing:0.5px; padding:2px 0; }
+        .hire-nft-row { display:flex; align-items:center; gap:5px; padding:3px 5px; border:1px solid rgba(192,144,96,0.12); cursor:crosshair; transition:background 0.12s; }
+        .hire-nft-row:hover { background:rgba(192,144,96,0.1); }
+        .hire-nft-row input[type="checkbox"] { cursor:crosshair; flex-shrink:0; accent-color:var(--gold); }
+        .hire-nft-name { font-size:0.63em; color:#c0b090; flex:1; line-height:1.3; }
+        .hire-nft-rarity { font-size:0.59em; color:#806050; flex-shrink:0; }
+        .hire-nft-empty { font-size:0.63em; color:#446; padding:6px 0; text-align:center; }
+
         /* ── QUICK TRAVEL TOGGLE ─────────────────────────────────────────── */
         #qt-toggle { display:block; width:100%; padding:7px 6px; font-family:'Courier New',monospace; font-size:0.68em; letter-spacing:2px; background:transparent; border:1px dashed #334; color:#446; cursor:crosshair; transition:all 0.2s; text-align:center; text-transform:uppercase; flex-shrink:0; }
         #qt-toggle.on { border-color:var(--gold); border-style:solid; color:var(--gold); background:rgba(232,160,32,0.07); }
@@ -378,7 +389,8 @@
                     <div id="action-coord"></div>
                     <button id="confirm-travel-btn" class="act-btn confirm"  onclick="doConfirm()"    style="display:none;">CONFIRM TRAVEL</button>
                     <button id="view-map-btn"        class="act-btn view-map" onclick="doViewPlanet()" style="display:none;">VIEW MAP</button>
-                    <button id="hire-btn"            class="act-btn hire"     style="display:none;">HIRE FIGHTER</button>
+                    <button id="hire-btn"            class="act-btn hire"     onclick="doHire()" style="display:none;">HIRE FIGHTER (100 AP)</button>
+                    <div id="hire-nft-list"></div>
                     <button id="dungeon-btn"         class="act-btn dungeon"  style="display:none;">&#9935; PLAY DUNGEON</button>
                     <button id="arena-btn"           class="act-btn arena"    style="display:none;">&#9876; FIGHT ARENA</button>
                     <span id="action-status"></span>
@@ -1036,8 +1048,10 @@
         var aBtn=document.getElementById('arena-btn');
         document.getElementById('action-status').textContent='';
         document.getElementById('action-status').className='';
-        // hide all action buttons first
+        // hide all action buttons and clear NFT list
         [tBtn,vBtn,hBtn,dBtn,aBtn].forEach(function(b){b.style.display='none';});
+        var hl=document.getElementById('hire-nft-list');
+        if(hl){hl.classList.remove('open');hl.innerHTML='';}
         coord.textContent='('+x+', '+y+')';
         if(portal){
             var dest=(PLANETS[portal.to]||{name:portal.to.toUpperCase()}).name.toUpperCase();
@@ -1052,6 +1066,7 @@
             info.innerHTML='<strong style="color:#c09060;">TAVERN</strong>';
             tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
             hBtn.style.display='';
+            showHirePanel();
         } else if(isArena){
             info.innerHTML='<strong style="color:#c06060;">ARENA</strong>';
             tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
@@ -1066,6 +1081,8 @@
 
     function dismissStrip(){
         document.getElementById('action-panel').classList.remove('open');
+        var hl=document.getElementById('hire-nft-list');
+        if(hl){hl.classList.remove('open');hl.innerHTML='';}
         document.querySelectorAll('.ale-cell.selected').forEach(function(el){el.classList.remove('selected');});
         _sel=null;
     }
@@ -1101,6 +1118,103 @@
         }
         btn.disabled=false;
         btn.textContent=(_sel&&_sel.portal)?'TRAVEL TO PORTAL':'CONFIRM TRAVEL';
+    }
+
+    // ── HIRE FIGHTER ──────────────────────────────────────────────────────────
+    var _tavernTemplates=null;
+
+    async function loadTavernTemplates(){
+        if(_tavernTemplates)return _tavernTemplates;
+        var ids=[],lb='';
+        while(true){
+            var d=await fetchRows({code:'tavern.ale',scope:'tavern.ale',table:'nfttemplates',limit:500,lower_bound:lb||undefined,json:true});
+            if(!d||!d.rows||!d.rows.length)break;
+            d.rows.forEach(function(r){if(r.template_id!=null)ids.push(String(r.template_id));});
+            if(!d.more)break;
+            lb=d.next_key||'';if(!lb)break;
+        }
+        _tavernTemplates=ids;
+        return ids;
+    }
+
+    async function loadPlayerHireNFTs(wallet){
+        var templates=await loadTavernTemplates();
+        if(!templates.length)return[];
+        var url='https://wax.api.atomicassets.io/atomicassets/v1/assets'
+            +'?owner='+encodeURIComponent(wallet)
+            +'&template_whitelist='+templates.join(',')
+            +'&limit=100&page=1';
+        try{
+            var r=await fetch(url);
+            var j=await r.json();
+            if(!j.success||!j.data)return[];
+            return j.data.map(function(a){
+                var imm=(a.template&&a.template.immutable_data)||{};
+                return{
+                    asset_id:a.asset_id,
+                    name:a.name||imm.name||('NFT #'+a.asset_id),
+                    rarity:imm.rarity||'',
+                };
+            });
+        }catch(e){return[];}
+    }
+
+    function _hEsc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+    function renderHireNFTs(nfts){
+        var el=document.getElementById('hire-nft-list');
+        if(!el)return;
+        if(!nfts||!nfts.length){
+            el.innerHTML='<div class="hire-nft-empty">No eligible NFTs in wallet.</div>';
+            el.classList.add('open');return;
+        }
+        var html='<div class="hire-cost-note">Select NFTs (optional — may reduce cost):</div>';
+        nfts.forEach(function(n){
+            html+='<label class="hire-nft-row">'
+                +'<input type="checkbox" class="hire-nft-cb" value="'+_hEsc(n.asset_id)+'">'
+                +'<span class="hire-nft-name">'+_hEsc(n.name)+'</span>'
+                +(n.rarity?'<span class="hire-nft-rarity">'+_hEsc(n.rarity)+'</span>':'')
+                +'</label>';
+        });
+        el.innerHTML=html;
+        el.classList.add('open');
+    }
+
+    async function showHirePanel(){
+        var el=document.getElementById('hire-nft-list');
+        if(!el)return;
+        el.innerHTML='<div class="hire-nft-empty">Loading NFTs…</div>';
+        el.classList.add('open');
+        var wallet=getWallet();
+        if(!wallet){el.innerHTML='<div class="hire-nft-empty">Log in to see NFTs.</div>';return;}
+        var nfts=await loadPlayerHireNFTs(wallet);
+        renderHireNFTs(nfts);
+    }
+
+    async function doHire(){
+        if(!_sel||!_sel.isTavern)return;
+        var wallet=getWallet();
+        var btn=document.getElementById('hire-btn');
+        var status=document.getElementById('action-status');
+        if(!wallet){status.textContent='⚠ PLEASE LOG IN';status.className='err';return;}
+        var cbs=document.querySelectorAll('.hire-nft-cb:checked');
+        var asset_ids=[];
+        cbs.forEach(function(cb){if(cb.value)asset_ids.push(cb.value);});
+        btn.disabled=true;btn.textContent='HIRING…';
+        status.textContent='';status.className='';
+        try{
+            var actions=[{account:'players.ale',name:'hire',authorization:[{actor:wallet,permission:'active'}],
+                data:{wallet:wallet,asset_ids:asset_ids,cost_action_points:100}}];
+            if(window.walletSession) await window.walletSession.transact({actions});
+            else if(wax&&wax.api) await wax.api.transact({actions},{blocksBehind:3,expireSeconds:30});
+            else throw new Error('No wallet session — please log in.');
+            status.textContent='✓ FIGHTER HIRED';status.className='ok';
+            setTimeout(dismissStrip,3000);
+        }catch(e){
+            status.textContent='✗ '+((e&&e.message)||'Failed').substring(0,60);
+            status.className='err';
+        }
+        btn.disabled=false;btn.textContent='HIRE FIGHTER (100 AP)';
     }
 
     // ── QUICK TRAVEL TOGGLE ───────────────────────────────────────────────────
