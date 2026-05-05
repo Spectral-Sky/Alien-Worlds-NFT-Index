@@ -40,41 +40,53 @@
         *, *::before, *::after { box-sizing: border-box; }
         body {
             margin: 0; padding: 0;
-            background: #03030e;
-            color: #d0d0d0;
+            background: #03030e; color: #d0d0d0;
             font-family: 'Courier New', monospace;
-            overflow: hidden;
-            height: 100vh; width: 100vw;
+            overflow: hidden; height: 100vh; width: 100vw;
             cursor: crosshair;
         }
         a, button { cursor: crosshair !important; }
 
-        /* ── BACKGROUND LAYERS ─────────────────────────────────────────── */
-        #stars-canvas {
-            position: fixed; inset: 0;
-            width: 100vw; height: 100vh;
-            z-index: 1; pointer-events: none;
-        }
-        #planet-webgl { display: none; position: absolute; top: -9999px; left: -9999px; }
+        /* ── LAYERS ──────────────────────────────────────────────────────── */
+        #stars-canvas { position:fixed; inset:0; width:100vw; height:100vh; z-index:1; pointer-events:none; }
+        #planet-webgl  { display:none; position:absolute; top:-9999px; left:-9999px; }
 
-        /* ── LOGIN GATE ────────────────────────────────────────────────── */
+        /* ── TOP-LEFT: NARON CODEX ───────────────────────────────────────── */
+        #nc-header {
+            position: fixed; top: 14px; left: 18px; z-index: 600;
+            pointer-events: all;
+        }
+        #nc-header a {
+            color: rgba(232,160,32,0.65); font-size: 0.85em; letter-spacing: 4px;
+            text-decoration: none; text-transform: uppercase;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 8px rgba(232,160,32,0.25);
+            transition: color 0.2s;
+        }
+        #nc-header a:hover { color: #e8a020; }
+
+        /* ── TOP-RIGHT: ALE LOGO ─────────────────────────────────────────── */
+        #ale-corner {
+            position: fixed; top: 10px; right: 14px; z-index: 600;
+            pointer-events: none;
+        }
+        #ale-corner img { height: 36px; opacity: 0.55; }
+
+        /* ── LOGIN GATE ──────────────────────────────────────────────────── */
         #login-gate {
             position: fixed; inset: 0; z-index: 9000;
-            background: rgba(3,3,14,0.93);
-            backdrop-filter: blur(8px);
+            background: rgba(3,3,14,0.93); backdrop-filter: blur(8px);
             display: flex; align-items: center; justify-content: center;
         }
         #login-gate.gone { display: none; }
         .gate-box {
-            border: 1px solid rgba(232,160,32,0.4);
-            background: rgba(10,8,2,0.97);
-            padding: 42px 52px 36px;
-            text-align: center;
-            max-width: 400px; width: 88%;
+            border: 1px solid rgba(232,160,32,0.4); background: rgba(10,8,2,0.97);
+            padding: 42px 52px 36px; text-align: center; max-width: 400px; width: 88%;
             box-shadow: 0 0 50px rgba(232,160,32,0.08);
         }
-        .gate-hex { font-size: 2.2em; color: #e8a020; margin-bottom: 10px; text-shadow: 0 0 20px rgba(232,160,32,0.6); }
-        .gate-title { color: #e8a020; font-size: 1.15em; letter-spacing: 6px; margin: 0 0 6px; text-transform: uppercase; }
+        .gate-logo { margin-bottom: 16px; }
+        .gate-logo img { height: 52px; opacity: 0.85; }
+        .gate-title { color: #e8a020; font-size: 1.1em; letter-spacing: 5px; margin: 0 0 6px; text-transform: uppercase; }
         .gate-sub { color: #445; font-size: 0.68em; letter-spacing: 2px; margin: 0 0 30px; }
         .gate-btn {
             display: block; width: 100%; padding: 13px 0; margin-bottom: 12px;
@@ -86,12 +98,11 @@
         .gate-btn:hover { background: #e8a020; color: #000; border-style: solid; }
         #gate-status { color: #555; font-size: 0.67em; letter-spacing: 2px; margin-top: 18px; min-height: 1.5em; }
 
-        /* ── ARRIVAL BANNER ────────────────────────────────────────────── */
+        /* ── ARRIVAL BANNER ──────────────────────────────────────────────── */
         #arrival-banner {
             position: fixed; top: 0; left: 0; right: 0; z-index: 200;
             text-align: center; padding: 32px 20px 24px;
-            pointer-events: none;
-            opacity: 0; transition: opacity 0.6s;
+            pointer-events: none; opacity: 0; transition: opacity 0.6s;
         }
         #arrival-banner.visible { opacity: 1; }
         #arrival-planet-name {
@@ -102,36 +113,28 @@
         }
         #arrival-sub   { color: #ccaa88; font-size: 0.72em; letter-spacing: 3px; text-shadow: 0 1px 6px #000; margin-bottom: 4px; }
         #arrival-status { color: #aa8866; font-size: 0.65em; letter-spacing: 2px; text-shadow: 0 1px 6px #000; }
-        @keyframes fadein-up { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadein-up { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
         #arrival-banner > * { animation: fadein-up 0.7s ease both; }
         #arrival-banner > *:nth-child(2) { animation-delay: 0.3s; }
         #arrival-banner > *:nth-child(3) { animation-delay: 0.55s; }
 
-        /* ── EASTER EGG ────────────────────────────────────────────────── */
+        /* ── EASTER EGG ──────────────────────────────────────────────────── */
         #egg-msg {
             position: fixed; top: 50%; left: 50%; z-index: 300;
-            transform: translate(-50%,-50%);
-            color: #e8a020; font-size: 1.5em; letter-spacing: 4px;
+            transform: translate(-50%,-50%); color: #e8a020;
+            font-size: 1.5em; letter-spacing: 4px; text-transform: uppercase;
             text-shadow: 0 0 24px rgba(232,160,32,0.9);
             pointer-events: none; opacity: 0; font-weight: bold;
-            text-transform: uppercase;
         }
         @keyframes egg-pop {
-            0%   { opacity:0; transform:translate(-50%,-50%) scale(0.4); }
-            18%  { opacity:1; transform:translate(-50%,-50%) scale(1.12); }
-            70%  { opacity:1; transform:translate(-50%,-50%) scale(1); }
-            100% { opacity:0; transform:translate(-50%,-62%); }
+            0%  { opacity:0; transform:translate(-50%,-50%) scale(0.4); }
+            18% { opacity:1; transform:translate(-50%,-50%) scale(1.12); }
+            70% { opacity:1; transform:translate(-50%,-50%) scale(1); }
+            100%{ opacity:0; transform:translate(-50%,-62%); }
         }
         #egg-msg.pop { animation: egg-pop 2s ease forwards; }
 
-        /* ── CORNER LOGO ───────────────────────────────────────────────── */
-        #ale-corner {
-            position: fixed; top: 14px; right: 18px; z-index: 600;
-            color: rgba(232,160,32,0.45); font-size: 0.68em; letter-spacing: 3px;
-            pointer-events: none; text-transform: uppercase;
-        }
-
-        /* ── SKIP BUTTON ───────────────────────────────────────────────── */
+        /* ── SKIP BUTTON ─────────────────────────────────────────────────── */
         #skip-btn {
             position: fixed; bottom: 22px; right: 22px; z-index: 700;
             padding: 7px 18px; background: rgba(0,0,0,0.7);
@@ -141,14 +144,10 @@
         }
         #skip-btn:hover { color: #888; border-color: #555; }
 
-        /* ── MAP OVERLAY (bottom panel) ────────────────────────────────── */
-        #map-overlay {
-            position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
-            display: flex; flex-direction: column;
-        }
+        /* ── MAP OVERLAY ─────────────────────────────────────────────────── */
+        #map-overlay { position: fixed; bottom: 0; left: 0; right: 0; z-index: 500; display: flex; flex-direction: column; }
         #map-overlay.gone { display: none; }
 
-        /* Minimize toggle */
         #minimize-btn {
             display: flex; align-items: center; justify-content: center;
             padding: 5px; background: rgba(0,8,18,0.88);
@@ -161,21 +160,19 @@
 
         /* Planet tabs */
         #planet-tabs {
-            display: flex; gap: 0; background: rgba(0,8,18,0.9);
-            backdrop-filter: blur(8px);
+            display: flex; background: rgba(0,8,18,0.9); backdrop-filter: blur(8px);
             border-top: 1px solid rgba(0,200,255,0.2);
             padding: 0 12px; overflow-x: auto;
         }
         .planet-tab {
-            padding: 7px 12px; font-size: 0.6em; letter-spacing: 2px;
-            text-transform: uppercase; background: transparent; border: none;
-            color: #334; cursor: pointer; transition: all 0.2s;
+            padding: 7px 12px; font-size: 0.6em; letter-spacing: 2px; text-transform: uppercase;
+            background: transparent; border: none; color: #334; cursor: pointer; transition: all 0.2s;
             border-top: 2px solid transparent; white-space: nowrap; flex-shrink: 0;
         }
         .planet-tab:hover { color: #88aacc; }
         .planet-tab.active { font-size: 0.78em; padding: 7px 16px; border-top-color: #e8a020; color: #e8a020; }
 
-        /* Collapsible map panel */
+        /* Collapsible panel */
         #map-panel {
             background: rgba(0,6,14,0.88); backdrop-filter: blur(10px);
             border-top: 1px solid rgba(0,200,255,0.18);
@@ -184,42 +181,44 @@
         }
         #map-panel.collapsed { max-height: 0; }
 
-        /* Map inner = legend sidebar + scroll area */
+        /* Map inner */
         #map-inner { display: flex; height: 264px; }
 
         /* Legend */
         #map-legend {
-            flex-shrink: 0; width: 150px; padding: 10px 12px;
+            flex-shrink: 0; width: 140px; padding: 10px 12px;
             border-right: 1px solid rgba(0,200,255,0.1);
             display: flex; flex-direction: column; gap: 7px;
             font-size: 0.6em; letter-spacing: 1px; overflow: hidden;
         }
-        .lg-title { color: #446; letter-spacing: 3px; font-size: 0.95em; margin-bottom: 2px; }
-        .lg-row { display: flex; align-items: flex-start; gap: 8px; }
-        .lg-ic { width: 14px; flex-shrink: 0; text-align: center; line-height: 1.3; }
+        .lg-title { color: #446; letter-spacing: 3px; margin-bottom: 2px; }
+        .lg-row { display: flex; align-items: center; gap: 8px; }
+        .lg-ic { width: 18px; height: 18px; flex-shrink: 0; display:flex; align-items:center; justify-content:center; }
+        .lg-ic img { width: 100%; height: 100%; object-fit: contain; }
         .lg-lbl { color: #557; line-height: 1.3; }
 
-        /* Map scroll container */
+        /* Map scroll + grid */
         #map-scroll { flex: 1; overflow: auto; }
-
-        /* Grid */
         .ale-map {
             display: grid;
             grid-template-columns: repeat(40, 26px);
             grid-template-rows: repeat(20, 13px);
             width: 1040px;
+            background-size: cover;
+            background-position: center;
         }
         .ale-cell {
             width: 26px; height: 13px;
             border: 1px solid rgba(0,80,120,0.16);
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; position: relative; overflow: visible;
-            transition: background 0.1s;
+            transition: background 0.1s; background: transparent;
         }
-        .ale-cell:hover { background: rgba(232,160,32,0.2); border-color: rgba(232,160,32,0.5); z-index: 2; }
+        .ale-cell:hover { background: rgba(232,160,32,0.22); border-color: rgba(232,160,32,0.5); z-index: 2; }
         .ale-portal { box-shadow: inset 0 0 5px rgba(0,200,255,0.3); }
+        .ale-portal img { width: 10px; height: 10px; object-fit: contain; pointer-events: none; }
         .ale-me { background: rgba(232,160,32,0.22) !important; }
-        .ale-me::after { content: '◈'; color: #e8a020; font-size: 1.5em; position: absolute; pointer-events: none; line-height: 1; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+        .ale-me::after { content:'◈'; color:#e8a020; font-size:1.5em; position:absolute; pointer-events:none; line-height:1; top:50%; left:50%; transform:translate(-50%,-50%); }
 
         /* Coord bar */
         #coord-bar {
@@ -230,7 +229,6 @@
         }
         #coord-xy { color: #557; }
         #coord-planet { color: #e8a020; }
-        #coord-pos { color: #778; }
 
         /* Confirm strip */
         #confirm-strip {
@@ -253,7 +251,7 @@
         #cs-dismiss { border: 1px solid #222; color: #334; }
         #cs-dismiss:hover { border-color: #444; color: #667; }
 
-        /* Scrollbar styling */
+        /* Scrollbar */
         ::-webkit-scrollbar { height: 5px; width: 5px; }
         ::-webkit-scrollbar-track { background: rgba(0,8,18,0.5); }
         ::-webkit-scrollbar-thumb { background: #1a2030; border: 1px solid rgba(0,200,255,0.2); }
@@ -264,14 +262,20 @@
 <canvas id="stars-canvas"></canvas>
 <canvas id="planet-webgl"></canvas>
 
+<!-- TOP-LEFT: NARON CODEX -->
+<div id="nc-header"><a href="index.html">NARON CODEX</a></div>
+
+<!-- TOP-RIGHT: ALE LOGO -->
+<div id="ale-corner"><img src="ALElogo.png" alt="Alien Legends"></div>
+
 <!-- LOGIN GATE -->
 <div id="login-gate">
     <div class="gate-box">
-        <div class="gate-hex">⬡</div>
+        <div class="gate-logo"><img src="ALElogo.png" alt="Alien Legends"></div>
         <p class="gate-title">ALE STAR CHART</p>
         <p class="gate-sub">AUTHENTICATE TO ACCESS NAVIGATION SYSTEMS</p>
-        <button class="gate-btn" onclick="loginAnchor()">[ ⚓ ANCHOR WALLET ]</button>
-        <button class="gate-btn" onclick="loginWCC()">[ ☁ CLOUD WALLET ]</button>
+        <button class="gate-btn" onclick="loginAnchor()">[ &#9875; ANCHOR WALLET ]</button>
+        <button class="gate-btn" onclick="loginWCC()">[ &#9729; CLOUD WALLET ]</button>
         <div id="gate-status"></div>
     </div>
 </div>
@@ -283,11 +287,8 @@
     <div id="arrival-status"></div>
 </div>
 
-<!-- EASTER EGG TEXT -->
+<!-- EASTER EGG -->
 <div id="egg-msg"></div>
-
-<!-- ALE LOGO CORNER -->
-<div id="ale-corner">⬡ ALE</div>
 
 <!-- SKIP WARP -->
 <button id="skip-btn" onclick="skipWarp()">&#9654;&#9654; SKIP</button>
@@ -312,38 +313,34 @@
             <div id="map-legend">
                 <div class="lg-title">LEGEND</div>
                 <div class="lg-row">
-                    <div class="lg-ic" style="color:#0df;font-size:1.4em;">&#9658;</div>
+                    <div class="lg-ic"><img src="Ale images/portal.png" alt="portal"></div>
                     <div class="lg-lbl">Portal</div>
                 </div>
                 <div class="lg-row">
-                    <div class="lg-ic" style="color:#5a8;">&#9651;</div>
+                    <div class="lg-ic"><img src="Ale images/dungeon.svg" alt="dungeon"></div>
                     <div class="lg-lbl">Dungeon<br>(Hire here!)</div>
                 </div>
                 <div class="lg-row">
-                    <div class="lg-ic" style="color:#b87;">&#9750;</div>
+                    <div class="lg-ic"><img src="Ale images/tavern.svg" alt="tavern"></div>
                     <div class="lg-lbl">Tavern<br>(Hire Fighters!)</div>
                 </div>
                 <div class="lg-row">
-                    <div class="lg-ic" style="color:#c44;">&#9876;</div>
+                    <div class="lg-ic"><img src="Ale images/Arena.svg" alt="arena"></div>
                     <div class="lg-lbl">Arena<br>(Compete!)</div>
                 </div>
                 <div class="lg-row">
-                    <div class="lg-ic" style="color:#e8a020;">&#9672;</div>
+                    <div class="lg-ic" style="color:#e8a020;font-size:1.4em;line-height:1;">&#9672;</div>
                     <div class="lg-lbl">Your Position</div>
-                </div>
-                <div class="lg-row">
-                    <div class="lg-ic" style="color:#556;">&#8226;</div>
-                    <div class="lg-lbl">Other Players</div>
                 </div>
             </div>
 
             <div id="map-scroll">
-                <div id="map-magor"  class="ale-map"></div>
-                <div id="map-naron"  class="ale-map" style="display:none;"></div>
-                <div id="map-eyeke"  class="ale-map" style="display:none;"></div>
-                <div id="map-kavian" class="ale-map" style="display:none;"></div>
-                <div id="map-neri"   class="ale-map" style="display:none;"></div>
-                <div id="map-veles"  class="ale-map" style="display:none;"></div>
+                <div id="map-magor"  class="ale-map" style="background-image:url('planets/magor.jpg')"></div>
+                <div id="map-naron"  class="ale-map" style="background-image:url('planets/naron.jpg');display:none;"></div>
+                <div id="map-eyeke"  class="ale-map" style="background-image:url('planets/eyeke.jpg');display:none;"></div>
+                <div id="map-kavian" class="ale-map" style="background-image:url('planets/kavian.jpg');display:none;"></div>
+                <div id="map-neri"   class="ale-map" style="background-image:url('planets/neri.jpg');display:none;"></div>
+                <div id="map-veles"  class="ale-map" style="background-image:url('planets/veles.jpg');display:none;"></div>
             </div>
 
         </div>
@@ -351,7 +348,6 @@
         <div id="coord-bar">
             <span id="coord-xy">X:&#8212; &nbsp;Y:&#8212;</span>
             <span id="coord-planet">&#8212;</span>
-            <span id="coord-pos"></span>
         </div>
 
         <div id="confirm-strip">
@@ -365,7 +361,7 @@
 </div>
 
 <script>
-    // ── WAX ──────────────────────────────────────────────────────────────────
+    // ── WAX ───────────────────────────────────────────────────────────────────
     var wax = new waxjs.WaxJS({ rpcEndpoint:'https://wax.greymass.com', userAccount:'', tryAutoLogin:false });
     var RPC = ['https://wax.greymass.com','https://api.waxsweden.org','https://wax.eosphere.io','https://wax.eosnation.io'];
 
@@ -396,6 +392,7 @@
 
     // ── LOGIN GATE ────────────────────────────────────────────────────────────
     function gateStatus(msg){ document.getElementById('gate-status').textContent=msg; }
+    function showLoginGate(){ document.getElementById('login-gate').classList.remove('gone'); gateStatus('SESSION EXPIRED — PLEASE LOG IN AGAIN'); }
 
     async function loginAnchor() {
         gateStatus('CONNECTING TO ANCHOR...');
@@ -404,7 +401,7 @@
             window.walletSession=r.session;
             localStorage.setItem('naron_wallet',String(r.session.actor));
             onWalletReady();
-        } catch(e){ gateStatus('FAILED — '+(e&&e.message||e)); }
+        } catch(e){ gateStatus('FAILED — '+(e&&e.message||String(e))); }
     }
 
     async function loginWCC() {
@@ -413,7 +410,7 @@
             var acc=await wax.login();
             localStorage.setItem('naron_wallet',acc);
             onWalletReady();
-        } catch(e){ gateStatus('FAILED — '+(e&&e.message||e)); }
+        } catch(e){ gateStatus('FAILED — '+(e&&e.message||String(e))); }
     }
 
     function onWalletReady() {
@@ -421,17 +418,11 @@
         startScene();
     }
 
-    // ── STATE ─────────────────────────────────────────────────────────────────
-    var _planetVisible  = false;
-    var _activePlanet   = 'magor';
-    var _playerPos      = null;
-    var _panelOpen      = true;
-    var _skipReq        = false;
-    var _renderer       = null;
-    var _scene          = null;
-    var _camera         = null;
-    var _mesh           = null;
-    var _eggCount       = 0;
+    // ── CONSTANTS ─────────────────────────────────────────────────────────────
+    var BASE_SPEED      = 0.003;
+    var BOOST_PER_CLICK = 10;
+    var MAX_MULTIPLIER  = 10000;
+    var DECAY_RATE      = 0.0025;
 
     var PLANETS = {
         magor:  {name:'Magor',  color:'#e05030'},
@@ -442,9 +433,9 @@
         veles:  {name:'Veles',  color:'#40c0c0'},
     };
 
-    var OFFSETS = {
-        eyeke:{x:1.1,y:-0.5},kavian:{x:-1.3,y:0.2},magor:{x:0.2,y:0.8},
-        naron:{x:0.6,y:-0.25},neri:{x:-0.7,y:-0.6},veles:{x:1.4,y:0.4}
+    var CAM_OFFSETS = {
+        eyeke:{x:1.1,y:-0.5}, kavian:{x:-1.3,y:0.2}, magor:{x:0.2,y:0.8},
+        naron:{x:0.6,y:-0.25}, neri:{x:-0.7,y:-0.6}, veles:{x:1.4,y:0.4}
     };
 
     var ALE_PORTALS = {
@@ -455,6 +446,23 @@
         neri:   [{x:2,y:2,to:'kavian'},{x:3,y:3,to:'eyeke'},{x:2,y:19,to:'veles'},{x:3,y:18,to:'naron'},{x:38,y:2,to:'magor'}],
         veles:  [{x:2,y:2,to:'eyeke'},{x:3,y:19,to:'neri'},{x:38,y:2,to:'kavian'},{x:36,y:19,to:'magor'},{x:39,y:4,to:'naron'}],
     };
+
+    // ── STATE ─────────────────────────────────────────────────────────────────
+    var _planetVisible = false;
+    var _activePlanet  = 'magor';
+    var _playerPos     = null;
+    var _panelOpen     = true;
+    var _skipReq       = false;
+
+    var _renderer = null;
+    var _scene    = null;
+    var _camera   = null;
+    var _mesh     = null;
+
+    var _eggCount  = 0;
+    var _rendered  = {};
+    var _sel       = null;
+    var _arrTimer  = null;
 
     // ── STARS ─────────────────────────────────────────────────────────────────
     var _starSpeed = 5;
@@ -475,14 +483,14 @@
                 var s=stars[i],pz=s.z;
                 s.z-=_starSpeed;
                 if(s.z<=0){s.x=(Math.random()-0.5)*W;s.y=(Math.random()-0.5)*H;s.z=W;pz=s.z;}
-                var sx=(s.x/s.z)*W+cx,sy=(s.y/s.z)*H+cy;
-                var px=(s.x/pz)*W+cx,py=(s.y/pz)*H+cy;
-                var b=1-s.z/W,sz=Math.max(0.5,b*2.5);
+                var sx=(s.x/s.z)*W+cx, sy=(s.y/s.z)*H+cy;
+                var px=(s.x/pz)*W+cx, py=(s.y/pz)*H+cy;
+                var b=1-s.z/W, sz=Math.max(0.5,b*2.5);
                 ctx.strokeStyle='rgba(180,255,235,'+b.toFixed(2)+')';
                 ctx.lineWidth=sz;
-                ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(sx,sy);ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(sx,sy); ctx.stroke();
             }
-            if (_planetVisible&&_renderer) {
+            if (_planetVisible && _renderer) {
                 var pw=document.getElementById('planet-webgl');
                 if (pw) ctx.drawImage(pw,0,0,W,H);
             }
@@ -492,12 +500,12 @@
     }
 
     function rampStars(target,ms,cb) {
-        var start=_starSpeed,t0=performance.now();
+        var start=_starSpeed, t0=performance.now();
         (function step(now){
             var t=Math.min(1,(now-t0)/ms);
             _starSpeed=start+(target-start)*(1-Math.pow(1-t,3));
             if(t<1) requestAnimationFrame(step);
-            else{_starSpeed=target;if(cb)cb();}
+            else { _starSpeed=target; if(cb) cb(); }
         })(performance.now());
     }
 
@@ -505,7 +513,7 @@
     function initPlanetRenderer() {
         if (_renderer) return;
         var canvas=document.getElementById('planet-webgl');
-        var W=window.innerWidth,H=window.innerHeight;
+        var W=window.innerWidth, H=window.innerHeight;
         _renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true,preserveDrawingBuffer:true});
         _renderer.setClearColor(0x000000,0);
         _renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
@@ -513,59 +521,100 @@
         _scene=new THREE.Scene();
         _camera=new THREE.PerspectiveCamera(55,W/H,0.1,500);
         _scene.add(new THREE.AmbientLight(0xffffff,0.55));
-        var sun=new THREE.DirectionalLight(0xfff5e0,2.8);sun.position.set(6,4,10);_scene.add(sun);
-        var rim=new THREE.DirectionalLight(0xffffff,0.3);rim.position.set(-4,-2,-5);_scene.add(rim);
+        var sun=new THREE.DirectionalLight(0xfff5e0,2.8); sun.position.set(6,4,10); _scene.add(sun);
+        var rim=new THREE.DirectionalLight(0xffffff,0.3); rim.position.set(-4,-2,-5); _scene.add(rim);
         window.addEventListener('resize',function(){
-            W=window.innerWidth;H=window.innerHeight;
-            _renderer.setSize(W,H);_camera.aspect=W/H;_camera.updateProjectionMatrix();
+            W=window.innerWidth; H=window.innerHeight;
+            _renderer.setSize(W,H); _camera.aspect=W/H; _camera.updateProjectionMatrix();
         });
         (function frame(){
             requestAnimationFrame(frame);
-            if(_mesh) _mesh.rotation.y+=0.0006;
+            if (_mesh) {
+                var spd=_mesh.userData.speedMultiplier||1;
+                _mesh.rotation.y += BASE_SPEED * spd;
+                if (spd > 1) _mesh.userData.speedMultiplier = Math.max(1, spd - DECAY_RATE);
+            }
             _renderer.render(_scene,_camera);
         })();
     }
 
     function loadPlanetMesh(planetKey, doApproach) {
         initPlanetRenderer();
-        if (_mesh){_scene.remove(_mesh);_mesh=null;}
-        var off=OFFSETS[planetKey]||{x:0.6,y:-0.25};
+        if (_mesh) { _scene.remove(_mesh); _mesh=null; }
+        var off=CAM_OFFSETS[planetKey]||{x:0.6,y:-0.25};
         var tx=new THREE.TextureLoader().load('planets/'+planetKey+'.jpg');
-        tx.minFilter=THREE.LinearFilter;tx.generateMipmaps=false;
+        tx.minFilter=THREE.LinearFilter; tx.generateMipmaps=false;
         _mesh=new THREE.Mesh(
             new THREE.SphereGeometry(2.2,64,64),
             new THREE.MeshStandardMaterial({map:tx,roughness:0.75,metalness:0.05})
         );
+        _mesh.userData.speedMultiplier=1;
+        _mesh.userData.clickCount=0;
         _scene.add(_mesh);
         if (doApproach) {
-            // Full camera approach: z 22 → 4.5 over 1800ms (dramatic arrival)
             _camera.position.set(off.x,off.y,22);
             _camera.lookAt(0,0,0);
             var t0=null;
             (function approach(ts){
-                if(_skipReq){_camera.position.z=4.5;return;}
-                if(!t0)t0=ts;
+                if(_skipReq){ _camera.position.z=4.5; return; }
+                if(!t0) t0=ts;
                 var t=Math.min(1,(ts-t0)/1800);
                 var ease=t<0.65?Math.pow(t/0.65,2)*0.65:0.65+0.35*(1-Math.pow(1-(t-0.65)/0.35,5));
                 _camera.position.z=22-ease*(22-4.5);
-                if(t<1)requestAnimationFrame(approach);
+                if(t<1) requestAnimationFrame(approach);
             })(performance.now());
         } else {
-            // Tab switch: snap camera to resting position, no approach
             _camera.position.set(off.x,off.y,4.5);
             _camera.lookAt(0,0,0);
         }
     }
 
-    // ── SCENE STARTUP ──────────────────────────────────────────────────────────
+    // ── PLANET CLICK TO SPIN (raycaster) ──────────────────────────────────────
+    document.addEventListener('click',function(e){
+        // Ignore clicks inside the map panel or login gate
+        var overlay=document.getElementById('map-overlay');
+        var gate=document.getElementById('login-gate');
+        if(overlay&&!overlay.classList.contains('gone')&&overlay.contains(e.target)) return;
+        if(gate&&!gate.classList.contains('gone')&&gate.contains(e.target)) return;
+
+        // Raycast against planet mesh
+        if (_mesh && _camera) {
+            var mouse=new THREE.Vector2();
+            mouse.x=(e.clientX/window.innerWidth)*2-1;
+            mouse.y=-(e.clientY/window.innerHeight)*2+1;
+            var rc=new THREE.Raycaster();
+            rc.setFromCamera(mouse,_camera);
+            var hits=rc.intersectObject(_mesh);
+            if (hits.length>0) {
+                _mesh.userData.clickCount=(_mesh.userData.clickCount||0)+1;
+                var boost=_mesh.userData.clickCount>8?50:BOOST_PER_CLICK;
+                _mesh.userData.speedMultiplier=Math.min((_mesh.userData.speedMultiplier||1)+boost,MAX_MULTIPLIER);
+                return; // click consumed — don't count as egg
+            }
+        }
+
+        // Easter egg: non-planet background clicks
+        _eggCount++;
+        if (_eggCount%5===0) {
+            var msgs=['SPACE IS BIG.','VERY BIG.','MIND-BOGGLINGLY BIG.','WHO ARE YOU?','◈ FOUND YOU',
+                      'NICE CLICKS.','STOP THAT.','…OKAY KEEP GOING','MAGOR APPROVES','NARON WATCHING',
+                      'YOU SPIN ME RIGHT ROUND','PLANET GO BRRR','◎ ◎ ◎','DO A BARREL ROLL',
+                      'WARP CORES NOMINAL','LIFE DETECTED…','…OR IS IT?','GREETINGS, TRAVELLER'];
+            var msg=msgs[Math.floor(Math.random()*msgs.length)];
+            var el=document.getElementById('egg-msg');
+            el.textContent=msg;
+            el.classList.remove('pop');
+            void el.offsetWidth;
+            el.classList.add('pop');
+        }
+    });
+
+    // ── SCENE STARTUP ─────────────────────────────────────────────────────────
     async function startScene() {
         var wallet=getWallet();
         if(!wallet) return;
-
         rampStars(22,900);
         document.getElementById('skip-btn').style.display='';
-
-        // Fetch player position from chain
         var playerPlanet='magor';
         try {
             var res=await fetchRows({code:'players.ale',scope:'players.ale',table:'players',lower_bound:wallet,upper_bound:wallet,limit:1,json:true});
@@ -576,12 +625,9 @@
                 _playerPos={planet:playerPlanet,x:row.x||1,y:row.y||1};
             }
         } catch(e){}
-
         _activePlanet=playerPlanet;
         _planetVisible=true;
-        loadPlanetMesh(playerPlanet,true); // dramatic approach on first load
-
-        // Decelerate stars, then show arrival + map
+        loadPlanetMesh(playerPlanet,true);
         setTimeout(function(){
             rampStars(0.35,1800,function(){
                 if(!_skipReq){
@@ -596,66 +642,62 @@
         document.getElementById('skip-btn').style.display='none';
         var overlay=document.getElementById('map-overlay');
         overlay.classList.remove('gone');
-        setActiveTab(_activePlanet);
         buildMap(_activePlanet);
+        setActiveTab(_activePlanet);
     }
 
     function skipWarp() {
-        _skipReq=true;
-        _starSpeed=0.35;
-        document.getElementById('skip-btn').style.display='none';
+        _skipReq=true; _starSpeed=0.35;
         if(_camera) _camera.position.z=4.5;
+        document.getElementById('skip-btn').style.display='none';
         showArrival(_activePlanet);
         revealMap();
     }
 
-    // ── ARRIVAL BANNER ─────────────────────────────────────────────────────────
-    var _arrivalTimer=null;
+    // ── ARRIVAL BANNER ────────────────────────────────────────────────────────
     function showArrival(planet) {
         var p=PLANETS[planet]||{name:planet.toUpperCase()};
         document.getElementById('arrival-planet-name').textContent=p.name.toUpperCase();
         document.getElementById('arrival-sub').textContent='LANDING SEQUENCE COMPLETE · SURFACE ACCESSIBLE';
-        var portals=(ALE_PORTALS[planet]||[]).length;
-        document.getElementById('arrival-status').textContent='PORTALS DETECTED: '+portals+' · ENGAGE TRAVEL SYSTEMS';
+        document.getElementById('arrival-status').textContent='PORTALS DETECTED: '+(ALE_PORTALS[planet]||[]).length+' · ENGAGE TRAVEL SYSTEMS';
         var banner=document.getElementById('arrival-banner');
         banner.classList.add('visible');
-        if(_arrivalTimer) clearTimeout(_arrivalTimer);
-        _arrivalTimer=setTimeout(function(){banner.classList.remove('visible');},4200);
+        if(_arrTimer) clearTimeout(_arrTimer);
+        _arrTimer=setTimeout(function(){banner.classList.remove('visible');},4200);
     }
 
     // ── PLANET WARP (tab switch) ───────────────────────────────────────────────
-    function warpSwitch(planet) {
-        // Fast cut: ramp up → swap → ramp down
+    function warpSwitch(planet, cb) {
         rampStars(18,280,function(){
-            loadPlanetMesh(planet,false); // no approach animation for tab switch
+            loadPlanetMesh(planet,false);
             showArrival(planet);
             rampStars(0.35,520);
+            if(cb) cb();
         });
     }
 
-    // ── MAP BUILD ─────────────────────────────────────────────────────────────
-    var _rendered={};
-    var _sel=null;
-
+    // ── MAP GRID ──────────────────────────────────────────────────────────────
     function buildMap(planet) {
-        if(_rendered[planet]){applyMarker();return;}
+        if(_rendered[planet]){ applyMarker(); return; }
         var container=document.getElementById('map-'+planet);
-        if(!container)return;
-        var portals=ALE_PORTALS[planet]||[],pmap={};
-        portals.forEach(function(p){pmap[p.x+','+p.y]=p;});
+        if(!container) return;
+        var portals=ALE_PORTALS[planet]||[], pmap={};
+        portals.forEach(function(p){ pmap[p.x+','+p.y]=p; });
         var html='';
         for(var y=1;y<=20;y++){
             for(var x=1;x<=40;x++){
-                var key=x+','+y,portal=pmap[key];
-                var cls='ale-cell',sty='',dataTo='',icon='';
+                var key=x+','+y, portal=pmap[key];
+                var cls='ale-cell', sty='', dataTo='', icon='';
                 if(portal){
                     var c=PLANETS[portal.to].color;
                     cls+=' ale-portal';
                     sty=' style="border-color:'+c+'80;box-shadow:inset 0 0 4px '+c+'50;"';
                     dataTo=' data-to="'+portal.to+'"';
-                    icon='<span style="color:'+c+';font-size:1.7em;line-height:1;pointer-events:none;position:absolute;">&#9658;</span>';
+                    icon='<img src="Ale images/portal.png" alt="" style="width:10px;height:10px;object-fit:contain;pointer-events:none;">';
                 }
-                html+='<div class="'+cls+'" data-x="'+x+'" data-y="'+y+'"'+dataTo+sty+' onmouseenter="onHov(this,'+x+','+y+')" onmouseleave="onLeave()" onclick="onCell('+x+','+y+')">'+icon+'</div>';
+                html+='<div class="'+cls+'" data-x="'+x+'" data-y="'+y+'"'+dataTo+sty
+                    +' onmouseenter="onHov(this,'+x+','+y+')" onmouseleave="onLeave()" onclick="onCell('+x+','+y+')">'
+                    +icon+'</div>';
             }
         }
         container.innerHTML=html;
@@ -665,11 +707,11 @@
 
     function applyMarker() {
         document.querySelectorAll('.ale-me').forEach(function(el){el.classList.remove('ale-me');});
-        if(!_playerPos)return;
+        if(!_playerPos) return;
         var c=document.getElementById('map-'+_playerPos.planet);
-        if(!c)return;
+        if(!c) return;
         var cell=c.querySelector('[data-x="'+_playerPos.x+'"][data-y="'+_playerPos.y+'"]');
-        if(cell)cell.classList.add('ale-me');
+        if(cell) cell.classList.add('ale-me');
     }
 
     function setActiveTab(planet) {
@@ -678,28 +720,33 @@
         });
         ['magor','naron','eyeke','kavian','neri','veles'].forEach(function(p){
             var m=document.getElementById('map-'+p);
-            if(m)m.style.display=(p===planet)?'':'none';
+            if(m) m.style.display=(p===planet)?'':'none';
         });
         document.getElementById('coord-planet').textContent=(PLANETS[planet]||{name:planet}).name.toUpperCase();
     }
 
     function switchPlanet(planet) {
-        if(planet===_activePlanet)return;
+        if(planet===_activePlanet) return;
+        // Highlight tab immediately for feedback
+        document.querySelectorAll('.planet-tab').forEach(function(t){
+            t.classList.toggle('active',t.dataset.planet===planet);
+        });
         _activePlanet=planet;
-        warpSwitch(planet);
-        buildMap(planet);
-        setActiveTab(planet);
         dismissStrip();
+        buildMap(planet); // pre-build (hidden) while warping
+        // Show grid only after warp completes so 3D and grid are in sync
+        warpSwitch(planet, function(){
+            setActiveTab(planet);
+        });
     }
 
     // ── CELL INTERACTION ──────────────────────────────────────────────────────
-    function onHov(el,x,y){ document.getElementById('coord-xy').textContent='X:'+x+'  Y:'+y; }
-    function onLeave(){ document.getElementById('coord-xy').textContent='X:—  Y:—'; }
+    function onHov(el,x,y){ document.getElementById('coord-xy').textContent='X:'+x+'  Y:'+y; }
+    function onLeave(){ document.getElementById('coord-xy').textContent='X:&#8212;  Y:&#8212;'; }
 
     function onCell(x,y) {
-        var portals=ALE_PORTALS[_activePlanet]||[];
-        var portal=null;
-        for(var i=0;i<portals.length;i++){if(portals[i].x===x&&portals[i].y===y){portal=portals[i];break;}}
+        var portals=ALE_PORTALS[_activePlanet]||[], portal=null;
+        for(var i=0;i<portals.length;i++){ if(portals[i].x===x&&portals[i].y===y){portal=portals[i];break;} }
         _sel={x:x,y:y,planet:_activePlanet,portal:portal};
         var text=document.getElementById('confirm-text');
         var viewBtn=document.getElementById('cs-view');
@@ -711,7 +758,7 @@
             viewBtn.style.display='';
             viewBtn.textContent='VIEW '+dest;
         } else {
-            text.textContent='TRAVEL TO ('+x+', '+y+') · '+(_activePlanet.toUpperCase());
+            text.textContent='TRAVEL TO ('+x+', '+y+') · '+_activePlanet.toUpperCase();
             confBtn.textContent='CONFIRM TRAVEL';
             viewBtn.style.display='none';
         }
@@ -724,16 +771,16 @@
     }
 
     function doViewPlanet(){
-        if(!_sel||!_sel.portal)return;
+        if(!_sel||!_sel.portal) return;
         switchPlanet(_sel.portal.to);
     }
 
     async function doConfirm() {
-        if(!_sel)return;
+        if(!_sel) return;
         var wallet=getWallet();
-        if(!wallet){document.getElementById('confirm-text').textContent='&#9888; PLEASE LOG IN FIRST';return;}
+        if(!wallet){ document.getElementById('confirm-text').textContent='&#9888; PLEASE LOG IN FIRST'; return; }
         var btn=document.getElementById('cs-confirm');
-        btn.disabled=true;btn.textContent='TRANSMITTING…';
+        btn.disabled=true; btn.textContent='TRANSMITTING…';
         try {
             await signTravel(wallet,_sel.x,_sel.y);
             document.getElementById('confirm-text').textContent='✓ TRAVELLED TO ('+_sel.x+', '+_sel.y+')';
@@ -742,11 +789,7 @@
             applyMarker();
             if(_sel.portal){
                 var to=_sel.portal.to;
-                setTimeout(function(){
-                    switchPlanet(to);
-                    _playerPos={x:_sel.x,y:_sel.y,planet:to};
-                    applyMarker();
-                },1400);
+                setTimeout(function(){ switchPlanet(to); _playerPos={x:_sel.x,y:_sel.y,planet:to}; applyMarker(); },1400);
             }
             setTimeout(dismissStrip,3000);
         } catch(e){
@@ -756,54 +799,19 @@
         btn.textContent=(_sel&&_sel.portal)?'TRAVEL TO PORTAL':'CONFIRM TRAVEL';
     }
 
-    // ── MAP PANEL TOGGLE ──────────────────────────────────────────────────────
+    // ── PANEL TOGGLE ──────────────────────────────────────────────────────────
     function togglePanel(){
         _panelOpen=!_panelOpen;
         document.getElementById('map-panel').classList.toggle('collapsed',!_panelOpen);
         document.getElementById('minimize-btn').textContent=_panelOpen?'― MINIMIZE MAP ―':'+ OPEN MAP +';
     }
 
-    // ── EASTER EGG ────────────────────────────────────────────────────────────
-    var EGG=[
-        'SPACE IS BIG.','VERY BIG.','MIND-BOGGLINGLY BIG.',
-        'WHO ARE YOU?','◈ FOUND YOU','NICE CLICKS.','STOP THAT.',
-        '…OKAY KEEP GOING','MAGOR APPROVES','NARON WATCHING',
-        'YOU SPIN ME RIGHT ROUND','PLANET GO BRRR',
-        '◎ ◎ ◎','DO A BARREL ROLL',
-        'WARP CORES NOMINAL','LIFE DETECTED…','…OR IS IT?',
-        'GREETINGS, TRAVELLER','SIGNAL LOST','RECALIBRATING…',
-    ];
-
-    document.addEventListener('click',function(e){
-        var overlay=document.getElementById('map-overlay');
-        if(overlay&&overlay.contains(e.target))return; // click inside panel — ignore
-        if(e.target.id==='login-gate'||document.getElementById('login-gate').contains(e.target))return;
-        _eggCount++;
-        if(_eggCount%5===0){
-            var msg=EGG[Math.floor(Math.random()*EGG.length)];
-            var el=document.getElementById('egg-msg');
-            el.textContent=msg;
-            el.classList.remove('pop');
-            void el.offsetWidth;
-            el.classList.add('pop');
-            if(_mesh){_mesh.rotation.y+=Math.PI*0.8;}
-        }
-    });
-
-    // ── LOGIN GATE VISIBILITY ─────────────────────────────────────────────────
-    function showLoginGate() {
-        document.getElementById('login-gate').classList.remove('gone');
-        document.getElementById('gate-status').textContent='SESSION EXPIRED — PLEASE LOG IN AGAIN';
-    }
-
     // ── INIT ──────────────────────────────────────────────────────────────────
     initStars();
 
-    // If already logged in, hide the gate immediately and wait for module to restore session
+    // Auto-skip gate if already logged in
     if (localStorage.getItem('naron_wallet')) {
         document.getElementById('login-gate').classList.add('gone');
-        // onWalletReady() will be called by the module when restore() completes.
-        // If restore() fails, showLoginGate() re-shows it.
     }
 </script>
 
