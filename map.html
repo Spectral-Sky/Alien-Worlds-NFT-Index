@@ -724,7 +724,7 @@
         }
     }
 
-    // Called on tab switch: new planet zooms in from far away (warp arrival)
+    // Called on tab switch: camera stays fixed, planet flies in from far ahead (warp arrival)
     function loadPlanetMeshWarpIn(planetKey) {
         initPlanetRenderer();
         setPlanetVisible(false);
@@ -736,25 +736,25 @@
         );
         _mesh.userData.speedMultiplier=1;
         _mesh.userData.clickCount=0;
-        _mesh.position.x=0;
+        _mesh.position.set(0,0,-22); // far ahead along camera's line of sight
         _scene.add(_mesh);
-        // Camera starts far back (warp distance), zooms in like an approach
-        _camera.position.set(off.x,off.y,26);
+        // Camera stays at normal viewing distance — no camera movement needed
+        _camera.position.set(off.x,off.y,4.5);
         _camera.lookAt(0,0,0);
         var tx=new THREE.TextureLoader().load('planets/'+planetKey+'.jpg',function(){
-            if (_mesh) _mesh.material.map=tx;
-            if (_mesh) _mesh.material.needsUpdate=true;
+            if (!_mesh) return;
+            _mesh.material.map=tx;
+            _mesh.material.needsUpdate=true;
             setPlanetVisible(true);
-            // Zoom camera in: fast punch then ease-out settle
-            var t0=null;
-            (function zoomIn(ts){
+            // Planet flies from z:-22 toward z:0 (camera is at z:4.5, planet rushes in)
+            var t0=null,m=_mesh;
+            (function flyIn(ts){
                 if(!t0)t0=ts;
-                var p=Math.min(1,(ts-t0)/900);
-                // fast at first (warp punch), then decelerates
-                var ease=1-Math.pow(1-p,2.5);
-                if(_camera)_camera.position.z=26-ease*(26-4.5);
-                if(p<1)requestAnimationFrame(zoomIn);
-                else if(_camera)_camera.position.z=4.5;
+                var p=Math.min(1,(ts-t0)/820);
+                var ease=1-Math.pow(1-p,2.5); // fast start, ease-out settle
+                if(m) m.position.z=-22*(1-ease);
+                if(p<1)requestAnimationFrame(flyIn);
+                else if(m) m.position.z=0;
             })(performance.now());
         });
         tx.minFilter=THREE.LinearFilter;tx.generateMipmaps=false;
