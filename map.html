@@ -847,13 +847,15 @@
 
     // ── PLANET WARP: pan right → warp punch → new planet zooms in ────────────
     function warpSwitch(planet,cb){
-        // Pan current planet off-screen to the right while stars ramp up
-        if (_mesh){
-            var startX=_mesh.position.x,t0=null;
+        // Capture the OLD mesh now — loadPlanetMeshWarpIn will replace _mesh at warp peak,
+        // so the panOut closure must not reference the global _mesh.
+        var outMesh=_mesh;
+        if (outMesh){
+            var startX=outMesh.position.x,t0=null;
             (function panOut(ts){
                 if(!t0)t0=ts;
                 var p=Math.min(1,(ts-t0)/360);
-                if(_mesh)_mesh.position.x=startX+p*p*15; // ease-in to the right
+                outMesh.position.x=startX+p*p*15; // ease-in to the right
                 if(p<1)requestAnimationFrame(panOut);
             })(performance.now());
         }
