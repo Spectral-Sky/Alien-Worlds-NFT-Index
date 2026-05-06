@@ -261,6 +261,10 @@
         .qo-empty { font-size:0.68em; color:#446; padding:10px 8px; text-align:center; }
         #qo-status { font-size:0.64em; color:#446; padding:0 8px 6px; min-height:1.1em; }
 
+        /* ── LOCKED TAVERN ──────────────────────────────────────────────────── */
+        .ale-locked { opacity:0.42; filter:grayscale(0.6); }
+        .ale-locked:hover { opacity:0.7; }
+
         /* ── MAP FOOTER — slim buffer at bottom ──────────────────────────── */
         .map-footer { height:5px; flex-shrink:0; background:rgba(0,0,0,0.35); border-top:1px solid rgba(232,160,32,0.07); }
 
@@ -550,6 +554,25 @@
         }
     }
 
+    var LOCKED_SVG='<svg width="18" height="19" viewBox="0 0 18 19" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 1C12.1919 1 14.7246 3.66329 14.7246 6.87988V7.50488C15.2323 7.63 15.705 7.85309 16.1035 8.26465C16.622 8.80012 16.8245 9.45859 16.915 10.1543C17.0022 10.8244 17 11.6684 17 12.6631C17 13.6576 17.0022 14.5009 16.915 15.1709C16.8245 15.8666 16.622 16.5251 16.1035 17.0605C15.5807 17.6004 14.9308 17.8155 14.2422 17.9111C13.5856 18.0023 12.7606 18 11.7998 18H6.2002C5.23941 18 4.4144 18.0023 3.75781 17.9111C3.06921 17.8155 2.41926 17.6004 1.89648 17.0605C1.37801 16.5251 1.17553 15.8666 1.08496 15.1709C0.997791 14.5009 0.999999 13.6576 1 12.6631C1 11.6684 0.997765 10.8244 1.08496 10.1543C1.17553 9.45859 1.37798 8.80012 1.89648 8.26465C2.29498 7.85309 2.76766 7.63 3.27539 7.50488V6.87988C3.27539 3.66329 5.80808 1 9 1ZM9 4.08398C7.55273 4.08398 6.3252 5.30557 6.3252 6.87988V7.3252H11.6748V6.87988C11.6748 5.30557 10.4473 4.08398 9 4.08398Z" fill="#FFB800" stroke="#1C274C" stroke-width="2"/></svg>';
+
+    async function fetchPlayerTaverns(wallet){
+        if(!wallet)return;
+        try{
+            var res=await fetchRows({code:'players.ale',scope:'players.ale',table:'players',lower_bound:wallet,upper_bound:wallet,limit:1,json:true});
+            if(!res||!res.rows||!res.rows[0]||res.rows[0].wallet!==wallet)return;
+            Object.keys(ALE_LOCATIONS).forEach(function(p){ALE_LOCATIONS[p].taverns=[];});
+            (res.rows[0].active_taverns||[]).forEach(function(t){
+                var planet=normalizePlanet(t.planet);
+                if(!planet||!ALE_LOCATIONS[planet])return;
+                var locked=t.required_maintenance&&t.required_maintenance!=='1970-01-01T00:00:00'
+                    &&new Date(t.required_maintenance.replace(' ','T')+'Z')>new Date();
+                ALE_LOCATIONS[planet].taverns.push({x:t.x,y:t.y,objectives:t.objectives||[],land_id:t.land_id,locked:!!locked});
+            });
+            _refreshAllMaps();
+        }catch(e){}
+    }
+
     async function fetchAllDungeons() {
         var planetList=['magor','naron','eyeke','kavian','neri','veles'],added=0;
         try {
@@ -586,10 +609,6 @@
                 var buildings=row.buildings||row.building||[];
                 if (!Array.isArray(buildings)) buildings=[buildings];
                 var bStr=JSON.stringify(buildings).toLowerCase();
-                if (bStr.indexOf('tavern')>=0){
-                    var dup=ALE_LOCATIONS[rp].taverns.some(function(t){return t.x===x&&t.y===y;});
-                    if (!dup){ALE_LOCATIONS[rp].taverns.push({x:x,y:y,owner:owner});added++;}
-                }
                 if (bStr.indexOf('arena')>=0){
                     var dup2=ALE_LOCATIONS[rp].arenas.some(function(a){return a.x===x&&a.y===y;});
                     if (!dup2){ALE_LOCATIONS[rp].arenas.push({x:x,y:y,owner:owner});added++;}
@@ -874,6 +893,8 @@
         buildMap(_activePlanet);
         setActiveTab(_activePlanet);
         // Kick off data fetches in background
+        var w=getWallet();
+        if(w) fetchPlayerTaverns(w);
         fetchAllDungeons().then(function(){ fetchAllBuildings(); });
         fetchAllPlayers();
     }
@@ -952,10 +973,10 @@
         if(!container)return;
         var portals=ALE_PORTALS[planet]||[];
         var locs=ALE_LOCATIONS[planet]||{};
-        var pmap={},dungeonSet={},tavernSet={},arenaSet={};
+        var pmap={},dungeonSet={},tavernMap={},arenaSet={};
         portals.forEach(function(p){pmap[p.x+','+p.y]=p;});
         (locs.dungeons||[]).forEach(function(d){dungeonSet[d.x+','+d.y]=true;});
-        (locs.taverns||[]).forEach(function(t){tavernSet[t.x+','+t.y]=true;});
+        (locs.taverns||[]).forEach(function(t){tavernMap[t.x+','+t.y]=t;});
         (locs.arenas||[]).forEach(function(a){arenaSet[a.x+','+a.y]=true;});
         var html='';
         for(var y=1;y<=20;y++){
@@ -972,10 +993,13 @@
                     cls+=' ale-dungeon';
                     sty=' style="border-color:#508050a0;box-shadow:inset 0 0 5px #50805060"';
                     icon='<span class="cell-icon"><img src="Ale%20images/dungeon.svg" alt="dungeon"></span>';
-                } else if(tavernSet[key]){
-                    cls+=' ale-tavern';
-                    sty=' style="border-color:#b0784090;box-shadow:inset 0 0 5px #b0784050"';
-                    icon='<span class="cell-icon"><img src="Ale%20images/tavern.svg" alt="tavern"></span>';
+                } else if(tavernMap[key]){
+                    var tv=tavernMap[key];
+                    cls+=' ale-tavern'+(tv.locked?' ale-locked':'');
+                    sty=' style="border-color:'+(tv.locked?'#504060':'#b07840')+'90;box-shadow:inset 0 0 5px '+(tv.locked?'#504060':'#b07840')+'50"';
+                    icon=tv.locked
+                        ?'<span class="cell-icon">'+LOCKED_SVG+'</span>'
+                        :'<span class="cell-icon"><img src="Ale%20images/tavern.svg" alt="tavern"></span>';
                 } else if(arenaSet[key]){
                     cls+=' ale-arena';
                     sty=' style="border-color:#c0404090;box-shadow:inset 0 0 5px #c0404050"';
@@ -1036,9 +1060,10 @@
         // also check location type
         var locs=ALE_LOCATIONS[_activePlanet]||{};
         var isDungeon=(locs.dungeons||[]).some(function(d){return d.x===x&&d.y===y;});
-        var isTavern=(locs.taverns||[]).some(function(t){return t.x===x&&t.y===y;});
+        var tavernEntry=(locs.taverns||[]).reduce(function(f,t){return f||(t.x===x&&t.y===y?t:null);},null);
+        var isTavern=!!tavernEntry;
         var isArena=(locs.arenas||[]).some(function(a){return a.x===x&&a.y===y;});
-        _sel={x:x,y:y,planet:_activePlanet,portal:portal,isDungeon:isDungeon,isTavern:isTavern,isArena:isArena};
+        _sel={x:x,y:y,planet:_activePlanet,portal:portal,isDungeon:isDungeon,isTavern:isTavern,tavernEntry:tavernEntry,isArena:isArena};
         document.querySelectorAll('.ale-cell.selected').forEach(function(el){el.classList.remove('selected');});
         var container=document.getElementById('map-'+_activePlanet);
         if(container){var cell=container.querySelector('[data-x="'+x+'"][data-y="'+y+'"]');if(cell)cell.classList.add('selected');}
@@ -1066,10 +1091,10 @@
             tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
             dBtn.style.display='';
         } else if(isTavern){
-            info.innerHTML='<strong style="color:#c09060;">TAVERN</strong>';
+            var tavernLocked=tavernEntry&&tavernEntry.locked;
+            info.innerHTML='<strong style="color:'+(tavernLocked?'#806060':'#c09060')+'">'+(tavernLocked?'TAVERN (LOCKED)':'TAVERN')+'</strong>';
             tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
-            hBtn.style.display='';
-            showHirePanel();
+            if(!tavernLocked){hBtn.style.display='';showHirePanel();}
         } else if(isArena){
             info.innerHTML='<strong style="color:#c06060;">ARENA</strong>';
             tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
@@ -1125,61 +1150,48 @@
 
     // ── HIRE FIGHTER ──────────────────────────────────────────────────────────
     // nfttemplates: {templateid_string → full row} — eligibility + properties for AP calc
-    // objgroups: [{grpname, objectives:[]}] — property-based AP reduction rules
     var _tavernTemplateMap=null;
-    var _tavernObjGroups=null;
 
     async function loadTavernData(){
-        // Load nfttemplates into a map keyed by templateid
-        if(!_tavernTemplateMap){
-            var map={},lb='';
-            while(true){
-                var d=await fetchRows({code:'tavern.ale',scope:'tavern.ale',table:'nfttemplates',limit:500,lower_bound:lb||undefined,json:true});
-                if(!d||!d.rows||!d.rows.length)break;
-                d.rows.forEach(function(r){if(r.templateid!=null)map[String(r.templateid)]=r;});
-                if(!d.more)break;
-                lb=d.next_key||'';if(!lb)break;
-            }
-            _tavernTemplateMap=map;
+        if(_tavernTemplateMap)return;
+        var map={},lb='';
+        while(true){
+            var d=await fetchRows({code:'tavern.ale',scope:'tavern.ale',table:'nfttemplates',limit:500,lower_bound:lb||undefined,json:true});
+            if(!d||!d.rows||!d.rows.length)break;
+            d.rows.forEach(function(r){if(r.templateid!=null)map[String(r.templateid)]=r;});
+            if(!d.more)break;
+            lb=d.next_key||'';if(!lb)break;
         }
-        // Load all objgroups
-        if(!_tavernObjGroups){
-            var grps=[],lb2='';
-            while(true){
-                var d2=await fetchRows({code:'tavern.ale',scope:'tavern.ale',table:'objgroups',limit:100,lower_bound:lb2||undefined,json:true});
-                if(!d2||!d2.rows||!d2.rows.length)break;
-                grps=grps.concat(d2.rows);
-                if(!d2.more)break;
-                lb2=d2.next_key||'';if(!lb2)break;
-            }
-            _tavernObjGroups=grps;
-        }
+        _tavernTemplateMap=map;
     }
 
-    // Calculate total AP reduction for a nfttemplates row against all loaded objgroups
-    function calcHireMod(tmplRow){
-        if(!_tavernObjGroups||!tmplRow)return 0;
+    // Calculate total AP reduction for an nfttemplates row against a specific tavern's objectives
+    function calcHireMod(tmplRow, objectives){
+        if(!objectives||!tmplRow)return 0;
         var total=0;
-        _tavernObjGroups.forEach(function(grp){
-            (grp.objectives||[]).forEach(function(obj){
-                var match=false;
-                switch(obj.objective_type){
-                    case 'schema':   match=tmplRow.schema===obj.objective_string; break;
-                    case 'rarity':   match=tmplRow.rarity===obj.objective_string; break;
-                    case 'shine':    match=tmplRow.shine===obj.objective_string; break;
-                    case 'element':  match=tmplRow.element===obj.objective_string; break;
-                    case 'race':     match=tmplRow.race===obj.objective_string; break;
-                    case 'cardname': match=tmplRow.cardname===obj.objective_string; break;
-                    case 'atk':      match=Number(tmplRow.atk)===Number(obj.objective_value); break;
-                    case 'def':      match=Number(tmplRow.def)===Number(obj.objective_value); break;
-                }
-                if(match)total+=Number(obj.mod_value||0);
-            });
+        objectives.forEach(function(obj){
+            var match=false;
+            switch(obj.objective_type){
+                case 'schema':   match=tmplRow.schema===obj.objective_string; break;
+                case 'rarity':   match=tmplRow.rarity===obj.objective_string; break;
+                case 'shine':    match=tmplRow.shine===obj.objective_string; break;
+                case 'element':  match=tmplRow.element===obj.objective_string; break;
+                case 'race':     match=tmplRow.race===obj.objective_string; break;
+                case 'cardname': match=tmplRow.cardname===obj.objective_string; break;
+                case 'type':     match=tmplRow.type===obj.objective_string; break;
+                case 'atk':      match=Number(tmplRow.atk)===Number(obj.objective_value); break;
+                case 'def':      match=Number(tmplRow.def)===Number(obj.objective_value); break;
+                case 'pow':      match=Number(tmplRow.pow)===Number(obj.objective_value); break;
+                case 'movcost':  match=Number(tmplRow.movcost)===Number(obj.objective_value); break;
+                case 'tlm.mp':   match=Number(tmplRow.tlm_mp)===Number(obj.objective_value); break;
+                case 'nft.mp':   match=Number(tmplRow.nft_mp)===Number(obj.objective_value); break;
+            }
+            if(match)total+=Number(obj.mod_value||0);
         });
         return total;
     }
 
-    async function loadPlayerHireNFTs(wallet){
+    async function loadPlayerHireNFTs(wallet, objectives){
         await loadTavernData();
         // Extract unique schemas from eligible templates
         var schemas={};
@@ -1202,7 +1214,7 @@
                         var tid=String(a.template&&a.template.template_id);
                         var tmpl=_tavernTemplateMap[tid];
                         if(!tmpl)return; // not in eligible list
-                        var mod=calcHireMod(tmpl);
+                        var mod=calcHireMod(tmpl,objectives);
                         results.push({
                             asset_id:a.asset_id,
                             template_id:tid,
@@ -1280,7 +1292,8 @@
             if(cfg&&cfg.rows&&cfg.rows[0])_hireBaseCost=Number(cfg.rows[0].cost_hire_ap)||100;
         }catch(e){_hireBaseCost=100;}
         document.getElementById('hire-btn').textContent='HIRE FIGHTER ('+_hireBaseCost+' AP)';
-        var nfts=await loadPlayerHireNFTs(wallet);
+        var objectives=(_sel&&_sel.tavernEntry&&_sel.tavernEntry.objectives)||[];
+        var nfts=await loadPlayerHireNFTs(wallet,objectives);
         renderHireNFTs(nfts,_hireBaseCost);
     }
 
