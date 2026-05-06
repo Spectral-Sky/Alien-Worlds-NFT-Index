@@ -261,10 +261,6 @@
         .qo-empty { font-size:0.68em; color:#446; padding:10px 8px; text-align:center; }
         #qo-status { font-size:0.64em; color:#446; padding:0 8px 6px; min-height:1.1em; }
 
-        /* ── LOCKED TAVERN ──────────────────────────────────────────────────── */
-        .ale-locked { opacity:0.42; filter:grayscale(0.6); }
-        .ale-locked:hover { opacity:0.7; }
-
         /* ── MAP FOOTER — slim buffer at bottom ──────────────────────────── */
         .map-footer { height:5px; flex-shrink:0; background:rgba(0,0,0,0.35); border-top:1px solid rgba(232,160,32,0.07); }
 
@@ -565,9 +561,7 @@
             (res.rows[0].active_taverns||[]).forEach(function(t){
                 var planet=normalizePlanet(t.planet);
                 if(!planet||!ALE_LOCATIONS[planet])return;
-                var locked=t.required_maintenance&&t.required_maintenance!=='1970-01-01T00:00:00'
-                    &&new Date(t.required_maintenance.replace(' ','T')+'Z')>new Date();
-                ALE_LOCATIONS[planet].taverns.push({x:t.x,y:t.y,objectives:t.objectives||[],land_id:t.land_id,locked:!!locked});
+                ALE_LOCATIONS[planet].taverns.push({x:t.x,y:t.y,objectives:t.objectives||[],land_id:t.land_id});
             });
             _refreshAllMaps();
         }catch(e){}
@@ -994,12 +988,9 @@
                     sty=' style="border-color:#508050a0;box-shadow:inset 0 0 5px #50805060"';
                     icon='<span class="cell-icon"><img src="Ale%20images/dungeon.svg" alt="dungeon"></span>';
                 } else if(tavernMap[key]){
-                    var tv=tavernMap[key];
-                    cls+=' ale-tavern'+(tv.locked?' ale-locked':'');
-                    sty=' style="border-color:'+(tv.locked?'#504060':'#b07840')+'90;box-shadow:inset 0 0 5px '+(tv.locked?'#504060':'#b07840')+'50"';
-                    icon=tv.locked
-                        ?'<span class="cell-icon">'+LOCKED_SVG+'</span>'
-                        :'<span class="cell-icon"><img src="Ale%20images/tavern.svg" alt="tavern"></span>';
+                    cls+=' ale-tavern';
+                    sty=' style="border-color:#b0784090;box-shadow:inset 0 0 5px #b0784050"';
+                    icon='<span class="cell-icon"><img src="Ale%20images/tavern.svg" alt="tavern"></span>';
                 } else if(arenaSet[key]){
                     cls+=' ale-arena';
                     sty=' style="border-color:#c0404090;box-shadow:inset 0 0 5px #c0404050"';
@@ -1091,10 +1082,10 @@
             tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
             dBtn.style.display='';
         } else if(isTavern){
-            var tavernLocked=tavernEntry&&tavernEntry.locked;
-            info.innerHTML='<strong style="color:'+(tavernLocked?'#806060':'#c09060')+'">'+(tavernLocked?'TAVERN (LOCKED)':'TAVERN')+'</strong>';
+            info.innerHTML='<strong style="color:#c09060;">TAVERN</strong>';
             tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
-            if(!tavernLocked){hBtn.style.display='';showHirePanel();}
+            hBtn.style.display='';
+            showHirePanel();
         } else if(isArena){
             info.innerHTML='<strong style="color:#c06060;">ARENA</strong>';
             tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
