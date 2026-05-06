@@ -526,10 +526,10 @@
         return {x:cx,y:cy};
     }
 
-    function _addDungeonCoord(planet,x,y,owner) {
+    function _addDungeonCoord(planet,x,y,owner,land_id) {
         if (!planet||!x||!y||!ALE_LOCATIONS[planet]) return false;
         var dup=ALE_LOCATIONS[planet].dungeons.some(function(d){return d.x===x&&d.y===y;});
-        if (!dup){ALE_LOCATIONS[planet].dungeons.push({x:x,y:y,owner:owner||null});return true;}
+        if (!dup){ALE_LOCATIONS[planet].dungeons.push({x:x,y:y,owner:owner||null,land_id:land_id||null});return true;}
         return false;
     }
 
@@ -537,7 +537,7 @@
         var x=row.x,y=row.y;
         if ((!x||!y)&&row.land_id){var c=decodeLandId(row.land_id);if(c){x=c.x;y=c.y;}}
         var planet=(row.planet!==undefined&&row.planet!==null)?normalizePlanet(row.planet):defaultPlanet;
-        return _addDungeonCoord(planet,x,y,row.owner||row.account||null);
+        return _addDungeonCoord(planet,x,y,row.owner||row.account||null,row.land_id||null);
     }
 
     function _refreshAllMaps() {
@@ -550,6 +550,8 @@
         }
     }
 
+    var _playerPlayedDungeons=new Set(); // "planet.land_id" strings beaten today
+
     var LOCKED_SVG='<svg width="18" height="19" viewBox="0 0 18 19" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 1C12.1919 1 14.7246 3.66329 14.7246 6.87988V7.50488C15.2323 7.63 15.705 7.85309 16.1035 8.26465C16.622 8.80012 16.8245 9.45859 16.915 10.1543C17.0022 10.8244 17 11.6684 17 12.6631C17 13.6576 17.0022 14.5009 16.915 15.1709C16.8245 15.8666 16.622 16.5251 16.1035 17.0605C15.5807 17.6004 14.9308 17.8155 14.2422 17.9111C13.5856 18.0023 12.7606 18 11.7998 18H6.2002C5.23941 18 4.4144 18.0023 3.75781 17.9111C3.06921 17.8155 2.41926 17.6004 1.89648 17.0605C1.37801 16.5251 1.17553 15.8666 1.08496 15.1709C0.997791 14.5009 0.999999 13.6576 1 12.6631C1 11.6684 0.997765 10.8244 1.08496 10.1543C1.17553 9.45859 1.37798 8.80012 1.89648 8.26465C2.29498 7.85309 2.76766 7.63 3.27539 7.50488V6.87988C3.27539 3.66329 5.80808 1 9 1ZM9 4.08398C7.55273 4.08398 6.3252 5.30557 6.3252 6.87988V7.3252H11.6748V6.87988C11.6748 5.30557 10.4473 4.08398 9 4.08398Z" fill="#FFB800" stroke="#1C274C" stroke-width="2"/></svg>';
 
     async function fetchPlayerTaverns(wallet){
@@ -557,6 +559,8 @@
         try{
             var res=await fetchRows({code:'players.ale',scope:'players.ale',table:'players',lower_bound:wallet,upper_bound:wallet,limit:1,json:true});
             if(!res||!res.rows||!res.rows[0]||res.rows[0].wallet!==wallet)return;
+            // Dungeons beaten today
+            _playerPlayedDungeons=new Set(res.rows[0].played_dungeons||[]);
             Object.keys(ALE_LOCATIONS).forEach(function(p){ALE_LOCATIONS[p].taverns=[];});
             (res.rows[0].active_taverns||[]).forEach(function(t){
                 var planet=normalizePlanet(t.planet);
@@ -967,9 +971,9 @@
         if(!container)return;
         var portals=ALE_PORTALS[planet]||[];
         var locs=ALE_LOCATIONS[planet]||{};
-        var pmap={},dungeonSet={},tavernMap={},arenaSet={};
+        var pmap={},dungeonMap={},tavernMap={},arenaSet={};
         portals.forEach(function(p){pmap[p.x+','+p.y]=p;});
-        (locs.dungeons||[]).forEach(function(d){dungeonSet[d.x+','+d.y]=true;});
+        (locs.dungeons||[]).forEach(function(d){dungeonMap[d.x+','+d.y]=d;});
         (locs.taverns||[]).forEach(function(t){tavernMap[t.x+','+t.y]=t;});
         (locs.arenas||[]).forEach(function(a){arenaSet[a.x+','+a.y]=true;});
         var html='';
@@ -983,10 +987,14 @@
                     sty=' style="border-color:'+c+'90;box-shadow:inset 0 0 7px '+c+'60;"';
                     dataTo=' data-to="'+portal.to+'"';
                     icon='<span class="cell-icon"><img src="Ale%20images/portal.png" alt="portal" class="icon-portal"></span>';
-                } else if(dungeonSet[key]){
-                    cls+=' ale-dungeon';
-                    sty=' style="border-color:#508050a0;box-shadow:inset 0 0 5px #50805060"';
-                    icon='<span class="cell-icon"><img src="Ale%20images/dungeon.svg" alt="dungeon"></span>';
+                } else if(dungeonMap[key]){
+                    var dg=dungeonMap[key];
+                    var dgLocked=dg.land_id&&_playerPlayedDungeons.has(planet+'.'+dg.land_id);
+                    cls+=' ale-dungeon'+(dgLocked?' ale-dg-locked':'');
+                    sty=' style="border-color:'+(dgLocked?'#406040':'#508050')+'a0;box-shadow:inset 0 0 5px '+(dgLocked?'#406040':'#508050')+'60"';
+                    icon=dgLocked
+                        ?'<span class="cell-icon" style="opacity:0.45;filter:grayscale(0.5)">'+LOCKED_SVG+'</span>'
+                        :'<span class="cell-icon"><img src="Ale%20images/dungeon.svg" alt="dungeon"></span>';
                 } else if(tavernMap[key]){
                     cls+=' ale-tavern';
                     sty=' style="border-color:#b0784090;box-shadow:inset 0 0 5px #b0784050"';
@@ -1050,7 +1058,9 @@
         for(var i=0;i<portals.length;i++){if(portals[i].x===x&&portals[i].y===y){portal=portals[i];break;}}
         // also check location type
         var locs=ALE_LOCATIONS[_activePlanet]||{};
-        var isDungeon=(locs.dungeons||[]).some(function(d){return d.x===x&&d.y===y;});
+        var dungeonEntry=(locs.dungeons||[]).reduce(function(f,d){return f||(d.x===x&&d.y===y?d:null);},null);
+        var isDungeon=!!dungeonEntry;
+        var isDungeonLocked=isDungeon&&dungeonEntry.land_id&&_playerPlayedDungeons.has(_activePlanet+'.'+dungeonEntry.land_id);
         var tavernEntry=(locs.taverns||[]).reduce(function(f,t){return f||(t.x===x&&t.y===y?t:null);},null);
         var isTavern=!!tavernEntry;
         var isArena=(locs.arenas||[]).some(function(a){return a.x===x&&a.y===y;});
@@ -1078,9 +1088,11 @@
             tBtn.textContent='TRAVEL TO PORTAL'; tBtn.style.display='';
             vBtn.textContent='VIEW '+dest; vBtn.style.display='';
         } else if(isDungeon){
-            info.innerHTML='<strong style="color:#70a870;">DUNGEON</strong>';
+            info.innerHTML=isDungeonLocked
+                ?'<strong style="color:#507050;">DUNGEON</strong><br><span style="font-size:0.7em;color:#446;">✓ Won today — resets 0 UTC</span>'
+                :'<strong style="color:#70a870;">DUNGEON</strong>';
             tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
-            dBtn.style.display='';
+            if(!isDungeonLocked) dBtn.style.display='';
         } else if(isTavern){
             info.innerHTML='<strong style="color:#c09060;">TAVERN</strong>';
             tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
