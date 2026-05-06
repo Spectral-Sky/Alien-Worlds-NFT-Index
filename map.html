@@ -1246,13 +1246,16 @@
             el.innerHTML='<div class="hire-nft-empty">No eligible NFTs in wallet.</div>';
             el.classList.add('open');return;
         }
-        var html='<div class="hire-cost-note">NFTs reduce AP cost (base: '+baseCost+'):</div>';
+        var html='<div class="hire-cost-note">Select up to 3 NFTs to reduce AP cost:</div>';
         var schemaShort={'arms.worlds':'arms','tool.worlds':'tool','crew.worlds':'crew','level.worlds':'level','faces.worlds':'face','land.worlds':'land'};
-        nfts.forEach(function(n){
-            var autoCheck=n.mod_value>0;
+        var autoCount=0;
+        nfts.forEach(function(n,i){
+            // Auto-check top 3 with mod_value > 0
+            var autoCheck=n.mod_value>0&&autoCount<3;
+            if(autoCheck)autoCount++;
             var sc=schemaShort[n.schema]||n.schema||'';
             var meta='#'+n.asset_id+' · '+_hEsc(n.rarity)+(n.shine&&n.shine!=='-'?' · '+_hEsc(n.shine):'')+' · '+sc;
-            html+='<label class="hire-nft-row" onclick="updateHireCost()">'
+            html+='<label class="hire-nft-row" onclick="onHireNftChange(event,this)">'
                 +'<input type="checkbox" class="hire-nft-cb" value="'+_hEsc(n.asset_id)+'" data-mod="'+Number(n.mod_value)+'"'+(autoCheck?' checked':'')+' data-tid="'+_hEsc(n.template_id||'')+'">'
                 +'<div class="hire-nft-info">'
                 +'<span class="hire-nft-name">'+_hEsc(n.name)+'</span>'
@@ -1267,17 +1270,43 @@
         updateHireCost();
     }
 
+    function onHireNftChange(e,label){
+        // Enforce max 3 selected
+        var cb=label.querySelector('.hire-nft-cb');
+        var allCbs=document.querySelectorAll('.hire-nft-cb');
+        var checked=document.querySelectorAll('.hire-nft-cb:checked');
+        if(cb&&cb.checked&&checked.length>3){
+            cb.checked=false;
+            e.preventDefault();
+            return;
+        }
+        // Dim labels that can't be selected when at limit
+        var nowChecked=document.querySelectorAll('.hire-nft-cb:checked').length;
+        allCbs.forEach(function(c){
+            c.closest('label').style.opacity=(nowChecked>=3&&!c.checked)?'0.35':'';
+            c.disabled=nowChecked>=3&&!c.checked;
+        });
+        updateHireCost();
+    }
+
     function updateHireCost(){
         var base=_hireBaseCost||100;
-        var cbs=document.querySelectorAll('.hire-nft-cb:checked');
+        var checked=document.querySelectorAll('.hire-nft-cb:checked');
         var reduction=0;
-        cbs.forEach(function(cb){reduction+=Number(cb.dataset.mod||0);});
+        checked.forEach(function(cb){reduction+=Number(cb.dataset.mod||0);});
         var final=Math.max(1,base-reduction);
         var btn=document.getElementById('hire-btn');
         if(btn)btn.textContent='HIRE FIGHTER ('+final+' AP)';
         var summary=document.getElementById('hire-cost-summary');
-        if(summary&&reduction>0)summary.textContent=base+' - '+reduction+' = '+final+' AP';
-        else if(summary)summary.textContent=base+' AP (no NFTs selected)';
+        var count=checked.length;
+        if(summary&&reduction>0)summary.textContent=base+' - '+reduction+' = '+final+' AP  ('+count+'/3)';
+        else if(summary)summary.textContent=base+' AP — no NFTs selected';
+        // Apply dim state on initial render
+        var allCbs=document.querySelectorAll('.hire-nft-cb');
+        allCbs.forEach(function(c){
+            c.closest('label').style.opacity=(count>=3&&!c.checked)?'0.35':'';
+            c.disabled=count>=3&&!c.checked;
+        });
     }
 
     var _hireBaseCost=100;
