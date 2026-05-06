@@ -1121,64 +1121,138 @@
     }
 
     // ── HIRE FIGHTER ──────────────────────────────────────────────────────────
-    var _tavernTemplates=null;
+    // nfttemplates: {templateid_string → full row} — eligibility + properties for AP calc
+    // objgroups: [{grpname, objectives:[]}] — property-based AP reduction rules
+    var _tavernTemplateMap=null;
+    var _tavernObjGroups=null;
 
-    async function loadTavernTemplates(){
-        if(_tavernTemplates)return _tavernTemplates;
-        var ids=[],lb='';
-        while(true){
-            var d=await fetchRows({code:'tavern.ale',scope:'tavern.ale',table:'nfttemplates',limit:500,lower_bound:lb||undefined,json:true});
-            if(!d||!d.rows||!d.rows.length)break;
-            d.rows.forEach(function(r){if(r.template_id!=null)ids.push(String(r.template_id));});
-            if(!d.more)break;
-            lb=d.next_key||'';if(!lb)break;
+    async function loadTavernData(){
+        // Load nfttemplates into a map keyed by templateid
+        if(!_tavernTemplateMap){
+            var map={},lb='';
+            while(true){
+                var d=await fetchRows({code:'tavern.ale',scope:'tavern.ale',table:'nfttemplates',limit:500,lower_bound:lb||undefined,json:true});
+                if(!d||!d.rows||!d.rows.length)break;
+                d.rows.forEach(function(r){if(r.templateid!=null)map[String(r.templateid)]=r;});
+                if(!d.more)break;
+                lb=d.next_key||'';if(!lb)break;
+            }
+            _tavernTemplateMap=map;
         }
-        _tavernTemplates=ids;
-        return ids;
+        // Load all objgroups
+        if(!_tavernObjGroups){
+            var grps=[],lb2='';
+            while(true){
+                var d2=await fetchRows({code:'tavern.ale',scope:'tavern.ale',table:'objgroups',limit:100,lower_bound:lb2||undefined,json:true});
+                if(!d2||!d2.rows||!d2.rows.length)break;
+                grps=grps.concat(d2.rows);
+                if(!d2.more)break;
+                lb2=d2.next_key||'';if(!lb2)break;
+            }
+            _tavernObjGroups=grps;
+        }
+    }
+
+    // Calculate total AP reduction for a nfttemplates row against all loaded objgroups
+    function calcHireMod(tmplRow){
+        if(!_tavernObjGroups||!tmplRow)return 0;
+        var total=0;
+        _tavernObjGroups.forEach(function(grp){
+            (grp.objectives||[]).forEach(function(obj){
+                var match=false;
+                switch(obj.objective_type){
+                    case 'schema':   match=tmplRow.schema===obj.objective_string; break;
+                    case 'rarity':   match=tmplRow.rarity===obj.objective_string; break;
+                    case 'shine':    match=tmplRow.shine===obj.objective_string; break;
+                    case 'element':  match=tmplRow.element===obj.objective_string; break;
+                    case 'race':     match=tmplRow.race===obj.objective_string; break;
+                    case 'cardname': match=tmplRow.cardname===obj.objective_string; break;
+                    case 'atk':      match=Number(tmplRow.atk)===Number(obj.objective_value); break;
+                    case 'def':      match=Number(tmplRow.def)===Number(obj.objective_value); break;
+                }
+                if(match)total+=Number(obj.mod_value||0);
+            });
+        });
+        return total;
     }
 
     async function loadPlayerHireNFTs(wallet){
-        var templates=await loadTavernTemplates();
-        if(!templates.length)return[];
-        var url='https://wax.api.atomicassets.io/atomicassets/v1/assets'
-            +'?owner='+encodeURIComponent(wallet)
-            +'&template_whitelist='+templates.join(',')
-            +'&limit=100&page=1';
-        try{
-            var r=await fetch(url);
-            var j=await r.json();
-            if(!j.success||!j.data)return[];
-            return j.data.map(function(a){
-                var imm=(a.template&&a.template.immutable_data)||{};
-                return{
-                    asset_id:a.asset_id,
-                    name:a.name||imm.name||('NFT #'+a.asset_id),
-                    rarity:imm.rarity||'',
-                };
-            });
-        }catch(e){return[];}
+        await loadTavernData();
+        // Extract unique schemas from eligible templates
+        var schemas={};
+        Object.values(_tavernTemplateMap).forEach(function(r){if(r.schema)schemas[r.schema]=true;});
+        var schemaList=Object.keys(schemas);
+        var results=[];
+        for(var i=0;i<schemaList.length;i++){
+            try{
+                // Fetch up to 2 pages per schema
+                for(var pg=1;pg<=2;pg++){
+                    var url='https://wax.api.atomicassets.io/atomicassets/v1/assets'
+                        +'?owner='+encodeURIComponent(wallet)
+                        +'&collection_name=alien.worlds'
+                        +'&schema_name='+encodeURIComponent(schemaList[i])
+                        +'&limit=100&page='+pg;
+                    var r=await fetch(url);
+                    var j=await r.json();
+                    if(!j.success||!j.data||!j.data.length)break;
+                    j.data.forEach(function(a){
+                        var tid=String(a.template&&a.template.template_id);
+                        var tmpl=_tavernTemplateMap[tid];
+                        if(!tmpl)return; // not in eligible list
+                        var mod=calcHireMod(tmpl);
+                        results.push({
+                            asset_id:a.asset_id,
+                            name:tmpl.cardname||a.name||('NFT #'+a.asset_id),
+                            schema:tmpl.schema,
+                            rarity:tmpl.rarity||'',
+                            shine:tmpl.shine||'',
+                            mod_value:mod,
+                        });
+                    });
+                    if(j.data.length<100)break;
+                }
+            }catch(e){}
+        }
+        // Sort highest AP reduction first
+        results.sort(function(a,b){return b.mod_value-a.mod_value;});
+        return results;
     }
 
     function _hEsc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-    function renderHireNFTs(nfts){
+    function renderHireNFTs(nfts,baseCost){
         var el=document.getElementById('hire-nft-list');
         if(!el)return;
         if(!nfts||!nfts.length){
             el.innerHTML='<div class="hire-nft-empty">No eligible NFTs in wallet.</div>';
             el.classList.add('open');return;
         }
-        var html='<div class="hire-cost-note">Select NFTs (optional — may reduce cost):</div>';
+        var html='<div class="hire-cost-note">Select to reduce AP cost (base: '+baseCost+'):</div>';
         nfts.forEach(function(n){
-            html+='<label class="hire-nft-row">'
-                +'<input type="checkbox" class="hire-nft-cb" value="'+_hEsc(n.asset_id)+'">'
-                +'<span class="hire-nft-name">'+_hEsc(n.name)+'</span>'
-                +(n.rarity?'<span class="hire-nft-rarity">'+_hEsc(n.rarity)+'</span>':'')
+            var label=_hEsc(n.name);
+            if(n.rarity)label+=' <span style="color:#806050">'+_hEsc(n.rarity)+'</span>';
+            if(n.shine&&n.shine!=='-')label+=' <span style="color:#706040">'+_hEsc(n.shine)+'</span>';
+            html+='<label class="hire-nft-row" onclick="updateHireCost()">'
+                +'<input type="checkbox" class="hire-nft-cb" value="'+_hEsc(n.asset_id)+'" data-mod="'+Number(n.mod_value)+'">'
+                +'<span class="hire-nft-name">'+label+'</span>'
+                +(n.mod_value?'<span class="hire-nft-rarity">-'+n.mod_value+' AP</span>':'')
                 +'</label>';
         });
         el.innerHTML=html;
         el.classList.add('open');
     }
+
+    function updateHireCost(){
+        var base=_hireBaseCost||100;
+        var cbs=document.querySelectorAll('.hire-nft-cb:checked');
+        var reduction=0;
+        cbs.forEach(function(cb){reduction+=Number(cb.dataset.mod||0);});
+        var final=Math.max(1,base-reduction);
+        var btn=document.getElementById('hire-btn');
+        if(btn)btn.textContent='HIRE FIGHTER ('+final+' AP)';
+    }
+
+    var _hireBaseCost=100;
 
     async function showHirePanel(){
         var el=document.getElementById('hire-nft-list');
@@ -1187,8 +1261,14 @@
         el.classList.add('open');
         var wallet=getWallet();
         if(!wallet){el.innerHTML='<div class="hire-nft-empty">Log in to see NFTs.</div>';return;}
+        // Fetch base AP cost from tavern config
+        try{
+            var cfg=await fetchRows({code:'tavern.ale',scope:'tavern.ale',table:'config',limit:1,json:true});
+            if(cfg&&cfg.rows&&cfg.rows[0])_hireBaseCost=Number(cfg.rows[0].cost_hire_ap)||100;
+        }catch(e){_hireBaseCost=100;}
+        document.getElementById('hire-btn').textContent='HIRE FIGHTER ('+_hireBaseCost+' AP)';
         var nfts=await loadPlayerHireNFTs(wallet);
-        renderHireNFTs(nfts);
+        renderHireNFTs(nfts,_hireBaseCost);
     }
 
     async function doHire(){
@@ -1199,14 +1279,16 @@
         if(!wallet){status.textContent='⚠ PLEASE LOG IN';status.className='err';return;}
         var cbs=document.querySelectorAll('.hire-nft-cb:checked');
         var asset_ids=[];
-        cbs.forEach(function(cb){if(cb.value)asset_ids.push(cb.value);});
+        var reduction=0;
+        cbs.forEach(function(cb){asset_ids.push(cb.value);reduction+=Number(cb.dataset.mod||0);});
+        var finalCost=Math.max(1,(_hireBaseCost||100)-reduction);
         btn.disabled=true;btn.textContent='HIRING…';
         status.textContent='';status.className='';
         try{
             var actions=[{account:'players.ale',name:'hire',authorization:[{actor:wallet,permission:'active'}],
-                data:{wallet:wallet,asset_ids:asset_ids,cost_action_points:100}}];
-            if(window.walletSession) await window.walletSession.transact({actions});
-            else if(wax&&wax.api) await wax.api.transact({actions},{blocksBehind:3,expireSeconds:30});
+                data:{wallet:wallet,asset_ids:asset_ids,cost_action_points:finalCost}}];
+            if(window.walletSession)await window.walletSession.transact({actions});
+            else if(wax&&wax.api)await wax.api.transact({actions},{blocksBehind:3,expireSeconds:30});
             else throw new Error('No wallet session — please log in.');
             status.textContent='✓ FIGHTER HIRED';status.className='ok';
             setTimeout(dismissStrip,3000);
@@ -1214,7 +1296,7 @@
             status.textContent='✗ '+((e&&e.message)||'Failed').substring(0,60);
             status.className='err';
         }
-        btn.disabled=false;btn.textContent='HIRE FIGHTER (100 AP)';
+        btn.disabled=false;btn.textContent='HIRE FIGHTER ('+finalCost+' AP)';
     }
 
     // ── QUICK TRAVEL TOGGLE ───────────────────────────────────────────────────
