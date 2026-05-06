@@ -1299,7 +1299,7 @@
         if(btn)btn.textContent='HIRE FIGHTER ('+final+' AP)';
         var summary=document.getElementById('hire-cost-summary');
         var count=checked.length;
-        if(summary&&reduction>0)summary.textContent=base+' - '+reduction+' = '+final+' AP  ('+count+'/3)';
+        if(summary&&reduction>0)summary.textContent='est. ~'+final+' AP with '+count+' NFT'+(count!==1?'s':'');
         else if(summary)summary.textContent=base+' AP — no NFTs selected';
         // Apply dim state on initial render
         var allCbs=document.querySelectorAll('.hire-nft-cb');
@@ -1337,14 +1337,14 @@
         if(!wallet){status.textContent='⚠ PLEASE LOG IN';status.className='err';return;}
         var cbs=document.querySelectorAll('.hire-nft-cb:checked');
         var asset_ids=[];
-        var reduction=0;
-        cbs.forEach(function(cb){asset_ids.push(cb.value);reduction+=Number(cb.dataset.mod||0);});
-        var finalCost=Math.max(1,(_hireBaseCost||100)-reduction);
+        cbs.forEach(function(cb){asset_ids.push(cb.value);});
+        // Send base cost — contract validates NFTs and deducts the actual reduced amount
+        var authorizedCost=_hireBaseCost||100;
         btn.disabled=true;btn.textContent='HIRING…';
         status.textContent='';status.className='';
         try{
             var actions=[{account:'players.ale',name:'hire',authorization:[{actor:wallet,permission:'active'}],
-                data:{wallet:wallet,asset_ids:asset_ids,cost_action_points:finalCost}}];
+                data:{wallet:wallet,asset_ids:asset_ids,cost_action_points:authorizedCost}}];
             if(window.walletSession)await window.walletSession.transact({actions});
             else if(wax&&wax.api)await wax.api.transact({actions},{blocksBehind:3,expireSeconds:30});
             else throw new Error('No wallet session — please log in.');
@@ -1354,7 +1354,7 @@
             status.textContent='✗ '+((e&&e.message)||'Failed').substring(0,60);
             status.className='err';
         }
-        btn.disabled=false;btn.textContent='HIRE FIGHTER ('+finalCost+' AP)';
+        btn.disabled=false;btn.textContent='HIRE FIGHTER ('+authorizedCost+' AP)';
     }
 
     // ── QUICK TRAVEL TOGGLE ───────────────────────────────────────────────────
