@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-48CCMEYHXG"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-48CCMEYHXG');</script>
+    <title>World Mine // Naron Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="NCico.png">
+    <script src="waxjs.js"></script>
+    <script src="nft_data.js"></script>
+    <script type="module">
+        import { SessionKit } from 'https://esm.sh/@wharfkit/session@1';
+        import { WebRenderer } from 'https://esm.sh/@wharfkit/web-renderer@1';
+        import { WalletPluginAnchor } from 'https://esm.sh/@wharfkit/wallet-plugin-anchor@1';
+        const kit = new SessionKit({
+            appName: 'naroncodex',
+            chains: [{ id: '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4', url: 'https://wax.greymass.com' }],
+            ui: new WebRenderer(),
+            walletPlugins: [new WalletPluginAnchor()],
+        });
+        window.walletKit = kit;
+        try {
+            const session = await kit.restore();
+            if (session) {
+                window.walletSession = session;
+                localStorage.setItem('naron_wallet', String(session.actor));
+                if (typeof onWalletReady === 'function') onWalletReady();
+            }
+        } catch(e) {}
+    </script>
+    <style>
+        :root {
+            --theme-color: #e8a020;
+            --theme-shadow: 0 0 15px rgba(232,160,32,0.4);
+            --theme-dark: #0a0600;
+            --theme-hover: #1a1000;
+            --mine-green: #40c890;
+            --mine-blue: #4090d8;
+            --mine-gray: #a0a8b8;
+            --mine-purple: #b060d8;
+            --bg: #03060f;
+        }
+        * { box-sizing: border-box; }
+        body { cursor:crosshair; background:var(--bg); background-image:radial-gradient(circle at 50% 20%,#0a0a00 0%,var(--bg) 70%); color:#d0d0d0; font-family:'Segoe UI',system-ui,Arial,sans-serif; margin:0; padding:0; overflow-x:hidden; }
+        body::before { content:" "; position:fixed; top:0; left:0; width:1px; height:1px; z-index:-1;
+            box-shadow:5vw 10vh #fff,15vw 25vh rgba(255,255,255,0.5),25vw 5vh #fff,35vw 45vh rgba(255,255,255,0.7),45vw 15vh #fff,55vw 65vh #fff,65vw 20vh rgba(255,255,255,0.4),75vw 55vh #fff,85vw 12vh rgba(255,255,255,0.8),95vw 40vh #fff,10vw 60vh #fff,20vw 80vh rgba(255,255,255,0.6),30vw 90vh #fff,40vw 75vh rgba(255,255,255,0.5),50vw 85vh #fff,60vw 95vh rgba(255,255,255,0.7),70vw 80vh #fff;
+            animation:starlight 4s ease-in-out infinite; }
+        @keyframes starlight { 0%,100%{opacity:0.2}50%{opacity:0.9} }
+        .click-effect { position:fixed; pointer-events:none; width:40px; height:40px; border:2px solid var(--theme-color); border-radius:50%; transform:translate(-50%,-50%); animation:clickPulse 0.4s ease-out forwards; z-index:2147483647; }
+        @keyframes clickPulse { 0%{transform:translate(-50%,-50%) scale(0.2);opacity:1;border-width:5px}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0;border-width:0} }
+        #cursor-glow { position:fixed; top:-50px; left:-50px; width:70px; height:70px; border-radius:50%; background:var(--theme-color); filter:blur(35px); opacity:0.2; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); }
+        a,button { cursor:crosshair !important; }
+        ::-webkit-scrollbar { height:8px; width:8px; }
+        ::-webkit-scrollbar-track { background:var(--bg); }
+        ::-webkit-scrollbar-thumb { background:#333; border:1px solid var(--theme-color); }
+
+        /* HEADER */
+        .global-header { display:flex; justify-content:space-between; align-items:center; background:#0a0802; border-bottom:2px solid var(--theme-color); padding:0 30px; width:100%; height:66px; position:sticky; top:0; z-index:6000; box-shadow:0 5px 20px rgba(0,0,0,0.9); }
+        .logo-section h1 { color:var(--theme-color); margin:0; font-size:1.8em; letter-spacing:4px; text-transform:uppercase; text-shadow:0 0 10px var(--theme-color); font-family:'Courier New',monospace; }
+        .wallet-section { display:flex; gap:6px; align-items:center; }
+        .wallet-btn { background:#111; color:var(--theme-color); border:1px dashed var(--theme-color); padding:10px 20px; font-family:'Courier New',monospace; font-weight:bold; cursor:pointer; transition:all 0.3s; }
+        .wallet-btn:hover { background:var(--theme-hover); box-shadow:var(--theme-shadow); }
+        .wallet-btn.logged-in { background:var(--theme-color); color:#000; border:1px solid #fff; }
+
+        /* TOP BAR */
+        .top-bar { display:flex; justify-content:space-between; align-items:center; padding:14px 30px; background:var(--bg); border-bottom:2px solid var(--theme-color); position:sticky; top:66px; z-index:5000; box-shadow:0 6px 20px rgba(0,0,0,0.8); }
+        .top-bar h1 { color:var(--theme-color); letter-spacing:4px; margin:0; text-transform:uppercase; font-size:1.4em; text-shadow:0 0 10px var(--theme-color); font-family:'Courier New',monospace; }
+        .top-bar-sub { font-size:0.68em; color:#505060; letter-spacing:2px; font-family:'Courier New',monospace; margin-top:3px; }
+
+        /* MAIN */
+        .mine-main { max-width:980px; margin:0 auto; padding:24px 20px 60px; }
+
+        /* SEASON BANNER */
+        .mine-season { display:flex; gap:24px; flex-wrap:wrap; align-items:center; border:1px solid rgba(232,160,32,0.2); padding:12px 20px; margin-bottom:24px; background:rgba(232,160,32,0.03); }
+        .mine-season-stat { font-family:'Courier New',monospace; }
+        .mine-season-val { color:var(--theme-color); font-weight:bold; font-size:1.1em; }
+        .mine-season-label { font-size:0.68em; color:#505060; letter-spacing:1px; margin-top:1px; }
+
+        /* LOADOUT STRIP */
+        .loadout-strip { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:20px; }
+        .loadout-tool { position:relative; width:160px; border:1px solid #252535; background:rgba(255,255,255,0.02); padding:10px; }
+        .loadout-tool.active-slot { border-color:rgba(232,160,32,0.4); }
+        .loadout-tool-img { width:138px; height:138px; object-fit:cover; display:block; margin-bottom:8px; }
+        .loadout-tool-name { font-family:'Courier New',monospace; font-size:0.75em; color:#c0b080; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .loadout-tool-stats { font-size:0.65em; color:#607080; line-height:1.6; }
+        .loadout-tool-rate { font-size:0.72em; color:var(--mine-green); font-family:'Courier New',monospace; margin-top:4px; font-weight:bold; }
+        .loadout-empty { width:160px; height:200px; border:1px dashed #252535; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#252535; font-family:'Courier New',monospace; font-size:0.65em; letter-spacing:1px; gap:8px; }
+        .loadout-empty-icon { font-size:2em; }
+
+        /* TYPE BADGE */
+        .type-badge { display:inline-block; padding:2px 7px; font-family:'Courier New',monospace; font-size:0.58em; letter-spacing:1px; font-weight:bold; text-transform:uppercase; margin-bottom:4px; }
+        .type-Extractor   { background:rgba(224,128,32,0.15); color:#e08020; border:1px solid rgba(224,128,32,0.3); }
+        .type-Manipulator { background:rgba(144,96,208,0.15); color:#9060d0; border:1px solid rgba(144,96,208,0.3); }
+        .type-ExoTool     { background:rgba(32,160,192,0.15); color:#20a0c0; border:1px solid rgba(32,160,192,0.3); }
+        .type-Explosive   { background:rgba(224,64,64,0.15); color:#e04040; border:1px solid rgba(224,64,64,0.3); }
+
+        /* MINING OUTPUT TABLE */
+        .mine-output-section { margin-bottom:20px; }
+        .mine-output-title { font-family:'Courier New',monospace; font-size:0.7em; letter-spacing:3px; color:#404050; text-transform:uppercase; border-bottom:1px solid #151520; padding-bottom:6px; margin-bottom:12px; }
+        .mine-output-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+        .mineral-card { border:1px solid #1a1a28; padding:12px; background:rgba(0,0,0,0.3); }
+        .mineral-icon { font-size:1.4em; margin-bottom:4px; }
+        .mineral-name { font-family:'Courier New',monospace; font-size:0.65em; letter-spacing:2px; color:#506070; text-transform:uppercase; margin-bottom:6px; }
+        .mineral-amount { font-family:'Courier New',monospace; font-size:1.1em; font-weight:bold; }
+        .mineral-pts { font-family:'Courier New',monospace; font-size:0.6em; color:#404050; margin-top:2px; }
+        .m-biomass  { border-color:rgba(64,200,144,0.25); } .m-biomass .mineral-amount  { color:var(--mine-green); }
+        .m-silica   { border-color:rgba(64,144,216,0.25); } .m-silica  .mineral-amount  { color:var(--mine-blue); }
+        .m-metal    { border-color:rgba(160,168,184,0.25); } .m-metal  .mineral-amount  { color:var(--mine-gray); }
+        .m-crystite { border-color:rgba(176,96,216,0.25);  } .m-crystite .mineral-amount { color:var(--mine-purple); }
+
+        /* SCORE BAR */
+        .mine-score-bar { display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(232,160,32,0.3); padding:12px 20px; background:rgba(232,160,32,0.04); margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+        .mine-score-val { font-family:'Courier New',monospace; font-size:1.5em; color:var(--theme-color); font-weight:bold; text-shadow:0 0 8px rgba(232,160,32,0.4); }
+        .mine-score-label { font-family:'Courier New',monospace; font-size:0.65em; color:#505060; letter-spacing:2px; }
+        .mine-rank { font-family:'Courier New',monospace; font-size:0.8em; color:#808090; }
+
+        /* ACTION BUTTONS */
+        .mine-actions { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:28px; align-items:center; }
+        .mine-btn { background:rgba(232,160,32,0.1); color:var(--theme-color); border:1px solid var(--theme-color); padding:11px 22px; font-family:'Courier New',monospace; font-weight:bold; font-size:0.82em; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all 0.2s; }
+        .mine-btn:hover:not(:disabled) { background:var(--theme-color); color:#000; box-shadow:var(--theme-shadow); }
+        .mine-btn:disabled { opacity:0.35; cursor:default; }
+        .mine-btn-ghost { background:transparent; color:#505870; border:1px solid #252535; padding:11px 22px; font-family:'Courier New',monospace; font-size:0.82em; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all 0.2s; }
+        .mine-btn-ghost:hover { color:var(--theme-color); border-color:var(--theme-color); }
+        .swap-timer { font-family:'Courier New',monospace; font-size:0.72em; color:#505060; letter-spacing:1px; }
+
+        /* LEADERBOARD */
+        .mine-lb { margin-top:10px; }
+        .mine-lb-row { display:grid; grid-template-columns:28px 1fr 120px; gap:8px; align-items:center; padding:7px 12px; border-bottom:1px solid #0d0d18; font-size:0.8em; }
+        .mine-lb-row:hover { background:rgba(255,255,255,0.02); }
+        .mine-lb-rank { color:#505060; font-family:'Courier New',monospace; font-weight:bold; }
+        .mine-lb-name { color:#a0b0c0; font-family:'Courier New',monospace; }
+        .mine-lb-score { color:var(--theme-color); font-family:'Courier New',monospace; font-weight:bold; text-align:right; }
+        .mine-lb-you { background:rgba(232,160,32,0.05); }
+        .mine-empty { color:#303040; font-family:'Courier New',monospace; font-size:0.75em; letter-spacing:2px; padding:16px 0; text-align:center; }
+
+        /* PROOF CODE */
+        .proof-section { border:1px solid #1a1a28; padding:14px; margin-top:24px; }
+        .proof-label { font-family:'Courier New',monospace; font-size:0.68em; letter-spacing:2px; color:#404050; margin-bottom:6px; }
+        .proof-note  { font-size:0.7em; color:#406080; line-height:1.4; margin-bottom:10px; }
+        #proof-code-text { width:100%; background:#000; border:1px solid #1a1a28; color:#506080; padding:8px; font-family:'Courier New',monospace; font-size:0.65em; resize:none; height:60px; outline:none; word-break:break-all; }
+
+        /* ── TOOL SELECTOR SCREEN ── */
+        #screen-select { display:none; }
+        .select-header { display:flex; align-items:center; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
+        .select-back { background:transparent; color:#506070; border:1px solid #252535; padding:8px 14px; font-family:'Courier New',monospace; font-size:0.75em; letter-spacing:1px; cursor:pointer; transition:all 0.15s; }
+        .select-back:hover { color:var(--theme-color); border-color:var(--theme-color); }
+        .select-title { color:var(--theme-color); font-family:'Courier New',monospace; font-size:1.05em; letter-spacing:3px; text-transform:uppercase; }
+        .select-note { font-size:0.72em; color:#505860; letter-spacing:0.5px; font-family:'Courier New',monospace; }
+        #select-status { font-family:'Courier New',monospace; font-size:0.72em; color:#505060; letter-spacing:1px; margin-bottom:12px; }
+
+        /* TOOL GRID */
+        .tool-grid { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+        .tool-card { width:120px; position:relative; padding:7px 7px 9px; border:1px solid #1e1e2e; cursor:pointer; transition:all 0.15s; background:rgba(255,255,255,0.02); user-select:none; }
+        .tool-card:hover { border-color:#363646; background:rgba(255,255,255,0.04); }
+        .tool-card.sel { border-color:var(--theme-color); background:rgba(232,160,32,0.08); box-shadow:0 0 10px rgba(232,160,32,0.15); }
+        .tool-card.disabled { opacity:0.28; cursor:default; pointer-events:none; }
+        .tool-card-img { width:104px; height:104px; object-fit:cover; display:block; margin-bottom:5px; }
+        .tool-card-name { font-size:0.58em; color:#c0b080; text-align:center; line-height:1.2; max-height:2.4em; overflow:hidden; word-break:break-word; margin-bottom:2px; }
+        .tool-card-score { font-size:0.6em; color:var(--mine-green); text-align:center; font-family:'Courier New',monospace; margin-top:2px; }
+        .tool-card-num { position:absolute; top:4px; right:4px; width:16px; height:16px; background:var(--theme-color); color:#000; font-size:0.58em; font-weight:bold; display:flex; align-items:center; justify-content:center; }
+        .tool-card-type { display:block; text-align:center; margin-bottom:3px; }
+
+        /* SELECTED LOADOUT PREVIEW */
+        .sel-strip { border-top:1px solid rgba(255,255,255,0.05); padding-top:12px; margin-bottom:14px; }
+        .sel-strip-label { font-family:'Courier New',monospace; font-size:0.68em; color:#404050; letter-spacing:2px; margin-bottom:10px; }
+        .sel-strip-cards { display:flex; gap:10px; flex-wrap:wrap; min-height:60px; }
+        .sel-strip-card img { width:56px; height:56px; object-fit:cover; border:1px solid var(--theme-color); display:block; }
+        .sel-strip-card-name { font-size:0.5em; color:#a09060; text-align:center; margin-top:2px; max-width:56px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .sel-placeholder { width:56px; height:56px; border:1px dashed #252535; display:flex; align-items:center; justify-content:center; color:#252535; font-size:1.2em; }
+
+        .confirm-btn { background:rgba(232,160,32,0.12); color:var(--theme-color); border:1px solid var(--theme-color); padding:12px 26px; font-family:'Courier New',monospace; font-weight:bold; font-size:0.85em; letter-spacing:2px; cursor:pointer; transition:all 0.18s; }
+        .confirm-btn:hover:not(:disabled) { background:var(--theme-color); color:#000; box-shadow:var(--theme-shadow); }
+        .confirm-btn:disabled { opacity:0.3; cursor:default; }
+
+        /* WALLET PROMPT */
+        #screen-wallet { padding:60px 30px; text-align:center; }
+        .wallet-prompt-title { font-family:'Courier New',monospace; color:var(--theme-color); font-size:1.2em; letter-spacing:4px; margin-bottom:16px; }
+        .wallet-prompt-sub { color:#404050; font-size:0.82em; font-family:'Courier New',monospace; letter-spacing:1px; }
+
+        /* SECTION TITLES */
+        .section-title { font-family:'Courier New',monospace; font-size:0.68em; letter-spacing:3px; color:#404050; text-transform:uppercase; border-bottom:1px solid #151520; padding-bottom:6px; margin-bottom:12px; }
+
+        @media (max-width:600px) {
+            .mine-output-grid { grid-template-columns:1fr 1fr; }
+            .loadout-strip { gap:10px; }
+            .loadout-tool { width:140px; }
+            .loadout-tool-img { width:118px; height:118px; }
+        }
+    </style>
+</head>
+<body>
+<div id="cursor-glow"></div>
+
+<header class="global-header">
+    <div class="logo-section">
+        <h1><a href="index.html" style="color:inherit;text-decoration:none;">NARON CODEX</a></h1>
+    </div>
+    <div style="font-family:'Courier New',monospace; color:var(--theme-color); letter-spacing:3px; font-size:0.85em; opacity:0.7;">⛏ WORLD MINE</div>
+    <div class="wallet-section">
+        <button id="wallet-connect-btn" class="wallet-btn" onclick="disconnectWallet()" style="display:none;"></button>
+        <button id="wallet-btn-anchor" class="wallet-btn" onclick="loginWithAnchor()">[ &#9875; ANCHOR ]</button>
+        <button id="wallet-btn-wcc"    class="wallet-btn" onclick="loginWithWCC()">[ &#9729; CLOUD WALLET ]</button>
+    </div>
+</header>
+
+<div class="top-bar">
+    <div>
+        <h1>⛏ WORLD MINE</h1>
+        <div class="top-bar-sub">AW TOOL EXTRACTION — WEEKLY COMPETITION</div>
+    </div>
+    <div id="top-bar-info" style="font-family:'Courier New',monospace; font-size:0.75em; color:#505060; text-align:right;"></div>
+</div>
+
+<!-- ══ WALLET PROMPT ══════════════════════════════════════════════════════════ -->
+<div id="screen-wallet" class="mine-main">
+    <div class="wallet-prompt-title">CONNECT WALLET TO BEGIN MINING</div>
+    <div class="wallet-prompt-sub">Log in with Anchor or Cloud Wallet to load your AW tools and join the season.</div>
+</div>
+
+<!-- ══ DASHBOARD SCREEN ══════════════════════════════════════════════════════ -->
+<div id="screen-dash" class="mine-main" style="display:none;">
+
+    <div class="mine-season">
+        <div class="mine-season-stat"><div class="mine-season-val" id="sb-season">SEASON 1</div><div class="mine-season-label">SEASON</div></div>
+        <div class="mine-season-stat"><div class="mine-season-val" id="sb-days">—</div><div class="mine-season-label">DAYS LEFT</div></div>
+        <div class="mine-season-stat"><div class="mine-season-val" id="sb-tools">—</div><div class="mine-season-label">ACTIVE TOOLS</div></div>
+        <div class="mine-season-stat"><div class="mine-season-val" id="sb-rate">—</div><div class="mine-season-label">COMBINED RATE/s</div></div>
+        <div style="flex:1"></div>
+        <div style="font-size:0.62em; color:#303040; font-family:'Courier New',monospace; line-height:1.7; text-align:right;">PRIZE POOL: TBD<br>PHASE 1 — LOCAL TRACKING</div>
+    </div>
+
+    <div class="section-title">ACTIVE LOADOUT</div>
+    <div class="loadout-strip" id="loadout-strip"></div>
+
+    <div class="mine-actions">
+        <button class="mine-btn" id="swap-btn" onclick="openSelector()">⛏ CHANGE LOADOUT</button>
+        <div class="swap-timer" id="swap-timer"></div>
+    </div>
+
+    <div class="mine-output-section">
+        <div class="mine-output-title">THIS WEEK'S EXTRACTION</div>
+        <div class="mine-output-grid">
+            <div class="mineral-card m-biomass">
+                <div class="mineral-icon">🌿</div>
+                <div class="mineral-name">BIOMASS</div>
+                <div class="mineral-amount" id="m-biomass">0</div>
+                <div class="mineral-pts" id="p-biomass">0 pts</div>
+            </div>
+            <div class="mineral-card m-silica">
+                <div class="mineral-icon">💧</div>
+                <div class="mineral-name">SILICA</div>
+                <div class="mineral-amount" id="m-silica">0</div>
+                <div class="mineral-pts" id="p-silica">0 pts</div>
+            </div>
+            <div class="mineral-card m-metal">
+                <div class="mineral-icon">⚙</div>
+                <div class="mineral-name">METAL</div>
+                <div class="mineral-amount" id="m-metal">0</div>
+                <div class="mineral-pts" id="p-metal">0 pts</div>
+            </div>
+            <div class="mineral-card m-crystite">
+                <div class="mineral-icon">💎</div>
+                <div class="mineral-name">CRYSTITE</div>
+                <div class="mineral-amount" id="m-crystite">0</div>
+                <div class="mineral-pts" id="p-crystite">0 pts</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mine-score-bar">
+        <div>
+            <div class="mine-score-label">WEEKLY SCORE</div>
+            <div class="mine-score-val" id="weekly-score">0</div>
+        </div>
+        <div id="score-rank" class="mine-rank"></div>
+        <div>
+            <div class="mine-score-label">PROJECTED WEEK TOTAL</div>
+            <div style="font-family:'Courier New',monospace; font-size:1.1em; color:#808090;" id="projected-score">—</div>
+        </div>
+    </div>
+
+    <div class="section-title">SEASON LEADERBOARD (LOCAL)</div>
+    <div class="mine-lb" id="mine-leaderboard"></div>
+
+    <div class="proof-section">
+        <div class="proof-label">PROOF CODE — SHARE WITH SEASON ADMIN</div>
+        <div class="proof-note">Submit this to Shade at end of week to record your score for prize distribution.</div>
+        <textarea id="proof-code-text" readonly></textarea>
+        <button class="mine-btn-ghost" onclick="copyProofCode()" style="margin-top:8px; font-size:0.7em; padding:7px 14px; letter-spacing:1px;">COPY PROOF CODE</button>
+    </div>
+</div>
+
+<!-- ══ TOOL SELECTOR SCREEN ═══════════════════════════════════════════════════ -->
+<div id="screen-select" class="mine-main">
+    <div class="select-header">
+        <button class="select-back" id="select-back-btn" onclick="cancelSelector()" style="display:none;">← BACK</button>
+        <div class="select-title" id="select-title">SELECT YOUR MINING LOADOUT</div>
+    </div>
+    <div class="select-note">Pick 1–3 AW tools. Each tool mines independently. Loadout locks for 24 hours after confirming.</div>
+    <div id="select-status" style="margin-top:10px;">LOADING YOUR TOOLS…</div>
+
+    <div class="tool-grid" id="tool-grid"></div>
+
+    <div class="sel-strip">
+        <div class="sel-strip-label">SELECTED LOADOUT (<span id="sel-count">0</span>/3)</div>
+        <div class="sel-strip-cards" id="sel-strip-cards"></div>
+    </div>
+
+    <button class="confirm-btn" id="confirm-btn" onclick="confirmLoadout()" disabled>SELECT AT LEAST 1 TOOL</button>
+</div>
+
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
+const AA_NODES = [
+    'https://wax.api.atomicassets.io',
+    'https://wax-atomic-api.eosphere.io',
+    'https://atomic.wax.eosrio.io'
+];
+const RARITY_MOD = { abundant:0.5, common:1.0, uncommon:1.08, rare:1.18, epic:1.3, legendary:1.5, mythical:1.75, mythic:1.75 };
+const NFT_PTS_SCALE = 300;
+
+const MINERAL_DIST = {
+    Extractor:   { biomass:0.35, silica:0.40, metal:0.20, crystite:0.05 },
+    Manipulator: { biomass:0.05, silica:0.15, metal:0.35, crystite:0.45 },
+    ExoTool:     { biomass:0.20, silica:0.30, metal:0.35, crystite:0.15 },
+    Explosive:   { biomass:0.55, silica:0.30, metal:0.12, crystite:0.03 }
+};
+const MINERAL_PTS = { biomass:2, silica:5, metal:10, crystite:20 };
+const MINERAL_KEYS = ['biomass','silica','metal','crystite'];
+const WEEK_MS  = 7 * 24 * 3600 * 1000;
+const SWAP_LOCK_MS = 24 * 3600 * 1000;
+
+// Tool type icon for display
+const TYPE_ICON = { Extractor:'⛏', Manipulator:'🔬', ExoTool:'🦾', Explosive:'💥' };
+
+// ── WALLET ─────────────────────────────────────────────────────────────────────
+function checkWalletState() {
+    var wallet = localStorage.getItem('naron_wallet');
+    var btnA   = document.getElementById('wallet-connect-btn');
+    var btnAnc = document.getElementById('wallet-btn-anchor');
+    var btnWCC = document.getElementById('wallet-btn-wcc');
+    if (wallet) {
+        if (btnA)   { btnA.textContent = '[ ' + wallet + ' ]'; btnA.style.display=''; btnA.classList.add('logged-in'); }
+        if (btnAnc) btnAnc.style.display = 'none';
+        if (btnWCC) btnWCC.style.display = 'none';
+    } else {
+        if (btnA)   { btnA.style.display='none'; btnA.classList.remove('logged-in'); }
+        if (btnAnc) btnAnc.style.display = '';
+        if (btnWCC) btnWCC.style.display = '';
+    }
+}
+window.onWalletReady = function() { checkWalletState(); init(); };
+window.loginWithAnchor = async function() {
+    try { var r = await window.walletKit.login(); window.walletSession = r.session; localStorage.setItem('naron_wallet', String(r.session.actor)); checkWalletState(); init(); } catch(e) {}
+};
+window.loginWithWCC = async function() {
+    try { var a = await wax.login(); localStorage.setItem('naron_wallet', a); checkWalletState(); init(); } catch(e) {}
+};
+window.disconnectWallet = function() {
+    if (window.walletKit && window.walletSession) { window.walletKit.logout(window.walletSession).catch(function(){}); window.walletSession = null; }
+    localStorage.removeItem('naron_wallet');
+    if (wax) wax.userAccount = '';
+    checkWalletState();
+    showScreen('wallet');
+};
+
+// ── DATA LAYER ─────────────────────────────────────────────────────────────────
+function getSession(wallet) {
+    try {
+        var s = JSON.parse(localStorage.getItem('wm_' + wallet));
+        if (!s) return null;
+        // If week has rolled over, reset minerals
+        var weekStart = getWeekStart();
+        if (!s.weekStart || s.weekStart < weekStart) {
+            s.accumulated = { biomass:0, silica:0, metal:0, crystite:0 };
+            s.weeklyScore = 0;
+            s.weekStart = weekStart;
+            s.lastTick = Date.now();
+            saveSession(wallet, s);
+        }
+        return s;
+    } catch(e) { return null; }
+}
+function newSession(wallet) {
+    return {
+        loadout: [],
+        weekStart: getWeekStart(),
+        lastTick: Date.now(),
+        lastSwap: 0,
+        accumulated: { biomass:0, silica:0, metal:0, crystite:0 },
+        weeklyScore: 0
+    };
+}
+function saveSession(wallet, s) { localStorage.setItem('wm_' + wallet, JSON.stringify(s)); }
+function getAllSessions() {
+    var out = [];
+    for (var k in localStorage) {
+        if (k.startsWith('wm_')) {
+            var w = k.slice(3);
+            try {
+                var s = JSON.parse(localStorage.getItem(k));
+                if (s) out.push({ wallet:w, score: s.weeklyScore || 0 });
+            } catch(e) {}
+        }
+    }
+    return out.sort(function(a,b){ return b.score - a.score; });
+}
+
+// ── WEEK TIMING ────────────────────────────────────────────────────────────────
+function getWeekStart() {
+    var now = new Date();
+    var d   = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    d.setUTCDate(d.getUTCDate() - d.getUTCDay()); // back to Sunday
+    return d.getTime();
+}
+function daysLeftInWeek() {
+    return Math.max(0, (getWeekStart() + WEEK_MS - Date.now()) / (24*3600*1000));
+}
+function hoursUntilSwap(lastSwap) {
+    if (!lastSwap) return 0;
+    var elapsed = Date.now() - lastSwap;
+    return Math.max(0, (SWAP_LOCK_MS - elapsed) / 3600000);
+}
+
+// ── MINING ENGINE ──────────────────────────────────────────────────────────────
+function toolRate(tool) {
+    if (!tool.mine_power || !tool.delay) return 0;
+    var rarMod  = RARITY_MOD[tool.rarity] || 1.0;
+    var nftMod  = 1 + (tool.nft_points || 0) / NFT_PTS_SCALE;
+    return (tool.mine_power / tool.delay) * rarMod * nftMod;
+}
+
+function applyTick(session) {
+    var now     = Date.now();
+    var elapsed = Math.max(0, (now - session.lastTick) / 1000); // seconds
+    if (elapsed < 0.1) return;
+
+    for (var i = 0; i < session.loadout.length; i++) {
+        var tool = session.loadout[i];
+        var rate = toolRate(tool);
+        var dist = MINERAL_DIST[tool.type] || MINERAL_DIST.ExoTool;
+        var out  = rate * elapsed;
+        MINERAL_KEYS.forEach(function(k){ session.accumulated[k] += out * dist[k]; });
+    }
+    session.weeklyScore = calcScore(session.accumulated);
+    session.lastTick = now;
+}
+
+function calcScore(acc) {
+    var s = 0;
+    MINERAL_KEYS.forEach(function(k){ s += (acc[k] || 0) * MINERAL_PTS[k]; });
+    return s;
+}
+
+function projectedWeekScore(loadout) {
+    if (!loadout.length) return 0;
+    var scorePerSec = 0;
+    loadout.forEach(function(tool) {
+        var rate = toolRate(tool);
+        var dist = MINERAL_DIST[tool.type] || MINERAL_DIST.ExoTool;
+        MINERAL_KEYS.forEach(function(k){ scorePerSec += rate * dist[k] * MINERAL_PTS[k]; });
+    });
+    var secsLeft = daysLeftInWeek() * 86400;
+    return scorePerSec * secsLeft;
+}
+
+function fmtNum(n) {
+    if (n >= 1e9) return (n/1e9).toFixed(2) + 'B';
+    if (n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+    return Math.floor(n).toLocaleString();
+}
+
+// ── SCREENS ────────────────────────────────────────────────────────────────────
+function showScreen(name) {
+    ['wallet','dash','select'].forEach(function(s){
+        document.getElementById('screen-'+s).style.display = s===name ? '' : 'none';
+    });
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────────────
+var _dashInterval = null;
+function showDashboard() {
+    var wallet  = localStorage.getItem('naron_wallet');
+    var session = getSession(wallet) || newSession(wallet);
+    applyTick(session);
+    saveSession(wallet, session);
+    renderDashboard(wallet, session);
+    showScreen('dash');
+    if (_dashInterval) clearInterval(_dashInterval);
+    _dashInterval = setInterval(function(){ refreshDashboard(); }, 15000);
+}
+
+function refreshDashboard() {
+    var wallet  = localStorage.getItem('naron_wallet');
+    if (!wallet) return;
+    var session = getSession(wallet);
+    if (!session) return;
+    applyTick(session);
+    saveSession(wallet, session);
+    renderDashboard(wallet, session);
+}
+
+function renderDashboard(wallet, session) {
+    // Season info
+    var daysLeft = daysLeftInWeek();
+    document.getElementById('sb-days').textContent    = daysLeft.toFixed(1);
+    document.getElementById('sb-tools').textContent   = session.loadout.length || '—';
+    var totalRate = session.loadout.reduce(function(s,t){ return s + toolRate(t); }, 0);
+    document.getElementById('sb-rate').textContent    = totalRate.toFixed(4);
+    document.getElementById('top-bar-info').innerHTML = wallet + ' &nbsp;|&nbsp; Score: ' + fmtNum(session.weeklyScore);
+
+    // Loadout strip
+    var strip = document.getElementById('loadout-strip');
+    var html  = '';
+    for (var i = 0; i < 3; i++) {
+        var t = session.loadout[i];
+        if (t) {
+            var rate  = toolRate(t);
+            var dist  = MINERAL_DIST[t.type] || MINERAL_DIST.ExoTool;
+            var topM  = MINERAL_KEYS.reduce(function(best, k){ return dist[k] > dist[best] ? k : best; }, MINERAL_KEYS[0]);
+            html += '<div class="loadout-tool active-slot">' +
+                '<span class="type-badge type-' + t.type + '">' + (TYPE_ICON[t.type]||'') + ' ' + t.type + '</span>' +
+                '<img class="loadout-tool-img" src="tool.worlds/' + t.templateId + '.webp" onerror="this.style.opacity=0.3" alt="' + t.name + '">' +
+                '<div class="loadout-tool-name" title="' + t.name + '">' + t.name + '</div>' +
+                '<div class="loadout-tool-stats">' +
+                    '⚡ ' + t.mine_power + ' &nbsp;·&nbsp; ⏱ ' + t.delay + 's<br>' +
+                    rarLabel(t.rarity) + ' &nbsp;·&nbsp; ' + shineLabel(t.shine) +
+                    (t.nft_points ? '<br>NFT pts: ' + t.nft_points : '') +
+                '</div>' +
+                '<div class="loadout-tool-rate">Rate: ' + rate.toFixed(4) + '/s · Best: ' + topM + '</div>' +
+            '</div>';
+        } else {
+            html += '<div class="loadout-empty"><div class="loadout-empty-icon">⛏</div><div>EMPTY SLOT</div></div>';
+        }
+    }
+    strip.innerHTML = html;
+
+    // Minerals
+    MINERAL_KEYS.forEach(function(k){
+        var amt  = session.accumulated[k] || 0;
+        var pts  = amt * MINERAL_PTS[k];
+        document.getElementById('m-' + k).textContent = fmtNum(amt);
+        document.getElementById('p-' + k).textContent = fmtNum(pts) + ' pts';
+    });
+
+    // Score
+    document.getElementById('weekly-score').textContent   = fmtNum(session.weeklyScore);
+    var proj = session.weeklyScore + projectedWeekScore(session.loadout);
+    document.getElementById('projected-score').textContent = fmtNum(proj) + ' projected';
+
+    // Swap button
+    var swapBtn   = document.getElementById('swap-btn');
+    var swapTimer = document.getElementById('swap-timer');
+    var hoursLeft = hoursUntilSwap(session.lastSwap);
+    if (hoursLeft > 0) {
+        swapBtn.disabled  = true;
+        swapBtn.textContent = '⛏ CHANGE LOADOUT';
+        var h = Math.floor(hoursLeft), m = Math.floor((hoursLeft - h) * 60);
+        swapTimer.textContent = 'Available in ' + h + 'h ' + m + 'm';
+    } else {
+        swapBtn.disabled  = false;
+        swapBtn.textContent = '⛏ CHANGE LOADOUT';
+        swapTimer.textContent = session.loadout.length ? 'Swap available' : 'No loadout set';
+    }
+
+    // Leaderboard
+    renderLeaderboard(wallet, session.weeklyScore);
+
+    // Proof code
+    var proof = { wallet:wallet, season:1, weekStart:session.weekStart, score:Math.round(session.weeklyScore), loadout:session.loadout.map(function(t){return {templateId:t.templateId,assetId:t.assetId,type:t.type,rarity:t.rarity};}), ts:Date.now() };
+    document.getElementById('proof-code-text').value = btoa(JSON.stringify(proof));
+}
+
+function renderLeaderboard(myWallet, myScore) {
+    var all  = getAllSessions();
+    var el   = document.getElementById('mine-leaderboard');
+    if (!all.length) { el.innerHTML = '<div class="mine-empty">NO SCORES YET THIS WEEK</div>'; return; }
+    el.innerHTML = all.slice(0,10).map(function(r, i){
+        var isMine = r.wallet === myWallet;
+        return '<div class="mine-lb-row' + (isMine?' mine-lb-you':'') + '">' +
+            '<span class="mine-lb-rank">' + (i+1) + '</span>' +
+            '<span class="mine-lb-name">' + r.wallet + (isMine?' ◀':'') + '</span>' +
+            '<span class="mine-lb-score">' + fmtNum(r.score) + '</span>' +
+        '</div>';
+    }).join('');
+    var myRank = all.findIndex(function(r){return r.wallet===myWallet;});
+    document.getElementById('score-rank').textContent = myRank >= 0 ? 'RANK #' + (myRank+1) + ' of ' + all.length : '';
+}
+
+function copyProofCode() {
+    var txt = document.getElementById('proof-code-text').value;
+    navigator.clipboard.writeText(txt).catch(function(){});
+    event.target.textContent = '✓ COPIED';
+    setTimeout(function(){ event.target.textContent = 'COPY PROOF CODE'; }, 2000);
+}
+
+// ── TOOL SELECTOR ──────────────────────────────────────────────────────────────
+var _allTools   = [];
+var _selTools   = [];
+var _isSwap     = false;
+
+function openSelector() {
+    var wallet  = localStorage.getItem('naron_wallet');
+    var session = getSession(wallet) || newSession(wallet);
+    _isSwap = session.loadout.length > 0;
+    _selTools = [];
+    document.getElementById('select-title').textContent = _isSwap ? 'SWAP YOUR LOADOUT' : 'SELECT YOUR MINING LOADOUT';
+    document.getElementById('select-back-btn').style.display = _isSwap ? '' : 'none';
+    document.getElementById('select-status').textContent = 'LOADING YOUR TOOLS…';
+    document.getElementById('tool-grid').innerHTML = '';
+    document.getElementById('confirm-btn').disabled = true;
+    document.getElementById('confirm-btn').textContent = 'SELECT AT LEAST 1 TOOL';
+    updateSelStrip();
+    if (_dashInterval) { clearInterval(_dashInterval); _dashInterval = null; }
+    showScreen('select');
+    loadTools(wallet);
+}
+
+function cancelSelector() { showDashboard(); }
+
+async function loadTools(wallet) {
+    for (var node of AA_NODES) {
+        try {
+            var all = [], page = 1;
+            while (true) {
+                var resp = await fetch(node + '/atomicassets/v1/assets?owner=' + encodeURIComponent(wallet) +
+                    '&collection_name=alien.worlds&schema_name=tool.worlds&limit=1000&page=' + page);
+                var json = await resp.json();
+                if (!json.success) break;
+                all = all.concat(json.data);
+                if (json.data.length < 1000) break;
+                page++;
+            }
+            var tools = parseTool(all);
+            _allTools = tools;
+            document.getElementById('select-status').textContent = tools.length + ' TOOLS FOUND — PICK 1–3';
+            renderToolGrid();
+            return;
+        } catch(e) { continue; }
+    }
+    document.getElementById('select-status').textContent = 'CONNECTION FAILED — TRY AGAIN';
+}
+
+function parseTool(raw) {
+    var seen  = new Set();
+    var tools = [];
+    raw.forEach(function(nft){
+        var tid  = nft.template ? parseInt(nft.template.template_id) : 0;
+        var key  = tid + '_' + nft.asset_id;
+        if (seen.has(key)) return; seen.add(key);
+        var ld = NFT_DATA[tid];
+        if (!ld || ld.category !== 'tool') return;
+        var d  = nft.data || nft.mutable_data || {};
+        var td = (nft.template && nft.template.immutable_data) || {};
+        var rarity = (d.rarity || td.rarity || ld.rarity || 'common').toLowerCase();
+        tools.push({
+            templateId: tid, assetId: nft.asset_id,
+            name: nft.name || ld.name,
+            type: ld.type || 'ExoTool',
+            mine_power: ld.mine_power || 0,
+            delay: ld.delay || 60,
+            nft_points: ld.nft_points || 0,
+            rarity: rarity,
+            shine: ld.shine || 'stone'
+        });
+    });
+    // Sort by projected daily score desc
+    tools.sort(function(a,b){ return dailyScore(b) - dailyScore(a); });
+    return tools;
+}
+
+function dailyScore(tool) {
+    var rate = toolRate(tool);
+    var dist = MINERAL_DIST[tool.type] || MINERAL_DIST.ExoTool;
+    var s = 0; MINERAL_KEYS.forEach(function(k){ s += rate * dist[k] * MINERAL_PTS[k]; });
+    return s * 86400;
+}
+
+function renderToolGrid() {
+    var el     = document.getElementById('tool-grid');
+    var selIds = new Set(_selTools.map(function(t){return t.assetId;}));
+    var atMax  = _selTools.length >= 3;
+    el.innerHTML = _allTools.map(function(tool){
+        var isSel = selIds.has(tool.assetId);
+        var dis   = !isSel && atMax;
+        var num   = isSel ? (_selTools.findIndex(function(t){return t.assetId===tool.assetId;})+1) : '';
+        return '<div class="tool-card' + (isSel?' sel':'') + (dis?' disabled':'') + '" onclick="toggleTool(\'' + tool.assetId + '\')">' +
+            (num ? '<div class="tool-card-num">' + num + '</div>' : '') +
+            '<span class="tool-card-type"><span class="type-badge type-' + tool.type + '">' + (TYPE_ICON[tool.type]||'') + ' ' + tool.type + '</span></span>' +
+            '<img class="tool-card-img" src="tool.worlds/' + tool.templateId + '.webp" onerror="this.style.opacity=0.3" alt="' + tool.name + '">' +
+            '<div class="tool-card-name">' + tool.name + '</div>' +
+            '<div class="tool-card-score">⚡' + tool.mine_power + ' ⏱' + tool.delay + 's</div>' +
+            '<div class="tool-card-score" style="color:#808090;">' + rarLabel(tool.rarity) + ' · ' + shineLabel(tool.shine) + '</div>' +
+            '<div class="tool-card-score">' + fmtNum(dailyScore(tool)) + ' pts/day</div>' +
+        '</div>';
+    }).join('');
+}
+
+function toggleTool(assetId) {
+    var idx = _selTools.findIndex(function(t){return t.assetId===assetId;});
+    if (idx >= 0) {
+        _selTools.splice(idx, 1);
+    } else {
+        if (_selTools.length >= 3) return;
+        var tool = _allTools.find(function(t){return t.assetId===assetId;});
+        if (tool) _selTools.push(tool);
+    }
+    updateSelStrip();
+    renderToolGrid();
+    var btn = document.getElementById('confirm-btn');
+    if (_selTools.length > 0) {
+        btn.disabled = false;
+        btn.textContent = 'CONFIRM LOADOUT (' + _selTools.length + ' TOOL' + (_selTools.length>1?'S':'') + ')';
+    } else {
+        btn.disabled = true;
+        btn.textContent = 'SELECT AT LEAST 1 TOOL';
+    }
+}
+
+function updateSelStrip() {
+    document.getElementById('sel-count').textContent = _selTools.length;
+    var strip = document.getElementById('sel-strip-cards');
+    var html  = '';
+    for (var i = 0; i < 3; i++) {
+        var t = _selTools[i];
+        if (t) {
+            html += '<div class="sel-strip-card"><img src="tool.worlds/' + t.templateId + '.webp" onerror="this.style.opacity=0.3"><div class="sel-strip-card-name">' + t.name + '</div></div>';
+        } else {
+            html += '<div><div class="sel-placeholder">+</div></div>';
+        }
+    }
+    strip.innerHTML = html;
+}
+
+function confirmLoadout() {
+    if (!_selTools.length) return;
+    var wallet  = localStorage.getItem('naron_wallet');
+    var session = getSession(wallet) || newSession(wallet);
+    // Apply any pending tick before swapping
+    applyTick(session);
+    session.loadout  = _selTools.slice();
+    session.lastSwap = Date.now();
+    session.lastTick = Date.now();
+    saveSession(wallet, session);
+    showDashboard();
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────────────
+function rarLabel(r) {
+    var C = { abundant:'#888', common:'#666', uncommon:'#4cbb6e', rare:'#0088ff', epic:'#c060d0', legendary:'#e8c020', mythical:'#ff80ff', mythic:'#ff80ff' };
+    return '<span style="color:' + (C[r]||'#888') + '">' + (r||'').charAt(0).toUpperCase()+(r||'').slice(1) + '</span>';
+}
+function shineLabel(s) {
+    var C = { stone:'#888', gold:'#e8c020', stardust:'#c080d0', antimatter:'#8060e0', xdimension:'#e040c0' };
+    var L = { stone:'Stone', gold:'Gold', stardust:'Stardust', antimatter:'Antimatter', xdimension:'X-Dim' };
+    return '<span style="color:' + (C[s]||'#888') + '">' + (L[s]||s||'Stone') + '</span>';
+}
+
+// ── CURSOR ─────────────────────────────────────────────────────────────────────
+document.addEventListener('mousemove', function(e){ var g=document.getElementById('cursor-glow'); if(g){g.style.left=e.clientX+'px';g.style.top=e.clientY+'px';} });
+document.addEventListener('click', function(e){ var el=document.createElement('div'); el.className='click-effect'; el.style.left=e.clientX+'px'; el.style.top=e.clientY+'px'; document.body.appendChild(el); setTimeout(function(){el.remove();},500); });
+
+// ── INIT ───────────────────────────────────────────────────────────────────────
+function init() {
+    var wallet = localStorage.getItem('naron_wallet');
+    if (!wallet) { showScreen('wallet'); return; }
+    var session = getSession(wallet) || newSession(wallet);
+    if (!session.loadout || !session.loadout.length) {
+        openSelector();
+    } else {
+        showDashboard();
+    }
+}
+
+checkWalletState();
+init();
+</script>
+</body>
+</html>
