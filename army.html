@@ -631,6 +631,73 @@
             .codex-footer { padding: 24px 10px 40px; }
             #codex-disclaimer { padding: 10px; font-size: 0.72em; }
         }
+
+        /* ── STAKE MODAL ──────────────────────────────────────────────────── */
+        #stake-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:9000; backdrop-filter:blur(4px); }
+        #stake-panel {
+            position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+            z-index:9001; background:#080808; border:1px solid var(--theme-color);
+            width:min(640px,95vw); max-height:85vh;
+            display:flex; flex-direction:column; box-shadow:0 0 40px rgba(255,170,0,0.15);
+        }
+        .sk-hdr {
+            padding:11px 16px; background:rgba(0,0,0,0.6);
+            border-bottom:1px solid var(--theme-color);
+            color:var(--theme-color); font-size:0.88em; letter-spacing:3px; font-weight:bold;
+            display:flex; justify-content:space-between; align-items:center;
+        }
+        .sk-close { background:none; border:none; color:#606060; font-size:1.2em; cursor:pointer; padding:0 4px; line-height:1; }
+        .sk-close:hover { color:var(--theme-color); }
+        .sk-cost-bar {
+            padding:8px 16px; background:rgba(255,170,0,0.05);
+            border-bottom:1px solid rgba(255,170,0,0.18);
+            font-size:0.76em; letter-spacing:1px; display:flex; gap:18px; align-items:center; flex-wrap:wrap;
+        }
+        .sk-gem { color:var(--theme-color); font-weight:bold; font-size:1.15em; }
+        .sk-gem-warn { color:#c08020; font-size:0.9em; }
+        .sk-controls { display:flex; gap:7px; padding:8px 16px; border-bottom:1px solid rgba(255,255,255,0.05); }
+        .sk-ctrl-btn {
+            background:transparent; color:#707070; border:1px solid #333;
+            padding:4px 12px; font-family:'Courier New',monospace; font-size:0.72em;
+            letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all 0.15s;
+        }
+        .sk-ctrl-btn:hover { color:var(--theme-color); border-color:var(--theme-color); }
+        .sk-list { overflow-y:auto; flex:1; min-height:80px; }
+        .sk-item {
+            display:grid; grid-template-columns:22px 1fr 60px 68px 56px;
+            align-items:center; gap:8px;
+            padding:5px 16px; border-bottom:1px solid rgba(255,255,255,0.04);
+            cursor:pointer; transition:background 0.1s; user-select:none;
+        }
+        .sk-item:hover { background:rgba(255,170,0,0.04); }
+        .sk-item.sk-unchecked { opacity:0.45; }
+        .sk-item input[type=checkbox] { accent-color:var(--theme-color); cursor:pointer; flex-shrink:0; }
+        .sk-name { font-size:0.78em; color:#c0b080; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .sk-cat  { font-size:0.62em; color:#505870; letter-spacing:1px; text-transform:uppercase; text-align:right; }
+        .sk-stat { font-size:0.68em; color:#707880; text-align:right; white-space:nowrap; }
+        .sk-rar  { font-size:0.62em; text-align:right; white-space:nowrap; text-transform:capitalize; }
+        .sk-rar.rare     { color:#c0a030; } .sk-rar.epic   { color:#c060d0; }
+        .sk-rar.uncommon { color:#60a080; } .sk-rar.common { color:#505060; }
+        .sk-actions {
+            display:flex; gap:8px; padding:12px 16px;
+            border-top:1px solid rgba(255,255,255,0.08); flex-wrap:wrap; align-items:center;
+        }
+        .sk-confirm-btn {
+            background:rgba(255,170,0,0.12); color:var(--theme-color);
+            border:1px solid var(--theme-color); padding:9px 18px;
+            font-family:'Courier New',monospace; font-size:0.8em; font-weight:bold;
+            letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all 0.18s;
+        }
+        .sk-confirm-btn:hover:not(:disabled) { background:var(--theme-color); color:#000; }
+        .sk-confirm-btn:disabled { opacity:0.35; cursor:default; }
+        .sk-cancel-btn {
+            background:transparent; color:#606060; border:1px solid #333;
+            padding:9px 16px; font-family:'Courier New',monospace; font-size:0.8em;
+            letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all 0.15s;
+        }
+        .sk-cancel-btn:hover { color:#c04040; border-color:#c04040; }
+        #sk-result { padding:4px 16px 10px; font-size:0.76em; min-height:22px; }
+        .sk-empty { text-align:center; color:#404050; padding:20px; font-size:0.8em; letter-spacing:2px; }
     </style>
     <script>(function(){ var s=localStorage.getItem('nc_font_size'); if(s) document.documentElement.style.fontSize=s+'px'; })();</script>
 </head>
@@ -761,6 +828,8 @@
     <button class="cyber-btn" onclick="adjustFontSize(-1)" title="Decrease font size" style="padding:8px 11px;letter-spacing:0">A−</button>
     <button id="export-csv-btn"  class="cyber-btn" onclick="exportArmyCSV()"  style="display:none; color:#40c080; border-color:#40c08066;">⬇ CSV</button>
     <button id="export-xlsx-btn" class="cyber-btn" onclick="exportArmyXLSX()" style="display:none; color:#40c080; border-color:#40c08066;">⬇ XLSX</button>
+    <button id="stake-auto-btn"   class="cyber-btn" onclick="openStakePanel('auto')"   style="display:none; color:var(--theme-color); border-color:rgba(255,170,0,0.5);">⚡ STAKE AUTO</button>
+    <button id="stake-manual-btn" class="cyber-btn" onclick="openStakePanel('manual')" style="display:none; color:var(--theme-color); border-color:rgba(255,170,0,0.5);">⚡ STAKE MANUAL</button>
     <div id="score-breakdown">
         <div class="bd-grid">
             <div class="bd-head"></div><div class="bd-head">⚔ ATK</div><div class="bd-head">🛡 DEF</div><div class="bd-head">⏱ >></div>
@@ -801,6 +870,29 @@
 
     <!-- Star score HUD -->
     <div id="star-score-hud"></div>
+
+    <!-- Stake Modal -->
+    <div id="stake-backdrop" onclick="closeStakePanel()"></div>
+    <div id="stake-panel" style="display:none;">
+        <div class="sk-hdr">
+            <span>⚡ STAKE TO FARM.ALE</span>
+            <button class="sk-close" onclick="closeStakePanel()">✕</button>
+        </div>
+        <div class="sk-cost-bar" id="sk-cost-bar">
+            <span>GEM COST: <span class="sk-gem" id="sk-gem-count">0</span> GEMS</span>
+            <span class="sk-gem-warn">1 GEM per card — only unassigned AW crew &amp; arms</span>
+        </div>
+        <div class="sk-controls">
+            <button class="sk-ctrl-btn" onclick="stakeSelectAll()">SELECT ALL</button>
+            <button class="sk-ctrl-btn" onclick="stakeDeselectAll()">DESELECT ALL</button>
+        </div>
+        <div class="sk-list" id="sk-list"></div>
+        <div class="sk-actions">
+            <button class="sk-confirm-btn" id="sk-confirm-btn" onclick="confirmStake()" disabled>CONFIRM STAKE (0)</button>
+            <button class="sk-cancel-btn" onclick="closeStakePanel()">CANCEL</button>
+        </div>
+        <div id="sk-result"></div>
+    </div>
 
     <!-- Footer -->
     <div class="codex-footer">
@@ -1464,9 +1556,11 @@ function processData(data) {
         bdSet('bd-lava', lavaLabel, pm(Math.round(lavaAtkBonus)), pm(Math.round(lavaDefBonus)), lavaMoveStr);
     } else if (lavaEl) { lavaEl.style.display = 'none'; }
     bdSet('bd-total', 'TOTAL', finalAtk.toLocaleString(), finalDef.toLocaleString(), hm(totalMoveSecs));
-    document.getElementById('breakdown-btn').style.display = 'inline-block';
-    document.getElementById('export-csv-btn').style.display  = 'inline-block';
-    document.getElementById('export-xlsx-btn').style.display = 'inline-block';
+    document.getElementById('breakdown-btn').style.display    = 'inline-block';
+    document.getElementById('export-csv-btn').style.display   = 'inline-block';
+    document.getElementById('export-xlsx-btn').style.display  = 'inline-block';
+    document.getElementById('stake-auto-btn').style.display   = 'inline-block';
+    document.getElementById('stake-manual-btn').style.display = 'inline-block';
 
     // Build division structure: each commander leads their slice of activeCrew + matching arms
     const divisions = [];
@@ -2216,6 +2310,142 @@ function simonWin() {
     })();
 })();
 // ── END HEADER NARON PLANET ──────────────────────────────────────────────────
+
+// ── STAKE TO FARM.ALE ────────────────────────────────────────────────────────
+
+function _getStakePool() {
+    if (!window._lastRenderArgs) return [];
+    const [faces, crew, arms] = window._lastRenderArgs;
+    const pool = [];
+    crew.filter(c => !c.active && !c.isPD && c.asset_id)
+        .forEach(c => pool.push({ ...c, _stakeType: 'crew' }));
+    arms.filter(a => !a.active && !a.isPD && a.asset_id)
+        .forEach(a => pool.push({ ...a, _stakeType: 'arms' }));
+    return pool;
+}
+
+function openStakePanel(mode) {
+    const pool = _getStakePool();
+    const list = document.getElementById('sk-list');
+    document.getElementById('sk-result').textContent = '';
+
+    if (!pool.length) {
+        list.innerHTML = '<div class="sk-empty">NO UNASSIGNED AW CREW OR ARMS IN WALLET</div>';
+    } else {
+        list.innerHTML = pool.map((item, i) => {
+            const checked = mode === 'auto';
+            const rar = item.rarity || 'common';
+            const shine = item.shine && item.shine !== 'stone' ? ` · ${item.shine}` : '';
+            const atk = item.atk ? `⚔${Math.round(item.atk)}` : '';
+            const def = item.def ? ` 🛡${Math.round(item.def)}` : '';
+            return `<label class="sk-item${checked ? '' : ' sk-unchecked'}" onclick="skToggleRow(this)">
+                <input type="checkbox" class="sk-cb" data-id="${item.asset_id}"${checked ? ' checked' : ''} onclick="event.stopPropagation()">
+                <span class="sk-name" title="${item.name}">${item.name}</span>
+                <span class="sk-cat">${item._stakeType}</span>
+                <span class="sk-stat">${atk}${def}</span>
+                <span class="sk-rar ${rar}">${rar}${shine}</span>
+            </label>`;
+        }).join('');
+    }
+
+    // Sort: checked items on top handled by selection state
+    document.getElementById('stake-backdrop').style.display = 'block';
+    document.getElementById('stake-panel').style.display    = 'flex';
+    updateStakeSummary();
+}
+
+function skToggleRow(label) {
+    const cb = label.querySelector('.sk-cb');
+    if (!cb) return;
+    cb.checked = !cb.checked;
+    label.classList.toggle('sk-unchecked', !cb.checked);
+    updateStakeSummary();
+}
+
+function stakeSelectAll() {
+    document.querySelectorAll('.sk-cb').forEach(cb => {
+        cb.checked = true;
+        cb.closest('.sk-item').classList.remove('sk-unchecked');
+    });
+    updateStakeSummary();
+}
+
+function stakeDeselectAll() {
+    document.querySelectorAll('.sk-cb').forEach(cb => {
+        cb.checked = false;
+        cb.closest('.sk-item').classList.add('sk-unchecked');
+    });
+    updateStakeSummary();
+}
+
+function updateStakeSummary() {
+    const checked = document.querySelectorAll('.sk-cb:checked');
+    const n = checked.length;
+    document.getElementById('sk-gem-count').textContent = n;
+    const btn = document.getElementById('sk-confirm-btn');
+    btn.textContent = `CONFIRM STAKE (${n} card${n !== 1 ? 's' : ''} — ${n} GEM${n !== 1 ? 'S' : ''})`;
+    btn.disabled = n === 0;
+}
+
+function closeStakePanel() {
+    document.getElementById('stake-backdrop').style.display = 'none';
+    document.getElementById('stake-panel').style.display    = 'none';
+}
+
+async function confirmStake() {
+    const checked = Array.from(document.querySelectorAll('.sk-cb:checked'));
+    if (!checked.length) return;
+    const assetIds = checked.map(cb => cb.getAttribute('data-id'));
+
+    const wallet = localStorage.getItem('naron_wallet');
+    if (!wallet) {
+        document.getElementById('sk-result').innerHTML = '<span style="color:#c04040">⚠ No wallet connected — log in first.</span>';
+        return;
+    }
+
+    const btn = document.getElementById('sk-confirm-btn');
+    btn.disabled = true;
+    btn.textContent = 'SIGNING…';
+    document.getElementById('sk-result').textContent = '';
+
+    const action = {
+        account: 'atomicassets',
+        name: 'transfer',
+        authorization: [{ actor: wallet, permission: 'active' }],
+        data: {
+            from: wallet,
+            to: 'farm.ale',
+            asset_ids: assetIds,
+            memo: 'nftstake'
+        }
+    };
+
+    try {
+        if (window.walletSession) {
+            await window.walletSession.transact({ actions: [action] });
+        } else if (window.wax && window.wax.api) {
+            await window.wax.api.transact({ actions: [action] }, { blocksBehind: 3, expireSeconds: 60 });
+        } else {
+            throw new Error('No wallet session active');
+        }
+        document.getElementById('sk-result').innerHTML =
+            `<span style="color:#40c080">✓ Staked ${assetIds.length} card${assetIds.length !== 1 ? 's' : ''} to farm.ale</span>`;
+        btn.textContent = '✓ DONE';
+        // Uncheck staked items so user can see what remains
+        checked.forEach(cb => {
+            cb.checked = false;
+            cb.closest('.sk-item').classList.add('sk-unchecked');
+        });
+        updateStakeSummary();
+    } catch(e) {
+        document.getElementById('sk-result').innerHTML =
+            `<span style="color:#c04040">✗ ${e.message || 'Transaction failed'}</span>`;
+        btn.disabled = false;
+        btn.textContent = `CONFIRM STAKE (${assetIds.length})`;
+    }
+}
+
+// ── END STAKE ─────────────────────────────────────────────────────────────────
 
 // ── ARMY EXPORT ──────────────────────────────────────────────────────────────
 
