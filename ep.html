@@ -216,6 +216,61 @@ body::before {
 /* Seed address style */
 .ep-row.is-seed .ep-addr { color: #405060; }
 
+/* --- VIEW TOGGLE & SORT --- */
+.ctrl-divider { width: 1px; height: 24px; background: rgba(232,160,32,0.2); flex-shrink: 0; }
+.view-toggle { display: flex; gap: 0; }
+.view-btn {
+    background: var(--dark); color: #506070; border: 1px solid rgba(232,160,32,0.3);
+    padding: 7px 14px; font-family: 'Courier New', monospace; font-size: 0.8em;
+    font-weight: bold; letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+    transition: all 0.15s;
+}
+.view-btn:first-child { border-right: none; }
+.view-btn:hover { color: var(--gold); border-color: var(--gold); }
+.view-btn.active { background: rgba(232,160,32,0.12); color: var(--gold); border-color: var(--gold); }
+.sort-btn {
+    background: var(--dark); color: #506070; border: 1px solid rgba(232,160,32,0.3);
+    padding: 7px 14px; font-family: 'Courier New', monospace; font-size: 0.8em;
+    font-weight: bold; letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+}
+.sort-btn:hover { color: var(--gold); border-color: var(--gold); }
+.sort-btn.active { color: var(--gold); border-color: var(--gold); background: rgba(232,160,32,0.08); }
+
+/* --- GRAPH VIEW --- */
+#graph-view { display: none; }
+.graph-section { margin-bottom: 6px; }
+.graph-section-hdr {
+    font-size: 0.65em; color: #405060; letter-spacing: 3px; text-transform: uppercase;
+    padding: 14px 4px 4px; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 0;
+}
+.graph-row {
+    display: grid;
+    grid-template-columns: 26px 120px 70px 1fr 60px 72px;
+    align-items: center; gap: 10px;
+    padding: 5px 6px; border-bottom: 1px solid rgba(255,255,255,0.03);
+    min-height: 34px; transition: background 0.1s;
+}
+.graph-row:hover { background: rgba(255,255,255,0.025); }
+.graph-logo {
+    width: 24px; height: 24px; border-radius: 3px; overflow: hidden;
+    background: rgba(232,160,32,0.06); border: 1px solid rgba(232,160,32,0.15);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.graph-logo img { width: 100%; height: 100%; object-fit: contain; display: none; }
+.graph-logo .g-initials { font-size: 0.55em; font-weight: bold; color: var(--gold); }
+.graph-guild { font-size: 0.7em; color: #8090a0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.graph-bar-wrap {
+    position: relative; height: 16px; background: rgba(255,255,255,0.04);
+    border-radius: 2px; overflow: hidden; min-width: 60px;
+}
+.graph-bar-fill {
+    height: 100%; border-radius: 2px; width: 0;
+    transition: width 0.6s cubic-bezier(0.25,0.8,0.25,1);
+}
+.graph-ms { font-size: 0.72em; font-weight: bold; text-align: right; white-space: nowrap; }
+.graph-st { font-size: 0.65em; font-weight: bold; text-align: right; white-space: nowrap; }
+
 /* --- EMPTY MSG --- */
 .empty-msg {
     text-align: center; color: #405060; padding: 40px 20px;
@@ -245,6 +300,12 @@ body::before {
         <input type="checkbox" id="auto-refresh" onchange="toggleAuto(this.checked)">
         AUTO (60s)
     </label>
+    <div class="ctrl-divider"></div>
+    <div class="view-toggle">
+        <button class="view-btn active" id="view-cards-btn" onclick="setViewMode('cards')">⊞ CARDS</button>
+        <button class="view-btn" id="view-graph-btn" onclick="setViewMode('graph')">▦ GRAPH</button>
+    </div>
+    <button class="sort-btn" id="sort-btn" onclick="cycleSort()">↑ FASTEST</button>
     <div class="stats-strip" id="stats-strip">
         <span>LOADING...</span>
     </div>
@@ -274,6 +335,7 @@ body::before {
 
 <div class="ep-main">
     <div class="guilds-grid" id="guilds-grid"></div>
+    <div id="graph-view"></div>
     <div class="empty-msg" id="empty-msg" style="display:none">No endpoints in this category</div>
 </div>
 
@@ -708,6 +770,7 @@ async function checkEndpoint(ep) {
 }
 
 function renderResult(guildId, idx, result) {
+    _epResults[guildId + '-' + idx] = result;
     var stEl = document.getElementById('st-' + guildId + '-' + idx);
     var msEl = document.getElementById('ms-' + guildId + '-' + idx);
     if (!stEl) return;
@@ -752,6 +815,143 @@ function renderResult(guildId, idx, result) {
 }
 
 var _checking = false;
+var _viewMode = 'cards';
+var _sortMode = 'fastest';  // 'fastest' | 'slowest' | 'alpha'
+var _epResults = {};  // key: 'guildId-idx' → { ms, status }
+
+function getGuildBestMs(guildId) {
+    var best = Infinity;
+    var g = WAX_GUILDS.find(function(x){ return x.id === guildId; });
+    if (!g) return Infinity;
+    g.endpoints.forEach(function(ep, i){
+        if (ep.cat === 'seed') return;
+        var r = _epResults[guildId + '-' + i];
+        if (r && r.status === 'up' && r.ms < best) best = r.ms;
+    });
+    return best;
+}
+
+function applySort() {
+    var grid = document.getElementById('guilds-grid');
+    var cards = Array.from(grid.children);
+    if (_sortMode === 'alpha') {
+        cards.sort(function(a, b){
+            var ga = WAX_GUILDS.find(function(g){ return 'card-'+g.id === a.id; });
+            var gb = WAX_GUILDS.find(function(g){ return 'card-'+g.id === b.id; });
+            return (ga ? ga.name : '').localeCompare(gb ? gb.name : '');
+        });
+    } else {
+        cards.sort(function(a, b){
+            var idA = a.id.replace('card-',''), idB = b.id.replace('card-','');
+            var msA = getGuildBestMs(idA), msB = getGuildBestMs(idB);
+            return _sortMode === 'fastest' ? msA - msB : msB - msA;
+        });
+    }
+    cards.forEach(function(c){ grid.appendChild(c); });
+}
+
+function renderGraph() {
+    var container = document.getElementById('graph-view');
+    // Collect all HTTP endpoints with their results
+    var rows = [];
+    WAX_GUILDS.forEach(function(g){
+        g.endpoints.forEach(function(ep, i){
+            if (ep.cat === 'seed') return;
+            if (_activeFilter !== 'all' && ep.cat !== _activeFilter) return;
+            var r = _epResults[g.id + '-' + i] || { status: 'checking' };
+            rows.push({ guild: g, ep: ep, idx: i, result: r });
+        });
+    });
+    // Sort rows
+    rows.sort(function(a, b){
+        var msA = (a.result.status === 'up') ? a.result.ms : 99999;
+        var msB = (b.result.status === 'up') ? b.result.ms : 99999;
+        if (_sortMode === 'slowest') return msB - msA;
+        if (_sortMode === 'alpha')   return a.guild.name.localeCompare(b.guild.name);
+        return msA - msB;
+    });
+
+    var maxMs = 0;
+    rows.forEach(function(r){ if (r.result.ms) maxMs = Math.max(maxMs, r.result.ms); });
+    maxMs = Math.max(maxMs, 500);
+
+    var html = '';
+    rows.forEach(function(row){
+        var r = row.result;
+        var isUp = r.status === 'up';
+        var isDown = r.status === 'down' || r.status === 'timeout';
+        var ms = r.ms || 0;
+        var barPct = isUp ? Math.min(ms / maxMs * 100, 100).toFixed(1) : (isDown ? 100 : 0);
+        var barColor = isDown ? 'rgba(192,64,64,0.5)' :
+                       (ms < 250 ? 'rgba(60,184,104,0.7)' :
+                       (ms < 600 ? 'rgba(192,160,32,0.7)' : 'rgba(192,64,64,0.7)'));
+        var msColor = isDown ? 'var(--down)' :
+                      (ms < 250 ? 'var(--up)' : (ms < 600 ? 'var(--warn)' : 'var(--down)'));
+        var stText = r.status === 'checking' ? '···' : r.status === 'up' ? '✓ UP' :
+                     r.status === 'timeout' ? '⏱ T/O' : '✗ DOWN';
+        var stColor = r.status === 'up' ? 'var(--up)' : r.status === 'checking' ? '#404858' : 'var(--down)';
+        var initials = getInitials(row.guild.name);
+        var logoImg = '<img id="glogo-' + row.guild.id + '" src="" alt="" style="display:none" onload="this.style.display=\'block\';this.nextElementSibling.style.display=\'none\'">';
+        html += '<div class="graph-row" data-cat="' + row.ep.cat + '">'
+            + '<div class="graph-logo">' + logoImg + '<span class="g-initials">' + initials + '</span></div>'
+            + '<span class="graph-guild" title="' + row.guild.name + '">' + row.guild.name + '</span>'
+            + '<span class="cat-badge ' + row.ep.cat + '">' + row.ep.cat + '</span>'
+            + '<div class="graph-bar-wrap"><div class="graph-bar-fill" id="gbar-' + row.guild.id + '-' + row.idx
+                + '" style="width:0%;background:' + barColor + '"></div></div>'
+            + '<span class="graph-ms" style="color:' + msColor + '" id="gms-' + row.guild.id + '-' + row.idx + '">'
+                + (isUp ? ms + ' ms' : (isDown ? (r.httpStatus || 'ERR') : '')) + '</span>'
+            + '<span class="graph-st" style="color:' + stColor + '">' + stText + '</span>'
+            + '</div>';
+    });
+    container.innerHTML = html || '<div class="empty-msg">No data yet — refresh to check</div>';
+
+    // Propagate logos already loaded
+    WAX_GUILDS.forEach(function(g){
+        var src = (document.getElementById('logo-img-' + g.id) || {}).src;
+        var gEl = document.getElementById('glogo-' + g.id);
+        if (gEl && src && !src.endsWith('ep.html')) {
+            gEl.onload = function(){ this.style.display='block'; this.nextElementSibling.style.display='none'; };
+            gEl.src = src;
+        }
+    });
+
+    // Animate bars in after paint
+    requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+            rows.forEach(function(row){
+                var el = document.getElementById('gbar-' + row.guild.id + '-' + row.idx);
+                if (el) {
+                    var r = row.result;
+                    var ms = r.ms || 0;
+                    var maxMsNow = maxMs;
+                    var pct = (r.status === 'up') ? Math.min(ms / maxMsNow * 100, 100).toFixed(1) :
+                              ((r.status === 'down' || r.status === 'timeout') ? 100 : 0);
+                    el.style.width = pct + '%';
+                }
+            });
+        });
+    });
+}
+
+function setViewMode(mode) {
+    _viewMode = mode;
+    document.getElementById('view-cards-btn').classList.toggle('active', mode === 'cards');
+    document.getElementById('view-graph-btn').classList.toggle('active', mode === 'graph');
+    document.getElementById('guilds-grid').style.display = mode === 'cards' ? '' : 'none';
+    document.getElementById('graph-view').style.display  = mode === 'graph' ? 'block' : 'none';
+    if (mode === 'graph') renderGraph();
+}
+
+function cycleSort() {
+    var next = _sortMode === 'fastest' ? 'slowest' : (_sortMode === 'slowest' ? 'alpha' : 'fastest');
+    _sortMode = next;
+    var labels = { fastest: '↑ FASTEST', slowest: '↓ SLOWEST', alpha: 'AZ ALPHA' };
+    var btn = document.getElementById('sort-btn');
+    btn.textContent = labels[_sortMode];
+    btn.classList.toggle('active', _sortMode !== 'fastest');
+    applySort();
+    if (_viewMode === 'graph') renderGraph();
+}
 
 async function refreshAll() {
     if (_checking) return;
@@ -784,6 +984,8 @@ async function refreshAll() {
     await Promise.allSettled(promises);
 
     updateStats();
+    applySort();
+    if (_viewMode === 'graph') renderGraph();
     var now = new Date();
     document.getElementById('last-updated').textContent =
         'Updated ' + now.getUTCHours().toString().padStart(2,'0') + ':' +
@@ -832,6 +1034,7 @@ function setFilter(cat, btn) {
     });
 
     document.getElementById('empty-msg').style.display = anyVisible ? 'none' : 'block';
+    if (_viewMode === 'graph') renderGraph();
 }
 
 function toggleAuto(on) {
