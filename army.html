@@ -830,6 +830,7 @@
     <button id="export-xlsx-btn" class="cyber-btn" onclick="exportArmyXLSX()" style="display:none; color:#40c080; border-color:#40c08066;">⬇ XLSX</button>
     <button id="stake-auto-btn"   class="cyber-btn" onclick="openStakePanel('auto')"   style="display:none; color:var(--theme-color); border-color:rgba(255,170,0,0.5);">⚡ STAKE AUTO</button>
     <button id="stake-manual-btn" class="cyber-btn" onclick="openStakePanel('manual')" style="display:none; color:var(--theme-color); border-color:rgba(255,170,0,0.5);">⚡ STAKE MANUAL</button>
+    <span id="stake-disclaimer" style="display:none; font-size:0.68em; color:#e06040; letter-spacing:1px; font-family:'Courier New',monospace; border:1px solid #e0604044; padding:3px 9px; margin-left:4px;">⚠ ALE FARMING ONLY — ASK SHADE BEFORE USING</span>
     <div id="score-breakdown">
         <div class="bd-grid">
             <div class="bd-head"></div><div class="bd-head">⚔ ATK</div><div class="bd-head">🛡 DEF</div><div class="bd-head">⏱ >></div>
@@ -1562,6 +1563,7 @@ function processData(data) {
     document.getElementById('export-xlsx-btn').style.display  = 'inline-block';
     document.getElementById('stake-auto-btn').style.display   = 'inline-block';
     document.getElementById('stake-manual-btn').style.display = 'inline-block';
+    document.getElementById('stake-disclaimer').style.display = 'inline-block';
 
     // Build division structure: each commander leads their slice of activeCrew + matching arms
     const divisions = [];
