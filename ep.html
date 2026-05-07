@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WAX Endpoint Status // Naron Codex</title>
+<link rel="icon" type="image/png" href="NCico.png">
+<style>
+:root {
+    --bg: #030609;
+    --gold: #e8a020;
+    --gold-glow: rgba(232,160,32,0.35);
+    --dark: #0a0802;
+    --hover: #12100a;
+    --up:    #3cb868;
+    --warn:  #c0a020;
+    --down:  #c04040;
+    --p2p:   #4a6a80;
+    --cat-api:     #3a8fd0;
+    --cat-hyp:     #8060d0;
+    --cat-atom:    #d07030;
+    --cat-hist:    #30a0a0;
+    --cat-seed:    #507080;
+    --cat-wallet:  #8080c0;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    background: var(--bg);
+    background-image: radial-gradient(ellipse at 50% 0%, #0a0c12 0%, #030609 65%);
+    color: #b8c4d0;
+    font-family: 'Courier New', monospace;
+    margin: 0; padding: 0; min-height: 100vh;
+    cursor: crosshair;
+}
+
+body::before {
+    content: ''; position: fixed; top: 0; left: 0; width: 1px; height: 1px; z-index: -1;
+    box-shadow:
+        5vw 10vh #fff, 15vw 25vh rgba(255,255,255,0.4), 25vw 5vh #fff, 35vw 45vh rgba(255,255,255,0.6),
+        45vw 15vh #fff, 55vw 65vh #fff, 65vw 20vh rgba(255,255,255,0.3), 75vw 55vh #fff,
+        85vw 12vh rgba(255,255,255,0.7), 95vw 40vh #fff, 10vw 60vh #fff, 20vw 80vh rgba(255,255,255,0.5),
+        30vw 90vh #fff, 40vw 75vh rgba(255,255,255,0.4), 50vw 85vh #fff, 60vw 95vh rgba(255,255,255,0.6),
+        70vw 80vh #fff, 80vw 92vh rgba(255,255,255,0.3), 90vw 70vh #fff, 98vw 85vh #fff,
+        8vw 35vh rgba(255,255,255,0.4), 28vw 55vh #fff, 48vw 30vh rgba(255,255,255,0.7), 88vw 28vh #fff;
+    animation: starlight 5s ease-in-out infinite;
+}
+@keyframes starlight { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.8; } }
+
+.click-effect {
+    position: fixed; pointer-events: none; width: 40px; height: 40px;
+    border: 2px solid var(--gold); border-radius: 50%;
+    transform: translate(-50%,-50%); animation: clickPulse 0.4s ease-out forwards;
+    z-index: 2147483647; box-shadow: 0 0 10px var(--gold);
+}
+@keyframes clickPulse {
+    0%   { transform: translate(-50%,-50%) scale(0.2); opacity:1; border-width:5px; }
+    100% { transform: translate(-50%,-50%) scale(2.5); opacity:0; border-width:0; }
+}
+#cursor-glow {
+    position: fixed; top:-50px; left:-50px; width:70px; height:70px; border-radius:50%;
+    background: var(--gold); filter: blur(35px); opacity: 0.2;
+    pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); transition: background 0.2s;
+}
+
+/* --- HEADER --- */
+.global-header {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--dark); border-bottom: 2px solid var(--gold);
+    padding: 0 28px; height: 62px; position: sticky; top: 0; z-index: 6000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.9);
+}
+.hdr-title {
+    color: var(--gold); margin: 0; font-size: 1.4em; letter-spacing: 4px;
+    text-transform: uppercase; text-shadow: 0 0 12px var(--gold); white-space: nowrap;
+}
+.hdr-right { display: flex; align-items: center; gap: 10px; }
+
+/* --- CONTROL BAR --- */
+.ctrl-bar {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 10px 28px; background: rgba(5,5,16,0.97);
+    border-bottom: 1px solid rgba(232,160,32,0.25);
+    position: sticky; top: 62px; z-index: 5000;
+}
+.ctrl-btn {
+    background: var(--dark); color: var(--gold); border: 1px solid var(--gold);
+    padding: 7px 18px; font-family: 'Courier New', monospace; font-size: 0.82em;
+    font-weight: bold; letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+    transition: all 0.18s;
+}
+.ctrl-btn:hover { background: var(--gold); color: #000; box-shadow: 0 0 12px var(--gold-glow); }
+.ctrl-btn:disabled { opacity: 0.4; cursor: default; }
+.ctrl-btn.spinning { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.stats-strip {
+    display: flex; gap: 18px; align-items: center; font-size: 0.78em;
+    color: #708090; letter-spacing: 1px; flex-wrap: wrap;
+}
+.stat-num { color: var(--gold); font-weight: bold; }
+.stat-up  { color: var(--up); font-weight: bold; }
+.stat-dn  { color: var(--down); font-weight: bold; }
+.auto-lbl { font-size: 0.78em; color: #607080; letter-spacing: 1px; display: flex; align-items: center; gap: 6px; }
+.auto-lbl input { accent-color: var(--gold); cursor: pointer; }
+#last-updated { font-size: 0.75em; color: #506070; margin-left: auto; white-space: nowrap; }
+
+/* --- CATEGORY TABS --- */
+.cat-tabs {
+    display: flex; gap: 0; padding: 0 28px;
+    background: rgba(3,6,9,0.98); border-bottom: 1px solid rgba(232,160,32,0.18);
+    position: sticky; top: 112px; z-index: 4800; overflow-x: auto;
+}
+.cat-tab {
+    background: transparent; border: none; border-bottom: 2px solid transparent;
+    padding: 10px 22px; font-family: 'Courier New', monospace; font-size: 0.82em;
+    font-weight: bold; letter-spacing: 2px; color: #506070; cursor: pointer;
+    transition: all 0.18s; text-transform: uppercase; white-space: nowrap; flex-shrink: 0;
+}
+.cat-tab:hover { color: var(--gold); }
+.cat-tab.active { color: #fff; border-bottom-color: var(--gold); }
+.cat-tab[data-cat="api"]    .tab-dot { background: var(--cat-api); }
+.cat-tab[data-cat="hyperion"] .tab-dot { background: var(--cat-hyp); }
+.cat-tab[data-cat="atomic"] .tab-dot { background: var(--cat-atom); }
+.cat-tab[data-cat="history"] .tab-dot { background: var(--cat-hist); }
+.cat-tab[data-cat="seed"]   .tab-dot { background: var(--cat-seed); }
+.cat-tab[data-cat="wallet"] .tab-dot { background: var(--cat-wallet); }
+.tab-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:7px; background:#506070; }
+
+/* --- MAIN CONTENT --- */
+.ep-main { padding: 20px 28px 40px; max-width: 1400px; margin: 0 auto; }
+
+/* --- GUILD CARDS --- */
+.guilds-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 14px;
+}
+
+.guild-card {
+    background: rgba(10,10,18,0.8);
+    border: 1px solid rgba(232,160,32,0.2);
+    border-top: 2px solid rgba(232,160,32,0.4);
+    transition: border-color 0.2s;
+}
+.guild-card:hover { border-color: rgba(232,160,32,0.5); }
+.guild-card.hidden { display: none; }
+
+.guild-hdr {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; background: rgba(0,0,0,0.3);
+    border-bottom: 1px solid rgba(232,160,32,0.12);
+}
+.guild-logo-wrap {
+    width: 32px; height: 32px; flex-shrink: 0; border-radius: 4px;
+    overflow: hidden; background: rgba(232,160,32,0.08);
+    border: 1px solid rgba(232,160,32,0.2);
+    display: flex; align-items: center; justify-content: center;
+}
+.guild-logo-wrap img { width: 100%; height: 100%; object-fit: contain; display: none; }
+.guild-logo-wrap .logo-fallback {
+    font-size: 0.75em; font-weight: bold; color: var(--gold); letter-spacing: 0;
+    text-transform: uppercase; line-height: 1; text-align: center; padding: 2px;
+}
+.guild-name { color: #d8c8a8; font-size: 0.88em; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+.guild-account { font-size: 0.68em; color: #506070; margin-left: auto; letter-spacing: 1px; }
+
+.ep-list { padding: 0; }
+.ep-row {
+    display: grid; grid-template-columns: 72px 1fr 80px 64px;
+    align-items: center; gap: 8px;
+    padding: 5px 12px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    min-height: 32px; transition: background 0.1s;
+}
+.ep-row:last-child { border-bottom: none; }
+.ep-row:hover { background: rgba(255,255,255,0.02); }
+.ep-row.ep-hidden { display: none; }
+
+.cat-badge {
+    font-size: 0.62em; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;
+    padding: 2px 6px; border-radius: 2px; text-align: center; width: 66px;
+    border: 1px solid currentColor;
+}
+.cat-badge.api     { color: var(--cat-api);    border-color: rgba(58,143,208,0.4);  background: rgba(58,143,208,0.08);  }
+.cat-badge.hyperion{ color: var(--cat-hyp);    border-color: rgba(128,96,208,0.4);  background: rgba(128,96,208,0.08);  }
+.cat-badge.atomic  { color: var(--cat-atom);   border-color: rgba(208,112,48,0.4);  background: rgba(208,112,48,0.08);  }
+.cat-badge.history { color: var(--cat-hist);   border-color: rgba(48,160,160,0.4);  background: rgba(48,160,160,0.08);  }
+.cat-badge.seed    { color: var(--cat-seed);   border-color: rgba(80,112,128,0.4);  background: rgba(80,112,128,0.08);  }
+.cat-badge.wallet  { color: var(--cat-wallet); border-color: rgba(128,128,192,0.4); background: rgba(128,128,192,0.08); }
+
+.ep-addr {
+    font-size: 0.7em; color: #8090a0; letter-spacing: 0.5px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.ep-status { font-size: 0.7em; font-weight: bold; letter-spacing: 0.5px; text-align: right; }
+.st-checking { color: #404858; }
+.st-up   { color: var(--up); }
+.st-warn { color: var(--warn); }
+.st-down { color: var(--down); }
+.st-p2p  { color: var(--p2p); }
+
+.ep-ms {
+    font-size: 0.68em; text-align: right; color: #506070; letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+.ms-fast   { color: var(--up); }
+.ms-medium { color: var(--warn); }
+.ms-slow   { color: var(--down); }
+
+.ep-extra { font-size: 0.6em; color: #506070; text-align: right; }
+.ep-lag-ok   { color: #3a8060; }
+.ep-lag-warn { color: var(--warn); }
+
+/* Seed address style */
+.ep-row.is-seed .ep-addr { color: #405060; }
+
+/* --- EMPTY MSG --- */
+.empty-msg {
+    text-align: center; color: #405060; padding: 40px 20px;
+    font-size: 0.8em; letter-spacing: 2px; text-transform: uppercase;
+}
+
+/* --- FOOTER --- */
+.ep-footer {
+    text-align: center; color: #303840; font-size: 0.7em; letter-spacing: 1px;
+    padding: 30px 20px; border-top: 1px solid rgba(232,160,32,0.1); margin-top: 20px;
+}
+</style>
+</head>
+<body>
+<div id="cursor-glow"></div>
+
+<header class="global-header">
+    <span class="hdr-title">◈ WAX NETWORK STATUS</span>
+    <div class="hdr-right">
+        <span style="font-size:0.7em;color:#405060;letter-spacing:1px;">WAX MAINNET</span>
+    </div>
+</header>
+
+<div class="ctrl-bar">
+    <button class="ctrl-btn" id="refresh-btn" onclick="refreshAll()">⟳ REFRESH ALL</button>
+    <label class="auto-lbl">
+        <input type="checkbox" id="auto-refresh" onchange="toggleAuto(this.checked)">
+        AUTO (60s)
+    </label>
+    <div class="stats-strip" id="stats-strip">
+        <span>LOADING...</span>
+    </div>
+    <span id="last-updated"></span>
+</div>
+
+<div class="cat-tabs">
+    <button class="cat-tab active" data-cat="all" onclick="setFilter('all',this)">
+        <span class="tab-dot" style="background:var(--gold)"></span>ALL
+    </button>
+    <button class="cat-tab" data-cat="api" onclick="setFilter('api',this)">
+        <span class="tab-dot" style="background:var(--cat-api)"></span>API
+    </button>
+    <button class="cat-tab" data-cat="hyperion" onclick="setFilter('hyperion',this)">
+        <span class="tab-dot" style="background:var(--cat-hyp)"></span>HYPERION
+    </button>
+    <button class="cat-tab" data-cat="atomic" onclick="setFilter('atomic',this)">
+        <span class="tab-dot" style="background:var(--cat-atom)"></span>ATOMIC
+    </button>
+    <button class="cat-tab" data-cat="history" onclick="setFilter('history',this)">
+        <span class="tab-dot" style="background:var(--cat-hist)"></span>HISTORY
+    </button>
+    <button class="cat-tab" data-cat="seed" onclick="setFilter('seed',this)">
+        <span class="tab-dot" style="background:var(--cat-seed)"></span>SEED / P2P
+    </button>
+</div>
+
+<div class="ep-main">
+    <div class="guilds-grid" id="guilds-grid"></div>
+    <div class="empty-msg" id="empty-msg" style="display:none">No endpoints in this category</div>
+</div>
+
+<footer class="ep-footer">
+    SEED / P2P endpoints are TCP connections — not checkable from the browser. Listed for reference only.<br>
+    Status checks use public CORS-enabled HTTP endpoints. Results depend on your network path to each node.
+</footer>
+
+<script>
+document.addEventListener('mousemove', function(e) {
+    var g = document.getElementById('cursor-glow');
+    if (g) { g.style.left = e.clientX + 'px'; g.style.top = e.clientY + 'px'; }
+});
+document.addEventListener('click', function(e) {
+    var el = document.createElement('div');
+    el.className = 'click-effect';
+    el.style.left = e.clientX + 'px'; el.style.top = e.clientY + 'px';
+    document.body.appendChild(el);
+    setTimeout(function(){ el.remove(); }, 500);
+});
+
+var WAX_CHAIN_ID = '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4';
+
+var WAX_GUILDS = [
+    {
+        id: 'teamgreymass', name: 'Greymass', website: 'https://greymass.com',
+        endpoints: [
+            { cat:'api',      url:'https://wax.greymass.com',           path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'hyperion', url:'https://wax.greymass.com',           path:'/v2/health',          method:'GET'  },
+            { cat:'seed',     addr:'wax.greymass.com:35777' },
+            { cat:'seed',     addr:'wax.greymass.com:35777' },
+        ]
+    },
+    {
+        id: 'pink.gg', name: 'pink.gg', website: 'https://pink.gg',
+        endpoints: [
+            { cat:'api',      url:'https://wax.pink.gg',                path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'hyperion', url:'https://hyperion.wax.pink.gg',       path:'/v2/health',          method:'GET'  },
+            { cat:'atomic',   url:'https://atomic.wax.pink.gg',         path:'/health',             method:'GET'  },
+            { cat:'seed',     addr:'peer1.wax.pink.gg:36715' },
+            { cat:'seed',     addr:'peer2.wax.pink.gg:36715' },
+        ]
+    },
+    {
+        id: 'eosphereiobp', name: 'EOSphere', website: 'https://eosphere.io',
+        endpoints: [
+            { cat:'api',      url:'https://wax.eosphere.io',            path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'hyperion', url:'https://wax.eosphere.io',            path:'/v2/health',          method:'GET'  },
+            { cat:'seed',     addr:'peer1-wax.eosphere.io:9876' },
+            { cat:'seed',     addr:'peer2-wax.eosphere.io:9876' },
+        ]
+    },
+    {
+        id: 'waxswedenorg', name: 'WAX Sweden', website: 'https://waxsweden.org',
+        endpoints: [
+            { cat:'api',      url:'https://api.waxsweden.org',          path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'hyperion', url:'https://api.waxsweden.org',          path:'/v2/health',          method:'GET'  },
+            { cat:'seed',     addr:'p2p.waxsweden.org:35777' },
+        ]
+    },
+    {
+        id: 'eosriobrazil', name: 'EOS Rio', website: 'https://eosrio.io',
+        endpoints: [
+            { cat:'api',      url:'https://api.wax.eosrio.io',          path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'hyperion', url:'https://hyperion.wax.eosrio.io',     path:'/v2/health',          method:'GET'  },
+            { cat:'atomic',   url:'https://atomic.wax.eosrio.io',       path:'/health',             method:'GET'  },
+            { cat:'seed',     addr:'p2p-1.wax.eosrio.io:8032' },
+        ]
+    },
+    {
+        id: 'blacklusionx', name: 'Blacklusion', website: 'https://blacklusion.io',
+        endpoints: [
+            { cat:'api',      url:'https://wax.blacklusion.io',         path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'atomic',   url:'https://aa.wax.blacklusion.io',      path:'/health',             method:'GET'  },
+            { cat:'seed',     addr:'peer1-emea.wax.blacklusion.io:4646' },
+        ]
+    },
+    {
+        id: 'amsterdamwax', name: 'EOS Amsterdam', website: 'https://eosamsterdam.net',
+        endpoints: [
+            { cat:'api',      url:'https://wax.eu.eosamsterdam.net',    path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'atomic',   url:'https://wax-aa.eu.eosamsterdam.net', path:'/health',             method:'GET'  },
+            { cat:'seed',     addr:'wax.eu.eosamsterdam.net:9101' },
+        ]
+    },
+    {
+        id: 'bp.wecan', name: 'We Can', website: 'https://wecan.dev',
+        endpoints: [
+            { cat:'api',      url:'https://wax-api.wecan.dev',          path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'hyperion', url:'https://wax-hyperion.wecan.dev',     path:'/v2/health',          method:'GET'  },
+            { cat:'atomic',   url:'https://wax-atomic.wecan.dev',       path:'/health',             method:'GET'  },
+            { cat:'seed',     addr:'seed1-wax-mainnet.wecan.dev:14998' },
+            { cat:'seed',     addr:'seed2-wax-mainnet.wecan.dev:14998' },
+        ]
+    },
+    {
+        id: 'dapplica', name: 'Dapplica', website: 'https://dapplica.io',
+        endpoints: [
+            { cat:'api',      url:'https://wax.dapplica.io',            path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'atomic',   url:'https://aa.dapplica.io',             path:'/health',             method:'GET'  },
+            { cat:'seed',     addr:'wax.dapplica.io:9876' },
+        ]
+    },
+    {
+        id: 'eosdacserver', name: 'eosDAC', website: 'https://eosdac.io',
+        endpoints: [
+            { cat:'api',      url:'https://wax.eosdac.io',              path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'wax-p2p.eosdac.io:29876' },
+            { cat:'seed',     addr:'wax-p2p.fi.eosdac.io:19876' },
+            { cat:'seed',     addr:'wax-p2p.uk.eosdac.io:29873' },
+        ]
+    },
+    {
+        id: 'guild.nefty', name: 'NeftyBlocks', website: 'https://neftyblocks.com',
+        endpoints: [
+            { cat:'api',      url:'https://wax.api.neftyblocks.com',    path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'atomic',   url:'https://aa.neftyblocks.com',         path:'/health',             method:'GET'  },
+            { cat:'seed',     addr:'p2p-node1.neftyblocks.com:9876' },
+            { cat:'seed',     addr:'p2p-node2.neftyblocks.com:9876' },
+        ]
+    },
+    {
+        id: 'ivote4waxusa', name: 'EOS USA', website: 'https://wax.eosusa.io',
+        endpoints: [
+            { cat:'api',      url:'https://wax.eosusa.io',              path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'hyperion', url:'https://wax.eosusa.io',              path:'/v2/health',          method:'GET'  },
+            { cat:'seed',     addr:'wax.p2p.eosusa.io:9875' },
+        ]
+    },
+    {
+        id: 'nation.wax', name: 'EOS Nation', website: 'https://eosnation.io',
+        endpoints: [
+            { cat:'api',      url:'https://wax.api.eosnation.io',       path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'hyperion', url:'https://wax.eosn.io',                path:'/v2/health',          method:'GET'  },
+            { cat:'seed',     addr:'wax.seed.eosnation.io:9876' },
+        ]
+    },
+    {
+        id: 'sentnlagents', name: 'Sentnl', website: 'https://sentnl.io',
+        endpoints: [
+            { cat:'api',      url:'https://wax.sentnl.io',              path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'hyperion', url:'https://wax.sentnl.io',              path:'/v2/health',          method:'GET'  },
+            { cat:'seed',     addr:'waxp2p.sentnl.io:9876' },
+        ]
+    },
+    {
+        id: 'alohaeosprod', name: 'Aloha EOS', website: 'https://www.alohaeos.com',
+        endpoints: [
+            { cat:'api',      url:'https://api.wax.alohaeos.com',       path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'peer.wax.alohaeos.com:9876' },
+        ]
+    },
+    {
+        id: 'eosiodetroit', name: 'Detroit Ledger', website: 'https://detroitledger.tech',
+        endpoints: [
+            { cat:'api',      url:'https://api.wax.detroitledger.tech', path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'p2p.wax.detroitledger.tech:1337' },
+        ]
+    },
+    {
+        id: 'bountyblokbp', name: 'Bountyblok', website: 'https://bountyblok.io',
+        endpoints: [
+            { cat:'api',      url:'https://api.wax.bountyblok.io',      path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'p2p.wax.bountyblok.io:29876' },
+        ]
+    },
+    {
+        id: 'ledgerwiseio', name: 'Ledgerwise', website: 'https://ledgerwise.io',
+        endpoints: [
+            { cat:'api',      url:'https://wax-api.ledgerwise.io',      path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'atomic',   url:'https://atomicassets.ledgerwise.io', path:'/health',             method:'GET'  },
+            { cat:'seed',     addr:'waxp2p.ledgerwise.io:21877' },
+        ]
+    },
+    {
+        id: 'eosauthority', name: 'EOS Authority', website: 'https://eosauthority.com',
+        endpoints: [
+            { cat:'api',      url:'https://wax.eosauthority.com',       path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'node-wax.eosauthority.com:10301' },
+            { cat:'seed',     addr:'node-wax-p2p.eosauthority.com:10301' },
+        ]
+    },
+    {
+        id: 'waxhiveguild', name: 'WAX Hive', website: 'https://hivebp.io',
+        endpoints: [
+            { cat:'api',      url:'https://api.wax.hivebp.io',          path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'peer1.hivebp.io:9876' },
+            { cat:'seed',     addr:'peer2.hivebp.io:9876' },
+        ]
+    },
+    {
+        id: 'aus1genereos', name: 'GenerEOS', website: 'https://genereos.io',
+        endpoints: [
+            { cat:'api',      url:'https://wax.api.genereos.io',        path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'peer1-wax.genereos.io:9876' },
+        ]
+    },
+    {
+        id: 'blokcrafters', name: 'BlocKrafters', website: 'https://blokcrafters.io',
+        endpoints: [
+            { cat:'api',      url:'https://wax-bp.blokcrafters.io',     path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'wax-peer-ca.blokcrafters.io:9876' },
+            { cat:'seed',     addr:'wax-peer-eu.blokcrafters.io:9876' },
+        ]
+    },
+    {
+        id: 'guild.taco', name: 'Taco', website: 'https://tacocrypto.io',
+        endpoints: [
+            { cat:'api',      url:'https://api.wax.tacocrypto.io',      path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'peer.wax.tacocrypto.io:9999' },
+        ]
+    },
+    {
+        id: 'cryptolions1', name: 'CryptoLions', website: 'https://cryptolions.io',
+        endpoints: [
+            { cat:'api',      url:'https://wax.cryptolions.io',         path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'wax.cryptolions.io:9876' },
+        ]
+    },
+    {
+        id: 'waxmadrid111', name: 'EOS Madrid', website: 'https://eosiomadrid.io',
+        endpoints: [
+            { cat:'api',      url:'https://wax.eosiomadrid.io',         path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'wax-seed.eosiomadrid.io:9876' },
+        ]
+    },
+    {
+        id: 'bp.box', name: 'DeFiBox', website: 'https://defibox.io',
+        endpoints: [
+            { cat:'seed',     addr:'wax.defibox.xyz:9966' },
+        ]
+    },
+    {
+        id: 'edeniaedenia', name: 'Edenia', website: 'https://edenia.cloud',
+        endpoints: [
+            { cat:'api',      url:'https://wax.edenia.cloud',           path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'wax.edenia.cloud:9880' },
+        ]
+    },
+    {
+        id: 'eosarabianet', name: 'EOS Arabia', website: 'https://eosarabia.net',
+        endpoints: [
+            { cat:'api',      url:'https://api-wax.eosarabia.net',      path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'p2p-wax.eosarabia.net:9876' },
+        ]
+    },
+    {
+        id: 'eosdublinwow', name: 'EOS Dublin', website: 'https://eosdublin.io',
+        endpoints: [
+            { cat:'api',      url:'https://api.wax.eosdublin.io',       path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'wax.p2p.eosdublin.io:9876' },
+        ]
+    },
+    {
+        id: 'eoseouldotio', name: 'EOS Seoul (Neoply)', website: 'https://eoseoul.io',
+        endpoints: [
+            { cat:'seed',     addr:'hapi.neoply.io:29876' },
+        ]
+    },
+    {
+        id: 'greeneosiobp', name: 'Green EOS', website: 'https://greeneosio.com',
+        endpoints: [
+            { cat:'api',      url:'https://api.wax.greeneosio.com',     path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'p2p1.wax.greeneosio.com:9876' },
+        ]
+    },
+    {
+        id: 'nomadxchange', name: 'Nomad Exchange', website: 'https://nomadexchange.xyz',
+        endpoints: [
+            { cat:'seed',     addr:'p2p.nomadexchange.xyz' },
+        ]
+    },
+    {
+        id: 'polar.wax', name: 'Polar (EOS Asia)', website: 'https://eosasia.one',
+        endpoints: [
+            { cat:'seed',     addr:'wax-peer.eosasia.one:9876' },
+        ]
+    },
+    {
+        id: 'bp.adex', name: 'A-DEX', website: 'https://a-dex.xyz',
+        endpoints: [
+            { cat:'seed',     addr:'p2p-wax.a-dex.xyz:9876' },
+        ]
+    },
+    {
+        id: 'bp.alcor', name: 'Alcor', website: 'https://alcor.exchange',
+        endpoints: [
+            { cat:'api',      url:'https://alcor.exchange',             path:'/v1/chain/get_info',  method:'POST' },
+            { cat:'seed',     addr:'wax-p2p.alcor.exchange:9876' },
+            { cat:'seed',     addr:'wax-p2p2.alcor.exchange:9876' },
+        ]
+    },
+    {
+        id: 'wax.io', name: 'WAX Official (AA)', website: 'https://wax.io',
+        endpoints: [
+            { cat:'atomic',   url:'https://wax.api.atomicassets.io',   path:'/health',             method:'GET'  },
+        ]
+    },
+];
+
+// Deduplicate seed entries per guild that have identical addr
+WAX_GUILDS.forEach(function(g){
+    var seen = {};
+    g.endpoints = g.endpoints.filter(function(ep){
+        if(ep.cat!=='seed') return true;
+        if(seen[ep.addr]) return false;
+        seen[ep.addr] = true; return true;
+    });
+});
+
+var _activeFilter = 'all';
+var _autoTimer = null;
+
+function getInitials(name) {
+    return name.split(/\s+/).map(function(w){ return w[0]||''; }).join('').toUpperCase().slice(0,3);
+}
+
+function buildCards() {
+    var grid = document.getElementById('guilds-grid');
+    grid.innerHTML = '';
+    WAX_GUILDS.forEach(function(guild) {
+        var card = document.createElement('div');
+        card.className = 'guild-card';
+        card.id = 'card-' + guild.id;
+
+        var initials = getInitials(guild.name);
+
+        var hdr = '<div class="guild-hdr">'
+            + '<div class="guild-logo-wrap">'
+            + '<img id="logo-img-' + guild.id + '" alt="" onload="this.style.display=\'block\';this.parentElement.querySelector(\'.logo-fallback\').style.display=\'none\'">'
+            + '<div class="logo-fallback">' + initials + '</div>'
+            + '</div>'
+            + '<span class="guild-name">' + guild.name + '</span>'
+            + '<span class="guild-account">' + guild.id + '</span>'
+            + '</div>';
+
+        var rows = '';
+        guild.endpoints.forEach(function(ep, i) {
+            var isSeed = ep.cat === 'seed';
+            var addr = isSeed ? ep.addr : (ep.url ? ep.url.replace(/^https?:\/\//, '') : '');
+            rows += '<div class="ep-row' + (isSeed ? ' is-seed' : '') + '" id="row-' + guild.id + '-' + i + '" data-cat="' + ep.cat + '">'
+                + '<span class="cat-badge ' + ep.cat + '">' + ep.cat + '</span>'
+                + '<span class="ep-addr" title="' + (isSeed ? ep.addr : ep.url) + '">' + addr + '</span>'
+                + '<span class="ep-status st-' + (isSeed ? 'p2p' : 'checking') + '" id="st-' + guild.id + '-' + i + '">'
+                    + (isSeed ? 'P2P' : '···') + '</span>'
+                + '<span class="ep-ms" id="ms-' + guild.id + '-' + i + '">'
+                    + (isSeed ? '' : '') + '</span>'
+                + '</div>';
+        });
+
+        card.innerHTML = hdr + '<div class="ep-list">' + rows + '</div>';
+        grid.appendChild(card);
+
+        tryLoadLogo(guild);
+    });
+}
+
+async function tryLoadLogo(guild) {
+    if (!guild.website) return;
+    try {
+        var ctrl = new AbortController();
+        setTimeout(function(){ ctrl.abort(); }, 4000);
+        var r = await fetch(guild.website + '/bp.json', { signal: ctrl.signal });
+        if (!r.ok) return;
+        var j = await r.json();
+        var logo = (j.org && j.org.branding && (j.org.branding.logo_256 || j.org.branding.logo_svg)) || null;
+        if (logo) {
+            var img = document.getElementById('logo-img-' + guild.id);
+            if (img) img.src = logo;
+        }
+    } catch(e) {}
+}
+
+var WAX_HEAD_TIME = null;
+
+async function fetchWaxHead() {
+    try {
+        var ctrl = new AbortController();
+        setTimeout(function(){ ctrl.abort(); }, 5000);
+        var r = await fetch('https://wax.greymass.com/v1/chain/get_info', {
+            method: 'POST', body: '{}',
+            headers: {'Content-Type':'application/json'}, signal: ctrl.signal
+        });
+        if (r.ok) {
+            var j = await r.json();
+            WAX_HEAD_TIME = j.head_block_time ? new Date(j.head_block_time + 'Z') : null;
+        }
+    } catch(e) {}
+}
+
+async function checkEndpoint(ep) {
+    if (ep.cat === 'seed') return { status: 'p2p' };
+    var ctrl = new AbortController();
+    var tid = setTimeout(function(){ ctrl.abort(); }, 7000);
+    var t0 = performance.now();
+    try {
+        var opts = { signal: ctrl.signal };
+        if (ep.method === 'POST') {
+            opts.method = 'POST';
+            opts.headers = {'Content-Type':'application/json'};
+            opts.body = '{}';
+        }
+        var r = await fetch(ep.url + ep.path, opts);
+        clearTimeout(tid);
+        var ms = Math.round(performance.now() - t0);
+        if (!r.ok) return { status: 'down', ms: ms, httpStatus: r.status };
+        var extra = null;
+        if (ep.cat === 'api') {
+            try {
+                var j = await r.json();
+                var chainOk = j.chain_id === WAX_CHAIN_ID;
+                var lag = null;
+                if (j.head_block_time) {
+                    var hbt = new Date(j.head_block_time + 'Z');
+                    lag = Math.round((Date.now() - hbt.getTime()) / 1000);
+                }
+                extra = { chainOk: chainOk, lag: lag };
+            } catch(e) {}
+        } else if (ep.cat === 'hyperion') {
+            try {
+                var j2 = await r.json();
+                var allOk = (j2.status === 'OK') || (j2.health && j2.health.every && j2.health.every(function(h){ return h.status==='OK'||h.status==='Syncing'; }));
+                extra = { allOk: allOk };
+            } catch(e) {}
+        }
+        return { status: 'up', ms: ms, extra: extra };
+    } catch(e) {
+        clearTimeout(tid);
+        if (e.name === 'AbortError') return { status: 'timeout' };
+        return { status: 'down', error: e.message };
+    }
+}
+
+function renderResult(guildId, idx, result) {
+    var stEl = document.getElementById('st-' + guildId + '-' + idx);
+    var msEl = document.getElementById('ms-' + guildId + '-' + idx);
+    if (!stEl) return;
+    if (result.status === 'p2p') {
+        stEl.className = 'ep-status st-p2p'; stEl.textContent = 'P2P';
+        msEl.textContent = ''; return;
+    }
+    if (result.status === 'up') {
+        var ms = result.ms;
+        var msClass = ms < 250 ? 'ms-fast' : (ms < 600 ? 'ms-medium' : 'ms-slow');
+        stEl.className = 'ep-status st-up'; stEl.textContent = '✓ UP';
+        msEl.className = 'ep-ms ' + msClass; msEl.textContent = ms + ' ms';
+        if (result.extra) {
+            if (result.extra.lag !== null && result.extra.lag !== undefined) {
+                var lagEl = document.createElement('span');
+                if (result.extra.lag < 5) {
+                    lagEl.className = 'ep-lag-ok'; lagEl.textContent = ' sync';
+                } else if (result.extra.lag < 30) {
+                    lagEl.className = 'ep-lag-warn'; lagEl.textContent = ' ~' + result.extra.lag + 's lag';
+                } else {
+                    lagEl.className = 'ep-lag-warn'; lagEl.style.color = 'var(--down)'; lagEl.textContent = ' ' + result.extra.lag + 's lag';
+                }
+                msEl.appendChild(lagEl);
+            }
+            if (result.extra.allOk !== undefined && !result.extra.allOk) {
+                stEl.className = 'ep-status st-warn'; stEl.textContent = '⚠ DEGRADED';
+            }
+        }
+        return;
+    }
+    if (result.status === 'timeout') {
+        stEl.className = 'ep-status st-warn'; stEl.textContent = '⏱ TIMEOUT';
+        msEl.className = 'ep-ms'; msEl.textContent = '>7s';
+        return;
+    }
+    stEl.className = 'ep-status st-down'; stEl.textContent = '✗ DOWN';
+    if (result.ms) {
+        msEl.className = 'ep-ms ms-slow'; msEl.textContent = result.ms + 'ms';
+    } else {
+        msEl.textContent = result.httpStatus ? 'HTTP ' + result.httpStatus : 'ERR';
+    }
+}
+
+var _checking = false;
+
+async function refreshAll() {
+    if (_checking) return;
+    _checking = true;
+    var btn = document.getElementById('refresh-btn');
+    btn.disabled = true; btn.textContent = '⟳ CHECKING...';
+
+    // Reset all to checking
+    WAX_GUILDS.forEach(function(g){
+        g.endpoints.forEach(function(ep, i){
+            if (ep.cat === 'seed') return;
+            var stEl = document.getElementById('st-' + g.id + '-' + i);
+            var msEl = document.getElementById('ms-' + g.id + '-' + i);
+            if (stEl) { stEl.className = 'ep-status st-checking'; stEl.textContent = '···'; }
+            if (msEl) { msEl.className = 'ep-ms'; msEl.textContent = ''; }
+        });
+    });
+
+    await fetchWaxHead();
+
+    // Fire all checks in parallel
+    var promises = [];
+    WAX_GUILDS.forEach(function(g){
+        g.endpoints.forEach(function(ep, i){
+            promises.push(checkEndpoint(ep).then(function(result){
+                renderResult(g.id, i, result);
+            }));
+        });
+    });
+    await Promise.allSettled(promises);
+
+    updateStats();
+    var now = new Date();
+    document.getElementById('last-updated').textContent =
+        'Updated ' + now.getUTCHours().toString().padStart(2,'0') + ':' +
+        now.getUTCMinutes().toString().padStart(2,'0') + ':' +
+        now.getUTCSeconds().toString().padStart(2,'0') + ' UTC';
+
+    btn.disabled = false; btn.textContent = '⟳ REFRESH ALL';
+    _checking = false;
+}
+
+function updateStats() {
+    var up = 0, down = 0, timeout = 0, total = 0;
+    document.querySelectorAll('.ep-status').forEach(function(el){
+        if (el.classList.contains('st-p2p')) return;
+        total++;
+        if (el.classList.contains('st-up')) up++;
+        else if (el.classList.contains('st-warn')) timeout++;
+        else if (el.classList.contains('st-down')) down++;
+    });
+    var strip = document.getElementById('stats-strip');
+    strip.innerHTML =
+        '<span>HTTP ENDPOINTS: <span class="stat-num">' + total + '</span></span>'
+        + '<span>UP: <span class="stat-up">' + up + '</span></span>'
+        + '<span>DOWN: <span class="stat-dn">' + (down + timeout) + '</span></span>';
+}
+
+function setFilter(cat, btn) {
+    _activeFilter = cat;
+    document.querySelectorAll('.cat-tab').forEach(function(t){ t.classList.remove('active'); });
+    btn.classList.add('active');
+
+    var anyVisible = false;
+    WAX_GUILDS.forEach(function(g){
+        var card = document.getElementById('card-' + g.id);
+        if (!card) return;
+        var rows = card.querySelectorAll('.ep-row');
+        var cardVisible = false;
+        rows.forEach(function(row){
+            var rowCat = row.getAttribute('data-cat');
+            var show = (cat === 'all') || (rowCat === cat);
+            row.classList.toggle('ep-hidden', !show);
+            if (show) cardVisible = true;
+        });
+        card.classList.toggle('hidden', !cardVisible);
+        if (cardVisible) anyVisible = true;
+    });
+
+    document.getElementById('empty-msg').style.display = anyVisible ? 'none' : 'block';
+}
+
+function toggleAuto(on) {
+    if (_autoTimer) { clearInterval(_autoTimer); _autoTimer = null; }
+    if (on) { _autoTimer = setInterval(function(){ refreshAll(); }, 60000); }
+}
+
+buildCards();
+refreshAll();
+</script>
+</body>
+</html>
