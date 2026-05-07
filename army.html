@@ -2270,7 +2270,11 @@ function _rowsToCsvSection(title, rows, headers) {
     out += headers.join(',') + '\n';
     rows.forEach(r => {
         out += headers.map(h => {
-            const v = String(r[h.toLowerCase().replace(/ /g,'_')] || r[h] || '');
+            const key = h.toLowerCase().replace(/ /g,'_');
+            const v = String(r[key] !== undefined ? r[key] : (r[h] || ''));
+            if (!v) return '';
+            // Wrap large numeric IDs as Excel text formula to prevent scientific notation
+            if (h === 'Asset ID') return '="' + v + '"';
             return v.includes(',') || v.includes('"') ? '"' + v.replace(/"/g,'""') + '"' : v;
         }).join(',') + '\n';
     });
