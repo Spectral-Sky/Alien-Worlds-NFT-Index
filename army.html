@@ -1391,6 +1391,7 @@ function processData(data) {
         if (cat === 'supply')                    { supplies.push(obj); return; }
         if (cat === 'equipment')                 { obj.active = forgeEnabled; obj.equipType = d.type || td.type || ''; equipment.push(obj); return; }
         if (cat === 'face' || cat === 'warlord') {
+            if (rarity === 'abundant') return; // 0 slots, no utility
             obj.slots = localData.crew_slots ?? WARLORD_OVERRIDE[nft.name] ?? 0;
             obj.active = true;
             obj._isWarlord = (cat === 'warlord');
@@ -2317,9 +2318,9 @@ function _getStakePool() {
     if (!window._lastRenderArgs) return [];
     const [faces, crew, arms] = window._lastRenderArgs;
     const pool = [];
-    crew.filter(c => !c.active && !c.isPD && c.asset_id)
+    crew.filter(c => !c.active && !c.isPD && c.asset_id && c.rarity !== 'abundant')
         .forEach(c => pool.push({ ...c, _stakeType: 'crew' }));
-    arms.filter(a => !a.active && !a.isPD && a.asset_id)
+    arms.filter(a => !a.active && !a.isPD && a.asset_id && a.rarity !== 'abundant')
         .forEach(a => pool.push({ ...a, _stakeType: 'arms' }));
     return pool;
 }
