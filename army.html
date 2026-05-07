@@ -2223,7 +2223,7 @@ function _armyRows() {
     if (!window._lastRenderArgs) return null;
     const [faces, crew, arms, creatures, supplies, equipment, services, forgeEnabled, divisions] = window._lastRenderArgs;
 
-    const divisionRows = [];   // { divName, role, type, name, assetId, rarity, shine }
+    const divisionRows = [];   // { divName, role, type, name, asset_id, rarity, shine }
     const unassignedRows = [];
 
     function row(divName, role, type, item) {
@@ -2232,7 +2232,7 @@ function _armyRows() {
             role,
             type,
             name:    item ? (item.name || '') : '',
-            assetId: item ? (item.asset_id || '') : '',
+            asset_id: item ? (item.asset_id || '') : '',
             rarity:  item ? (item.rarity || '') : '',
             shine:   item ? (item.shine || '') : '',
         };
@@ -2317,7 +2317,7 @@ function exportArmyXLSX() {
     const COLS = ['Division', 'Role', 'Type', 'Name', 'Asset ID', 'Rarity', 'Shine'];
 
     function makeSheet(rows) {
-        const aoa = [COLS, ...rows.map(r => [r.division, r.role, r.type, r.name, r.assetId, r.rarity, r.shine])];
+        const aoa = [COLS, ...rows.map(r => [r.division, r.role, r.type, r.name, r.asset_id, r.rarity, r.shine])];
         const ws = XLSX.utils.aoa_to_sheet(aoa);
         // Column widths
         ws['!cols'] = [{ wch: 30 }, { wch: 16 }, { wch: 12 }, { wch: 26 }, { wch: 20 }, { wch: 12 }, { wch: 12 }];
@@ -2341,7 +2341,7 @@ function exportArmyXLSX() {
 
     // Summary sheet
     const allRows = [...divisionRows, ...unassignedRows];
-    const totalAssets = allRows.filter(r => r.assetId).length;
+    const totalAssets = allRows.filter(r => r.asset_id).length;
     const summaryAoa = [
         ['PD Army Export'],
         ['Date', new Date().toLocaleDateString()],
