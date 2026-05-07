@@ -15,6 +15,7 @@
     <link rel="icon" type="image/png" href="NCico.png">
     <script src="waxjs.js"></script>
     <script src="nft_data.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script type="module">
         import { SessionKit } from 'https://esm.sh/@wharfkit/session@1';
         import { WebRenderer } from 'https://esm.sh/@wharfkit/web-renderer@1';
@@ -758,6 +759,8 @@
     <button id="empty-div-btn" class="cyber-btn" onclick="toggleEmptyDivisions()" style="display:none;">▶ SHOW EMPTY DIVISIONS</button>
     <button class="cyber-btn" onclick="adjustFontSize(1)" title="Increase font size" style="padding:8px 11px;letter-spacing:0">A+</button>
     <button class="cyber-btn" onclick="adjustFontSize(-1)" title="Decrease font size" style="padding:8px 11px;letter-spacing:0">A−</button>
+    <button id="export-csv-btn"  class="cyber-btn" onclick="exportArmyCSV()"  style="display:none; color:#40c080; border-color:#40c08066;">⬇ CSV</button>
+    <button id="export-xlsx-btn" class="cyber-btn" onclick="exportArmyXLSX()" style="display:none; color:#40c080; border-color:#40c08066;">⬇ XLSX</button>
     <div id="score-breakdown">
         <div class="bd-grid">
             <div class="bd-head"></div><div class="bd-head">⚔ ATK</div><div class="bd-head">🛡 DEF</div><div class="bd-head">⏱ >></div>
@@ -1462,6 +1465,8 @@ function processData(data) {
     } else if (lavaEl) { lavaEl.style.display = 'none'; }
     bdSet('bd-total', 'TOTAL', finalAtk.toLocaleString(), finalDef.toLocaleString(), hm(totalMoveSecs));
     document.getElementById('breakdown-btn').style.display = 'inline-block';
+    document.getElementById('export-csv-btn').style.display  = 'inline-block';
+    document.getElementById('export-xlsx-btn').style.display = 'inline-block';
 
     // Build division structure: each commander leads their slice of activeCrew + matching arms
     const divisions = [];
@@ -2211,6 +2216,147 @@ function simonWin() {
     })();
 })();
 // ── END HEADER NARON PLANET ──────────────────────────────────────────────────
+
+// ── ARMY EXPORT ──────────────────────────────────────────────────────────────
+
+function _armyRows() {
+    if (!window._lastRenderArgs) return null;
+    const [faces, crew, arms, creatures, supplies, equipment, services, forgeEnabled, divisions] = window._lastRenderArgs;
+
+    const divisionRows = [];   // { divName, role, type, name, assetId, rarity, shine }
+    const unassignedRows = [];
+
+    function row(divName, role, type, item) {
+        return {
+            division: divName,
+            role,
+            type,
+            name:    item ? (item.name || '') : '',
+            assetId: item ? (item.asset_id || '') : '',
+            rarity:  item ? (item.rarity || '') : '',
+            shine:   item ? (item.shine || '') : '',
+        };
+    }
+
+    // Divisions
+    divisions.forEach((div, di) => {
+        const divName = 'Division ' + (di + 1) + (div.commander ? ' — ' + div.commander.name : '');
+        divisionRows.push(row(divName, 'Commander', 'faces', div.commander));
+        div.units.forEach((u, ui) => {
+            divisionRows.push(row(divName, 'Unit ' + (ui + 1), 'crew', u.crew));
+            if (u.gear)    divisionRows.push(row(divName, '  ↳ Gear',     u.gear.cat || 'arms', u.gear));
+            if (u.creature)divisionRows.push(row(divName, '  ↳ Creature', 'creatures',          u.creature));
+            if (u.supply)  divisionRows.push(row(divName, '  ↳ Supply',   'supplies',           u.supply));
+            if (u.service) divisionRows.push(row(divName, '  ↳ Service',  'services',           u.service));
+        });
+    });
+
+    // Unassigned crew
+    crew.filter(c => !c.active).forEach(c => unassignedRows.push(row('Unassigned', 'Reserve Crew', 'crew', c)));
+    // Unassigned arms
+    arms.filter(a => !a.active).forEach(a => unassignedRows.push(row('Unassigned', 'Unused Gear',  'arms', a)));
+    // Unassigned equipment
+    equipment.filter(e => !e.active).forEach(e => unassignedRows.push(row('Unassigned', 'Unused Equip', 'equipment', e)));
+    // Creatures not linked
+    creatures.filter(c => !c.linkedTo).forEach(c => unassignedRows.push(row('Unassigned', 'Unlinked Creature', 'creatures', c)));
+    // Supplies not linked
+    supplies.filter(s => !s.linkedTo).forEach(s => unassignedRows.push(row('Unassigned', 'Unlinked Supply', 'supplies', s)));
+
+    return { divisionRows, unassignedRows, divisions };
+}
+
+function _rowsToCsvSection(title, rows, headers) {
+    let out = title + '\n';
+    out += headers.join(',') + '\n';
+    rows.forEach(r => {
+        out += headers.map(h => {
+            const v = String(r[h.toLowerCase().replace(/ /g,'_')] || r[h] || '');
+            return v.includes(',') || v.includes('"') ? '"' + v.replace(/"/g,'""') + '"' : v;
+        }).join(',') + '\n';
+    });
+    return out + '\n';
+}
+
+function exportArmyCSV() {
+    const data = _armyRows();
+    if (!data) return;
+    const { divisionRows, unassignedRows, divisions } = data;
+    const HEADERS = ['Division', 'Role', 'Type', 'Name', 'Asset ID', 'Rarity', 'Shine'];
+
+    let csv = 'PD ARMY EXPORT — ' + new Date().toISOString().split('T')[0] + '\n\n';
+
+    if (divisions.length === 0) {
+        csv += _rowsToCsvSection('ALL UNITS', divisionRows, HEADERS);
+    } else {
+        // Group by division
+        const divMap = {};
+        divisionRows.forEach(r => { (divMap[r.division] = divMap[r.division] || []).push(r); });
+        Object.entries(divMap).forEach(([divName, rows]) => {
+            csv += _rowsToCsvSection(divName.toUpperCase(), rows, HEADERS);
+        });
+    }
+
+    if (unassignedRows.length) {
+        csv += _rowsToCsvSection('UNASSIGNED', unassignedRows, HEADERS);
+    }
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'pd_army_' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
+}
+
+function exportArmyXLSX() {
+    if (typeof XLSX === 'undefined') { alert('XLSX library not loaded yet — try again in a moment.'); return; }
+    const data = _armyRows();
+    if (!data) return;
+    const { divisionRows, unassignedRows, divisions } = data;
+
+    const wb = XLSX.utils.book_new();
+    const COLS = ['Division', 'Role', 'Type', 'Name', 'Asset ID', 'Rarity', 'Shine'];
+
+    function makeSheet(rows) {
+        const aoa = [COLS, ...rows.map(r => [r.division, r.role, r.type, r.name, r.assetId, r.rarity, r.shine])];
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        // Column widths
+        ws['!cols'] = [{ wch: 30 }, { wch: 16 }, { wch: 12 }, { wch: 26 }, { wch: 20 }, { wch: 12 }, { wch: 12 }];
+        return ws;
+    }
+
+    if (divisions.length > 0) {
+        // One sheet per division
+        const divMap = {};
+        divisionRows.forEach(r => { (divMap[r.division] = divMap[r.division] || []).push(r); });
+        Object.entries(divMap).forEach(([divName, rows], i) => {
+            const sheetName = ('Div ' + (i + 1)).slice(0, 31);
+            XLSX.utils.book_append_sheet(wb, makeSheet(rows), sheetName);
+        });
+        if (unassignedRows.length) {
+            XLSX.utils.book_append_sheet(wb, makeSheet(unassignedRows), 'Unassigned');
+        }
+    } else {
+        XLSX.utils.book_append_sheet(wb, makeSheet([...divisionRows, ...unassignedRows]), 'Army');
+    }
+
+    // Summary sheet
+    const allRows = [...divisionRows, ...unassignedRows];
+    const totalAssets = allRows.filter(r => r.assetId).length;
+    const summaryAoa = [
+        ['PD Army Export'],
+        ['Date', new Date().toLocaleDateString()],
+        ['Total asset IDs', totalAssets],
+        ['Divisions', divisions.length],
+        ['Unassigned rows', unassignedRows.length],
+    ];
+    const sumWs = XLSX.utils.aoa_to_sheet(summaryAoa);
+    sumWs['!cols'] = [{ wch: 20 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, sumWs, 'Summary');
+
+    XLSX.writeFile(wb, 'pd_army_' + new Date().toISOString().split('T')[0] + '.xlsx');
+}
+
+// ── END ARMY EXPORT ───────────────────────────────────────────────────────────
 </script>
 </body>
 </html>
