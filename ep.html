@@ -271,6 +271,80 @@ body::before {
 .graph-ms { font-size: 0.72em; font-weight: bold; text-align: right; white-space: nowrap; }
 .graph-st { font-size: 0.65em; font-weight: bold; text-align: right; white-space: nowrap; }
 
+/* --- CUSTOM ENDPOINTS PANEL --- */
+#custom-section {
+    margin-top: 28px; border: 1px dashed rgba(232,160,32,0.3);
+    background: rgba(10,10,20,0.6);
+}
+.custom-hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 14px; cursor: pointer; user-select: none;
+    border-bottom: 1px dashed rgba(232,160,32,0.2); transition: background 0.15s;
+}
+.custom-hdr:hover { background: rgba(232,160,32,0.04); }
+.custom-hdr-title {
+    font-size: 0.8em; font-weight: bold; letter-spacing: 2px; color: var(--gold);
+    text-transform: uppercase;
+}
+.custom-hdr-count { font-size: 0.7em; color: #506070; margin-left: 10px; }
+.custom-chevron { color: var(--gold); font-size: 0.75em; transition: transform 0.2s; }
+.custom-chevron.open { transform: rotate(180deg); }
+
+#custom-panel { display: none; padding: 14px; }
+#custom-panel.open { display: block; }
+
+.custom-add-row {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px;
+}
+.custom-input {
+    background: #000; color: var(--gold); border: 1px solid rgba(232,160,32,0.35);
+    padding: 7px 10px; font-family: 'Courier New', monospace; font-size: 0.78em;
+    outline: none; letter-spacing: 0.5px; transition: border-color 0.15s; flex: 1; min-width: 220px;
+}
+.custom-input:focus { border-color: var(--gold); }
+.custom-input::placeholder { color: #304050; font-weight: normal; }
+.custom-label-input {
+    background: #000; color: #8090a0; border: 1px solid rgba(255,255,255,0.08);
+    padding: 7px 10px; font-family: 'Courier New', monospace; font-size: 0.78em;
+    outline: none; width: 140px;
+}
+.custom-label-input:focus { border-color: rgba(232,160,32,0.4); }
+.custom-label-input::placeholder { color: #304050; }
+.custom-type-sel {
+    background: #000; color: #8090a0; border: 1px solid rgba(255,255,255,0.1);
+    padding: 7px 8px; font-family: 'Courier New', monospace; font-size: 0.75em;
+    outline: none; cursor: pointer; letter-spacing: 1px; text-transform: uppercase;
+}
+.custom-type-sel:focus { border-color: rgba(232,160,32,0.4); }
+.custom-add-btn {
+    background: rgba(232,160,32,0.1); color: var(--gold); border: 1px solid rgba(232,160,32,0.5);
+    padding: 7px 16px; font-family: 'Courier New', monospace; font-size: 0.78em;
+    font-weight: bold; letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+}
+.custom-add-btn:hover { background: var(--gold); color: #000; }
+.custom-add-btn:disabled { opacity: 0.4; cursor: default; }
+.custom-err { font-size: 0.72em; color: var(--down); letter-spacing: 0.5px; width: 100%; padding-top: 2px; }
+.custom-detect-msg { font-size: 0.72em; color: #506070; letter-spacing: 0.5px; width: 100%; padding-top: 2px; }
+
+.custom-ep-list { display: flex; flex-direction: column; gap: 0; }
+.custom-ep-row {
+    display: grid; grid-template-columns: 70px 1fr 90px 72px 28px;
+    align-items: center; gap: 10px;
+    padding: 6px 6px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    min-height: 34px; transition: background 0.1s;
+}
+.custom-ep-row:last-child { border-bottom: none; }
+.custom-ep-row:hover { background: rgba(255,255,255,0.02); }
+.custom-ep-label { font-size: 0.72em; color: #a090c0; font-style: italic; letter-spacing: 0.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.custom-ep-url { font-size: 0.68em; color: #607080; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.custom-remove-btn {
+    background: transparent; border: none; color: #304050; font-size: 1em;
+    cursor: pointer; padding: 2px 4px; transition: color 0.15s; line-height: 1;
+}
+.custom-remove-btn:hover { color: var(--down); }
+.custom-empty { font-size: 0.72em; color: #304050; letter-spacing: 2px; text-transform: uppercase; padding: 10px 4px; text-align: center; }
+
 /* --- EMPTY MSG --- */
 .empty-msg {
     text-align: center; color: #405060; padding: 40px 20px;
@@ -337,6 +411,37 @@ body::before {
     <div class="guilds-grid" id="guilds-grid"></div>
     <div id="graph-view"></div>
     <div class="empty-msg" id="empty-msg" style="display:none">No endpoints in this category</div>
+
+    <div id="custom-section">
+        <div class="custom-hdr" onclick="toggleCustomPanel()">
+            <span>
+                <span class="custom-hdr-title">+ TRACK CUSTOM ENDPOINTS</span>
+                <span class="custom-hdr-count" id="custom-count"></span>
+            </span>
+            <span class="custom-chevron" id="custom-chevron">▼</span>
+        </div>
+        <div id="custom-panel">
+            <div class="custom-add-row">
+                <input class="custom-input" id="custom-url-in" type="text"
+                    placeholder="https://my-wax-node.com"
+                    onkeydown="if(event.key==='Enter')addCustomEndpoint()">
+                <input class="custom-label-input" id="custom-label-in" type="text"
+                    placeholder="Label (optional)"
+                    onkeydown="if(event.key==='Enter')addCustomEndpoint()">
+                <select class="custom-type-sel" id="custom-type-sel">
+                    <option value="auto">Auto-Detect</option>
+                    <option value="api">API</option>
+                    <option value="hyperion">Hyperion</option>
+                    <option value="atomic">Atomic</option>
+                    <option value="history">History</option>
+                </select>
+                <button class="custom-add-btn" id="custom-add-btn" onclick="addCustomEndpoint()">+ ADD</button>
+                <span class="custom-err" id="custom-err"></span>
+                <span class="custom-detect-msg" id="custom-detect-msg"></span>
+            </div>
+            <div class="custom-ep-list" id="custom-ep-list"></div>
+        </div>
+    </div>
 </div>
 
 <footer class="ep-footer">
@@ -983,6 +1088,15 @@ async function refreshAll() {
     });
     await Promise.allSettled(promises);
 
+    // Reset + check custom endpoints in parallel with stats update
+    _customEps.forEach(function(ep){
+        var stEl = document.getElementById('cst-' + ep.id);
+        var msEl = document.getElementById('cms-' + ep.id);
+        if (stEl) { stEl.className = 'ep-status st-checking'; stEl.textContent = '···'; }
+        if (msEl) { msEl.textContent = ''; }
+    });
+    checkAllCustom();
+
     updateStats();
     applySort();
     if (_viewMode === 'graph') renderGraph();
@@ -1042,7 +1156,153 @@ function toggleAuto(on) {
     if (on) { _autoTimer = setInterval(function(){ refreshAll(); }, 60000); }
 }
 
+// ── CUSTOM ENDPOINTS ──────────────────────────────────────────────────────────
+
+var CAT_PATHS = {
+    api:      { path: '/v1/chain/get_info',   method: 'POST', body: '{}' },
+    hyperion: { path: '/v2/health',           method: 'GET'  },
+    atomic:   { path: '/health',              method: 'GET'  },
+    history:  { path: '/v1/history/get_info', method: 'GET'  },
+};
+
+var _customEps = [];
+
+function loadCustom() {
+    try {
+        var raw = localStorage.getItem('ep_custom');
+        _customEps = raw ? JSON.parse(raw) : [];
+    } catch(e) { _customEps = []; }
+}
+
+function saveCustom() {
+    localStorage.setItem('ep_custom', JSON.stringify(_customEps));
+}
+
+function toggleCustomPanel() {
+    var panel   = document.getElementById('custom-panel');
+    var chevron = document.getElementById('custom-chevron');
+    var open    = panel.classList.toggle('open');
+    chevron.classList.toggle('open', open);
+}
+
+async function detectType(url) {
+    var cats = ['hyperion','atomic','api','history'];
+    var results = await Promise.all(cats.map(async function(cat){
+        var c = CAT_PATHS[cat];
+        try {
+            var ctrl = new AbortController();
+            setTimeout(function(){ ctrl.abort(); }, 4000);
+            var opts = { signal: ctrl.signal };
+            if (c.method === 'POST') { opts.method='POST'; opts.headers={'Content-Type':'application/json'}; opts.body=c.body; }
+            var r = await fetch(url + c.path, opts);
+            return r.ok ? cat : null;
+        } catch(e) { return null; }
+    }));
+    return results.find(function(r){ return r !== null; }) || 'api';
+}
+
+async function addCustomEndpoint() {
+    var urlIn   = document.getElementById('custom-url-in');
+    var labelIn = document.getElementById('custom-label-in');
+    var typeSel = document.getElementById('custom-type-sel');
+    var errEl   = document.getElementById('custom-err');
+    var detEl   = document.getElementById('custom-detect-msg');
+    var btn     = document.getElementById('custom-add-btn');
+
+    errEl.textContent  = '';
+    detEl.textContent  = '';
+
+    var rawUrl = urlIn.value.trim().replace(/\/+$/, '');
+    if (!rawUrl) { errEl.textContent = 'Enter a URL first.'; return; }
+    if (!/^https?:\/\//i.test(rawUrl)) { errEl.textContent = 'URL must start with http:// or https://'; return; }
+
+    var selectedType = typeSel.value;
+    var resolvedType = selectedType;
+
+    btn.disabled = true; btn.textContent = '…';
+
+    if (selectedType === 'auto') {
+        detEl.textContent = 'Auto-detecting…';
+        resolvedType = await detectType(rawUrl);
+        detEl.textContent = 'Detected: ' + resolvedType.toUpperCase();
+    }
+
+    var label = labelIn.value.trim() || new URL(rawUrl).hostname;
+    var id    = 'c_' + Date.now();
+
+    _customEps.push({ id: id, url: rawUrl, cat: resolvedType, label: label });
+    saveCustom();
+    renderCustomList();
+
+    urlIn.value = ''; labelIn.value = '';
+    btn.disabled = false; btn.textContent = '+ ADD';
+
+    // Immediately check the new endpoint
+    checkOneCustom(_customEps[_customEps.length - 1]);
+}
+
+function removeCustom(id) {
+    _customEps = _customEps.filter(function(e){ return e.id !== id; });
+    saveCustom();
+    renderCustomList();
+}
+
+function renderCustomList() {
+    var list  = document.getElementById('custom-ep-list');
+    var count = document.getElementById('custom-count');
+    if (count) count.textContent = _customEps.length ? '(' + _customEps.length + ')' : '';
+    if (!_customEps.length) {
+        list.innerHTML = '<div class="custom-empty">No custom endpoints saved</div>';
+        return;
+    }
+    list.innerHTML = _customEps.map(function(ep){
+        var stId = 'cst-' + ep.id;
+        var msId = 'cms-' + ep.id;
+        return '<div class="custom-ep-row">'
+            + '<span class="cat-badge ' + ep.cat + '">' + ep.cat + '</span>'
+            + '<span class="custom-ep-label" title="' + ep.label + '">' + ep.label + '</span>'
+            + '<span class="ep-status st-checking" id="' + stId + '">···</span>'
+            + '<span class="ep-ms" id="' + msId + '"></span>'
+            + '<button class="custom-remove-btn" onclick="removeCustom(\'' + ep.id + '\')" title="Remove">✕</button>'
+            + '</div>';
+    }).join('');
+}
+
+function renderCustomResult(ep, result) {
+    var stEl = document.getElementById('cst-' + ep.id);
+    var msEl = document.getElementById('cms-' + ep.id);
+    if (!stEl) return;
+    if (result.status === 'up') {
+        var ms = result.ms;
+        stEl.className = 'ep-status st-up'; stEl.textContent = '✓ UP';
+        msEl.className = 'ep-ms ' + (ms<250?'ms-fast':ms<600?'ms-medium':'ms-slow');
+        msEl.textContent = ms + ' ms';
+    } else if (result.status === 'timeout') {
+        stEl.className = 'ep-status st-warn'; stEl.textContent = '⏱ T/O';
+        msEl.className = 'ep-ms'; msEl.textContent = '>7s';
+    } else {
+        stEl.className = 'ep-status st-down'; stEl.textContent = '✗ DOWN';
+        msEl.className = 'ep-ms ms-slow';
+        msEl.textContent = result.httpStatus ? 'HTTP '+result.httpStatus : 'ERR';
+    }
+}
+
+async function checkOneCustom(ep) {
+    var c = CAT_PATHS[ep.cat] || CAT_PATHS['api'];
+    var fakeEp = { cat: ep.cat, url: ep.url, path: c.path, method: c.method };
+    var result = await checkEndpoint(fakeEp);
+    renderCustomResult(ep, result);
+}
+
+async function checkAllCustom() {
+    await Promise.allSettled(_customEps.map(function(ep){ return checkOneCustom(ep); }));
+}
+
+// ── END CUSTOM ENDPOINTS ──────────────────────────────────────────────────────
+
 buildCards();
+loadCustom();
+renderCustomList();
 refreshAll();
 </script>
 </body>
