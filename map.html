@@ -772,6 +772,8 @@
         var canvas = document.getElementById('planet-webgl');
         var ctx = canvas.getContext('2d');
         if (!ctx) return;
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
         var W = canvas.width, H = canvas.height;
         var cx = W/2, cy = H/2, r = Math.min(W,H)*0.22;
         function drawSphere(img) {
