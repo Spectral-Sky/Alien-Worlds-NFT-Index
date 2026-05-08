@@ -85,6 +85,12 @@
     }
     .col-toggle-rgb { animation: rgb-cycle 2.5s linear infinite; font-weight:bold; letter-spacing:1.5px; }
     .col-toggle-rgb.on { animation: rgb-cycle 2.5s linear infinite; background:rgba(255,255,255,0.06); }
+    @keyframes dg-glow {
+        0%,100% { border-color:rgba(232,160,32,0.55); color:#e8a020; box-shadow:0 0 6px rgba(232,160,32,0.35); }
+        50%     { border-color:rgba(255,210,80,0.9);  color:#ffd050; box-shadow:0 0 12px rgba(255,210,80,0.55); }
+    }
+    .col-toggle-dg { animation: dg-glow 2s ease-in-out infinite; font-weight:bold; letter-spacing:1.5px; }
+    .col-toggle-dg.on { animation: dg-glow 2s ease-in-out infinite; background:rgba(232,160,32,0.08); }
 
     /* PROGRESS */
     .progress-wrap { padding:18px 28px; display:none; }
@@ -156,24 +162,6 @@
 
     footer { border-top:1px solid rgba(232,160,32,0.07); padding:12px 28px; font-size:0.58em; color:var(--muted); letter-spacing:1.5px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
 
-    /* TABS */
-    .tab-bar { display:flex; background:rgba(3,6,15,0.9); border-bottom:1px solid rgba(232,160,32,0.12); padding:0 22px; flex-shrink:0; }
-    .tab-btn { background:transparent; border:none; border-bottom:2px solid transparent; color:#444; padding:10px 20px; font-family:'Courier New',monospace; font-size:0.76em; letter-spacing:2px; cursor:pointer; transition:all 0.2s; text-transform:uppercase; margin-bottom:-1px; }
-    .tab-btn:hover { color:#888; }
-    .tab-btn.active { color:var(--gold); border-bottom-color:var(--gold); }
-
-    /* DUNGEON RANKING */
-    #stats-panel   { display:flex; flex-direction:column; flex:1; min-height:0; }
-    #dungeon-panel { display:none; flex-direction:column; flex:1; min-height:0; }
-    .el-badge { display:inline-block; font-size:0.67em; padding:1px 5px; border-radius:2px; border:1px solid; letter-spacing:0.5px; font-weight:bold; text-transform:uppercase; margin:1px; white-space:nowrap; }
-    .el-air     { background:rgba(160,220,255,0.12); color:#a0dcff; border-color:rgba(160,220,255,0.3); }
-    .el-fire    { background:rgba(224,96,32,0.12);   color:#e06020; border-color:rgba(224,96,32,0.3); }
-    .el-gem     { background:rgba(176,96,216,0.12);  color:#b060d8; border-color:rgba(176,96,216,0.3); }
-    .el-metal   { background:rgba(64,144,216,0.12);  color:#4090d8; border-color:rgba(64,144,216,0.3); }
-    .el-nature  { background:rgba(64,200,144,0.12);  color:#40c890; border-color:rgba(64,200,144,0.3); }
-    .el-neutral { background:rgba(160,168,184,0.12); color:#a0a8b8; border-color:rgba(160,168,184,0.3); }
-    .class-badge { display:inline-block; font-size:0.64em; padding:1px 4px; border-radius:2px; border:1px solid rgba(232,160,32,0.2); color:#887050; letter-spacing:0.5px; text-transform:uppercase; margin:1px; }
-    .dg-last-active { color:var(--muted); font-size:0.85em; }
     </style>
 </head>
 <body>
@@ -248,12 +236,6 @@
     <p class="sub">ALL PLAYERS &middot; SORTABLE BY ANY STAT &middot; SOURCE: PLAYERS.ALE</p>
 </div>
 
-<div class="tab-bar">
-    <button class="tab-btn active" id="tab-stats-btn" onclick="setTab('stats')">&#8862; PLAYER STATS</button>
-    <button class="tab-btn" id="tab-dungeon-btn" onclick="setTab('dungeon')">&#9876; DUNGEON RANKING</button>
-</div>
-
-<div id="stats-panel">
 <div class="controls-bar">
     <button class="ctrl-btn" id="refresh-btn" onclick="loadLeaderboard(true)">&#8635; REFRESH</button>
     <span id="cache-info"></span>
@@ -280,26 +262,6 @@
         <tbody id="lb-tbody"></tbody>
     </table>
 </div>
-</div><!-- /stats-panel -->
-
-<div id="dungeon-panel">
-    <div class="controls-bar">
-        <button class="ctrl-btn" id="dg-refresh-btn" onclick="loadDungeonLB(true)">&#8635; REFRESH</button>
-        <span id="dg-cache-info" style="font-size:0.65em;color:var(--muted);letter-spacing:1px;"></span>
-        <input id="dg-search" type="text" placeholder="Search player..." style="background:rgba(3,6,15,0.9);border:1px solid rgba(232,160,32,0.2);color:var(--gold);font-family:'Courier New',monospace;font-size:0.76em;padding:6px 12px;outline:none;border-radius:2px;width:180px;" oninput="filterDungeonLB()">
-        <span id="dg-count" style="font-size:0.65em;color:var(--muted);margin-left:auto;letter-spacing:1px;"></span>
-    </div>
-    <div class="col-toggles" id="dg-filter-bar">
-        <span class="col-toggle-label">Filters:</span>
-    </div>
-    <div class="table-wrap">
-        <div class="lb-empty" id="dg-empty">Click REFRESH to load the official dungeon leaderboard.</div>
-        <table class="lb-table" id="dg-table" style="display:none;">
-            <thead id="dg-thead"></thead>
-            <tbody id="dg-tbody"></tbody>
-        </table>
-    </div>
-</div><!-- /dungeon-panel -->
 
 <footer>
     <span>SOURCE &middot; PLAYERS.ALE &middot; WAX BLOCKCHAIN</span>
@@ -321,10 +283,8 @@
     // ── COLUMNS DEFINITION ───────────────────────────────────────────────────
     // src: 'perm' = permstats key | 'active' = activestats key | 'comp' = comp.worlds | 'dungeon' = dungeons.ale lb
     var COLUMNS = [
-        // Official Dungeon LB
+        // Official Dungeon LB + AW Competition (adjacent glowing buttons)
         { key:'dungeon_rating',   label:'Dungeon Rating',  header:'Dung. Rating',   src:'dungeon', def:true,  title:'Official dungeon leaderboard rating from dungeons.ale — decay-weighted total difficulty' },
-        { key:'dungeon_gamertag', label:'Dungeon Gamertag',header:'Dung. Gamertag', src:'dungeon', def:false, title:'In-game gamertag set by the player in dungeons.ale' },
-        // AW Competition
         { key:'comp_live_score', label:'AW Level-Up Competition', header:'AW Level-Up', src:'comp', def:true, title:'live_score from comp.worlds — em dash = not registered' },
         // Dungeons
         { key:'dungeons_won',               label:'Dungeons Won',            src:'perm',   def:true  },
@@ -609,7 +569,6 @@
             var dge = _dgByWallet[fp.wallet];
             if (!dge) return null;
             if (key === 'dungeon_rating')   return dge.rating;
-            if (key === 'dungeon_gamertag') return dge.gamertag;
             return null;
         }
         return 0;
@@ -798,6 +757,7 @@
             btn.title = col.title || col.key;
             btn.dataset.key = col.key;
             if (col.key === 'comp_live_score') btn.classList.add('col-toggle-rgb');
+            if (col.key === 'dungeon_rating')  btn.classList.add('col-toggle-dg');
             btn.onclick = function() {
                 _visibleCols[col.key] = !_visibleCols[col.key];
                 btn.classList.toggle('on', _visibleCols[col.key]);
@@ -1095,62 +1055,13 @@
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
-    // ── TAB SWITCHER ─────────────────────────────────────────────────────────
-    window.setTab = function(tab) {
-        var sp = document.getElementById('stats-panel');
-        var dp = document.getElementById('dungeon-panel');
-        var sb = document.getElementById('tab-stats-btn');
-        var db = document.getElementById('tab-dungeon-btn');
-        if (tab === 'dungeon') {
-            sp.style.display = 'none';
-            dp.style.display = 'flex';
-            sb.classList.remove('active');
-            db.classList.add('active');
-            if (!_dgAllData.length) loadDungeonLB(false);
-        } else {
-            sp.style.display = '';
-            dp.style.display = 'none';
-            sb.classList.add('active');
-            db.classList.remove('active');
-        }
-    };
-
-    // ── DUNGEON LEADERBOARD ───────────────────────────────────────────────────
-    var DG_CACHE_KEY  = 'ale_dglb_v2';
-    var DG_TTL        = 15 * 60 * 1000; // 15 min — ratings change often
-    var _dgAllData    = []; // full processed rows for the dungeon tab
-    var _dgFiltered   = [];
-    var _dgElFilter   = new Set();
-    var _dgClsFilter  = new Set();
-    var _dgSortKey    = 'rating';
-    var _dgSortDir    = 1; // 1 = desc
-
-    var EL_LABEL = { air:'AIR', fire:'FIRE', gem:'GEM', metal:'MET', nature:'NAT', neutral:'NEU' };
-    var CLS_ABBR = {
-        arcanist:'ARC', voidwarden:'VOID', juggernaut:'JUG', astralknight:'AST',
-        desperado:'DES', hunter:'HNT', mindblade:'MBL', explosioneer:'EXP',
-        mystic:'MYS', lunatic:'LUN', voidcaller:'VCA', tactician:'TAC'
-    };
-
-    function relTime(ts) {
-        var ms = Date.now() - new Date(ts + 'Z').getTime();
-        var m = Math.floor(ms / 60000);
-        if (m < 2)   return 'just now';
-        if (m < 60)  return m + 'm ago';
-        var h = Math.floor(m / 60);
-        if (h < 24)  return h + 'h ago';
-        return Math.floor(h / 24) + 'd ago';
-    }
+    // ── DUNGEON RATING COLUMN ────────────────────────────────────────────────
+    var DG_CACHE_KEY = 'ale_dglb_v2';
+    var DG_TTL       = 15 * 60 * 1000;
+    var _dgAllData   = [];
 
     function processDgRow(r) {
-        var elements = [], classes = [];
-        (r.recent_fighters || []).forEach(function(f) {
-            if (f.element)   elements.push(f.element.toLowerCase());
-            if (f.classname) classes.push(f.classname.toLowerCase());
-        });
-        return { wallet: r.wallet, gamertag: r.gamertag || r.wallet,
-                 rating: r.rating || 0, last_change: r.last_change,
-                 elements: elements, classes: classes };
+        return { wallet: r.wallet, gamertag: r.gamertag || r.wallet, rating: r.rating || 0 };
     }
 
     async function fetchDungeonLBRows() {
@@ -1161,13 +1072,6 @@
         return d.rows || [];
     }
 
-    function setDgCacheInfo(ts, count) {
-        var d = new Date(ts);
-        document.getElementById('dg-cache-info').textContent =
-            'Updated ' + d.toLocaleTimeString() + '  ·  ' + count + ' ranked';
-    }
-
-    // Silent load: just populate _dgByWallet for the dungeon_rating column in player stats
     window.loadDungeonLBSilent = async function() {
         try {
             var cached = JSON.parse(localStorage.getItem(DG_CACHE_KEY) || 'null');
@@ -1184,172 +1088,6 @@
             if (_allPlayers.length) renderTable();
         } catch(e) {}
     };
-
-    window.loadDungeonLB = async function(forceRefresh) {
-        var btn = document.getElementById('dg-refresh-btn');
-        btn.disabled = true;
-        if (forceRefresh) { try { localStorage.removeItem(DG_CACHE_KEY); } catch(e) {} }
-
-        if (!forceRefresh) {
-            try {
-                var cached = JSON.parse(localStorage.getItem(DG_CACHE_KEY) || 'null');
-                if (cached && (Date.now() - cached.ts) < DG_TTL) {
-                    _dgAllData = cached.data;
-                    _dgByWallet = {};
-                    _dgAllData.forEach(function(r) { _dgByWallet[r.wallet] = { rating: r.rating, gamertag: r.gamertag }; });
-                    buildDgFilterBar();
-                    filterDungeonLB();
-                    setDgCacheInfo(cached.ts, _dgAllData.length);
-                    btn.disabled = false;
-                    return;
-                }
-            } catch(e) {}
-        }
-
-        document.getElementById('dg-empty').textContent = 'Loading...';
-        document.getElementById('dg-empty').style.display = 'block';
-        document.getElementById('dg-table').style.display = 'none';
-
-        try {
-            var raw = await fetchDungeonLBRows();
-            _dgAllData = raw.map(processDgRow);
-            _dgByWallet = {};
-            _dgAllData.forEach(function(r) { _dgByWallet[r.wallet] = { rating: r.rating, gamertag: r.gamertag }; });
-            var ts = Date.now();
-            try { localStorage.setItem(DG_CACHE_KEY, JSON.stringify({ ts: ts, data: _dgAllData })); } catch(e) {}
-            buildDgFilterBar();
-            filterDungeonLB();
-            setDgCacheInfo(ts, _dgAllData.length);
-            if (_allPlayers.length) renderTable(); // refresh main table so dungeon_rating column populates
-        } catch(e) {
-            document.getElementById('dg-empty').textContent = '✗ Error: ' + (e.message || e);
-        } finally {
-            btn.disabled = false;
-        }
-    };
-
-    function buildDgFilterBar() {
-        var bar = document.getElementById('dg-filter-bar');
-        var label = bar.querySelector('.col-toggle-label');
-        bar.innerHTML = '';
-        bar.appendChild(label);
-
-        // Element filters
-        var elLabel = document.createElement('span');
-        elLabel.className = 'col-toggle-label'; elLabel.textContent = 'Element:';
-        bar.appendChild(elLabel);
-
-        ['air','fire','gem','metal','nature','neutral'].forEach(function(el) {
-            var on = _dgElFilter.has(el);
-            var btn = document.createElement('button');
-            btn.className = 'col-toggle el-badge el-' + el + (on ? ' on' : '');
-            btn.textContent = EL_LABEL[el] || el.toUpperCase();
-            btn.title = el + ' element fighters';
-            btn.onclick = function() {
-                _dgElFilter.has(el) ? _dgElFilter.delete(el) : _dgElFilter.add(el);
-                buildDgFilterBar(); filterDungeonLB();
-            };
-            bar.appendChild(btn);
-        });
-
-        // Class filters (top 6 by usage)
-        var sep = document.createElement('span'); sep.className = 'col-toggles-sep'; bar.appendChild(sep);
-        var clsLabel = document.createElement('span');
-        clsLabel.className = 'col-toggle-label'; clsLabel.textContent = 'Class:';
-        bar.appendChild(clsLabel);
-
-        var clsCounts = {};
-        _dgAllData.forEach(function(r) { r.classes.forEach(function(c) { if (c) clsCounts[c] = (clsCounts[c]||0)+1; }); });
-        var topCls = Object.keys(clsCounts).sort(function(a,b) { return clsCounts[b]-clsCounts[a]; }).slice(0,6);
-        topCls.forEach(function(cls) {
-            var on = _dgClsFilter.has(cls);
-            var btn = document.createElement('button');
-            btn.className = 'col-toggle' + (on ? ' on' : '');
-            btn.textContent = (CLS_ABBR[cls]||cls.slice(0,4)).toUpperCase();
-            btn.title = cls + ' (' + clsCounts[cls] + ' fighters across all teams)';
-            btn.onclick = function() {
-                _dgClsFilter.has(cls) ? _dgClsFilter.delete(cls) : _dgClsFilter.add(cls);
-                buildDgFilterBar(); filterDungeonLB();
-            };
-            bar.appendChild(btn);
-        });
-
-        if (_dgElFilter.size || _dgClsFilter.size) {
-            var sep2 = document.createElement('span'); sep2.className = 'col-toggles-sep'; bar.appendChild(sep2);
-            var clr = document.createElement('button');
-            clr.className = 'col-toggle'; clr.textContent = '✕ CLEAR';
-            clr.style.color = '#c06060'; clr.style.borderColor = 'rgba(192,80,80,0.4)';
-            clr.onclick = function() { _dgElFilter.clear(); _dgClsFilter.clear(); buildDgFilterBar(); filterDungeonLB(); };
-            bar.appendChild(clr);
-        }
-    }
-
-    window.filterDungeonLB = function() {
-        var search = (document.getElementById('dg-search').value || '').toLowerCase();
-        _dgFiltered = _dgAllData.filter(function(r) {
-            if (search && r.gamertag.toLowerCase().indexOf(search) < 0 && r.wallet.toLowerCase().indexOf(search) < 0) return false;
-            if (_dgElFilter.size  && !r.elements.some(function(e) { return _dgElFilter.has(e); }))  return false;
-            if (_dgClsFilter.size && !r.classes.some(function(c) { return _dgClsFilter.has(c); })) return false;
-            return true;
-        });
-        _dgFiltered.sort(function(a, b) {
-            var av = _dgSortKey === 'last_change' ? a.last_change : a.rating;
-            var bv = _dgSortKey === 'last_change' ? b.last_change : b.rating;
-            return _dgSortDir * (bv > av ? 1 : bv < av ? -1 : 0);
-        });
-        renderDungeonLB();
-    };
-
-    window.dgSortBy = function(key) {
-        if (_dgSortKey === key) _dgSortDir = -_dgSortDir;
-        else { _dgSortKey = key; _dgSortDir = 1; }
-        filterDungeonLB();
-    };
-
-    function dgSortCls(key) {
-        if (key !== _dgSortKey) return '';
-        return _dgSortDir === 1 ? 'sort-desc' : 'sort-asc';
-    }
-
-    function renderDungeonLB() {
-        var thHtml = '<tr>' +
-            '<th style="text-align:left;width:40px;">#</th>' +
-            '<th style="text-align:left;min-width:120px;" onclick="dgSortBy(\'gamertag\')" class="' + dgSortCls('gamertag') + '">GAMERTAG</th>' +
-            '<th onclick="dgSortBy(\'rating\')" class="' + dgSortCls('rating') + '" title="Decay-weighted dungeon difficulty rating">RATING</th>' +
-            '<th onclick="dgSortBy(\'last_change\')" class="' + dgSortCls('last_change') + '">LAST ACTIVE</th>' +
-            '<th style="text-align:left;">FIGHTER ELEMENTS</th>' +
-            '<th style="text-align:left;">CLASSES</th>' +
-            '</tr>';
-        document.getElementById('dg-thead').innerHTML = thHtml;
-
-        var rows = '';
-        _dgFiltered.forEach(function(r, i) {
-            var rank = i + 1;
-            var rankCls = rank===1?'rank-1':rank===2?'rank-2':rank===3?'rank-3':'';
-
-            var elHtml = r.elements.map(function(el) {
-                return '<span class="el-badge el-' + el + '">' + (EL_LABEL[el]||el.toUpperCase()) + '</span>';
-            }).join('');
-
-            var clsHtml = r.classes.filter(Boolean).map(function(cls) {
-                return '<span class="class-badge" title="' + cls + '">' + (CLS_ABBR[cls]||cls.slice(0,4)).toUpperCase() + '</span>';
-            }).join('');
-
-            rows += '<tr class="' + rankCls + '">';
-            rows += '<td>' + rank + '</td>';
-            rows += '<td title="' + escHtml(r.wallet) + '">' + escHtml(r.gamertag) + '</td>';
-            rows += '<td style="color:var(--gold);font-weight:bold;">' + r.rating.toLocaleString() + '</td>';
-            rows += '<td><span class="dg-last-active">' + relTime(r.last_change) + '</span></td>';
-            rows += '<td class="nft-cell">' + elHtml + '</td>';
-            rows += '<td class="nft-cell">' + clsHtml + '</td>';
-            rows += '</tr>';
-        });
-
-        document.getElementById('dg-tbody').innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:#445;padding:24px;">No results</td></tr>';
-        document.getElementById('dg-table').style.display = '';
-        document.getElementById('dg-empty').style.display = 'none';
-        document.getElementById('dg-count').textContent = _dgFiltered.length + ' / ' + _dgAllData.length + ' PLAYERS';
-    }
 
     // ── HAMBURGER ────────────────────────────────────────────────────────────
     window.toggleHamburger = function() {
