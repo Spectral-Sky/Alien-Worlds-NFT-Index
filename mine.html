@@ -762,7 +762,7 @@ function renderFeaturedLand(land, mult, mineCount) {
 // ── SCREENS ────────────────────────────────────────────────────────────────────
 function showScreen(name) {
     ['wallet','dash','select'].forEach(function(s){
-        document.getElementById('screen-'+s).style.display = s===name ? '' : 'none';
+        document.getElementById('screen-'+s).style.display = s===name ? 'block' : 'none';
     });
 }
 
