@@ -8,6 +8,9 @@
     <link rel="icon" type="image/png" href="NCico.png">
     <script src="waxjs.js"></script>
     <script src="nft_data.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <script type="module">
         import { SessionKit } from 'https://esm.sh/@wharfkit/session@1';
         import { WebRenderer } from 'https://esm.sh/@wharfkit/web-renderer@1';
@@ -266,6 +269,34 @@
             .ttc-grid { grid-template-columns:1fr; }
             .lg-grid  { grid-template-columns:1fr; }
         }
+
+        /* CARD REVEAL OVERLAY */
+        #reveal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(3,6,15,0.97); z-index:10000; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+        #reveal-overlay h2 { font-family:'Courier New',monospace; color:var(--theme-color); font-size:1.0em; letter-spacing:5px; text-transform:uppercase; margin:0 0 18px; text-shadow:0 0 12px var(--theme-color); }
+        #reveal-canvas { display:block; max-width:100%; }
+        #reveal-drops { max-width:580px; width:100%; }
+        .reveal-drops-grid { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin-top:14px; }
+        .reveal-drop-card { font-family:'Courier New',monospace; font-size:0.72em; text-align:center; min-width:130px; padding:10px 12px; border:1px solid #1a1a28; background:rgba(0,0,0,0.4); animation:revealFadeIn 0.4s ease both; }
+        .reveal-drop-name { color:#c0b080; margin-bottom:6px; font-size:1.05em; border-bottom:1px solid #1a1a28; padding-bottom:5px; }
+        @keyframes revealFadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+        /* TEST CONTROLS */
+        .test-round-bar { display:flex; align-items:center; gap:14px; background:rgba(200,80,20,0.05); border:1px solid rgba(200,80,20,0.2); padding:8px 16px; margin-bottom:16px; flex-wrap:wrap; }
+        .test-round-info { font-family:'Courier New',monospace; font-size:0.68em; color:#804020; letter-spacing:1px; }
+        .test-next-btn { background:rgba(200,80,20,0.15); color:#c05010; border:1px solid rgba(200,80,20,0.35); padding:7px 16px; font-family:'Courier New',monospace; font-size:0.72em; letter-spacing:2px; cursor:pointer; transition:all 0.2s; }
+        .test-next-btn:hover { background:rgba(200,80,20,0.35); color:#e06020; }
+
+        /* HOW TO PLAY */
+        .htp-section { font-family:'Rajdhani',sans-serif; max-width:980px; margin:0 auto; padding:0 20px 80px; }
+        .htp-title { font-size:1.1em; letter-spacing:5px; color:var(--theme-color); text-transform:uppercase; border-bottom:1px solid #151520; padding-bottom:8px; margin-bottom:24px; font-weight:700; }
+        .htp-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        .htp-step { display:flex; gap:14px; align-items:flex-start; border:1px solid #141420; background:rgba(0,0,0,0.2); padding:14px 16px; }
+        .htp-num { font-size:2.2em; font-weight:700; color:rgba(232,160,32,0.25); line-height:1; flex-shrink:0; width:44px; text-align:right; font-family:'Courier New',monospace; }
+        .htp-body { flex:1; }
+        .htp-head { font-size:1.05em; font-weight:700; color:#c0a060; letter-spacing:2px; text-transform:uppercase; margin-bottom:5px; }
+        .htp-text { font-size:1.0em; color:#606878; line-height:1.55; }
+        .htp-text b { color:#909898; font-weight:600; }
+        @media (max-width:620px) { .htp-grid { grid-template-columns:1fr; } }
     </style>
 </head>
 <body>
@@ -294,6 +325,14 @@
 <!-- TESTING BANNER — remove TESTING_MODE flag before full launch -->
 <div class="test-banner">⚠ TESTING MODE — loadout swap lock is disabled &nbsp;·&nbsp; scores are local only &nbsp;·&nbsp; this banner will be removed at full launch</div>
 
+<!-- ══ CARD REVEAL OVERLAY ════════════════════════════════════════════════════ -->
+<div id="reveal-overlay" style="display:none;">
+    <h2>⛏ DAILY EXTRACTION</h2>
+    <canvas id="reveal-canvas"></canvas>
+    <div id="reveal-drops"></div>
+    <button id="reveal-continue-btn" class="mine-btn" onclick="dismissReveal()" style="display:none; margin-top:20px; letter-spacing:3px;">CONTINUE ›</button>
+</div>
+
 <!-- ══ WALLET PROMPT ══════════════════════════════════════════════════════════ -->
 <div id="screen-wallet" class="mine-main">
     <div class="wallet-prompt-title">CONNECT WALLET TO BEGIN MINING</div>
@@ -311,6 +350,13 @@
         <div class="mine-season-stat"><div class="mine-season-val" id="sb-pool" style="color:var(--mine-green);">—</div><div class="mine-season-label">TODAY'S POOL</div></div>
         <div style="flex:1"></div>
         <div style="font-size:0.62em; color:#303040; font-family:'Courier New',monospace; line-height:1.7; text-align:right;">PRIZE POOL: TBD<br>PHASE 1 — LOCAL TRACKING</div>
+    </div>
+
+    <!-- TEST MODE CONTROLS (hidden in production) -->
+    <div class="test-round-bar" id="test-round-bar" style="display:none;">
+        <div class="test-round-info">TEST &nbsp;·&nbsp; ROUND <span id="test-round-num">1</span> &nbsp;·&nbsp; Each round = 1 game day</div>
+        <button class="test-next-btn" onclick="advanceTestRound()">⚡ NEXT ROUND →</button>
+        <div class="test-round-info" id="test-round-land" style="margin-left:auto;"></div>
     </div>
 
     <!-- FEATURED LAND -->
@@ -578,6 +624,67 @@
     </div>
 </div>
 
+<!-- ══ HOW TO PLAY ═══════════════════════════════════════════════════════════ -->
+<hr class="info-divider">
+<div class="htp-section">
+    <div class="htp-title">How to Play — World Mine</div>
+    <div class="htp-grid">
+
+        <div class="htp-step">
+            <div class="htp-num">01</div>
+            <div class="htp-body">
+                <div class="htp-head">Pick Your Tools</div>
+                <div class="htp-text">Select <b>1–3 AW mining tools</b> from your wallet and lock in your loadout. Each tool mines independently. Your loadout is locked for <b>24 hours</b> — you can't swap until tomorrow.</div>
+            </div>
+        </div>
+
+        <div class="htp-step">
+            <div class="htp-num">02</div>
+            <div class="htp-body">
+                <div class="htp-head">Daily Extraction Drop</div>
+                <div class="htp-text">When you lock in, your tools immediately drop today's materials. Watch the card reveal — each tool flips to show what it mined. Materials accumulate in your weekly totals.</div>
+            </div>
+        </div>
+
+        <div class="htp-step">
+            <div class="htp-num">03</div>
+            <div class="htp-body">
+                <div class="htp-head">Land Type Synergy</div>
+                <div class="htp-text">Each day features a different land type from a rotating planet. <b>Match your tool type to the land</b> for a score bonus — a Manipulator on Veles (Oceanic) massively outscores one on Magor (Volcanic).</div>
+            </div>
+        </div>
+
+        <div class="htp-step">
+            <div class="htp-num">04</div>
+            <div class="htp-body">
+                <div class="htp-head">Shine = Score</div>
+                <div class="htp-text">The single biggest lever is your tool's <b>shine tier</b>. Common Stardust ≈ Rare Stone ≈ Epic Stone in score output. Legendary and Mythic tools start at ×30 even on Stone. Invest in shine.</div>
+            </div>
+        </div>
+
+        <div class="htp-step">
+            <div class="htp-num">05</div>
+            <div class="htp-body">
+                <div class="htp-head">Daily Rarity Pool</div>
+                <div class="htp-text">Each day boosts one rarity tier — <b>Common Day</b> multiplies Common tools by ×8. On Rare Day your Rare Stardust tools pull away from the pack. Check the season banner before locking in.</div>
+            </div>
+        </div>
+
+        <div class="htp-step">
+            <div class="htp-num">06</div>
+            <div class="htp-body">
+                <div class="htp-head">Perks &amp; Combos <span style="color:#404050;font-size:0.85em;">(coming soon)</span></div>
+                <div class="htp-text">Save your elemental mana to unlock weekly perks. Play <b>6 AW crew NFTs</b> as an elemental hand — 3+3, 2+2+2, or prismatic 1-of-each — to fire combo effects that multiply your score for days.</div>
+            </div>
+        </div>
+
+    </div>
+    <div style="margin-top:16px; font-size:0.88em; color:#404050; font-family:'Rajdhani',sans-serif; line-height:1.7;">
+        MINERALS: Biomass ×2 pts &nbsp;·&nbsp; Silica ×5 pts &nbsp;·&nbsp; Metal ×10 pts &nbsp;·&nbsp; Crystite ×20 pts &nbsp;&nbsp;—&nbsp;&nbsp;
+        Four tool types: <b style="color:#e08020;">Extractor</b> · <b style="color:#9060d0;">Manipulator</b> · <b style="color:#20a0c0;">ExoTool</b> · <b style="color:#e04040;">Explosive</b>
+    </div>
+</div>
+
 <script>
 // ── WAXJS INIT ─────────────────────────────────────────────────────────────────
 const _savedWallet = localStorage.getItem('naron_wallet');
@@ -639,6 +746,7 @@ const MINERAL_PTS = { biomass:2, silica:5, metal:10, crystite:20 };
 const MINERAL_KEYS = ['biomass','silica','metal','crystite'];
 const WEEK_MS  = 7 * 24 * 3600 * 1000;
 const SWAP_LOCK_MS = 24 * 3600 * 1000;
+const TEST_ROUND_SECS = 90; // seconds per round in test mode (= 1 day equivalent)
 
 // AW planets → land type
 // Magor: volcanic harsh mountains. Eyeke: oceans + grasslands. Kavian: icy mountains.
@@ -721,9 +829,10 @@ function newSession(wallet) {
         lastSwap: 0,
         accumulated: { biomass:0, silica:0, metal:0, crystite:0 },
         weeklyScore: 0,
-        featuredLand: null,      // { assetId, name, type, planet, img, rarity }
-        landMineMult: 1.0,       // updated from Hyperion history
-        landMineCount: 0         // mines on featured land today
+        featuredLand: null,
+        landMineMult: 1.0,
+        landMineCount: 0,
+        testRoundIndex: 0    // advances each "next round" in test mode
     };
 }
 function saveSession(wallet, s) { localStorage.setItem('wm_' + wallet, JSON.stringify(s)); }
@@ -880,9 +989,9 @@ async function landHasALBuilding(landAssetId) {
 }
 
 // Pick today's featured land deterministically from a list of qualified land NFTs
-function pickFeaturedLand(landNfts) {
+function pickFeaturedLand(landNfts, dayOffset) {
     if (!landNfts.length) return null;
-    var dayIndex = Math.floor(Date.now() / 86400000); // UTC day number, changes each midnight
+    var dayIndex = Math.floor(Date.now() / 86400000) + (dayOffset || 0); // UTC day + test offset
     var land = landNfts[dayIndex % landNfts.length];
     var td   = (land.template && land.template.immutable_data) || {};
     var dd   = land.data || land.mutable_data || {};
@@ -971,8 +1080,8 @@ async function loadFeaturedLand(wallet) {
     // Fallback: if no AL buildings found, use all owned lands
     var pool = qualified.length > 0 ? qualified : landNfts;
 
-    // 3. Pick today's land
-    var land = pickFeaturedLand(pool);
+    // 3. Pick today's land (test mode advances day index each round)
+    var land = pickFeaturedLand(pool, session.testRoundIndex || 0);
     session.featuredLand = land;
     saveSession(wallet, session);
 
@@ -1091,6 +1200,15 @@ var _lastMineHistRefresh = 0;
 function renderDashboard(wallet, session) {
     var landType = session.featuredLand ? session.featuredLand.type : null;
     var mineMult = session.landMineMult || 1.0;
+
+    // Test mode controls
+    var tbar = document.getElementById('test-round-bar');
+    if (TESTING_MODE && tbar) {
+        tbar.style.display = 'flex';
+        document.getElementById('test-round-num').textContent = (session.testRoundIndex || 0) + 1;
+        var tland = document.getElementById('test-round-land');
+        if (tland && session.featuredLand) tland.textContent = session.featuredLand.planet + ' · ' + session.featuredLand.type;
+    }
 
     document.getElementById('sb-days').textContent   = daysLeftInWeek().toFixed(1);
     document.getElementById('sb-tools').textContent  = session.loadout.length || '—';
@@ -1344,7 +1462,9 @@ function confirmLoadout() {
     session.lastSwap = Date.now();
     session.lastTick = Date.now();
     saveSession(wallet, session);
-    showDashboard();
+    playCardReveal(_selTools, getSession(wallet), function() {
+        showDashboard();
+    });
 }
 
 // ── HELPERS ────────────────────────────────────────────────────────────────────
@@ -1357,6 +1477,161 @@ function shineLabel(s) {
     var L = { stone:'Stone', gold:'Gold', stardust:'Stardust', antimatter:'Antimatter', xdimension:'X-Dim' };
     return '<span style="color:' + (C[s]||'#888') + '">' + (L[s]||s||'Stone') + '</span>';
 }
+
+// ── TEST MODE ──────────────────────────────────────────────────────────────────
+window.advanceTestRound = function() {
+    var wallet  = localStorage.getItem('naron_wallet');
+    var session = getSession(wallet) || newSession(wallet);
+    applyTick(session);
+    session.testRoundIndex = (session.testRoundIndex || 0) + 1;
+    session.lastSwap  = 0;          // unlock for next round
+    session.featuredLand = null;    // force new land pick
+    saveSession(wallet, session);
+    showDashboard();
+    loadFeaturedLand(wallet).catch(function(){});
+};
+
+// ── THREE.JS CARD REVEAL ───────────────────────────────────────────────────────
+function playCardReveal(tools, session, onComplete) {
+    var overlay = document.getElementById('reveal-overlay');
+    if (!overlay || typeof THREE === 'undefined') { if (onComplete) onComplete(); return; }
+
+    overlay.style.display = 'flex';
+    document.getElementById('reveal-continue-btn').style.display = 'none';
+    document.getElementById('reveal-drops').innerHTML = '';
+
+    var canvas = document.getElementById('reveal-canvas');
+    var W = Math.min(window.innerWidth - 48, 580);
+    var H = Math.round(W * 0.47);
+    canvas.width = W; canvas.height = H;
+
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+    renderer.setSize(W, H);
+    renderer.setClearColor(0x000000, 0);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    var scene  = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 50);
+    camera.position.z = 5.5;
+    scene.add(new THREE.AmbientLight(0xffffff));
+
+    // Card back texture — drawn on canvas
+    var bc = document.createElement('canvas');
+    bc.width = 256; bc.height = 360;
+    var bx = bc.getContext('2d');
+    bx.fillStyle = '#04040f'; bx.fillRect(0, 0, 256, 360);
+    bx.strokeStyle = '#e8a020'; bx.lineWidth = 5; bx.strokeRect(10, 10, 236, 340);
+    bx.strokeStyle = 'rgba(232,160,32,0.1)'; bx.lineWidth = 1;
+    for (var li = 32; li < 350; li += 22) { bx.beginPath(); bx.moveTo(12, li); bx.lineTo(244, li); bx.stroke(); }
+    bx.fillStyle = 'rgba(232,160,32,0.22)';
+    bx.font = '90px serif'; bx.textAlign = 'center'; bx.textBaseline = 'middle';
+    bx.fillText('⛏', 128, 185);
+    var backTex = new THREE.CanvasTexture(bc);
+
+    var loader = new THREE.TextureLoader();
+    var n = Math.min(tools.length, 3);
+    var cardW = 1.5, cardH = 2.1;
+    var spacing = n === 1 ? 0 : (n === 2 ? 2.1 : 2.25);
+    var startX  = -(n - 1) * spacing / 2;
+    var cards = []; var loaded = 0;
+
+    function onAllLoaded() {
+        var landType = session && session.featuredLand ? session.featuredLand.type : null;
+        var mineMult = session ? (session.landMineMult || 1.0) : 1.0;
+        var elapsed = 0; var last = performance.now();
+        var flipInterval = 0.65; var flipsTriggered = 0; var revealDone = false;
+
+        function frame(now) {
+            if (overlay.style.display === 'none') { renderer.dispose(); return; }
+            requestAnimationFrame(frame);
+            var dt = Math.min((now - last) / 1000, 0.1); last = now; elapsed += dt;
+
+            // Stagger-trigger each flip
+            var shouldFlip = Math.floor(elapsed / flipInterval);
+            while (flipsTriggered <= shouldFlip && flipsTriggered < cards.length) {
+                if (cards[flipsTriggered]) cards[flipsTriggered].targetY = Math.PI;
+                flipsTriggered++;
+            }
+
+            // Animate rotations; swap material when past 90°
+            var allSettled = true;
+            cards.forEach(function(c) {
+                if (c.targetY === undefined) c.targetY = 0;
+                c.group.rotation.y += (c.targetY - c.group.rotation.y) * 0.14;
+                if (!c.swapped && c.group.rotation.y > Math.PI * 0.48) {
+                    c.mesh.material = c.frontMat; c.swapped = true;
+                }
+                if (Math.abs(c.group.rotation.y - c.targetY) > 0.005) allSettled = false;
+            });
+            renderer.render(scene, camera);
+
+            if (!revealDone && flipsTriggered >= cards.length && allSettled) {
+                revealDone = true;
+                buildDropInfo(tools, landType, mineMult);
+                document.getElementById('reveal-continue-btn').style.display = '';
+            }
+        }
+        requestAnimationFrame(frame);
+    }
+
+    // Build each card and load its texture
+    for (var ci = 0; ci < n; ci++) {
+        (function(idx) {
+            var group = new THREE.Group();
+            group.position.x = startX + idx * spacing;
+            group.rotation.y = 0; // start showing back
+            var geo     = new THREE.PlaneGeometry(cardW, cardH);
+            var backMat = new THREE.MeshBasicMaterial({ map: backTex });
+            var mesh    = new THREE.Mesh(geo, backMat);
+            group.add(mesh); scene.add(group);
+            var card = { group: group, mesh: mesh, backMat: backMat, frontMat: null, targetY: 0, swapped: false };
+            cards[idx] = card;
+
+            loader.load(
+                'tool.worlds/' + tools[idx].templateId + '.webp',
+                function(tex) {
+                    card.frontMat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide });
+                    if (++loaded >= n) onAllLoaded();
+                },
+                undefined,
+                function() {
+                    var fb = document.createElement('canvas'); fb.width = 256; fb.height = 360;
+                    var fx = fb.getContext('2d'); fx.fillStyle = '#0a0a18'; fx.fillRect(0, 0, 256, 360);
+                    card.frontMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(fb), side: THREE.BackSide });
+                    if (++loaded >= n) onAllLoaded();
+                }
+            );
+        })(ci);
+    }
+
+    window._revealOnComplete = function() {
+        overlay.style.display = 'none';
+        renderer.dispose();
+        if (onComplete) onComplete();
+    };
+}
+
+function buildDropInfo(tools, landType, mineMult) {
+    var roundSecs = TESTING_MODE ? TEST_ROUND_SECS : 86400;
+    var MCOL = { biomass:'#40c890', silica:'#4090d8', metal:'#a0a8b8', crystite:'#b060d8' };
+    var html = '<div class="reveal-drops-grid">';
+    tools.slice(0, 3).forEach(function(tool) {
+        var rate = toolRate(tool, landType, mineMult);
+        var dist = getEffectiveDist(tool);
+        html += '<div class="reveal-drop-card"><div class="reveal-drop-name">' + tool.name + '</div>';
+        var any = false;
+        MINERAL_KEYS.forEach(function(k) {
+            var amt = rate * roundSecs * dist[k];
+            if (amt >= 0.01) { any = true; html += '<div style="color:' + MCOL[k] + '">+' + fmtNum(amt) + ' ' + k.toUpperCase() + '</div>'; }
+        });
+        if (!any) html += '<div style="color:#303040">nothing mined</div>';
+        html += '</div>';
+    });
+    html += '</div>';
+    document.getElementById('reveal-drops').innerHTML = html;
+}
+
+window.dismissReveal = function() { if (window._revealOnComplete) window._revealOnComplete(); };
 
 // ── CURSOR ─────────────────────────────────────────────────────────────────────
 document.addEventListener('mousemove', function(e){ var g=document.getElementById('cursor-glow'); if(g){g.style.left=e.clientX+'px';g.style.top=e.clientY+'px';} });
