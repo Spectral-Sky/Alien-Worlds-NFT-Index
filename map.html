@@ -415,7 +415,10 @@
     async function fetchRows(p) {
         for (var i=0;i<RPC.length;i++){
             try {
-                var r=await fetch(RPC[i]+'/v1/chain/get_table_rows',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});
+                var ctrl=new AbortController();
+                var tid=setTimeout(function(){ctrl.abort();},5000);
+                var r=await fetch(RPC[i]+'/v1/chain/get_table_rows',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p),signal:ctrl.signal});
+                clearTimeout(tid);
                 if (!r.ok) continue;
                 var j=await r.json();
                 if (j.rows!==undefined) return j;
@@ -874,7 +877,8 @@
         document.getElementById('skip-btn').style.display='';
         var playerPlanet='magor';
         try {
-            var res=await fetchRows({code:'players.ale',scope:'players.ale',table:'players',lower_bound:wallet,upper_bound:wallet,limit:1,json:true});
+            var _timeout=new Promise(function(res){setTimeout(res,6000,null);});
+            var res=await Promise.race([fetchRows({code:'players.ale',scope:'players.ale',table:'players',lower_bound:wallet,upper_bound:wallet,limit:1,json:true}),_timeout]);
             if(res&&res.rows&&res.rows[0]&&res.rows[0].wallet===wallet){
                 var row=res.rows[0];
                 var pn=normalizePlanet(row.planet||'');
