@@ -753,10 +753,20 @@
             </div>
         </div>
         <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn"><img src="Ale%20images/tavern.svg" style="height:13px;vertical-align:middle;margin-right:4px;opacity:0.85;">ALE &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="ale.html" class="nav-dropdown-item">&#9876; ALE STATS</a>
+                <a href="alewiki.html" class="nav-dropdown-item">&#9672; ALE WIKI</a>
+                <a href="alements.html" class="nav-dropdown-item">&#11041; STAT EXPLORER</a>
+                <a href="aleleaders.html" class="nav-dropdown-item">&#9670; LEADERBOARD</a>
+            </div>
+        </div>
+        <div class="nav-dropdown-wrap">
             <button class="nav-btn nav-dropdown-btn">UTILITY &#9660;</button>
             <div class="nav-dropdown-menu">
                 <a href="stash.html" class="nav-dropdown-item">&#11041; STASH</a>
-                <a href="outpost.html" class="nav-dropdown-item"><img src="Shards.png" style="width:30px;height:30px;vertical-align:middle;margin-right:5px;object-fit:contain;" alt=""> OUTPOST</a>
+                <a href="outpost.html" class="nav-dropdown-item">OUTPOST</a>
+                <a href="ep.html" class="nav-dropdown-item">&#9672; ENDPOINTS</a>
             </div>
         </div>
     </nav>
@@ -776,9 +786,14 @@
     <a href="land.worlds.html" class="nav-btn">LAND</a>
     <a href="pd.units.html" class="nav-btn">PD UNITS</a>
     <a href="pd.materials.html" class="nav-btn">PD MATS</a>
-    <a href="army.html" class="nav-btn">ARMY BUILDER</a>
+    <a href="army.html" class="nav-btn active">ARMY BUILDER</a>
+    <a href="ale.html" class="nav-btn">&#9876; ALE STATS</a>
+    <a href="alewiki.html" class="nav-btn">&#9672; ALE WIKI</a>
+    <a href="alements.html" class="nav-btn">&#11041; STAT EXPLORER</a>
+    <a href="aleleaders.html" class="nav-btn">&#9670; LEADERBOARD</a>
     <a href="stash.html" class="nav-btn">&#11041; STASH</a>
-    <a href="outpost.html" class="nav-btn"><img src="Shards.png" style="width:30px;height:30px;vertical-align:middle;margin-right:5px;object-fit:contain;" alt=""> OUTPOST</a>
+    <a href="outpost.html" class="nav-btn">OUTPOST</a>
+    <a href="ep.html" class="nav-btn">&#9672; ENDPOINTS</a>
 </nav>
 
 <!-- ══ TITLE BAR ════════════════════════════════════════════════════════════ -->
@@ -2447,8 +2462,8 @@ async function confirmStake() {
     try {
         if (window.walletSession) {
             await window.walletSession.transact({ actions: [action] });
-        } else if (window.wax && window.wax.api) {
-            await window.wax.api.transact({ actions: [action] }, { blocksBehind: 3, expireSeconds: 60 });
+        } else if (typeof wax !== 'undefined' && wax && wax.api) {
+            await wax.api.transact({ actions: [action] }, { blocksBehind: 3, expireSeconds: 60 });
         } else {
             throw new Error('No wallet session active');
         }

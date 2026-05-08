@@ -64,6 +64,23 @@
         .wallet-btn { background:#111; color:var(--theme-color); border:1px dashed var(--theme-color); padding:10px 20px; font-family:'Courier New',monospace; font-weight:bold; cursor:pointer; transition:all 0.3s; }
         .wallet-btn:hover { background:var(--theme-hover); box-shadow:var(--theme-shadow); }
         .wallet-btn.logged-in { background:var(--theme-color); color:#000; border:1px solid #fff; }
+        .nav-links { display:flex; gap:10px; }
+        .nav-btn { background:transparent; color:#888; border:1px solid transparent; padding:8px 16px; font-family:'Courier New',monospace; font-weight:bold; font-size:0.9em; text-decoration:none; cursor:pointer; transition:all 0.3s; text-transform:uppercase; border-radius:6px; }
+        .nav-btn:hover { color:var(--theme-color); border-color:var(--theme-color); }
+        .nav-btn.active { color:#000; background:var(--theme-color); border-color:var(--theme-color); box-shadow:var(--theme-shadow); }
+        .nav-dropdown-wrap { position:relative; display:inline-block; }
+        .nav-dropdown-btn { background:transparent; color:#888; border:1px solid transparent; padding:8px 16px; font-family:'Courier New',monospace; font-weight:bold; font-size:0.9em; cursor:pointer; transition:all 0.3s; text-transform:uppercase; border-radius:6px; letter-spacing:1px; }
+        .nav-dropdown-btn:hover { color:var(--theme-color); border-color:var(--theme-color); }
+        .nav-dropdown-btn.active { color:#000; background:var(--theme-color); border-color:var(--theme-color); box-shadow:var(--theme-shadow); }
+        .nav-dropdown-menu { display:none; position:absolute; top:100%; margin-top:0; left:0; z-index:5000; background:rgba(2,8,6,0.98); border:1px solid var(--theme-color); min-width:160px; padding:8px 0 4px 0; box-shadow:0 8px 24px rgba(0,0,0,0.9); backdrop-filter:blur(6px); }
+        .nav-dropdown-wrap:hover .nav-dropdown-menu { display:block; }
+        .nav-dropdown-item { display:block; padding:8px 16px; color:#888; text-decoration:none; font-family:'Courier New',monospace; font-size:0.85em; letter-spacing:1px; text-transform:uppercase; transition:all 0.2s; white-space:nowrap; }
+        .nav-dropdown-item:hover { color:var(--theme-color); background:rgba(255,255,255,0.04); }
+        .nav-dropdown-item.active { color:var(--theme-color); font-weight:bold; background:rgba(255,255,255,0.03); }
+        #hamburger-btn { display:none; background:none; border:1px solid var(--theme-color); color:var(--theme-color); font-size:1.1em; padding:6px 10px; cursor:pointer; border-radius:3px; }
+        #nav-dropdown { display:none; flex-direction:column; background:rgba(3,6,15,0.98); border-bottom:1px solid rgba(232,160,32,0.2); padding:8px 16px; gap:4px; z-index:4999; }
+        #nav-dropdown.open { display:flex; }
+        @media (max-width:800px) { .nav-links { display:none !important; } #hamburger-btn { display:flex; align-items:center; justify-content:center; } }
 
         /* TOP BAR */
         .top-bar { display:flex; justify-content:space-between; align-items:center; padding:14px 30px; background:var(--bg); border-bottom:2px solid var(--theme-color); position:sticky; top:66px; z-index:5000; box-shadow:0 6px 20px rgba(0,0,0,0.8); }
@@ -298,6 +315,43 @@
         .test-next-btn { background:rgba(200,80,20,0.15); color:#c05010; border:1px solid rgba(200,80,20,0.35); padding:7px 16px; font-family:'Courier New',monospace; font-size:0.72em; letter-spacing:2px; cursor:pointer; transition:all 0.2s; }
         .test-next-btn:hover { background:rgba(200,80,20,0.35); color:#e06020; }
 
+        /* ELEMENT BADGES */
+        .el-badge { display:inline-block; font-family:'Courier New',monospace; font-size:0.58em; padding:2px 8px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; border:1px solid; }
+        .el-nature  { background:rgba(64,200,144,0.15);  color:#40c890; border-color:rgba(64,200,144,0.3); }
+        .el-neutral { background:rgba(160,168,184,0.15); color:#a0a8b8; border-color:rgba(160,168,184,0.3); }
+        .el-metal   { background:rgba(64,144,216,0.15);  color:#4090d8; border-color:rgba(64,144,216,0.3); }
+        .el-gem     { background:rgba(176,96,216,0.15);  color:#b060d8; border-color:rgba(176,96,216,0.3); }
+        .el-fire    { background:rgba(224,96,32,0.15);   color:#e06020; border-color:rgba(224,96,32,0.3); }
+        .el-air     { background:rgba(160,220,255,0.15); color:#a0dcff; border-color:rgba(160,220,255,0.3); }
+
+        /* HAND PREVIEW (in cards screen) */
+        .hand-preview { border:1px solid #181828; padding:12px 16px; margin-bottom:14px; background:rgba(0,0,0,0.2); }
+        .hand-preview-title { font-family:'Courier New',monospace; font-size:0.62em; letter-spacing:2px; color:#303040; text-transform:uppercase; margin-bottom:10px; }
+        .hand-tool-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+        .hand-tool-label { min-width:120px; flex-shrink:0; }
+        .hand-el-pct { font-family:'Courier New',monospace; font-size:0.6em; }
+
+        /* MANIPULATOR FOCUS PANEL */
+        .manip-panel { border:1px solid rgba(144,96,208,0.25); padding:12px 16px; margin-bottom:14px; background:rgba(144,96,208,0.04); }
+        .manip-panel-title { font-family:'Courier New',monospace; font-size:0.62em; letter-spacing:2px; color:#7040a0; text-transform:uppercase; margin-bottom:8px; }
+        .manip-focus-pills { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+        .manip-focus-pill { font-family:'Courier New',monospace; font-size:0.62em; padding:5px 11px; border:1px solid #252535; color:#505060; cursor:pointer; transition:all 0.15s; }
+        .manip-focus-pill:hover { border-color:var(--mine-purple); color:var(--mine-purple); }
+        .manip-focus-pill.mpactive { border-color:var(--mine-purple); color:var(--mine-purple); background:rgba(176,96,216,0.12); }
+        .manip-focus-hint { font-family:'Courier New',monospace; font-size:0.58em; color:#404050; }
+
+        /* ROUND PIPS */
+        .round-tracker { display:flex; gap:8px; align-items:center; margin-bottom:14px; padding:8px 14px; border:1px solid #151520; background:rgba(0,0,0,0.15); }
+        .round-pip { width:14px; height:14px; border:1px solid #252535; flex-shrink:0; }
+        .round-pip.used { background:var(--theme-color); border-color:var(--theme-color); }
+        .round-pip.current { border-color:var(--theme-color); animation:pipPulse 1.4s ease-in-out infinite; }
+        @keyframes pipPulse { 0%,100%{opacity:0.35}50%{opacity:1} }
+        .round-tracker-label { font-family:'Courier New',monospace; font-size:0.62em; color:#505060; letter-spacing:1px; }
+
+        /* ACTIVE HAND STRIP on dashboard */
+        .active-hand-strip { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; align-items:center; }
+        .active-hand-label { font-family:'Courier New',monospace; font-size:0.6em; color:#303040; letter-spacing:1px; margin-right:4px; }
+
         /* HOW TO PLAY */
         .htp-section { font-family:'Rajdhani',sans-serif; max-width:980px; margin:0 auto; padding:0 20px 80px; }
         .htp-title { font-size:1.1em; letter-spacing:5px; color:var(--theme-color); text-transform:uppercase; border-bottom:1px solid #151520; padding-bottom:8px; margin-bottom:24px; font-weight:700; }
@@ -318,13 +372,69 @@
     <div class="logo-section">
         <h1><a href="index.html" style="color:inherit;text-decoration:none;">NARON CODEX</a></h1>
     </div>
-    <div style="font-family:'Courier New',monospace; color:var(--theme-color); letter-spacing:3px; font-size:0.85em; opacity:0.7;">⛏ WORLD MINE</div>
+    <nav class="nav-links">
+        <a href="index.html" class="nav-btn">HUB</a>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">AW &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="crew.worlds.html" class="nav-dropdown-item">CREW</a>
+                <a href="arms.worlds.html" class="nav-dropdown-item">ARMS</a>
+                <a href="tools.worlds.html" class="nav-dropdown-item">TOOLS</a>
+                <a href="faces.worlds.html" class="nav-dropdown-item">FACES</a>
+                <a href="land.worlds.html" class="nav-dropdown-item">LAND</a>
+            </div>
+        </div>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.onerror=null;this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="pd.units.html" class="nav-dropdown-item">PD UNITS</a>
+                <a href="pd.materials.html" class="nav-dropdown-item">PD MATS</a>
+                <a href="army.html" class="nav-dropdown-item">ARMY BUILDER</a>
+            </div>
+        </div>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn"><img src="Ale%20images/tavern.svg" style="height:13px;vertical-align:middle;margin-right:4px;opacity:0.85;">ALE &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="ale.html" class="nav-dropdown-item">&#9876; ALE STATS</a>
+                <a href="alewiki.html" class="nav-dropdown-item">&#9672; ALE WIKI</a>
+                <a href="alements.html" class="nav-dropdown-item">&#11041; STAT EXPLORER</a>
+                <a href="aleleaders.html" class="nav-dropdown-item">&#9670; LEADERBOARD</a>
+            </div>
+        </div>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn">UTILITY &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="stash.html" class="nav-dropdown-item">&#11041; STASH</a>
+                <a href="outpost.html" class="nav-dropdown-item">OUTPOST</a>
+                <a href="ep.html" class="nav-dropdown-item">&#9672; ENDPOINTS</a>
+            </div>
+        </div>
+    </nav>
     <div class="wallet-section">
         <button id="wallet-connect-btn" class="wallet-btn" onclick="disconnectWallet()" style="display:none;"></button>
         <button id="wallet-btn-anchor" class="wallet-btn" onclick="loginWithAnchor()">[ &#9875; ANCHOR ]</button>
         <button id="wallet-btn-wcc"    class="wallet-btn" onclick="loginWithWCC()">[ &#9729; CLOUD WALLET ]</button>
     </div>
+    <button id="hamburger-btn" onclick="toggleHamburger()" aria-label="Open navigation">&#9776;</button>
 </header>
+<nav id="nav-dropdown">
+    <a href="index.html" class="nav-btn">HUB</a>
+    <a href="crew.worlds.html" class="nav-btn">CREW</a>
+    <a href="arms.worlds.html" class="nav-btn">ARMS</a>
+    <a href="tools.worlds.html" class="nav-btn">TOOLS</a>
+    <a href="faces.worlds.html" class="nav-btn">FACES</a>
+    <a href="land.worlds.html" class="nav-btn">LAND</a>
+    <a href="pd.units.html" class="nav-btn">PD UNITS</a>
+    <a href="pd.materials.html" class="nav-btn">PD MATS</a>
+    <a href="army.html" class="nav-btn">ARMY BUILDER</a>
+    <a href="ale.html" class="nav-btn">&#9876; ALE STATS</a>
+    <a href="alewiki.html" class="nav-btn">&#9672; ALE WIKI</a>
+    <a href="alements.html" class="nav-btn">&#11041; STAT EXPLORER</a>
+    <a href="aleleaders.html" class="nav-btn">&#9670; LEADERBOARD</a>
+    <a href="stash.html" class="nav-btn">&#11041; STASH</a>
+    <a href="outpost.html" class="nav-btn">OUTPOST</a>
+    <a href="ep.html" class="nav-btn">&#9672; ENDPOINTS</a>
+</nav>
 
 <div class="top-bar">
     <div>
@@ -383,8 +493,13 @@
     <div class="loadout-strip" id="loadout-strip"></div>
 
     <div class="mine-actions">
+        <button class="mine-btn" id="play-btn" onclick="openCardSelector()">⚡ PLAY ROUND</button>
         <button class="mine-btn" id="swap-btn" onclick="openSelector()">⛏ CHANGE LOADOUT</button>
         <div class="swap-timer" id="swap-timer"></div>
+    </div>
+    <div id="active-hand-display" style="display:none; margin-bottom:16px;">
+        <div class="section-title">LAST ELEMENT HAND</div>
+        <div class="active-hand-strip" id="active-hand-strip"></div>
     </div>
 
     <div class="mine-output-section">
@@ -471,6 +586,41 @@
     </div>
 
     <button class="confirm-btn" id="confirm-btn" onclick="confirmLoadout()" disabled>SELECT AT LEAST 1 TOOL</button>
+</div>
+
+<!-- ══ ELEMENT CARDS SCREEN ═══════════════════════════════════════════════════ -->
+<div id="screen-cards" class="mine-main" style="display:none;">
+    <div class="select-header">
+        <button class="select-back" onclick="backToTools()">← BACK TO TOOLS</button>
+        <div class="select-title" id="cards-screen-title">PLAY YOUR ELEMENT CARDS</div>
+    </div>
+    <div class="select-note">Pick <b>6 crew or level NFTs</b> from your wallet. Their elements determine what your tools mine this round. Arms NFTs have no element — only crew and level cards apply.</div>
+
+    <div class="round-tracker" id="round-tracker"></div>
+
+    <div id="card-tools-hint" class="select-land-hint" style="display:none; margin-bottom:12px;"></div>
+
+    <div id="card-status" style="font-family:'Courier New',monospace; font-size:0.72em; color:#505060; letter-spacing:1px; margin-bottom:12px;">LOADING YOUR CARDS…</div>
+
+    <div class="tool-grid" id="card-grid"></div>
+
+    <div class="sel-strip">
+        <div class="sel-strip-label">ELEMENT HAND (<span id="card-sel-count">0</span>/6)</div>
+        <div class="sel-strip-cards" id="card-sel-strip"></div>
+    </div>
+
+    <div id="manip-focus-panel" class="manip-panel" style="display:none;">
+        <div class="manip-panel-title">🔬 MANIPULATOR FOCUS — Choose 2–3 Elements</div>
+        <div class="manip-focus-pills" id="manip-focus-pills"></div>
+        <div class="manip-focus-hint" id="manip-focus-hint">Choose 2–3 elements your Manipulator will focus. Only elements in your hand are available.</div>
+    </div>
+
+    <div class="hand-preview" id="hand-preview" style="display:none;">
+        <div class="hand-preview-title">EXPECTED EXTRACTION THIS ROUND</div>
+        <div id="hand-preview-content"></div>
+    </div>
+
+    <button class="confirm-btn" id="card-confirm-btn" onclick="confirmCards()" disabled>PICK 6 CARDS TO PLAY</button>
 </div>
 
 <!-- ══ TOOL TYPE GUIDE ════════════════════════════════════════════════════════ -->
@@ -903,7 +1053,9 @@ function getPoolBonus(rarity) {
     var pool = getDailyPool();
     return (rarity||'').toLowerCase() === pool ? (POOL_BONUS[pool] || 1) : 1;
 }
-function getEffectiveDist(tool) {
+function getEffectiveDist(tool, resolvedDist) {
+    if (resolvedDist && resolvedDist[tool.assetId]) return resolvedDist[tool.assetId];
+    // Static fallback when no element hand has been played
     var base = MINERAL_DIST[tool.type] || MINERAL_DIST.ExoTool;
     var r = (tool.rarity || '').toLowerCase();
     if (r === 'legendary') return blendDist(base, MINERAL_DIST.Explosive, 0.15);
@@ -940,10 +1092,11 @@ function applyTick(session) {
     if (elapsed < 0.1) return;
     var landType  = session.featuredLand ? session.featuredLand.type : null;
     var mineMult  = session.landMineMult || 1.0;
+    var resolved  = session.resolvedDist || {};
     for (var i = 0; i < session.loadout.length; i++) {
         var tool = session.loadout[i];
         var rate = toolRate(tool, landType, mineMult);
-        var dist = getEffectiveDist(tool);
+        var dist = getEffectiveDist(tool, resolved);
         var out  = rate * elapsed;
         if (tool.type === 'ExoTool' && Math.random() < 0.15) out *= 2; // lucky double tick
         MINERAL_KEYS.forEach(function(k){ session.accumulated[k] += out * dist[k]; });
@@ -958,12 +1111,12 @@ function calcScore(acc) {
     return s;
 }
 
-function projectedWeekScore(loadout, landType, mineMult) {
+function projectedWeekScore(loadout, landType, mineMult, resolvedDist) {
     if (!loadout.length) return 0;
     var scorePerSec = 0;
     loadout.forEach(function(tool) {
         var rate = toolRate(tool, landType, mineMult);
-        var dist = getEffectiveDist(tool);
+        var dist = getEffectiveDist(tool, resolvedDist || {});
         MINERAL_KEYS.forEach(function(k){ scorePerSec += rate * dist[k] * MINERAL_PTS[k]; });
     });
     return scorePerSec * daysLeftInWeek() * 86400;
@@ -1186,7 +1339,7 @@ function renderFeaturedLand(land, mult, mineCount) {
 
 // ── SCREENS ────────────────────────────────────────────────────────────────────
 function showScreen(name) {
-    ['wallet','dash','select'].forEach(function(s){
+    ['wallet','dash','select','cards'].forEach(function(s){
         document.getElementById('screen-'+s).style.display = s===name ? 'block' : 'none';
     });
 }
@@ -1260,7 +1413,7 @@ function renderDashboard(wallet, session) {
         var t = session.loadout[i];
         if (t) {
             var rate    = toolRate(t, landType, mineMult);
-            var dist    = MINERAL_DIST[t.type] || MINERAL_DIST.ExoTool;
+            var dist    = getEffectiveDist(t, session.resolvedDist || {});
             var topM    = MINERAL_KEYS.reduce(function(best,k){ return dist[k] > dist[best] ? k : best; }, MINERAL_KEYS[0]);
             var synMod  = (landType && TYPE_SYNERGY[landType]) ? (TYPE_SYNERGY[landType][t.type] || 1.0) : 1.0;
             var synStr  = synMod !== 1.0 ? ('Land syn: ' + (synMod>1?'+':'-') + Math.abs(Math.round((synMod-1)*100)) + '%') : '';
@@ -1290,7 +1443,7 @@ function renderDashboard(wallet, session) {
     });
 
     document.getElementById('weekly-score').textContent = fmtNum(session.weeklyScore);
-    var proj = session.weeklyScore + projectedWeekScore(session.loadout, landType, mineMult);
+    var proj = session.weeklyScore + projectedWeekScore(session.loadout, landType, mineMult, session.resolvedDist || {});
     document.getElementById('projected-score').textContent = fmtNum(proj) + ' projected';
 
     var swapBtn   = document.getElementById('swap-btn');
@@ -1298,10 +1451,41 @@ function renderDashboard(wallet, session) {
     if (hoursLeft > 0) {
         swapBtn.disabled = true;
         var h = Math.floor(hoursLeft), m = Math.floor((hoursLeft - h) * 60);
-        document.getElementById('swap-timer').textContent = 'Available in ' + h + 'h ' + m + 'm';
+        document.getElementById('swap-timer').textContent = 'Loadout locked ' + h + 'h ' + m + 'm';
     } else {
         swapBtn.disabled = false;
-        document.getElementById('swap-timer').textContent = session.loadout.length ? 'Swap available' : 'No loadout set';
+        document.getElementById('swap-timer').textContent = session.loadout.length ? '' : 'No loadout set';
+    }
+
+    // Play round button
+    var playBtn = document.getElementById('play-btn');
+    var todayDay = Math.floor(Date.now() / 86400000);
+    var roundsToday = (session.lastRoundDay === todayDay) ? (session.roundsToday || 0) : 0;
+    var MAX_ROUNDS = TESTING_MODE ? 99 : 3;
+    if (!session.loadout || !session.loadout.length) {
+        playBtn.disabled = true;
+        playBtn.textContent = '⚡ PLAY ROUND';
+    } else if (roundsToday >= MAX_ROUNDS) {
+        playBtn.disabled = true;
+        playBtn.textContent = 'ALL ROUNDS PLAYED TODAY';
+    } else {
+        playBtn.disabled = false;
+        var left = MAX_ROUNDS - roundsToday;
+        playBtn.textContent = '⚡ PLAY ROUND' + (MAX_ROUNDS < 99 ? ' (' + left + ' left)' : '');
+    }
+
+    // Active element hand display
+    var handDiv = document.getElementById('active-hand-display');
+    var handStrip = document.getElementById('active-hand-strip');
+    var EL_ICON = { nature:'🌿', neutral:'◆', metal:'⚙', gem:'💎', fire:'🔥', air:'💨' };
+    if (session.elementHand && session.elementHand.length) {
+        handDiv.style.display = '';
+        handStrip.innerHTML = '<span class="active-hand-label">HAND:</span>' +
+            session.elementHand.map(function(c) {
+                return '<span class="el-badge el-' + c.element + '">' + (EL_ICON[c.element]||'') + ' ' + c.element.toUpperCase() + '</span>';
+            }).join('');
+    } else {
+        handDiv.style.display = 'none';
     }
 
     renderLeaderboard(wallet, session.weeklyScore);
@@ -1412,9 +1596,9 @@ function parseTool(raw, session) {
     return tools;
 }
 
-function dailyScore(tool, landType, mineMult) {
+function dailyScore(tool, landType, mineMult, resolvedDist) {
     var rate = toolRate(tool, landType, mineMult);
-    var dist = getEffectiveDist(tool);
+    var dist = getEffectiveDist(tool, resolvedDist || {});
     var s = 0; MINERAL_KEYS.forEach(function(k){ s += rate * dist[k] * MINERAL_PTS[k]; });
     return s * 86400;
 }
@@ -1447,7 +1631,7 @@ function renderToolGrid(session) {
             '<div class="tool-card-score" title="Output / Charge / Shard">⚡' + tool.mine_power + ' ⏱' + tool.delay + 's' + (tool.nft_points ? ' 🔮' + tool.nft_points : '') + '</div>' +
             '<div class="tool-card-score" style="color:#808090;">' + rarLabel(tool.rarity) + (shineText ? ' · ' + shineText : '') + '</div>' +
             '<div class="tool-card-score" style="color:#c0a030;" title="Rarity×Shine multiplier">Shine ×' + rsMult.toFixed(0) + '</div>' +
-            '<div class="tool-card-score">' + fmtNum(dailyScore(tool,lt,mm)) + ' pts/day</div>' +
+            '<div class="tool-card-score">' + fmtNum(dailyScore(tool,lt,mm,session?session.resolvedDist:{})) + ' pts/day</div>' +
             poolTag +
             (synText ? '<div class="tool-card-syn">' + synText + '</div>' : '') +
         '</div>';
@@ -1495,13 +1679,9 @@ function confirmLoadout() {
     var wallet  = localStorage.getItem('naron_wallet');
     var session = getSession(wallet) || newSession(wallet);
     applyTick(session);
-    session.loadout  = _selTools.slice();
-    session.lastSwap = Date.now();
-    session.lastTick = Date.now();
+    session.loadout = _selTools.slice();
     saveSession(wallet, session);
-    playCardReveal(_selTools, getSession(wallet), function() {
-        showDashboard();
-    });
+    openCardSelector();
 }
 
 // ── HELPERS ────────────────────────────────────────────────────────────────────
@@ -1521,12 +1701,437 @@ window.advanceTestRound = function() {
     var session = getSession(wallet) || newSession(wallet);
     applyTick(session);
     session.testRoundIndex = (session.testRoundIndex || 0) + 1;
-    session.lastSwap  = 0;          // unlock for next round
-    session.featuredLand = null;    // force new land pick
+    session.lastSwap  = 0;
+    session.featuredLand = null;
+    session.roundsToday  = 0;
+    session.lastRoundDay = 0;
     saveSession(wallet, session);
-    showDashboard();
     loadFeaturedLand(wallet).catch(function(){});
+    openCardSelector();
 };
+
+// ── ELEMENT CARD SELECTOR ─────────────────────────────────────────────────────
+var _allCards  = [];
+var _selCards  = [];
+var _manipFocus = [];
+
+var EL_ICON  = { nature:'🌿', neutral:'◆', metal:'⚙', gem:'💎', fire:'🔥', air:'💨' };
+var EL_COLOR = { nature:'#40c890', neutral:'#a0a8b8', metal:'#4090d8', gem:'#b060d8', fire:'#e06020', air:'#a0dcff' };
+var EL_ORDER = ['nature','neutral','metal','gem','fire','air'];
+
+function openCardSelector() {
+    _selCards   = [];
+    _manipFocus = [];
+    showScreen('cards');
+
+    // Populate round tracker
+    renderRoundTracker();
+
+    // Show tool hint strip (what tools are in the loadout)
+    var wallet  = localStorage.getItem('naron_wallet');
+    var session = getSession(wallet);
+    var loadout = session && session.loadout ? session.loadout : [];
+    var hint = document.getElementById('card-tools-hint');
+    if (loadout.length) {
+        hint.style.display = '';
+        hint.innerHTML = 'Your tools: ' + loadout.map(function(t) {
+            return '<span class="type-badge type-' + t.type + '">' + (TYPE_ICON[t.type]||'') + ' ' + t.type + '</span>';
+        }).join(' ');
+    } else {
+        hint.style.display = 'none';
+    }
+
+    updateCardSelStrip();
+    loadElementCards(wallet);
+}
+
+function backToTools() { showScreen('select'); }
+
+function renderRoundTracker() {
+    var wallet   = localStorage.getItem('naron_wallet');
+    var session  = getSession(wallet);
+    var todayDay = Math.floor(Date.now() / 86400000);
+    var roundsPlayed = (session && session.lastRoundDay === todayDay) ? (session.roundsToday || 0) : 0;
+    var MAX_ROUNDS = TESTING_MODE ? 99 : 3;
+    var html = '<span class="round-tracker-label">TODAY\'S ROUNDS&nbsp;&nbsp;</span>';
+    for (var i = 0; i < Math.min(MAX_ROUNDS, 3); i++) {
+        var cls = i < roundsPlayed ? 'round-pip used' : (i === roundsPlayed ? 'round-pip current' : 'round-pip');
+        html += '<div class="' + cls + '"></div>';
+    }
+    html += '<span class="round-tracker-label">&nbsp;&nbsp;' + roundsPlayed + (MAX_ROUNDS < 99 ? '/' + MAX_ROUNDS : '') + ' PLAYED</span>';
+    if (MAX_ROUNDS < 99 && roundsPlayed >= MAX_ROUNDS) {
+        html += '<span class="round-tracker-label" style="color:#c05010;margin-left:8px;">— ALL ROUNDS USED TODAY</span>';
+    }
+    document.getElementById('round-tracker').innerHTML = html;
+}
+
+async function loadElementCards(wallet) {
+    _allCards = [];
+    document.getElementById('card-status').textContent = 'LOADING YOUR CARDS…';
+    document.getElementById('card-grid').innerHTML = '';
+
+    for (var node of AA_NODES) {
+        try {
+            var crewResp = await fetch(node + '/atomicassets/v1/assets?owner=' + encodeURIComponent(wallet) +
+                '&collection_name=alien.worlds&schema_name=crew.worlds&limit=1000&page=1');
+            var crewJson = await crewResp.json();
+            var crewNfts = (crewJson.success && crewJson.data) ? crewJson.data : [];
+
+            var armsResp = await fetch(node + '/atomicassets/v1/assets?owner=' + encodeURIComponent(wallet) +
+                '&collection_name=alien.worlds&schema_name=arms.worlds&limit=1000&page=1');
+            var armsJson = await armsResp.json();
+            var armsNfts = (armsJson.success && armsJson.data) ? armsJson.data : [];
+
+            var lvlResp  = await fetch(node + '/atomicassets/v1/assets?owner=' + encodeURIComponent(wallet) +
+                '&collection_name=alien.worlds&schema_name=level.worlds&limit=500&page=1');
+            var lvlJson  = await lvlResp.json();
+            var lvlNfts  = (lvlJson.success && lvlJson.data) ? lvlJson.data : [];
+
+            _allCards = parseCards(crewNfts, 'crew.worlds')
+                .concat(parseCards(armsNfts, 'arms.worlds'))
+                .concat(parseCards(lvlNfts, 'level.worlds'));
+
+            _allCards.sort(function(a, b) {
+                var ea = EL_ORDER.indexOf(a.element), eb = EL_ORDER.indexOf(b.element);
+                if (ea !== eb) return ea - eb;
+                var RO = ['mythical','mythic','legendary','epic','rare','uncommon','common','abundant'];
+                return RO.indexOf(a.rarity) - RO.indexOf(b.rarity);
+            });
+
+            if (_allCards.length) {
+                document.getElementById('card-status').textContent =
+                    _allCards.length + ' CARDS FOUND — PICK 6';
+            } else {
+                document.getElementById('card-status').innerHTML =
+                    'No crew or level NFTs found in this wallet. ' +
+                    '<button class="mine-btn" style="padding:6px 14px;font-size:0.75em;" onclick="skipHandAndPlay()">PLAY WITH DEFAULT PROFILES →</button>';
+            }
+            renderCardGrid();
+            return;
+        } catch(e) { continue; }
+    }
+    document.getElementById('card-status').textContent = 'CONNECTION FAILED — TRY AGAIN';
+}
+
+// AW element strings → game element (lowercase). Covers known aliases.
+var AW_EL_MAP = {
+    nature:'nature', forest:'nature', earth:'nature', plant:'nature',
+    neutral:'neutral', none:'neutral', normal:'neutral', void:'neutral',
+    metal:'metal', iron:'metal', steel:'metal', ore:'metal',
+    gem:'gem', crystal:'gem', dark:'gem', darkgem:'gem',
+    fire:'fire', flame:'fire', lava:'fire',
+    air:'air', wind:'air', lightning:'air', electric:'air'
+};
+
+// Static template_id → element lookup extracted from crew.worlds.html + arms.worlds.html
+// Falls back to this when the AtomicAssets API doesn't carry the element field on the NFT
+const AW_ELEMENT_LOOKUP = {
+    // crew.worlds templates
+    19624:'air',19625:'neutral',19626:'neutral',19627:'air',19628:'fire',19629:'air',19630:'nature',19631:'fire',
+    19632:'nature',19633:'gem',19634:'metal',19635:'metal',19636:'gem',19637:'air',19638:'metal',19639:'nature',
+    19640:'nature',19641:'gem',19642:'neutral',19643:'neutral',19644:'gem',19645:'fire',19646:'neutral',19647:'fire',
+    20988:'air',20989:'fire',20990:'metal',20991:'gem',20992:'neutral',20993:'neutral',
+    28422:'neutral',28423:'nature',28424:'neutral',44933:'nature',
+    141516:'air',141517:'neutral',141518:'neutral',141519:'air',141520:'fire',141522:'air',141523:'nature',
+    141524:'fire',141525:'nature',141526:'gem',141527:'metal',141528:'metal',141529:'gem',141530:'air',
+    141531:'metal',141532:'nature',141533:'nature',141534:'gem',141535:'neutral',141536:'neutral',141537:'gem',
+    141538:'fire',141539:'neutral',141540:'fire',141541:'neutral',141542:'air',141543:'neutral',141544:'air',
+    141545:'fire',141546:'air',141547:'nature',141548:'fire',141549:'gem',141550:'metal',141551:'metal',
+    141552:'gem',141553:'metal',141554:'nature',141555:'nature',141556:'gem',141557:'neutral',141558:'neutral',
+    141559:'fire',141560:'neutral',141561:'fire',141562:'neutral',141563:'air',141564:'air',141565:'nature',
+    141566:'fire',141567:'gem',141568:'metal',141569:'gem',141570:'gem',141571:'neutral',141572:'neutral',
+    141573:'fire',141574:'neutral',
+    235640:'neutral',235641:'air',235642:'neutral',235643:'air',235644:'neutral',235645:'air',235646:'neutral',235647:'air',
+    254350:'neutral',254351:'air',254352:'neutral',254353:'air',254354:'neutral',254355:'air',254356:'neutral',254357:'air',
+    // arms.worlds templates
+    19582:'fire',19583:'neutral',19584:'nature',19585:'fire',19586:'metal',19587:'air',19588:'neutral',19589:'gem',
+    19590:'neutral',19591:'metal',19592:'air',19593:'nature',19594:'metal',19595:'fire',19596:'nature',19597:'gem',
+    19598:'air',19599:'neutral',19600:'gem',19601:'gem',19602:'air',19603:'metal',19604:'neutral',19605:'gem',
+    19606:'nature',19607:'metal',19608:'fire',19609:'nature',19610:'neutral',19611:'metal',19612:'nature',19613:'air',
+    19614:'gem',19615:'neutral',19616:'fire',19617:'fire',19618:'metal',19619:'neutral',19620:'air',19621:'fire',
+    19622:'nature',19623:'gem',
+    20973:'air',20974:'gem',20975:'neutral',20976:'air',20977:'gem',20978:'air',20979:'metal',20980:'gem',20981:'nature',20982:'metal',20983:'fire',
+    56042:'air',
+    141406:'fire',141407:'neutral',141408:'nature',141409:'fire',141410:'metal',141411:'air',141412:'neutral',141413:'gem',
+    141414:'neutral',141415:'metal',141416:'air',141417:'nature',141418:'metal',141419:'fire',141420:'nature',141421:'gem',
+    141422:'air',141423:'neutral',141424:'gem',141425:'gem',141426:'air',141427:'metal',141428:'neutral',141429:'gem',
+    141430:'nature',141431:'metal',141432:'fire',141433:'nature',141434:'neutral',141435:'metal',141436:'nature',141437:'air',
+    141438:'gem',141439:'neutral',141440:'fire',141441:'fire',141442:'metal',141443:'neutral',141444:'air',141445:'fire',
+    141446:'nature',141447:'gem',141448:'air',141449:'fire',141450:'nature',141451:'fire',141452:'metal',141453:'air',
+    141454:'neutral',141455:'gem',141456:'neutral',141457:'metal',141458:'air',141459:'nature',141460:'metal',141461:'fire',
+    141462:'nature',141463:'gem',141464:'air',141465:'neutral',141466:'gem',141467:'gem',141468:'air',141469:'metal',
+    141470:'neutral',141471:'gem',141472:'nature',141473:'metal',141474:'fire',141475:'metal',141476:'nature',141477:'air',
+    141478:'gem',141479:'neutral',141480:'fire',141481:'fire',141482:'metal',141483:'air',141484:'fire',141485:'nature',
+    141486:'gem',141487:'air',141488:'fire',141489:'air',141490:'gem',141491:'neutral',141492:'air',141493:'nature',
+    141494:'fire',141495:'nature',141496:'gem',141497:'air',141498:'neutral',141499:'gem',141500:'gem',141501:'air',
+    141502:'metal',141503:'gem',141504:'nature',141505:'metal',141506:'fire',141507:'metal',141508:'nature',141509:'gem',
+    141510:'neutral',141511:'fire',141512:'metal',141513:'nature',141514:'gem',141515:'air'
+};
+
+function parseCards(rawNfts, schema) {
+    var seen  = new Set();
+    var cards = [];
+    rawNfts.forEach(function(nft) {
+        if (seen.has(nft.asset_id)) return;
+        seen.add(nft.asset_id);
+        var td  = (nft.template && nft.template.immutable_data) || {};
+        var dd  = nft.data || nft.mutable_data || {};
+        var tid = nft.template ? parseInt(nft.template.template_id) : 0;
+        // 1. Try API element field
+        var raw = (td.element || td.Element || dd.element || dd.Element || '').toString().toLowerCase().trim();
+        var el  = AW_EL_MAP[raw];
+        // 2. Fall back to static lookup keyed by template_id
+        if (!el) el = AW_ELEMENT_LOOKUP[tid] || null;
+        // 3. Only include cards with a known element
+        if (!el) return;
+        var rarity = (td.rarity || dd.rarity || 'common').toLowerCase();
+        var img    = td.img || dd.img || td.backimg || dd.backimg || '';
+        cards.push({
+            assetId: nft.asset_id, templateId: tid,
+            name: nft.name || td.name || ('Card #' + nft.asset_id),
+            element: el, rarity: rarity, img: img, schema: schema
+        });
+    });
+    return cards;
+}
+
+function renderCardGrid() {
+    var el     = document.getElementById('card-grid');
+    var selIds = new Set(_selCards.map(function(c) { return c.assetId; }));
+    var atMax  = _selCards.length >= 6;
+
+    el.innerHTML = _allCards.map(function(card) {
+        var isSel = selIds.has(card.assetId);
+        var dis   = !isSel && atMax;
+        var num   = isSel ? (_selCards.findIndex(function(c) { return c.assetId===card.assetId; })+1) : '';
+        var schemaFolder = { 'crew.worlds':'crew.worlds', 'arms.worlds':'arms.worlds', 'level.worlds':'level.worlds' };
+        var imgSrc = card.img
+            ? 'https://cloudflare-ipfs.com/ipfs/' + card.img
+            : ((schemaFolder[card.schema] || 'crew.worlds') + '/' + card.templateId + '.webp');
+        var schemaTag = { 'crew.worlds':'CREW', 'arms.worlds':'ARMS', 'level.worlds':'LEVEL' }[card.schema] || card.schema;
+        return '<div class="tool-card' + (isSel?' sel':'') + (dis?' disabled':'') + '" onclick="toggleCard(\'' + card.assetId + '\')">' +
+            (num ? '<div class="tool-card-num">' + num + '</div>' : '') +
+            '<span class="tool-card-type"><span class="el-badge el-' + card.element + '">' + (EL_ICON[card.element]||'') + ' ' + card.element.toUpperCase() + '</span></span>' +
+            '<img class="tool-card-img" src="' + imgSrc + '" onerror="this.style.opacity=0.3" alt="' + card.name + '">' +
+            '<div class="tool-card-name">' + card.name + '</div>' +
+            '<div class="tool-card-score" style="color:#505060;">' + schemaTag + '</div>' +
+            '<div class="tool-card-score" style="color:#808090;">' + rarLabel(card.rarity) + '</div>' +
+        '</div>';
+    }).join('');
+}
+
+function toggleCard(assetId) {
+    var idx = _selCards.findIndex(function(c) { return c.assetId===assetId; });
+    if (idx >= 0) { _selCards.splice(idx, 1); }
+    else {
+        if (_selCards.length >= 6) return;
+        var card = _allCards.find(function(c) { return c.assetId===assetId; });
+        if (card) _selCards.push(card);
+    }
+    renderCardGrid();
+    updateCardSelStrip();
+    updateManipFocusPanel();
+    updateHandPreview();
+}
+
+function updateCardSelStrip() {
+    document.getElementById('card-sel-count').textContent = _selCards.length;
+    var strip = document.getElementById('card-sel-strip');
+    var html  = '';
+    for (var i = 0; i < 6; i++) {
+        var c = _selCards[i];
+        if (c) {
+            var imgSrc = c.img
+                ? 'https://cloudflare-ipfs.com/ipfs/' + c.img
+                : ((c.schema || 'crew.worlds') + '/' + c.templateId + '.webp');
+            var col = EL_COLOR[c.element] || '#606070';
+            html += '<div class="sel-strip-card">' +
+                '<img src="' + imgSrc + '" onerror="this.style.opacity=0.3" style="width:56px;height:56px;object-fit:cover;border:1px solid ' + col + ';">' +
+                '<div class="sel-strip-card-name" style="color:' + col + ';">' + (EL_ICON[c.element]||'') + ' ' + c.element.toUpperCase() + '</div>' +
+            '</div>';
+        } else {
+            html += '<div><div class="sel-placeholder">+</div></div>';
+        }
+    }
+    strip.innerHTML = html;
+
+    var btn = document.getElementById('card-confirm-btn');
+    if (_selCards.length === 6) {
+        btn.disabled = false;
+        btn.textContent = '⚡  PLAY HAND  ›';
+        btn.classList.add('play-ready');
+    } else {
+        var need = 6 - _selCards.length;
+        btn.disabled = true;
+        btn.textContent = 'PICK ' + need + ' MORE CARD' + (need !== 1 ? 'S' : '');
+        btn.classList.remove('play-ready');
+    }
+}
+
+// Compute dynamic element distribution from hand + tool type
+function resolveHandDist(toolType, handElements) {
+    var dist = { nature:0, neutral:0, metal:0, gem:0, fire:0, air:0 };
+    if (!handElements || !handElements.length) {
+        return Object.assign({}, MINERAL_DIST[toolType] || MINERAL_DIST.ExoTool);
+    }
+    var counts = {};
+    handElements.forEach(function(e) { if (e) counts[e] = (counts[e]||0) + 1; });
+    var uniqueEles = Object.keys(counts);
+    if (!uniqueEles.length) return Object.assign({}, MINERAL_DIST[toolType] || MINERAL_DIST.ExoTool);
+
+    if (toolType === 'Extractor') {
+        // Dominant element (most common in hand) gets 80%
+        var dominant = uniqueEles.reduce(function(best, e) {
+            return (counts[e]||0) > (counts[best]||0) ? e : best;
+        }, uniqueEles[0]);
+        dist[dominant] = 0.80;
+        var others = uniqueEles.filter(function(e) { return e !== dominant; });
+        if (others.length) {
+            var share = 0.20 / others.length;
+            others.forEach(function(e) { dist[e] = share; });
+        }
+
+    } else if (toolType === 'Explosive') {
+        // Up to 5 elements, weighted by count
+        var sorted5 = uniqueEles.slice().sort(function(a,b){ return counts[b]-counts[a]; }).slice(0,5);
+        var total5  = sorted5.reduce(function(s,e){ return s + counts[e]; }, 0);
+        sorted5.forEach(function(e){ dist[e] = counts[e] / total5; });
+
+    } else if (toolType === 'Manipulator') {
+        // _manipFocus: player-chosen 2–3 elements; fallback = all unique from hand
+        var focus = (_manipFocus && _manipFocus.length >= 2)
+            ? _manipFocus.filter(function(e){ return counts[e]; })
+            : uniqueEles;
+        if (!focus.length) focus = uniqueEles;
+        focus.forEach(function(e){ dist[e] = 1.0 / focus.length; });
+
+    } else { // ExoTool — 2 random elements from hand
+        var shuffled = uniqueEles.slice().sort(function(){ return Math.random()-0.5; });
+        var picked   = shuffled.slice(0, Math.min(2, shuffled.length));
+        picked.forEach(function(e){ dist[e] = 1.0 / picked.length; });
+    }
+    return dist;
+}
+
+function updateManipFocusPanel() {
+    var panel   = document.getElementById('manip-focus-panel');
+    var wallet  = localStorage.getItem('naron_wallet');
+    var session = getSession(wallet);
+    var loadout = session && session.loadout ? session.loadout : _selTools;
+    var hasManip = loadout.some(function(t){ return t.type === 'Manipulator'; });
+
+    if (!hasManip || !_selCards.length) { panel.style.display = 'none'; return; }
+    panel.style.display = '';
+
+    var handEles = _selCards.map(function(c){ return c.element; });
+    var unique   = [];
+    handEles.forEach(function(e){ if (unique.indexOf(e) === -1) unique.push(e); });
+
+    var pillsHTML = unique.map(function(e) {
+        var isFoc = _manipFocus.indexOf(e) >= 0;
+        var col   = EL_COLOR[e] || '#606070';
+        return '<span class="manip-focus-pill' + (isFoc ? ' mpactive' : '') + '"' +
+            (isFoc ? ' style="border-color:' + col + ';color:' + col + ';"' : '') +
+            ' onclick="toggleManipFocus(\'' + e + '\')">' +
+            (EL_ICON[e]||'') + ' ' + e.toUpperCase() +
+        '</span>';
+    }).join('');
+    document.getElementById('manip-focus-pills').innerHTML = pillsHTML;
+
+    var hint = document.getElementById('manip-focus-hint');
+    if (!_manipFocus.length) {
+        hint.textContent = 'No focus set — Manipulator will split equally across all hand elements.';
+    } else if (_manipFocus.length === 1) {
+        hint.textContent = 'Pick 1 more (min 2). Selected: ' + _manipFocus[0].toUpperCase();
+    } else {
+        hint.textContent = 'Focus: ' + _manipFocus.map(function(e){ return e.toUpperCase(); }).join(', ') +
+            (_manipFocus.length < 3 ? ' — can add 1 more' : ' — max 3 reached');
+    }
+}
+
+window.toggleManipFocus = function(el) {
+    var idx = _manipFocus.indexOf(el);
+    if (idx >= 0) { _manipFocus.splice(idx, 1); }
+    else { if (_manipFocus.length >= 3) return; _manipFocus.push(el); }
+    updateManipFocusPanel();
+    updateHandPreview();
+};
+
+function updateHandPreview() {
+    var preview = document.getElementById('hand-preview');
+    var content = document.getElementById('hand-preview-content');
+    var wallet  = localStorage.getItem('naron_wallet');
+    var session = getSession(wallet);
+    var loadout = session && session.loadout ? session.loadout : _selTools;
+
+    if (!loadout.length || !_selCards.length) { preview.style.display = 'none'; return; }
+    preview.style.display = '';
+
+    var handElements = _selCards.map(function(c){ return c.element; });
+    var html = '';
+    loadout.slice(0, 3).forEach(function(tool) {
+        var dist   = resolveHandDist(tool.type, handElements);
+        var active = Object.keys(dist).filter(function(k){ return dist[k] >= 0.01; });
+        active.sort(function(a,b){ return dist[b]-dist[a]; });
+        html += '<div class="hand-tool-row">' +
+            '<span class="hand-tool-label"><span class="type-badge type-' + tool.type + '">' + (TYPE_ICON[tool.type]||'') + ' ' + tool.type + '</span></span>' +
+            active.map(function(k) {
+                return '<span class="hand-el-pct" style="color:' + (EL_COLOR[k]||'#606070') + ';">' +
+                    (EL_ICON[k]||'') + ' ' + k.toUpperCase() + ' ' + Math.round(dist[k]*100) + '%' +
+                '</span>';
+            }).join('<span style="color:#252535;margin:0 4px;font-size:0.6em;">·</span>') +
+        '</div>';
+        if (tool.type === 'ExoTool') {
+            html += '<div style="font-family:\'Courier New\',monospace;font-size:0.58em;color:#406050;margin-left:120px;margin-bottom:6px;">+ 15% chance to double yield</div>';
+        }
+    });
+    content.innerHTML = html;
+}
+
+window.skipHandAndPlay = function() {
+    var wallet  = localStorage.getItem('naron_wallet');
+    var session = getSession(wallet) || newSession(wallet);
+    session.lastSwap = Date.now();
+    session.lastTick = Date.now();
+    var todayDay = Math.floor(Date.now() / 86400000);
+    if (session.lastRoundDay !== todayDay) session.roundsToday = 0;
+    session.roundsToday  = (session.roundsToday || 0) + 1;
+    session.lastRoundDay = todayDay;
+    saveSession(wallet, session);
+    playCardReveal(session.loadout || [], getSession(wallet), function() { showDashboard(); });
+};
+
+function confirmCards() {
+    if (_selCards.length < 6) return;
+    var wallet  = localStorage.getItem('naron_wallet');
+    var session = getSession(wallet) || newSession(wallet);
+
+    // Store element hand
+    session.elementHand = _selCards.map(function(c) {
+        return { assetId: c.assetId, element: c.element, name: c.name, templateId: c.templateId, schema: c.schema };
+    });
+
+    // Compute resolved distributions for each tool
+    var handElements = _selCards.map(function(c){ return c.element; });
+    var resolved = {};
+    (session.loadout || []).forEach(function(tool) {
+        resolved[tool.assetId] = resolveHandDist(tool.type, handElements);
+    });
+    session.resolvedDist = resolved;
+
+    // Track rounds played today
+    var todayDay = Math.floor(Date.now() / 86400000);
+    if (session.lastRoundDay !== todayDay) { session.roundsToday = 0; }
+    session.roundsToday  = (session.roundsToday || 0) + 1;
+    session.lastRoundDay = todayDay;
+    session.lastSwap     = Date.now();
+    session.lastTick     = Date.now();
+    saveSession(wallet, session);
+
+    playCardReveal(session.loadout || [], getSession(wallet), function() {
+        showDashboard();
+    });
+}
 
 // ── THREE.JS CARD REVEAL ───────────────────────────────────────────────────────
 function playCardReveal(tools, session, onComplete) {
@@ -1604,7 +2209,7 @@ function playCardReveal(tools, session, onComplete) {
 
             if (!revealDone && flipsTriggered >= cards.length && allSettled) {
                 revealDone = true;
-                buildDropInfo(tools, landType, mineMult);
+                buildDropInfo(tools, landType, mineMult, session ? session.resolvedDist : null);
                 document.getElementById('reveal-continue-btn').style.display = '';
             }
         }
@@ -1648,13 +2253,13 @@ function playCardReveal(tools, session, onComplete) {
     };
 }
 
-function buildDropInfo(tools, landType, mineMult) {
+function buildDropInfo(tools, landType, mineMult, resolvedDist) {
     var roundSecs = TESTING_MODE ? TEST_ROUND_SECS : 86400;
     var MCOL = { nature:'#40c890', neutral:'#a0a8b8', metal:'#4090d8', gem:'#b060d8', fire:'#e06020', air:'#a0dcff' };
     var html = '<div class="reveal-drops-grid">';
     tools.slice(0, 3).forEach(function(tool) {
         var rate = toolRate(tool, landType, mineMult);
-        var dist = getEffectiveDist(tool);
+        var dist = getEffectiveDist(tool, resolvedDist || {});
         html += '<div class="reveal-drop-card"><div class="reveal-drop-name">' + tool.name + '</div>';
         var any = false;
         MINERAL_KEYS.forEach(function(k) {
@@ -1688,6 +2293,15 @@ function init() {
 
 checkWalletState();
 init();
+
+function toggleHamburger() {
+    var dd = document.getElementById('nav-dropdown');
+    if (dd) dd.classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+    var dd = document.getElementById('nav-dropdown'), btn = document.getElementById('hamburger-btn');
+    if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) dd.classList.remove('open');
+});
 </script>
 </body>
 </html>

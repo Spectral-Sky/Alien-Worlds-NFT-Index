@@ -64,6 +64,25 @@ body::before {
     pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); transition: background 0.2s;
 }
 
+/* --- NAV --- */
+.nav-links { display:flex; gap:10px; }
+.nav-btn { background:transparent; color:#888; border:1px solid transparent; padding:8px 16px; font-family:'Courier New',monospace; font-weight:bold; font-size:0.9em; text-decoration:none; cursor:pointer; transition:all 0.3s; text-transform:uppercase; border-radius:6px; }
+.nav-btn:hover { color:var(--gold); border-color:var(--gold); }
+.nav-btn.active { color:#000; background:var(--gold); border-color:var(--gold); box-shadow:0 0 15px rgba(232,160,32,0.4); }
+.nav-dropdown-wrap { position:relative; display:inline-block; }
+.nav-dropdown-btn { background:transparent; color:#888; border:1px solid transparent; padding:8px 16px; font-family:'Courier New',monospace; font-weight:bold; font-size:0.9em; cursor:pointer; transition:all 0.3s; text-transform:uppercase; border-radius:6px; letter-spacing:1px; }
+.nav-dropdown-btn:hover { color:var(--gold); border-color:var(--gold); }
+.nav-dropdown-btn.active { color:#000; background:var(--gold); border-color:var(--gold); box-shadow:0 0 15px rgba(232,160,32,0.4); }
+.nav-dropdown-menu { display:none; position:absolute; top:100%; margin-top:0; left:0; z-index:5000; background:rgba(2,8,6,0.98); border:1px solid var(--gold); min-width:160px; padding:8px 0 4px 0; box-shadow:0 8px 24px rgba(0,0,0,0.9); backdrop-filter:blur(6px); }
+.nav-dropdown-wrap:hover .nav-dropdown-menu { display:block; }
+.nav-dropdown-item { display:block; padding:8px 16px; color:#888; text-decoration:none; font-family:'Courier New',monospace; font-size:0.85em; letter-spacing:1px; text-transform:uppercase; transition:all 0.2s; white-space:nowrap; }
+.nav-dropdown-item:hover { color:var(--gold); background:rgba(255,255,255,0.04); }
+.nav-dropdown-item.active { color:var(--gold); font-weight:bold; background:rgba(255,255,255,0.03); }
+#hamburger-btn { display:none; background:none; border:1px solid var(--gold); color:var(--gold); font-size:1.1em; padding:6px 10px; cursor:pointer; border-radius:3px; }
+#nav-dropdown { display:none; flex-direction:column; background:rgba(2,8,6,0.98); border-bottom:1px solid rgba(232,160,32,0.2); padding:8px 16px; gap:4px; z-index:4999; }
+#nav-dropdown.open { display:flex; }
+@media (max-width:800px) { .nav-links { display:none !important; } #hamburger-btn { display:flex; align-items:center; justify-content:center; } }
+
 /* --- HEADER --- */
 .global-header {
     display: flex; justify-content: space-between; align-items: center;
@@ -367,11 +386,68 @@ body::before {
             <a href="index.html" style="color:inherit;text-decoration:none;">NARON CODEX</a>
         </h1>
     </div>
+    <nav class="nav-links">
+        <a href="index.html" class="nav-btn">HUB</a>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">AW &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="crew.worlds.html" class="nav-dropdown-item">CREW</a>
+                <a href="arms.worlds.html" class="nav-dropdown-item">ARMS</a>
+                <a href="tools.worlds.html" class="nav-dropdown-item">TOOLS</a>
+                <a href="faces.worlds.html" class="nav-dropdown-item">FACES</a>
+                <a href="land.worlds.html" class="nav-dropdown-item">LAND</a>
+            </div>
+        </div>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.onerror=null;this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="pd.units.html" class="nav-dropdown-item">PD UNITS</a>
+                <a href="pd.materials.html" class="nav-dropdown-item">PD MATS</a>
+                <a href="army.html" class="nav-dropdown-item">ARMY BUILDER</a>
+            </div>
+        </div>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn"><img src="Ale%20images/tavern.svg" style="height:13px;vertical-align:middle;margin-right:4px;opacity:0.85;">ALE &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="ale.html" class="nav-dropdown-item">&#9876; ALE STATS</a>
+                <a href="alewiki.html" class="nav-dropdown-item">&#9672; ALE WIKI</a>
+                <a href="alements.html" class="nav-dropdown-item">&#11041; STAT EXPLORER</a>
+                <a href="aleleaders.html" class="nav-dropdown-item">&#9670; LEADERBOARD</a>
+            </div>
+        </div>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn active">UTILITY &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="stash.html" class="nav-dropdown-item">&#11041; STASH</a>
+                <a href="outpost.html" class="nav-dropdown-item">OUTPOST</a>
+                <a href="ep.html" class="nav-dropdown-item active">&#9672; ENDPOINTS</a>
+            </div>
+        </div>
+    </nav>
     <div class="hdr-right">
         <span class="hdr-title">◈ WAX NETWORK STATUS</span>
         <span style="font-size:0.7em;color:#405060;letter-spacing:1px;margin-left:10px;">WAX MAINNET</span>
     </div>
+    <button id="hamburger-btn" onclick="toggleHamburger()" aria-label="Open navigation">&#9776;</button>
 </header>
+<nav id="nav-dropdown">
+    <a href="index.html" class="nav-btn">HUB</a>
+    <a href="crew.worlds.html" class="nav-btn">CREW</a>
+    <a href="arms.worlds.html" class="nav-btn">ARMS</a>
+    <a href="tools.worlds.html" class="nav-btn">TOOLS</a>
+    <a href="faces.worlds.html" class="nav-btn">FACES</a>
+    <a href="land.worlds.html" class="nav-btn">LAND</a>
+    <a href="pd.units.html" class="nav-btn">PD UNITS</a>
+    <a href="pd.materials.html" class="nav-btn">PD MATS</a>
+    <a href="army.html" class="nav-btn">ARMY BUILDER</a>
+    <a href="ale.html" class="nav-btn">&#9876; ALE STATS</a>
+    <a href="alewiki.html" class="nav-btn">&#9672; ALE WIKI</a>
+    <a href="alements.html" class="nav-btn">&#11041; STAT EXPLORER</a>
+    <a href="aleleaders.html" class="nav-btn">&#9670; LEADERBOARD</a>
+    <a href="stash.html" class="nav-btn">&#11041; STASH</a>
+    <a href="outpost.html" class="nav-btn">OUTPOST</a>
+    <a href="ep.html" class="nav-btn active">&#9672; ENDPOINTS</a>
+</nav>
 
 <div class="ctrl-bar">
     <button class="ctrl-btn" id="refresh-btn" onclick="refreshAll()">⟳ REFRESH ALL</button>
@@ -1309,6 +1385,15 @@ buildCards();
 loadCustom();
 renderCustomList();
 refreshAll();
+
+function toggleHamburger() {
+    var dd = document.getElementById('nav-dropdown');
+    if (dd) dd.classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+    var dd = document.getElementById('nav-dropdown'), btn = document.getElementById('hamburger-btn');
+    if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) dd.classList.remove('open');
+});
 </script>
 </body>
 </html>
