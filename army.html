@@ -719,6 +719,11 @@
         .sk-cancel-btn:hover { color:#c04040; border-color:#c04040; }
         #sk-result { padding:4px 16px 10px; font-size:0.76em; min-height:22px; }
         .sk-empty { text-align:center; color:#404050; padding:20px; font-size:0.8em; letter-spacing:2px; }
+        .sk-tab-bar { display:flex; border-bottom:1px solid rgba(255,170,0,0.15); background:rgba(0,0,0,0.3); }
+        .sk-tab-btn { flex:1; background:transparent; border:none; border-bottom:2px solid transparent; color:#505060; font-family:'Courier New',monospace; font-size:0.72em; letter-spacing:2px; text-transform:uppercase; padding:8px 4px; cursor:pointer; transition:all 0.15s; }
+        .sk-tab-btn:hover { color:#888; }
+        .sk-tab-btn.sk-tab-active { color:var(--theme-color); border-bottom-color:var(--theme-color); background:rgba(255,170,0,0.04); }
+        .sk-gem-bal { color:#70d0a0; font-size:0.9em; margin-left:4px; }
     </style>
     <script>(function(){ var s=localStorage.getItem('nc_font_size'); if(s) document.documentElement.style.fontSize=s+'px'; })();</script>
 </head>
@@ -915,9 +920,14 @@
             <span>⚡ STAKE TO FARM.ALE</span>
             <button class="sk-close" onclick="closeStakePanel()">✕</button>
         </div>
+        <div class="sk-tab-bar">
+            <button class="sk-tab-btn sk-tab-active" id="sk-tab-unassigned" onclick="switchStakeTab('unassigned')">UNASSIGNED</button>
+            <button class="sk-tab-btn" id="sk-tab-assigned" onclick="switchStakeTab('assigned')">ASSIGNED</button>
+        </div>
         <div class="sk-cost-bar" id="sk-cost-bar">
             <span>GEM COST: <span class="sk-gem" id="sk-gem-count">0</span> GEMS</span>
-            <span class="sk-gem-warn">1 GEM per card — only unassigned AW crew &amp; arms</span>
+            <span class="sk-gem-warn" id="sk-tab-hint">1 GEM per card — only unassigned AW crew &amp; arms</span>
+            <span style="margin-left:auto;">YOUR GEMS:<span class="sk-gem sk-gem-bal" id="sk-gem-bal">—</span></span>
         </div>
         <div class="sk-controls">
             <button class="sk-ctrl-btn" onclick="stakeSelectAll()">SELECT ALL</button>
@@ -2352,6 +2362,8 @@ function simonWin() {
 
 // ── STAKE TO FARM.ALE ────────────────────────────────────────────────────────
 
+var _stakeTab = 'unassigned';
+
 function _getStakePool() {
     if (!window._lastRenderArgs) return [];
     const [faces, crew, arms] = window._lastRenderArgs;
@@ -2363,34 +2375,89 @@ function _getStakePool() {
     return pool;
 }
 
-function openStakePanel(mode) {
-    const pool = _getStakePool();
-    const list = document.getElementById('sk-list');
-    document.getElementById('sk-result').textContent = '';
+function _getAssignedPool() {
+    if (!window._lastRenderArgs) return [];
+    const [faces, crew, arms] = window._lastRenderArgs;
+    const pool = [];
+    crew.filter(c => c.active && !c.isPD && c.asset_id && c.rarity !== 'abundant')
+        .forEach(c => pool.push({ ...c, _stakeType: 'crew' }));
+    arms.filter(a => a.active && !a.isPD && a.asset_id && a.rarity !== 'abundant')
+        .forEach(a => pool.push({ ...a, _stakeType: 'arms' }));
+    return pool;
+}
 
+async function _fetchGemBalance(wallet) {
+    try {
+        const resp = await fetch('https://wax.greymass.com/v1/chain/get_table_rows', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                code: 'players.ale', scope: 'players.ale', table: 'players',
+                lower_bound: wallet, upper_bound: wallet, limit: 1, json: true
+            })
+        });
+        const data = await resp.json();
+        const row = (data.rows || [])[0];
+        return row ? Number((row.activestats || {}).gems || 0) : null;
+    } catch(e) { return null; }
+}
+
+function _buildStakeList(pool, autoCheck) {
+    const list = document.getElementById('sk-list');
     if (!pool.length) {
-        list.innerHTML = '<div class="sk-empty">NO UNASSIGNED AW CREW OR ARMS IN WALLET</div>';
+        list.innerHTML = '<div class="sk-empty">NO ELIGIBLE AW CREW OR ARMS</div>';
+        return;
+    }
+    const RAR_COLOR = {epic:'#c060d0',rare:'#0088ff',uncommon:'#4cbb6e',common:'#404040'};
+    list.innerHTML = pool.map(item => {
+        const checked  = autoCheck;
+        const rarColor = RAR_COLOR[item.rarity] || '#404040';
+        const folder   = item._stakeType === 'crew' ? 'crew.worlds' : 'arms.worlds';
+        const imgSrc   = `${folder}/${item.templateId}.webp`;
+        const shine    = item.shine && item.shine !== 'stone' ? item.shine : '';
+        const stat     = [item.atk ? `⚔${Math.round(item.atk)}` : '', item.def ? `🛡${Math.round(item.def)}` : ''].filter(Boolean).join(' ');
+        return `<label class="sk-item${checked ? '' : ' sk-unchecked'}" style="--rar-color:${rarColor}">
+            <input type="checkbox" class="sk-cb sk-card-cb" data-id="${item.asset_id}"${checked ? ' checked' : ''} onchange="skOnChange(this)">
+            <img class="sk-card-img" src="${imgSrc}" onerror="this.src=''" alt="${item.name}">
+            <div class="sk-card-name">${item.name}</div>
+            ${shine ? `<div class="sk-card-shine">${shine}</div>` : ''}
+            <div class="sk-card-id">${item.asset_id}</div>
+            ${stat ? `<div class="sk-card-stat">${stat}</div>` : ''}
+        </label>`;
+    }).join('');
+}
+
+function switchStakeTab(tab) {
+    _stakeTab = tab;
+    document.getElementById('sk-tab-unassigned').classList.toggle('sk-tab-active', tab === 'unassigned');
+    document.getElementById('sk-tab-assigned').classList.toggle('sk-tab-active', tab === 'assigned');
+    const hint = document.getElementById('sk-tab-hint');
+    if (tab === 'assigned') {
+        hint.textContent = '1 GEM per card — assigned AW crew & arms (currently in divisions)';
     } else {
-        const RAR_COLOR = {epic:'#c060d0',rare:'#0088ff',uncommon:'#4cbb6e',common:'#404040'};
-        list.innerHTML = pool.map((item) => {
-            const checked  = mode === 'auto';
-            const rarColor = RAR_COLOR[item.rarity] || '#404040';
-            const folder   = item._stakeType === 'crew' ? 'crew.worlds' : 'arms.worlds';
-            const imgSrc   = `${folder}/${item.templateId}.webp`;
-            const shine    = item.shine && item.shine !== 'stone' ? item.shine : '';
-            const stat     = [item.atk ? `⚔${Math.round(item.atk)}` : '', item.def ? `🛡${Math.round(item.def)}` : ''].filter(Boolean).join(' ');
-            return `<label class="sk-item${checked ? '' : ' sk-unchecked'}" style="--rar-color:${rarColor}">
-                <input type="checkbox" class="sk-cb sk-card-cb" data-id="${item.asset_id}"${checked ? ' checked' : ''} onchange="skOnChange(this)">
-                <img class="sk-card-img" src="${imgSrc}" onerror="this.src=''" alt="${item.name}">
-                <div class="sk-card-name">${item.name}</div>
-                ${shine ? `<div class="sk-card-shine">${shine}</div>` : ''}
-                <div class="sk-card-id">${item.asset_id}</div>
-                ${stat ? `<div class="sk-card-stat">${stat}</div>` : ''}
-            </label>`;
-        }).join('');
+        hint.textContent = '1 GEM per card — only unassigned AW crew & arms';
+    }
+    _buildStakeList(tab === 'assigned' ? _getAssignedPool() : _getStakePool(), false);
+    updateStakeSummary();
+}
+
+function openStakePanel(mode) {
+    _stakeTab = 'unassigned';
+    document.getElementById('sk-tab-unassigned').classList.add('sk-tab-active');
+    document.getElementById('sk-tab-assigned').classList.remove('sk-tab-active');
+    document.getElementById('sk-tab-hint').textContent = '1 GEM per card — only unassigned AW crew & arms';
+    document.getElementById('sk-result').textContent = '';
+    document.getElementById('sk-gem-bal').textContent = '—';
+
+    _buildStakeList(_getStakePool(), mode === 'auto');
+
+    const wallet = localStorage.getItem('naron_wallet');
+    if (wallet) {
+        _fetchGemBalance(wallet).then(gems => {
+            document.getElementById('sk-gem-bal').textContent = gems !== null ? gems.toLocaleString() : '?';
+        });
     }
 
-    // Sort: checked items on top handled by selection state
     document.getElementById('stake-backdrop').style.display = 'block';
     document.getElementById('stake-panel').style.display    = 'flex';
     updateStakeSummary();
