@@ -5,6 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ALE Leaderboard // Naron Codex</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="waxjs.js"></script>
+    <script type="module">
+        import { SessionKit } from 'https://esm.sh/@wharfkit/session@1';
+        import { WebRenderer } from 'https://esm.sh/@wharfkit/web-renderer@1';
+        import { WalletPluginAnchor } from 'https://esm.sh/@wharfkit/wallet-plugin-anchor@1';
+        const kit = new SessionKit({
+            appName: 'naroncodex',
+            chains: [{ id: '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4', url: 'https://wax.greymass.com' }],
+            ui: new WebRenderer(),
+            walletPlugins: [new WalletPluginAnchor()],
+        });
+        window.walletKit = kit;
+        try {
+            const session = await kit.restore();
+            if (session) {
+                window.walletSession = session;
+                localStorage.setItem('naron_wallet', String(session.actor));
+                if (typeof checkWalletState === 'function') checkWalletState();
+            }
+        } catch(e) {}
+    </script>
     <link rel="icon" type="image/png" href="NCico.png">
     <style>
     :root {
@@ -162,6 +183,12 @@
 
     footer { border-top:1px solid rgba(232,160,32,0.07); padding:12px 28px; font-size:0.58em; color:var(--muted); letter-spacing:1.5px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
 
+    /* WALLET */
+    .wallet-section { display:flex; gap:6px; align-items:center; }
+    .wallet-btn { background:#111; color:var(--gold); border:1px dashed var(--border); padding:7px 13px; font-family:'Courier New',monospace; font-size:0.74em; font-weight:bold; cursor:pointer; transition:all 0.2s; letter-spacing:1px; border-radius:3px; }
+    .wallet-btn:hover { background:var(--hover); border-color:var(--gold); }
+    .wallet-btn.logged-in { background:rgba(232,160,32,0.12); color:var(--gold); border:1px solid var(--gold); }
+
     </style>
 </head>
 <body>
@@ -211,6 +238,11 @@
             </div>
         </div>
     </nav>
+    <div class="wallet-section">
+        <button id="wallet-connect-btn" class="wallet-btn" onclick="disconnectWallet()" style="display:none;"></button>
+        <button id="wallet-btn-anchor" class="wallet-btn" onclick="loginWithAnchor()">[ &#9875; ANCHOR ]</button>
+        <button id="wallet-btn-wcc" class="wallet-btn" onclick="loginWithWCC()">[ &#9729; CLOUD WALLET ]</button>
+    </div>
     <button id="hamburger-btn" onclick="toggleHamburger()" aria-label="Navigation">&#9776;</button>
 </header>
 
@@ -820,11 +852,14 @@
         document.getElementById('lb-thead').innerHTML = thHtml;
 
         // tbody
+        var _meWallet = (localStorage.getItem('naron_wallet') || '').toLowerCase();
         var rows = '';
+        var _myRank = -1;
         sorted.forEach(function(fp, i) {
             var rank = i + 1;
             var rankCls = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
-            var meCls = ''; // could highlight logged-in player here
+            var meCls = (_meWallet && fp.wallet && fp.wallet.toLowerCase() === _meWallet) ? 'me' : '';
+            if (meCls) _myRank = rank;
             rows += '<tr class="' + rankCls + ' ' + meCls + '">';
             rows += '<td>' + rank + '</td>';
             rows += '<td title="' + escHtml(fp.wallet) + '">' + escHtml(fp.tag) + '</td>';
@@ -873,6 +908,10 @@
         document.getElementById('lb-tbody').innerHTML = rows || '<tr><td colspan="99" style="text-align:center;color:#445;padding:24px;">No results</td></tr>';
         document.getElementById('lb-table').style.display = '';
         document.getElementById('lb-empty').style.display = 'none';
+        if (_myRank > 0) {
+            var myRow = document.querySelector('#lb-tbody tr.me');
+            if (myRow) setTimeout(function() { myRow.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
+        }
         document.getElementById('count-display').textContent = sorted.length + ' / ' + _allPlayers.length + ' PLAYERS';
         document.getElementById('dl-csv-btn').disabled = false;
         document.getElementById('dl-xlsx-btn').disabled = false;
@@ -1091,6 +1130,54 @@
         } catch(e) {}
     };
 
+    // ── WALLET ───────────────────────────────────────────────────────────────
+    window.checkWalletState = function() {
+        var account = localStorage.getItem('naron_wallet');
+        var btnAccount = document.getElementById('wallet-connect-btn');
+        var btnAnchor  = document.getElementById('wallet-btn-anchor');
+        var btnWCC     = document.getElementById('wallet-btn-wcc');
+        if (account) {
+            if (btnAccount) { btnAccount.textContent = '[ ' + account + ' ]'; btnAccount.style.display = ''; btnAccount.classList.add('logged-in'); }
+            if (btnAnchor) btnAnchor.style.display = 'none';
+            if (btnWCC) btnWCC.style.display = 'none';
+        } else {
+            if (btnAccount) { btnAccount.style.display = 'none'; btnAccount.classList.remove('logged-in'); }
+            if (btnAnchor) btnAnchor.style.display = '';
+            if (btnWCC) btnWCC.style.display = '';
+        }
+        if (_allPlayers.length) renderTable();
+    };
+
+    window.loginWithAnchor = async function() {
+        try {
+            var wax_local = new waxjs.WaxJS({ rpcEndpoint: 'https://wax.greymass.com', tryAutoLogin: false });
+            window._wax_lb = wax_local;
+            const { session } = await window.walletKit.login();
+            window.walletSession = session;
+            localStorage.setItem('naron_wallet', String(session.actor));
+            checkWalletState();
+        } catch(e) { console.error('Anchor login failed:', e); }
+    };
+
+    window.loginWithWCC = async function() {
+        try {
+            var wax_local = window._wax_lb || new waxjs.WaxJS({ rpcEndpoint: 'https://wax.greymass.com', tryAutoLogin: false });
+            window._wax_lb = wax_local;
+            var userAccount = await wax_local.login();
+            localStorage.setItem('naron_wallet', userAccount);
+            checkWalletState();
+        } catch(e) { console.error('WAX Cloud Wallet login failed:', e); }
+    };
+
+    window.disconnectWallet = function() {
+        if (window.walletKit && window.walletSession) {
+            window.walletKit.logout(window.walletSession).catch(function(){});
+            window.walletSession = null;
+        }
+        localStorage.removeItem('naron_wallet');
+        checkWalletState();
+    };
+
     // ── HAMBURGER ────────────────────────────────────────────────────────────
     window.toggleHamburger = function() {
         var dd = document.getElementById('nav-dropdown');
@@ -1098,6 +1185,7 @@
     };
 
     // ── INIT ─────────────────────────────────────────────────────────────────
+    checkWalletState();
     loadSnaps();
     loadLeaderboard(false);
 })();
