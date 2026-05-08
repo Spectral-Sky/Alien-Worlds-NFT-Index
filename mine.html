@@ -129,16 +129,18 @@
         /* MINING OUTPUT TABLE */
         .mine-output-section { margin-bottom:20px; }
         .mine-output-title { font-family:'Courier New',monospace; font-size:0.7em; letter-spacing:3px; color:#404050; text-transform:uppercase; border-bottom:1px solid #151520; padding-bottom:6px; margin-bottom:12px; }
-        .mine-output-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+        .mine-output-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
         .mineral-card { border:1px solid #1a1a28; padding:12px; background:rgba(0,0,0,0.3); }
         .mineral-icon { font-size:1.4em; margin-bottom:4px; }
         .mineral-name { font-family:'Courier New',monospace; font-size:0.65em; letter-spacing:2px; color:#506070; text-transform:uppercase; margin-bottom:6px; }
         .mineral-amount { font-family:'Courier New',monospace; font-size:1.1em; font-weight:bold; }
         .mineral-pts { font-family:'Courier New',monospace; font-size:0.6em; color:#404050; margin-top:2px; }
-        .m-biomass  { border-color:rgba(64,200,144,0.25); } .m-biomass .mineral-amount  { color:var(--mine-green); }
-        .m-silica   { border-color:rgba(64,144,216,0.25); } .m-silica  .mineral-amount  { color:var(--mine-blue); }
-        .m-metal    { border-color:rgba(160,168,184,0.25); } .m-metal  .mineral-amount  { color:var(--mine-gray); }
-        .m-crystite { border-color:rgba(176,96,216,0.25);  } .m-crystite .mineral-amount { color:var(--mine-purple); }
+        .m-nature   { border-color:rgba(64,200,144,0.25); }  .m-nature   .mineral-amount { color:var(--mine-green); }
+        .m-neutral  { border-color:rgba(160,168,184,0.25); } .m-neutral  .mineral-amount { color:var(--mine-gray); }
+        .m-metal    { border-color:rgba(64,144,216,0.25); }  .m-metal    .mineral-amount { color:var(--mine-blue); }
+        .m-gem      { border-color:rgba(176,96,216,0.25); }  .m-gem      .mineral-amount { color:var(--mine-purple); }
+        .m-fire     { border-color:rgba(232,96,32,0.25); }   .m-fire     .mineral-amount { color:#e06020; }
+        .m-air      { border-color:rgba(160,220,255,0.25); } .m-air      .mineral-amount { color:#a0dcff; }
 
         /* SCORE BAR */
         .mine-score-bar { display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(232,160,32,0.3); padding:12px 20px; background:rgba(232,160,32,0.04); margin-bottom:20px; flex-wrap:wrap; gap:12px; }
@@ -196,9 +198,19 @@
         .sel-strip-card-name { font-size:0.5em; color:#a09060; text-align:center; margin-top:2px; max-width:56px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .sel-placeholder { width:56px; height:56px; border:1px dashed #252535; display:flex; align-items:center; justify-content:center; color:#252535; font-size:1.2em; }
 
-        .confirm-btn { background:rgba(232,160,32,0.12); color:var(--theme-color); border:1px solid var(--theme-color); padding:12px 26px; font-family:'Courier New',monospace; font-weight:bold; font-size:0.85em; letter-spacing:2px; cursor:pointer; transition:all 0.18s; }
+        .confirm-btn { background:rgba(232,160,32,0.12); color:var(--theme-color); border:1px solid var(--theme-color); padding:12px 26px; font-family:'Courier New',monospace; font-weight:bold; font-size:0.85em; letter-spacing:2px; cursor:pointer; transition:all 0.25s; }
         .confirm-btn:hover:not(:disabled) { background:var(--theme-color); color:#000; box-shadow:var(--theme-shadow); }
         .confirm-btn:disabled { opacity:0.3; cursor:default; }
+        .confirm-btn.play-ready { font-size:1.2em; padding:18px 52px; letter-spacing:5px; animation:playPulse 2s ease-in-out infinite; }
+        @keyframes playPulse { 0%,100%{box-shadow:0 0 14px rgba(232,160,32,0.3)} 50%{box-shadow:0 0 38px rgba(232,160,32,0.75), 0 0 80px rgba(232,160,32,0.2)} }
+
+        /* element bar fills */
+        .ttc-bar-fill.bm { background:var(--mine-green); }
+        .ttc-bar-fill.bn { background:var(--mine-gray); }
+        .ttc-bar-fill.bx { background:var(--mine-blue); }
+        .ttc-bar-fill.bc { background:var(--mine-purple); }
+        .ttc-bar-fill.bf { background:#e06020; }
+        .ttc-bar-fill.ba { background:#a0dcff; }
 
         /* WALLET PROMPT */
         #screen-wallet { padding:60px 30px; text-align:center; }
@@ -209,7 +221,7 @@
         .section-title { font-family:'Courier New',monospace; font-size:0.68em; letter-spacing:3px; color:#404050; text-transform:uppercase; border-bottom:1px solid #151520; padding-bottom:6px; margin-bottom:12px; }
 
         @media (max-width:600px) {
-            .mine-output-grid { grid-template-columns:1fr 1fr; }
+            .mine-output-grid { grid-template-columns:1fr 1fr 1fr; }
             .loadout-strip { gap:10px; }
             .loadout-tool { width:140px; }
             .loadout-tool-img { width:118px; height:167px; }
@@ -378,17 +390,17 @@
     <div class="mine-output-section">
         <div class="mine-output-title">THIS WEEK'S EXTRACTION</div>
         <div class="mine-output-grid">
-            <div class="mineral-card m-biomass">
+            <div class="mineral-card m-nature">
                 <div class="mineral-icon">🌿</div>
-                <div class="mineral-name">BIOMASS</div>
-                <div class="mineral-amount" id="m-biomass">0</div>
-                <div class="mineral-pts" id="p-biomass">0 pts</div>
+                <div class="mineral-name">NATURE</div>
+                <div class="mineral-amount" id="m-nature">0</div>
+                <div class="mineral-pts" id="p-nature">0 pts</div>
             </div>
-            <div class="mineral-card m-silica">
-                <div class="mineral-icon">💧</div>
-                <div class="mineral-name">SILICA</div>
-                <div class="mineral-amount" id="m-silica">0</div>
-                <div class="mineral-pts" id="p-silica">0 pts</div>
+            <div class="mineral-card m-neutral">
+                <div class="mineral-icon">◆</div>
+                <div class="mineral-name">NEUTRAL</div>
+                <div class="mineral-amount" id="m-neutral">0</div>
+                <div class="mineral-pts" id="p-neutral">0 pts</div>
             </div>
             <div class="mineral-card m-metal">
                 <div class="mineral-icon">⚙</div>
@@ -396,11 +408,23 @@
                 <div class="mineral-amount" id="m-metal">0</div>
                 <div class="mineral-pts" id="p-metal">0 pts</div>
             </div>
-            <div class="mineral-card m-crystite">
+            <div class="mineral-card m-gem">
                 <div class="mineral-icon">💎</div>
-                <div class="mineral-name">CRYSTITE</div>
-                <div class="mineral-amount" id="m-crystite">0</div>
-                <div class="mineral-pts" id="p-crystite">0 pts</div>
+                <div class="mineral-name">GEM</div>
+                <div class="mineral-amount" id="m-gem">0</div>
+                <div class="mineral-pts" id="p-gem">0 pts</div>
+            </div>
+            <div class="mineral-card m-fire">
+                <div class="mineral-icon">🔥</div>
+                <div class="mineral-name">FIRE</div>
+                <div class="mineral-amount" id="m-fire">0</div>
+                <div class="mineral-pts" id="p-fire">0 pts</div>
+            </div>
+            <div class="mineral-card m-air">
+                <div class="mineral-icon">💨</div>
+                <div class="mineral-name">AIR</div>
+                <div class="mineral-amount" id="m-air">0</div>
+                <div class="mineral-pts" id="p-air">0 pts</div>
             </div>
         </div>
     </div>
@@ -457,58 +481,54 @@
 
         <!-- EXTRACTOR -->
         <div class="ttc">
-            <div class="ttc-head">
-                <span class="ttc-icon">⛏</span>
-                <span class="type-badge type-Extractor">EXTRACTOR</span>
-            </div>
-            <div class="ttc-desc">Mechanical drills and bulk conveyor systems. Tears through surface and near-surface strata to pull raw deposits. Highest silica yield of any tool type, with strong biomass output from organic-rich layers. Almost no crystite recovery — drill heat destroys deep crystal formations before they reach the surface.</div>
-            <div class="ttc-dist-title">MINERAL OUTPUT PROFILE</div>
-            <div class="ttc-row"><span class="ttc-mname">BIOMASS</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bm" style="width:35%"></div></div><span class="ttc-pct">35%</span></div>
-            <div class="ttc-row"><span class="ttc-mname">SILICA</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bs" style="width:40%"></div></div><span class="ttc-pct">40%</span></div>
-            <div class="ttc-row"><span class="ttc-mname">METAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bx" style="width:20%"></div></div><span class="ttc-pct">20%</span></div>
-            <div class="ttc-row"><span class="ttc-mname">CRYSTITE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bc" style="width:5%"></div></div><span class="ttc-pct">5%</span></div>
+            <div class="ttc-head"><span class="ttc-icon">⛏</span><span class="type-badge type-Extractor">EXTRACTOR</span></div>
+            <div class="ttc-desc">Pure Metal specialist. Mechanical drills drive straight for ore seams, pulling 80% Metal per tick. Nothing else comes close for Metal output — if you need it for a perk, this is your tool. Weak at everything else.</div>
+            <div class="ttc-dist-title">ELEMENT OUTPUT PROFILE</div>
+            <div class="ttc-row"><span class="ttc-mname">METAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bx" style="width:80%"></div></div><span class="ttc-pct">80%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">NATURE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bm" style="width:5%"></div></div><span class="ttc-pct">5%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">NEUTRAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bn" style="width:5%"></div></div><span class="ttc-pct">5%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">GEM</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bc" style="width:4%"></div></div><span class="ttc-pct">4%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">FIRE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bf" style="width:3%"></div></div><span class="ttc-pct">3%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">AIR</span><div class="ttc-bar-bg"><div class="ttc-bar-fill ba" style="width:3%"></div></div><span class="ttc-pct">3%</span></div>
         </div>
 
         <!-- EXPLOSIVE -->
         <div class="ttc">
-            <div class="ttc-head">
-                <span class="ttc-icon">💥</span>
-                <span class="type-badge type-Explosive">EXPLOSIVE</span>
-            </div>
-            <div class="ttc-desc">Shaped-charge detonation with a directed blast cone. Maximum biomass yield of any tool — ideal wherever organic material concentrates near the surface. The blast heat cracks and vaporises crystite formations on contact, making deep mineral recovery nearly impossible. Best raw throughput, worst precision.</div>
-            <div class="ttc-dist-title">MINERAL OUTPUT PROFILE</div>
-            <div class="ttc-row"><span class="ttc-mname">BIOMASS</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bm" style="width:55%"></div></div><span class="ttc-pct">55%</span></div>
-            <div class="ttc-row"><span class="ttc-mname">SILICA</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bs" style="width:30%"></div></div><span class="ttc-pct">30%</span></div>
-            <div class="ttc-row"><span class="ttc-mname">METAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bx" style="width:12%"></div></div><span class="ttc-pct">12%</span></div>
-            <div class="ttc-row"><span class="ttc-mname">CRYSTITE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bc" style="width:3%"></div></div><span class="ttc-pct">3%</span></div>
+            <div class="ttc-head"><span class="ttc-icon">💥</span><span class="type-badge type-Explosive">EXPLOSIVE</span></div>
+            <div class="ttc-desc">Broadest sweep of any tool — strong Fire and Nature, decent across Neutral, Metal, and Gem. Weak only on Air. Best for building a diverse elemental portfolio without committing to a single element. Worst precision; best breadth.</div>
+            <div class="ttc-dist-title">ELEMENT OUTPUT PROFILE</div>
+            <div class="ttc-row"><span class="ttc-mname">FIRE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bf" style="width:28%"></div></div><span class="ttc-pct">28%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">NATURE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bm" style="width:22%"></div></div><span class="ttc-pct">22%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">NEUTRAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bn" style="width:16%"></div></div><span class="ttc-pct">16%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">METAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bx" style="width:16%"></div></div><span class="ttc-pct">16%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">GEM</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bc" style="width:12%"></div></div><span class="ttc-pct">12%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">AIR</span><div class="ttc-bar-bg"><div class="ttc-bar-fill ba" style="width:6%"></div></div><span class="ttc-pct">6%</span></div>
         </div>
 
         <!-- EXOTOOL -->
         <div class="ttc">
-            <div class="ttc-head">
-                <span class="ttc-icon">🦾</span>
-                <span class="type-badge type-ExoTool">EXOTOOL</span>
-            </div>
-            <div class="ttc-desc">Exo-suit integrated multi-tool combining coring, spectral scanning, and mechanical cutting. The most balanced output profile — a solid pick when your land type is unknown. Favours metal and silica with reasonable crystite recovery. Performs consistently across all land types with no major weakness.</div>
-            <div class="ttc-dist-title">MINERAL OUTPUT PROFILE</div>
-            <div class="ttc-row"><span class="ttc-mname">BIOMASS</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bm" style="width:20%"></div></div><span class="ttc-pct">20%</span></div>
-            <div class="ttc-row"><span class="ttc-mname">SILICA</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bs" style="width:30%"></div></div><span class="ttc-pct">30%</span></div>
-            <div class="ttc-row"><span class="ttc-mname">METAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bx" style="width:35%"></div></div><span class="ttc-pct">35%</span></div>
-            <div class="ttc-row"><span class="ttc-mname">CRYSTITE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bc" style="width:15%"></div></div><span class="ttc-pct">15%</span></div>
+            <div class="ttc-head"><span class="ttc-icon">🦾</span><span class="type-badge type-ExoTool">EXOTOOL</span></div>
+            <div class="ttc-desc">Balanced Neutral and Metal output. The wildcard: a 15% chance each tick to double total yield — occasionally outputs twice as much of everything. Low floor, high ceiling. Great when you don't need a specific element but want the chance at a big tick.</div>
+            <div class="ttc-dist-title">ELEMENT OUTPUT PROFILE</div>
+            <div class="ttc-row"><span class="ttc-mname">NEUTRAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bn" style="width:34%"></div></div><span class="ttc-pct">34%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">METAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bx" style="width:34%"></div></div><span class="ttc-pct">34%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">NATURE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bm" style="width:8%"></div></div><span class="ttc-pct">8%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">GEM</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bc" style="width:8%"></div></div><span class="ttc-pct">8%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">FIRE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bf" style="width:8%"></div></div><span class="ttc-pct">8%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">AIR</span><div class="ttc-bar-bg"><div class="ttc-bar-fill ba" style="width:8%"></div></div><span class="ttc-pct">8%</span></div>
         </div>
 
         <!-- MANIPULATOR -->
         <div class="ttc">
-            <div class="ttc-head">
-                <span class="ttc-icon">🔬</span>
-                <span class="type-badge type-Manipulator">MANIPULATOR</span>
-            </div>
-            <div class="ttc-desc">Spectral resonance and chemical dissolution targeting deep crystalline structures. Near-zero surface yield but unmatched crystite and metal recovery from deep deposits — essentially the opposite of the Extractor. Comes into its own on Radiation and Luminite land types, where it can more than double other tools' score output.</div>
-            <div class="ttc-dist-title">MINERAL OUTPUT PROFILE</div>
-            <div class="ttc-row"><span class="ttc-mname">BIOMASS</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bm" style="width:5%"></div></div><span class="ttc-pct">5%</span></div>
-            <div class="ttc-row"><span class="ttc-mname">SILICA</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bs" style="width:15%"></div></div><span class="ttc-pct">15%</span></div>
-            <div class="ttc-row"><span class="ttc-mname">METAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bx" style="width:35%"></div></div><span class="ttc-pct">35%</span></div>
-            <div class="ttc-row"><span class="ttc-mname">CRYSTITE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bc" style="width:45%"></div></div><span class="ttc-pct">45%</span></div>
+            <div class="ttc-head"><span class="ttc-icon">🔬</span><span class="type-badge type-Manipulator">MANIPULATOR</span></div>
+            <div class="ttc-desc">Deep precision focus — default output is Gem (48%) and Air (32%). Uniquely, you can choose 2–3 elements to focus instead, getting random amounts split between your picks. The only tool type that lets you direct your own output profile.</div>
+            <div class="ttc-dist-title">DEFAULT OUTPUT (Gem + Air focus)</div>
+            <div class="ttc-row"><span class="ttc-mname">GEM</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bc" style="width:48%"></div></div><span class="ttc-pct">48%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">AIR</span><div class="ttc-bar-bg"><div class="ttc-bar-fill ba" style="width:32%"></div></div><span class="ttc-pct">32%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">NATURE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bm" style="width:5%"></div></div><span class="ttc-pct">5%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">NEUTRAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bn" style="width:5%"></div></div><span class="ttc-pct">5%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">METAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bx" style="width:5%"></div></div><span class="ttc-pct">5%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">FIRE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bf" style="width:5%"></div></div><span class="ttc-pct">5%</span></div>
         </div>
 
     </div>
@@ -616,7 +636,7 @@
     </div>
 
     <div style="margin-top:16px; font-size:0.62em; color:#303040; font-family:'Courier New',monospace; line-height:1.7;">
-        MINERAL VALUES: BIOMASS ×2 pts &nbsp;·&nbsp; SILICA ×5 pts &nbsp;·&nbsp; METAL ×10 pts &nbsp;·&nbsp; CRYSTITE ×20 pts
+        ELEMENTS: Nature · Neutral · Metal · Gem · Fire · Air — all equal value (variety matters for perks)
         <br>RARITY × SHINE MULT: Common Stone ×1 · Gold ×3 · Stardust ×12 &nbsp;/&nbsp;
         Rare Stone ×3 · Gold ×10 · Stardust ×30 · Antimatter ×55 &nbsp;/&nbsp;
         Epic Stone ×5 · Gold ×15 · Stardust ×45 · Antimatter ×64 &nbsp;/&nbsp;
@@ -680,7 +700,7 @@
 
     </div>
     <div style="margin-top:16px; font-size:0.88em; color:#404050; font-family:'Rajdhani',sans-serif; line-height:1.7;">
-        MINERALS: Biomass ×2 pts &nbsp;·&nbsp; Silica ×5 pts &nbsp;·&nbsp; Metal ×10 pts &nbsp;·&nbsp; Crystite ×20 pts &nbsp;&nbsp;—&nbsp;&nbsp;
+        ELEMENTS: Nature · Neutral · Metal · Gem · Fire · Air — all worth equal points &nbsp;&nbsp;—&nbsp;&nbsp;
         Four tool types: <b style="color:#e08020;">Extractor</b> · <b style="color:#9060d0;">Manipulator</b> · <b style="color:#20a0c0;">ExoTool</b> · <b style="color:#e04040;">Explosive</b>
     </div>
 </div>
@@ -737,13 +757,18 @@ const RARITY_POOLS = ['common','uncommon','rare','epic','legendary','mythical'];
 const POOL_BONUS   = { common:8, uncommon:6, rare:4, epic:3, legendary:2, mythical:2 };
 
 const MINERAL_DIST = {
-    Extractor:   { biomass:0.35, silica:0.40, metal:0.20, crystite:0.05 },
-    Manipulator: { biomass:0.05, silica:0.15, metal:0.35, crystite:0.45 },
-    ExoTool:     { biomass:0.20, silica:0.30, metal:0.35, crystite:0.15 },
-    Explosive:   { biomass:0.55, silica:0.30, metal:0.12, crystite:0.03 }
+    // Extractor: heavy Metal specialist — mechanical drilling targets ore seams exclusively
+    Extractor:   { nature:0.05, neutral:0.05, metal:0.80, gem:0.04, fire:0.03, air:0.03 },
+    // Explosive: broad sweep — strong Nature+Fire, decent across 4 others, weak Air
+    Explosive:   { nature:0.22, neutral:0.16, metal:0.16, gem:0.12, fire:0.28, air:0.06 },
+    // Manipulator: default Gem+Air focus; player can choose 2–3 focus elements (coming soon)
+    Manipulator: { nature:0.05, neutral:0.05, metal:0.05, gem:0.48, fire:0.05, air:0.32 },
+    // ExoTool: balanced Neutral+Metal base; 15% chance per tick to double total yield
+    ExoTool:     { nature:0.08, neutral:0.34, metal:0.34, gem:0.08, fire:0.08, air:0.08 }
 };
-const MINERAL_PTS = { biomass:2, silica:5, metal:10, crystite:20 };
-const MINERAL_KEYS = ['biomass','silica','metal','crystite'];
+// All 6 elements are worth equal points — variety matters for perks, not for raw score
+const MINERAL_PTS = { nature:1, neutral:1, metal:1, gem:1, fire:1, air:1 };
+const MINERAL_KEYS = ['nature','neutral','metal','gem','fire','air'];
 const WEEK_MS  = 7 * 24 * 3600 * 1000;
 const SWAP_LOCK_MS = 24 * 3600 * 1000;
 const TEST_ROUND_SECS = 90; // seconds per round in test mode (= 1 day equivalent)
@@ -811,7 +836,7 @@ function getSession(wallet) {
         if (!s) return null;
         var weekStart = getWeekStart();
         if (!s.weekStart || s.weekStart < weekStart) {
-            s.accumulated = { biomass:0, silica:0, metal:0, crystite:0 };
+            s.accumulated = { nature:0, neutral:0, metal:0, gem:0, fire:0, air:0 };
             s.weeklyScore = 0;
             s.weekStart = weekStart;
             s.lastTick = Date.now();
@@ -827,7 +852,7 @@ function newSession(wallet) {
         weekStart: getWeekStart(),
         lastTick: Date.now(),
         lastSwap: 0,
-        accumulated: { biomass:0, silica:0, metal:0, crystite:0 },
+        accumulated: { nature:0, neutral:0, metal:0, gem:0, fire:0, air:0 },
         weeklyScore: 0,
         featuredLand: null,
         landMineMult: 1.0,
@@ -920,6 +945,7 @@ function applyTick(session) {
         var rate = toolRate(tool, landType, mineMult);
         var dist = getEffectiveDist(tool);
         var out  = rate * elapsed;
+        if (tool.type === 'ExoTool' && Math.random() < 0.15) out *= 2; // lucky double tick
         MINERAL_KEYS.forEach(function(k){ session.accumulated[k] += out * dist[k]; });
     }
     session.weeklyScore = calcScore(session.accumulated);
@@ -996,9 +1022,18 @@ function pickFeaturedLand(landNfts, dayOffset) {
     var td   = (land.template && land.template.immutable_data) || {};
     var dd   = land.data || land.mutable_data || {};
     var img  = td.img || dd.img || '';
-    var planet = (td.planet || dd.planet || '').toLowerCase();
+    var planetRaw = String(td.planet || dd.planet || '');
+    var planet = planetRaw.toLowerCase();
+    // Planet attribute sometimes comes back as a uint64 name code — extract from land name instead
+    if (!PLANET_TYPE[planet]) {
+        var nameStr = (land.name || td.name || dd.name || '').toLowerCase();
+        var pNames = ['naron','eyeke','kavian','magor','veles','neri','aether'];
+        for (var pi = 0; pi < pNames.length; pi++) {
+            if (nameStr.indexOf(pNames[pi]) !== -1) { planet = pNames[pi]; break; }
+        }
+    }
     var rarity = (td.rarity || dd.rarity || land.template_mint || 'common').toLowerCase();
-    var landType = PLANET_TYPE[planet] || PLANET_TYPE[(td.planet||dd.planet||'')] || 'Unknown';
+    var landType = PLANET_TYPE[planet] || 'Unknown';
     return {
         assetId: land.asset_id,
         name: land.name || td.name || ('Land #' + land.asset_id),
@@ -1434,10 +1469,12 @@ function toggleTool(assetId) {
     var btn = document.getElementById('confirm-btn');
     if (_selTools.length > 0) {
         btn.disabled = false;
-        btn.textContent = 'CONFIRM LOADOUT (' + _selTools.length + ' TOOL' + (_selTools.length>1?'S':'') + ')';
+        btn.textContent = '⚡  PLAY  — ' + _selTools.length + ' TOOL' + (_selTools.length > 1 ? 'S' : '') + ' LOCKED';
+        btn.classList.add('play-ready');
     } else {
         btn.disabled = true;
         btn.textContent = 'SELECT AT LEAST 1 TOOL';
+        btn.classList.remove('play-ready');
     }
 }
 
@@ -1613,7 +1650,7 @@ function playCardReveal(tools, session, onComplete) {
 
 function buildDropInfo(tools, landType, mineMult) {
     var roundSecs = TESTING_MODE ? TEST_ROUND_SECS : 86400;
-    var MCOL = { biomass:'#40c890', silica:'#4090d8', metal:'#a0a8b8', crystite:'#b060d8' };
+    var MCOL = { nature:'#40c890', neutral:'#a0a8b8', metal:'#4090d8', gem:'#b060d8', fire:'#e06020', air:'#a0dcff' };
     var html = '<div class="reveal-drops-grid">';
     tools.slice(0, 3).forEach(function(tool) {
         var rate = toolRate(tool, landType, mineMult);
