@@ -76,6 +76,34 @@
         .mine-season-val { color:var(--theme-color); font-weight:bold; font-size:1.1em; }
         .mine-season-label { font-size:0.68em; color:#505060; letter-spacing:1px; margin-top:1px; }
 
+        /* FEATURED LAND */
+        .fl-section { margin-bottom:24px; }
+        .fl-card { display:flex; gap:16px; align-items:stretch; border:1px solid rgba(232,160,32,0.3); background:rgba(232,160,32,0.03); padding:14px 18px; flex-wrap:wrap; }
+        .fl-img { width:88px; height:88px; object-fit:cover; flex-shrink:0; border:1px solid rgba(255,255,255,0.05); }
+        .fl-img-placeholder { width:88px; height:88px; flex-shrink:0; border:1px dashed #252535; display:flex; align-items:center; justify-content:center; font-size:2em; opacity:0.3; }
+        .fl-info { flex:1; min-width:160px; }
+        .fl-name { font-family:'Courier New',monospace; font-size:0.9em; color:#c0b080; font-weight:bold; margin-bottom:4px; }
+        .fl-planet { font-family:'Courier New',monospace; font-size:0.68em; color:#606070; margin-bottom:8px; letter-spacing:1px; }
+        .fl-synergy-list { display:flex; flex-wrap:wrap; gap:5px; }
+        .fl-syn-badge { font-family:'Courier New',monospace; font-size:0.6em; padding:2px 7px; border:1px solid; letter-spacing:0.5px; }
+        .fl-syn-good  { color:#40c890; border-color:rgba(64,200,144,0.35); background:rgba(64,200,144,0.06); }
+        .fl-syn-great { color:#e8a020; border-color:rgba(232,160,32,0.4);  background:rgba(232,160,32,0.08); }
+        .fl-syn-bad   { color:#505060; border-color:#252535; background:transparent; }
+        .fl-mult-block { text-align:center; min-width:110px; padding:8px 14px; border:1px solid rgba(64,200,144,0.2); background:rgba(64,200,144,0.04); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; }
+        .fl-mult-label { font-family:'Courier New',monospace; font-size:0.58em; color:#406050; letter-spacing:2px; text-transform:uppercase; }
+        .fl-mult-val   { font-family:'Courier New',monospace; font-size:1.6em; color:var(--mine-green); font-weight:bold; text-shadow:0 0 8px rgba(64,200,144,0.4); }
+        .fl-mult-count { font-family:'Courier New',monospace; font-size:0.6em; color:#406050; }
+        .fl-mult-hint  { font-size:0.58em; color:#304030; font-family:'Courier New',monospace; margin-top:2px; text-align:center; }
+        .fl-loading { font-family:'Courier New',monospace; font-size:0.72em; color:#303040; letter-spacing:2px; padding:20px 0; }
+        .land-type-pill { display:inline-block; font-family:'Courier New',monospace; font-size:0.6em; padding:2px 8px; letter-spacing:1px; font-weight:bold; text-transform:uppercase; margin-left:8px; vertical-align:middle; }
+        .lt-Volcanic   { background:rgba(232,80,20,0.15);  color:#e05014; border:1px solid rgba(232,80,20,0.3); }
+        .lt-Biosphere  { background:rgba(40,200,80,0.12);  color:#28c850; border:1px solid rgba(40,200,80,0.25); }
+        .lt-Glacial    { background:rgba(80,160,240,0.12); color:#50a0f0; border:1px solid rgba(80,160,240,0.25); }
+        .lt-Electrical { background:rgba(240,220,40,0.12); color:#f0dc28; border:1px solid rgba(240,220,40,0.25); }
+        .lt-Radiation  { background:rgba(160,80,200,0.12); color:#a050c8; border:1px solid rgba(160,80,200,0.25); }
+        .lt-Luminite   { background:rgba(200,180,255,0.12);color:#c8b4ff; border:1px solid rgba(200,180,255,0.25); }
+        .lt-Unknown    { background:rgba(80,80,80,0.12);   color:#505050; border:1px solid #252535; }
+
         /* LOADOUT STRIP */
         .loadout-strip { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:20px; }
         .loadout-tool { position:relative; width:160px; border:1px solid #252535; background:rgba(255,255,255,0.02); padding:10px; }
@@ -84,6 +112,7 @@
         .loadout-tool-name { font-family:'Courier New',monospace; font-size:0.75em; color:#c0b080; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .loadout-tool-stats { font-size:0.65em; color:#607080; line-height:1.6; }
         .loadout-tool-rate { font-size:0.72em; color:var(--mine-green); font-family:'Courier New',monospace; margin-top:4px; font-weight:bold; }
+        .loadout-tool-syn  { font-size:0.62em; color:#e8a020; font-family:'Courier New',monospace; margin-top:2px; }
         .loadout-empty { width:160px; height:200px; border:1px dashed #252535; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#252535; font-family:'Courier New',monospace; font-size:0.65em; letter-spacing:1px; gap:8px; }
         .loadout-empty-icon { font-size:2em; }
 
@@ -92,7 +121,7 @@
         .type-Extractor   { background:rgba(224,128,32,0.15); color:#e08020; border:1px solid rgba(224,128,32,0.3); }
         .type-Manipulator { background:rgba(144,96,208,0.15); color:#9060d0; border:1px solid rgba(144,96,208,0.3); }
         .type-ExoTool     { background:rgba(32,160,192,0.15); color:#20a0c0; border:1px solid rgba(32,160,192,0.3); }
-        .type-Explosive   { background:rgba(224,64,64,0.15); color:#e04040; border:1px solid rgba(224,64,64,0.3); }
+        .type-Explosive   { background:rgba(224,64,64,0.15);  color:#e04040; border:1px solid rgba(224,64,64,0.3); }
 
         /* MINING OUTPUT TABLE */
         .mine-output-section { margin-bottom:20px; }
@@ -139,7 +168,7 @@
         .proof-note  { font-size:0.7em; color:#406080; line-height:1.4; margin-bottom:10px; }
         #proof-code-text { width:100%; background:#000; border:1px solid #1a1a28; color:#506080; padding:8px; font-family:'Courier New',monospace; font-size:0.65em; resize:none; height:60px; outline:none; word-break:break-all; }
 
-        /* ── TOOL SELECTOR SCREEN ── */
+        /* TOOL SELECTOR SCREEN */
         #screen-select { display:none; }
         .select-header { display:flex; align-items:center; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
         .select-back { background:transparent; color:#506070; border:1px solid #252535; padding:8px 14px; font-family:'Courier New',monospace; font-size:0.75em; letter-spacing:1px; cursor:pointer; transition:all 0.15s; }
@@ -147,6 +176,7 @@
         .select-title { color:var(--theme-color); font-family:'Courier New',monospace; font-size:1.05em; letter-spacing:3px; text-transform:uppercase; }
         .select-note { font-size:0.72em; color:#505860; letter-spacing:0.5px; font-family:'Courier New',monospace; }
         #select-status { font-family:'Courier New',monospace; font-size:0.72em; color:#505060; letter-spacing:1px; margin-bottom:12px; }
+        .select-land-hint { font-family:'Courier New',monospace; font-size:0.68em; color:#404050; border:1px solid #181828; padding:7px 12px; margin-bottom:14px; }
 
         /* TOOL GRID */
         .tool-grid { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
@@ -159,6 +189,7 @@
         .tool-card-score { font-size:0.6em; color:var(--mine-green); text-align:center; font-family:'Courier New',monospace; margin-top:2px; }
         .tool-card-num { position:absolute; top:4px; right:4px; width:16px; height:16px; background:var(--theme-color); color:#000; font-size:0.58em; font-weight:bold; display:flex; align-items:center; justify-content:center; }
         .tool-card-type { display:block; text-align:center; margin-bottom:3px; }
+        .tool-card-syn  { font-size:0.58em; text-align:center; font-family:'Courier New',monospace; margin-top:1px; }
 
         /* SELECTED LOADOUT PREVIEW */
         .sel-strip { border-top:1px solid rgba(255,255,255,0.05); padding-top:12px; margin-bottom:14px; }
@@ -185,6 +216,7 @@
             .loadout-strip { gap:10px; }
             .loadout-tool { width:140px; }
             .loadout-tool-img { width:118px; height:118px; }
+            .fl-card { flex-direction:column; }
         }
     </style>
 </head>
@@ -227,6 +259,14 @@
         <div class="mine-season-stat"><div class="mine-season-val" id="sb-rate">—</div><div class="mine-season-label">COMBINED RATE/s</div></div>
         <div style="flex:1"></div>
         <div style="font-size:0.62em; color:#303040; font-family:'Courier New',monospace; line-height:1.7; text-align:right;">PRIZE POOL: TBD<br>PHASE 1 — LOCAL TRACKING</div>
+    </div>
+
+    <!-- FEATURED LAND -->
+    <div class="fl-section">
+        <div class="section-title">TODAY'S FEATURED LAND <span id="fl-type-pill"></span></div>
+        <div id="fl-card-wrap">
+            <div class="fl-loading">LOADING YOUR LAND NFTs…</div>
+        </div>
     </div>
 
     <div class="section-title">ACTIVE LOADOUT</div>
@@ -297,7 +337,8 @@
         <div class="select-title" id="select-title">SELECT YOUR MINING LOADOUT</div>
     </div>
     <div class="select-note">Pick 1–3 AW tools. Each tool mines independently. Loadout locks for 24 hours after confirming.</div>
-    <div id="select-status" style="margin-top:10px;">LOADING YOUR TOOLS…</div>
+    <div id="select-land-hint" class="select-land-hint" style="display:none;"></div>
+    <div id="select-status" style="margin-top:10px; font-family:'Courier New',monospace; font-size:0.72em; color:#505060; letter-spacing:1px; margin-bottom:12px;">LOADING YOUR TOOLS…</div>
 
     <div class="tool-grid" id="tool-grid"></div>
 
@@ -310,14 +351,36 @@
 </div>
 
 <script>
+// ── WAXJS INIT ─────────────────────────────────────────────────────────────────
+const _savedWallet = localStorage.getItem('naron_wallet');
+const wax = new waxjs.WaxJS({
+    rpcEndpoint: 'https://wax.greymass.com',
+    userAccount: _savedWallet || '',
+    tryAutoLogin: false
+});
+
 // ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const AA_NODES = [
     'https://wax.api.atomicassets.io',
     'https://wax-atomic-api.eosphere.io',
     'https://atomic.wax.eosrio.io'
 ];
+const WAX_RPC_NODES = [
+    'https://wax.greymass.com',
+    'https://wax.eosusa.io',
+    'https://wax.eosrio.io'
+];
+const HYPERION_NODES = [
+    'https://wax.eosusa.io',
+    'https://wax.eosrio.io',
+    'https://api.waxsweden.org'
+];
+
 const RARITY_MOD = { abundant:0.5, common:1.0, uncommon:1.08, rare:1.18, epic:1.3, legendary:1.5, mythical:1.75, mythic:1.75 };
 const NFT_PTS_SCALE = 300;
+
+// Shine multiplier — each tier above stone adds to the score rate
+const SHINE_MULT = { stone:1.0, gold:1.10, stardust:1.25, antimatter:1.45, xdimension:1.70 };
 
 const MINERAL_DIST = {
     Extractor:   { biomass:0.35, silica:0.40, metal:0.20, crystite:0.05 },
@@ -330,7 +393,28 @@ const MINERAL_KEYS = ['biomass','silica','metal','crystite'];
 const WEEK_MS  = 7 * 24 * 3600 * 1000;
 const SWAP_LOCK_MS = 24 * 3600 * 1000;
 
-// Tool type icon for display
+// AW planets → land type (used for tool synergy)
+const PLANET_TYPE = {
+    naron: 'Volcanic', Naron: 'Volcanic',
+    eyeke: 'Biosphere', Eyeke: 'Biosphere',
+    kavian: 'Glacial', Kavian: 'Glacial',
+    magor: 'Electrical', Magor: 'Electrical',
+    veles: 'Radiation', Veles: 'Radiation',
+    aether: 'Luminite', Aether: 'Luminite'
+};
+
+// Land type × tool type → score multiplier
+// Volcanic = digging/blasting. Biosphere = organic clearing. Glacial/Electrical = precision.
+// Radiation/Luminite = chemical/spectral manipulation.
+const TYPE_SYNERGY = {
+    Volcanic:   { Extractor:1.25, Explosive:1.15, ExoTool:1.00, Manipulator:0.85 },
+    Biosphere:  { Extractor:1.10, Explosive:1.30, ExoTool:0.95, Manipulator:0.90 },
+    Glacial:    { Extractor:0.90, Explosive:0.80, ExoTool:1.25, Manipulator:1.20 },
+    Electrical: { Extractor:0.95, Explosive:0.85, ExoTool:1.30, Manipulator:1.20 },
+    Radiation:  { Extractor:0.90, Explosive:0.75, ExoTool:1.15, Manipulator:1.40 },
+    Luminite:   { Extractor:0.85, Explosive:0.70, ExoTool:1.10, Manipulator:1.45 }
+};
+
 const TYPE_ICON = { Extractor:'⛏', Manipulator:'🔬', ExoTool:'🦾', Explosive:'💥' };
 
 // ── WALLET ─────────────────────────────────────────────────────────────────────
@@ -354,12 +438,12 @@ window.loginWithAnchor = async function() {
     try { var r = await window.walletKit.login(); window.walletSession = r.session; localStorage.setItem('naron_wallet', String(r.session.actor)); checkWalletState(); init(); } catch(e) {}
 };
 window.loginWithWCC = async function() {
-    try { var a = await wax.login(); localStorage.setItem('naron_wallet', a); checkWalletState(); init(); } catch(e) {}
+    try { var a = await wax.login(); localStorage.setItem('naron_wallet', a); checkWalletState(); init(); } catch(e) { console.warn('WCC login failed', e); }
 };
 window.disconnectWallet = function() {
     if (window.walletKit && window.walletSession) { window.walletKit.logout(window.walletSession).catch(function(){}); window.walletSession = null; }
     localStorage.removeItem('naron_wallet');
-    if (wax) wax.userAccount = '';
+    wax.userAccount = '';
     checkWalletState();
     showScreen('wallet');
 };
@@ -369,13 +453,13 @@ function getSession(wallet) {
     try {
         var s = JSON.parse(localStorage.getItem('wm_' + wallet));
         if (!s) return null;
-        // If week has rolled over, reset minerals
         var weekStart = getWeekStart();
         if (!s.weekStart || s.weekStart < weekStart) {
             s.accumulated = { biomass:0, silica:0, metal:0, crystite:0 };
             s.weeklyScore = 0;
             s.weekStart = weekStart;
             s.lastTick = Date.now();
+            // Don't reset the featured land — it persists across weeks until land list is refreshed
             saveSession(wallet, s);
         }
         return s;
@@ -388,7 +472,10 @@ function newSession(wallet) {
         lastTick: Date.now(),
         lastSwap: 0,
         accumulated: { biomass:0, silica:0, metal:0, crystite:0 },
-        weeklyScore: 0
+        weeklyScore: 0,
+        featuredLand: null,      // { assetId, name, type, planet, img, rarity }
+        landMineMult: 1.0,       // updated from Hyperion history
+        landMineCount: 0         // mines on featured land today
     };
 }
 function saveSession(wallet, s) { localStorage.setItem('wm_' + wallet, JSON.stringify(s)); }
@@ -410,7 +497,7 @@ function getAllSessions() {
 function getWeekStart() {
     var now = new Date();
     var d   = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    d.setUTCDate(d.getUTCDate() - d.getUTCDay()); // back to Sunday
+    d.setUTCDate(d.getUTCDate() - d.getUTCDay());
     return d.getTime();
 }
 function daysLeftInWeek() {
@@ -418,26 +505,29 @@ function daysLeftInWeek() {
 }
 function hoursUntilSwap(lastSwap) {
     if (!lastSwap) return 0;
-    var elapsed = Date.now() - lastSwap;
-    return Math.max(0, (SWAP_LOCK_MS - elapsed) / 3600000);
+    return Math.max(0, (SWAP_LOCK_MS - (Date.now() - lastSwap)) / 3600000);
 }
 
 // ── MINING ENGINE ──────────────────────────────────────────────────────────────
-function toolRate(tool) {
+function toolRate(tool, landType, mineMult) {
     if (!tool.mine_power || !tool.delay) return 0;
-    var rarMod  = RARITY_MOD[tool.rarity] || 1.0;
-    var nftMod  = 1 + (tool.nft_points || 0) / NFT_PTS_SCALE;
-    return (tool.mine_power / tool.delay) * rarMod * nftMod;
+    var rarMod   = RARITY_MOD[tool.rarity] || 1.0;
+    var shineMod = SHINE_MULT[(tool.shine||'stone').toLowerCase()] || 1.0;
+    var nftMod   = 1 + (tool.nft_points || 0) / NFT_PTS_SCALE;
+    var synMod   = (landType && TYPE_SYNERGY[landType]) ? (TYPE_SYNERGY[landType][tool.type] || 1.0) : 1.0;
+    var mMult    = mineMult || 1.0;
+    return (tool.mine_power / tool.delay) * rarMod * shineMod * nftMod * synMod * mMult;
 }
 
 function applyTick(session) {
     var now     = Date.now();
-    var elapsed = Math.max(0, (now - session.lastTick) / 1000); // seconds
+    var elapsed = Math.max(0, (now - session.lastTick) / 1000);
     if (elapsed < 0.1) return;
-
+    var landType  = session.featuredLand ? session.featuredLand.type : null;
+    var mineMult  = session.landMineMult || 1.0;
     for (var i = 0; i < session.loadout.length; i++) {
         var tool = session.loadout[i];
-        var rate = toolRate(tool);
+        var rate = toolRate(tool, landType, mineMult);
         var dist = MINERAL_DIST[tool.type] || MINERAL_DIST.ExoTool;
         var out  = rate * elapsed;
         MINERAL_KEYS.forEach(function(k){ session.accumulated[k] += out * dist[k]; });
@@ -452,16 +542,15 @@ function calcScore(acc) {
     return s;
 }
 
-function projectedWeekScore(loadout) {
+function projectedWeekScore(loadout, landType, mineMult) {
     if (!loadout.length) return 0;
     var scorePerSec = 0;
     loadout.forEach(function(tool) {
-        var rate = toolRate(tool);
+        var rate = toolRate(tool, landType, mineMult);
         var dist = MINERAL_DIST[tool.type] || MINERAL_DIST.ExoTool;
         MINERAL_KEYS.forEach(function(k){ scorePerSec += rate * dist[k] * MINERAL_PTS[k]; });
     });
-    var secsLeft = daysLeftInWeek() * 86400;
-    return scorePerSec * secsLeft;
+    return scorePerSec * daysLeftInWeek() * 86400;
 }
 
 function fmtNum(n) {
@@ -469,6 +558,194 @@ function fmtNum(n) {
     if (n >= 1e6) return (n/1e6).toFixed(2) + 'M';
     if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
     return Math.floor(n).toLocaleString();
+}
+
+// ── LAND LOADING ───────────────────────────────────────────────────────────────
+async function fetchPlayerLands(wallet) {
+    for (var node of AA_NODES) {
+        try {
+            var resp = await fetch(node + '/atomicassets/v1/assets?owner=' + encodeURIComponent(wallet) +
+                '&collection_name=alien.worlds&schema_name=land.worlds&limit=100&page=1');
+            var json = await resp.json();
+            if (!json.success) continue;
+            return json.data || [];
+        } catch(e) { continue; }
+    }
+    return [];
+}
+
+// Query lands.ale to check if a land has an Alien Legends building
+async function landHasALBuilding(landAssetId) {
+    for (var node of WAX_RPC_NODES) {
+        try {
+            var r = await fetch(node + '/v1/chain/get_table_rows', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: 'lands.ale', scope: 'lands.ale', table: 'lands',
+                    lower_bound: String(landAssetId),
+                    limit: 1, json: true
+                })
+            });
+            var j = await r.json();
+            if (j.rows && j.rows.length > 0 && String(j.rows[0].land_id) === String(landAssetId)) {
+                // Row exists — check if it has any buildings (future: inspect j.rows[0].buildings)
+                return true;
+            }
+            return false;
+        } catch(e) { continue; }
+    }
+    return false;
+}
+
+// Pick today's featured land deterministically from a list of qualified land NFTs
+function pickFeaturedLand(landNfts) {
+    if (!landNfts.length) return null;
+    var dayIndex = Math.floor(Date.now() / 86400000); // UTC day number, changes each midnight
+    var land = landNfts[dayIndex % landNfts.length];
+    var td   = (land.template && land.template.immutable_data) || {};
+    var dd   = land.data || land.mutable_data || {};
+    var img  = td.img || dd.img || '';
+    var planet = (td.planet || dd.planet || '').toLowerCase();
+    var rarity = (td.rarity || dd.rarity || land.template_mint || 'common').toLowerCase();
+    var landType = PLANET_TYPE[planet] || PLANET_TYPE[(td.planet||dd.planet||'')] || 'Unknown';
+    return {
+        assetId: land.asset_id,
+        name: land.name || td.name || ('Land #' + land.asset_id),
+        planet: td.planet || dd.planet || planet,
+        type: landType,
+        img: img,
+        rarity: rarity
+    };
+}
+
+// Fetch today's mine actions from Hyperion for Mine Mult calculation
+async function fetchMineHist(wallet) {
+    var todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    var after = todayStart.toISOString().slice(0, 19);
+
+    for (var node of HYPERION_NODES) {
+        try {
+            var url = node + '/v2/history/get_actions?account=' + encodeURIComponent(wallet) +
+                '&filter=alien.worlds%3Amine&limit=200&after=' + encodeURIComponent(after) +
+                '&sort=desc';
+            var r = await fetch(url);
+            var j = await r.json();
+            if (j.actions) return j.actions;
+        } catch(e) { continue; }
+    }
+    return [];
+}
+
+// Count mines on the featured land and compute a multiplier
+function calcMineMult(actions, landAssetId) {
+    if (!actions || !landAssetId) return { mult: 1.0, count: 0 };
+    var count = 0;
+    actions.forEach(function(a) {
+        try {
+            var data = a.act ? a.act.data : (a.action_trace && a.action_trace.act ? a.action_trace.act.data : null);
+            if (!data) return;
+            var lid = data.land_id || data.land || '';
+            if (String(lid) === String(landAssetId)) count++;
+        } catch(e) {}
+    });
+    // Each mine on the featured land adds ×0.10, capped at ×2.5 (15 mines to max)
+    var mult = Math.min(2.5, 1.0 + count * 0.10);
+    return { mult: mult, count: count };
+}
+
+// Full land + mine-mult load flow (runs async in background after dashboard shown)
+async function loadFeaturedLand(wallet) {
+    var session = getSession(wallet) || newSession(wallet);
+
+    // 1. Fetch player land NFTs
+    var landNfts = await fetchPlayerLands(wallet);
+
+    if (!landNfts.length) {
+        document.getElementById('fl-card-wrap').innerHTML =
+            '<div class="fl-loading" style="color:#303040;">No AW land NFTs found in this wallet.</div>';
+        return;
+    }
+
+    // 2. Filter to lands with AL buildings (non-blocking — falls back to all lands if none qualify)
+    var qualified = [];
+    // Check up to 20 lands to avoid excessive API calls
+    var toCheck = landNfts.slice(0, 20);
+    for (var i = 0; i < toCheck.length; i++) {
+        var hasBuilding = await landHasALBuilding(toCheck[i].asset_id);
+        if (hasBuilding) qualified.push(toCheck[i]);
+    }
+    // Fallback: if no AL buildings found, use all owned lands
+    var pool = qualified.length > 0 ? qualified : landNfts;
+
+    // 3. Pick today's land
+    var land = pickFeaturedLand(pool);
+    session.featuredLand = land;
+    saveSession(wallet, session);
+
+    // 4. Render the land card immediately (mine mult starts at ×1.0)
+    renderFeaturedLand(land, 1.0, 0);
+
+    // 5. Fetch mine history in the background and update mine mult
+    var actions   = await fetchMineHist(wallet);
+    var mineData  = calcMineMult(actions, land.assetId);
+    session = getSession(wallet) || newSession(wallet); // re-read in case tick ran
+    session.landMineMult  = mineData.mult;
+    session.landMineCount = mineData.count;
+    saveSession(wallet, session);
+
+    renderFeaturedLand(land, mineData.mult, mineData.count);
+}
+
+function renderFeaturedLand(land, mult, mineCount) {
+    if (!land) {
+        document.getElementById('fl-card-wrap').innerHTML =
+            '<div class="fl-loading" style="color:#303040;">No qualified land found.</div>';
+        document.getElementById('fl-type-pill').innerHTML = '';
+        return;
+    }
+
+    // Type pill next to section title
+    var pillClass = 'land-type-pill lt-' + (land.type || 'Unknown');
+    document.getElementById('fl-type-pill').innerHTML =
+        '<span class="' + pillClass + '">' + (land.type || 'Unknown') + '</span>';
+
+    // Synergy badges
+    var synHTML = '';
+    var synMods = TYPE_SYNERGY[land.type] || {};
+    ['Extractor','Explosive','ExoTool','Manipulator'].forEach(function(t) {
+        var m = synMods[t] || 1.0;
+        var cls = m >= 1.2 ? 'fl-syn-great' : m >= 1.0 ? 'fl-syn-good' : 'fl-syn-bad';
+        var sign = m >= 1.0 ? '+' : '';
+        synHTML += '<span class="fl-syn-badge ' + cls + '">' + (TYPE_ICON[t]||'') + ' ' + t +
+            ' <b>' + sign + Math.round((m-1)*100) + '%</b></span>';
+    });
+
+    // Image
+    var imgHTML = land.img
+        ? '<img class="fl-img" src="https://cloudflare-ipfs.com/ipfs/' + land.img + '" onerror="this.outerHTML=\'<div class=fl-img-placeholder>🌍</div>\'" alt="' + land.name + '">'
+        : '<div class="fl-img-placeholder">🌍</div>';
+
+    // Mine mult color
+    var mColor = mult >= 2.0 ? '#e8a020' : mult >= 1.5 ? '#40c890' : '#406050';
+
+    document.getElementById('fl-card-wrap').innerHTML =
+        '<div class="fl-card">' +
+            imgHTML +
+            '<div class="fl-info">' +
+                '<div class="fl-name">' + land.name + ' <span style="color:#505060;font-size:0.8em;">(' + land.rarity + ')</span></div>' +
+                '<div class="fl-planet">Planet: ' + (land.planet || '—') + '&nbsp;·&nbsp;Asset: ' + land.assetId + '</div>' +
+                '<div style="font-family:\'Courier New\',monospace; font-size:0.62em; color:#404050; margin-bottom:6px; letter-spacing:1px;">TOOL SYNERGY FOR THIS LAND TYPE</div>' +
+                '<div class="fl-synergy-list">' + synHTML + '</div>' +
+            '</div>' +
+            '<div class="fl-mult-block">' +
+                '<div class="fl-mult-label">MINE MULT</div>' +
+                '<div class="fl-mult-val" style="color:' + mColor + ';">×' + mult.toFixed(2) + '</div>' +
+                '<div class="fl-mult-count">' + mineCount + ' mine' + (mineCount!==1?'s':'') + ' today</div>' +
+                '<div class="fl-mult-hint">Mine this land<br>in AW to boost</div>' +
+            '</div>' +
+        '</div>';
 }
 
 // ── SCREENS ────────────────────────────────────────────────────────────────────
@@ -489,6 +766,8 @@ function showDashboard() {
     showScreen('dash');
     if (_dashInterval) clearInterval(_dashInterval);
     _dashInterval = setInterval(function(){ refreshDashboard(); }, 15000);
+    // Load land in background (won't block dashboard display)
+    loadFeaturedLand(wallet).catch(function(){});
 }
 
 function refreshDashboard() {
@@ -499,15 +778,32 @@ function refreshDashboard() {
     applyTick(session);
     saveSession(wallet, session);
     renderDashboard(wallet, session);
+    // Refresh mine mult every 5 minutes
+    if (!_lastMineHistRefresh || Date.now() - _lastMineHistRefresh > 300000) {
+        _lastMineHistRefresh = Date.now();
+        if (session.featuredLand) {
+            fetchMineHist(wallet).then(function(actions) {
+                var s  = getSession(wallet);
+                if (!s || !s.featuredLand) return;
+                var md = calcMineMult(actions, s.featuredLand.assetId);
+                s.landMineMult  = md.mult;
+                s.landMineCount = md.count;
+                saveSession(wallet, s);
+                renderFeaturedLand(s.featuredLand, md.mult, md.count);
+            }).catch(function(){});
+        }
+    }
 }
+var _lastMineHistRefresh = 0;
 
 function renderDashboard(wallet, session) {
-    // Season info
-    var daysLeft = daysLeftInWeek();
-    document.getElementById('sb-days').textContent    = daysLeft.toFixed(1);
-    document.getElementById('sb-tools').textContent   = session.loadout.length || '—';
-    var totalRate = session.loadout.reduce(function(s,t){ return s + toolRate(t); }, 0);
-    document.getElementById('sb-rate').textContent    = totalRate.toFixed(4);
+    var landType = session.featuredLand ? session.featuredLand.type : null;
+    var mineMult = session.landMineMult || 1.0;
+
+    document.getElementById('sb-days').textContent   = daysLeftInWeek().toFixed(1);
+    document.getElementById('sb-tools').textContent  = session.loadout.length || '—';
+    var totalRate = session.loadout.reduce(function(s,t){ return s + toolRate(t, landType, mineMult); }, 0);
+    document.getElementById('sb-rate').textContent   = totalRate.toFixed(4);
     document.getElementById('top-bar-info').innerHTML = wallet + ' &nbsp;|&nbsp; Score: ' + fmtNum(session.weeklyScore);
 
     // Loadout strip
@@ -516,9 +812,12 @@ function renderDashboard(wallet, session) {
     for (var i = 0; i < 3; i++) {
         var t = session.loadout[i];
         if (t) {
-            var rate  = toolRate(t);
-            var dist  = MINERAL_DIST[t.type] || MINERAL_DIST.ExoTool;
-            var topM  = MINERAL_KEYS.reduce(function(best, k){ return dist[k] > dist[best] ? k : best; }, MINERAL_KEYS[0]);
+            var rate    = toolRate(t, landType, mineMult);
+            var dist    = MINERAL_DIST[t.type] || MINERAL_DIST.ExoTool;
+            var topM    = MINERAL_KEYS.reduce(function(best,k){ return dist[k] > dist[best] ? k : best; }, MINERAL_KEYS[0]);
+            var synMod  = (landType && TYPE_SYNERGY[landType]) ? (TYPE_SYNERGY[landType][t.type] || 1.0) : 1.0;
+            var synStr  = synMod !== 1.0 ? ('Land syn: ' + (synMod>1?'+':'-') + Math.abs(Math.round((synMod-1)*100)) + '%') : '';
+            var shStr   = t.shine && t.shine !== 'stone' ? ('Shine ×' + (SHINE_MULT[t.shine]||1.0).toFixed(2)) : '';
             html += '<div class="loadout-tool active-slot">' +
                 '<span class="type-badge type-' + t.type + '">' + (TYPE_ICON[t.type]||'') + ' ' + t.type + '</span>' +
                 '<img class="loadout-tool-img" src="tool.worlds/' + t.templateId + '.webp" onerror="this.style.opacity=0.3" alt="' + t.name + '">' +
@@ -528,7 +827,8 @@ function renderDashboard(wallet, session) {
                     rarLabel(t.rarity) + ' &nbsp;·&nbsp; ' + shineLabel(t.shine) +
                     (t.nft_points ? '<br>NFT pts: ' + t.nft_points : '') +
                 '</div>' +
-                '<div class="loadout-tool-rate">Rate: ' + rate.toFixed(4) + '/s · Best: ' + topM + '</div>' +
+                '<div class="loadout-tool-rate">Rate: ' + rate.toFixed(4) + '/s · ' + topM + '</div>' +
+                (synStr ? '<div class="loadout-tool-syn">' + synStr + (shStr ? ' · ' + shStr : '') + '</div>' : (shStr ? '<div class="loadout-tool-syn">' + shStr + '</div>' : '')) +
             '</div>';
         } else {
             html += '<div class="loadout-empty"><div class="loadout-empty-icon">⛏</div><div>EMPTY SLOT</div></div>';
@@ -536,55 +836,53 @@ function renderDashboard(wallet, session) {
     }
     strip.innerHTML = html;
 
-    // Minerals
     MINERAL_KEYS.forEach(function(k){
-        var amt  = session.accumulated[k] || 0;
-        var pts  = amt * MINERAL_PTS[k];
+        var amt = session.accumulated[k] || 0;
         document.getElementById('m-' + k).textContent = fmtNum(amt);
-        document.getElementById('p-' + k).textContent = fmtNum(pts) + ' pts';
+        document.getElementById('p-' + k).textContent = fmtNum(amt * MINERAL_PTS[k]) + ' pts';
     });
 
-    // Score
-    document.getElementById('weekly-score').textContent   = fmtNum(session.weeklyScore);
-    var proj = session.weeklyScore + projectedWeekScore(session.loadout);
+    document.getElementById('weekly-score').textContent = fmtNum(session.weeklyScore);
+    var proj = session.weeklyScore + projectedWeekScore(session.loadout, landType, mineMult);
     document.getElementById('projected-score').textContent = fmtNum(proj) + ' projected';
 
-    // Swap button
     var swapBtn   = document.getElementById('swap-btn');
-    var swapTimer = document.getElementById('swap-timer');
     var hoursLeft = hoursUntilSwap(session.lastSwap);
     if (hoursLeft > 0) {
-        swapBtn.disabled  = true;
-        swapBtn.textContent = '⛏ CHANGE LOADOUT';
+        swapBtn.disabled = true;
         var h = Math.floor(hoursLeft), m = Math.floor((hoursLeft - h) * 60);
-        swapTimer.textContent = 'Available in ' + h + 'h ' + m + 'm';
+        document.getElementById('swap-timer').textContent = 'Available in ' + h + 'h ' + m + 'm';
     } else {
-        swapBtn.disabled  = false;
-        swapBtn.textContent = '⛏ CHANGE LOADOUT';
-        swapTimer.textContent = session.loadout.length ? 'Swap available' : 'No loadout set';
+        swapBtn.disabled = false;
+        document.getElementById('swap-timer').textContent = session.loadout.length ? 'Swap available' : 'No loadout set';
     }
 
-    // Leaderboard
     renderLeaderboard(wallet, session.weeklyScore);
 
-    // Proof code
-    var proof = { wallet:wallet, season:1, weekStart:session.weekStart, score:Math.round(session.weeklyScore), loadout:session.loadout.map(function(t){return {templateId:t.templateId,assetId:t.assetId,type:t.type,rarity:t.rarity};}), ts:Date.now() };
+    var proof = {
+        wallet: wallet, season: 1, weekStart: session.weekStart,
+        score: Math.round(session.weeklyScore),
+        loadout: session.loadout.map(function(t){ return { templateId:t.templateId, assetId:t.assetId, type:t.type, rarity:t.rarity, shine:t.shine }; }),
+        featuredLand: session.featuredLand ? session.featuredLand.assetId : null,
+        mineMult: session.landMineMult || 1.0,
+        mineCount: session.landMineCount || 0,
+        ts: Date.now()
+    };
     document.getElementById('proof-code-text').value = btoa(JSON.stringify(proof));
 }
 
 function renderLeaderboard(myWallet, myScore) {
-    var all  = getAllSessions();
-    var el   = document.getElementById('mine-leaderboard');
+    var all = getAllSessions();
+    var el  = document.getElementById('mine-leaderboard');
     if (!all.length) { el.innerHTML = '<div class="mine-empty">NO SCORES YET THIS WEEK</div>'; return; }
-    el.innerHTML = all.slice(0,10).map(function(r, i){
+    el.innerHTML = all.slice(0,10).map(function(r,i){
         var isMine = r.wallet === myWallet;
         return '<div class="mine-lb-row' + (isMine?' mine-lb-you':'') + '">' +
             '<span class="mine-lb-rank">' + (i+1) + '</span>' +
             '<span class="mine-lb-name">' + r.wallet + (isMine?' ◀':'') + '</span>' +
-            '<span class="mine-lb-score">' + fmtNum(r.score) + '</span>' +
-        '</div>';
+            '<span class="mine-lb-score">' + fmtNum(r.score) + '</span></div>';
     }).join('');
-    var myRank = all.findIndex(function(r){return r.wallet===myWallet;});
+    var myRank = all.findIndex(function(r){ return r.wallet === myWallet; });
     document.getElementById('score-rank').textContent = myRank >= 0 ? 'RANK #' + (myRank+1) + ' of ' + all.length : '';
 }
 
@@ -596,14 +894,14 @@ function copyProofCode() {
 }
 
 // ── TOOL SELECTOR ──────────────────────────────────────────────────────────────
-var _allTools   = [];
-var _selTools   = [];
-var _isSwap     = false;
+var _allTools = [];
+var _selTools = [];
+var _isSwap   = false;
 
 function openSelector() {
     var wallet  = localStorage.getItem('naron_wallet');
     var session = getSession(wallet) || newSession(wallet);
-    _isSwap = session.loadout.length > 0;
+    _isSwap   = session.loadout.length > 0;
     _selTools = [];
     document.getElementById('select-title').textContent = _isSwap ? 'SWAP YOUR LOADOUT' : 'SELECT YOUR MINING LOADOUT';
     document.getElementById('select-back-btn').style.display = _isSwap ? '' : 'none';
@@ -612,14 +910,28 @@ function openSelector() {
     document.getElementById('confirm-btn').disabled = true;
     document.getElementById('confirm-btn').textContent = 'SELECT AT LEAST 1 TOOL';
     updateSelStrip();
+
+    // Show land hint if a featured land is known
+    var hint = document.getElementById('select-land-hint');
+    if (session.featuredLand) {
+        hint.style.display = '';
+        var synMods = TYPE_SYNERGY[session.featuredLand.type] || {};
+        var best = Object.keys(synMods).sort(function(a,b){ return (synMods[b]||1)-(synMods[a]||1); }).slice(0,2);
+        hint.innerHTML = 'Today\'s land: <b style="color:var(--theme-color)">' + session.featuredLand.name + '</b> &nbsp;·&nbsp; Type: ' +
+            '<b style="color:#e8a020">' + session.featuredLand.type + '</b>' +
+            (best.length ? ' &nbsp;·&nbsp; Best: <b style="color:#40c890">' + best.join(', ') + '</b>' : '');
+    } else {
+        hint.style.display = 'none';
+    }
+
     if (_dashInterval) { clearInterval(_dashInterval); _dashInterval = null; }
     showScreen('select');
-    loadTools(wallet);
+    loadTools(wallet, session);
 }
 
 function cancelSelector() { showDashboard(); }
 
-async function loadTools(wallet) {
+async function loadTools(wallet, session) {
     for (var node of AA_NODES) {
         try {
             var all = [], page = 1;
@@ -632,28 +944,27 @@ async function loadTools(wallet) {
                 if (json.data.length < 1000) break;
                 page++;
             }
-            var tools = parseTool(all);
+            var tools = parseTool(all, session);
             _allTools = tools;
             document.getElementById('select-status').textContent = tools.length + ' TOOLS FOUND — PICK 1–3';
-            renderToolGrid();
+            renderToolGrid(session);
             return;
         } catch(e) { continue; }
     }
     document.getElementById('select-status').textContent = 'CONNECTION FAILED — TRY AGAIN';
 }
 
-function parseTool(raw) {
+function parseTool(raw, session) {
     var seen  = new Set();
     var tools = [];
     raw.forEach(function(nft){
-        var tid  = nft.template ? parseInt(nft.template.template_id) : 0;
-        var key  = tid + '_' + nft.asset_id;
+        var tid = nft.template ? parseInt(nft.template.template_id) : 0;
+        var key = tid + '_' + nft.asset_id;
         if (seen.has(key)) return; seen.add(key);
         var ld = NFT_DATA[tid];
         if (!ld || ld.category !== 'tool') return;
-        var d  = nft.data || nft.mutable_data || {};
-        var td = (nft.template && nft.template.immutable_data) || {};
-        var rarity = (d.rarity || td.rarity || ld.rarity || 'common').toLowerCase();
+        var td     = (nft.template && nft.template.immutable_data) || {};
+        var rarity = (td.rarity || ld.rarity || 'common').toLowerCase();
         tools.push({
             templateId: tid, assetId: nft.asset_id,
             name: nft.name || ld.name,
@@ -662,52 +973,63 @@ function parseTool(raw) {
             delay: ld.delay || 60,
             nft_points: ld.nft_points || 0,
             rarity: rarity,
-            shine: ld.shine || 'stone'
+            shine: (ld.shine || 'stone').toLowerCase()
         });
     });
-    // Sort by projected daily score desc
-    tools.sort(function(a,b){ return dailyScore(b) - dailyScore(a); });
+    var lt = session && session.featuredLand ? session.featuredLand.type : null;
+    var mm = session ? (session.landMineMult || 1.0) : 1.0;
+    tools.sort(function(a,b){ return dailyScore(b,lt,mm) - dailyScore(a,lt,mm); });
     return tools;
 }
 
-function dailyScore(tool) {
-    var rate = toolRate(tool);
+function dailyScore(tool, landType, mineMult) {
+    var rate = toolRate(tool, landType, mineMult);
     var dist = MINERAL_DIST[tool.type] || MINERAL_DIST.ExoTool;
     var s = 0; MINERAL_KEYS.forEach(function(k){ s += rate * dist[k] * MINERAL_PTS[k]; });
     return s * 86400;
 }
 
-function renderToolGrid() {
+function renderToolGrid(session) {
     var el     = document.getElementById('tool-grid');
-    var selIds = new Set(_selTools.map(function(t){return t.assetId;}));
+    var selIds = new Set(_selTools.map(function(t){ return t.assetId; }));
     var atMax  = _selTools.length >= 3;
+    var lt     = session && session.featuredLand ? session.featuredLand.type : null;
+    var mm     = session ? (session.landMineMult || 1.0) : 1.0;
+    var synMods = (lt && TYPE_SYNERGY[lt]) ? TYPE_SYNERGY[lt] : {};
+
     el.innerHTML = _allTools.map(function(tool){
         var isSel = selIds.has(tool.assetId);
         var dis   = !isSel && atMax;
-        var num   = isSel ? (_selTools.findIndex(function(t){return t.assetId===tool.assetId;})+1) : '';
+        var num   = isSel ? (_selTools.findIndex(function(t){ return t.assetId===tool.assetId; })+1) : '';
+        var synM  = synMods[tool.type] || 1.0;
+        var synColor = synM >= 1.2 ? '#e8a020' : synM >= 1.0 ? '#40c890' : '#505060';
+        var synText  = lt ? ('<span style="color:' + synColor + ';">' + (synM>=1?'+':'') + Math.round((synM-1)*100) + '% ' + lt + '</span>') : '';
+        var shineText = tool.shine !== 'stone' ? shineLabel(tool.shine) : '';
         return '<div class="tool-card' + (isSel?' sel':'') + (dis?' disabled':'') + '" onclick="toggleTool(\'' + tool.assetId + '\')">' +
             (num ? '<div class="tool-card-num">' + num + '</div>' : '') +
             '<span class="tool-card-type"><span class="type-badge type-' + tool.type + '">' + (TYPE_ICON[tool.type]||'') + ' ' + tool.type + '</span></span>' +
             '<img class="tool-card-img" src="tool.worlds/' + tool.templateId + '.webp" onerror="this.style.opacity=0.3" alt="' + tool.name + '">' +
             '<div class="tool-card-name">' + tool.name + '</div>' +
             '<div class="tool-card-score">⚡' + tool.mine_power + ' ⏱' + tool.delay + 's</div>' +
-            '<div class="tool-card-score" style="color:#808090;">' + rarLabel(tool.rarity) + ' · ' + shineLabel(tool.shine) + '</div>' +
-            '<div class="tool-card-score">' + fmtNum(dailyScore(tool)) + ' pts/day</div>' +
+            '<div class="tool-card-score" style="color:#808090;">' + rarLabel(tool.rarity) + (shineText ? ' · ' + shineText : '') + '</div>' +
+            '<div class="tool-card-score">' + fmtNum(dailyScore(tool,lt,mm)) + ' pts/day</div>' +
+            (synText ? '<div class="tool-card-syn">' + synText + '</div>' : '') +
         '</div>';
     }).join('');
 }
 
 function toggleTool(assetId) {
-    var idx = _selTools.findIndex(function(t){return t.assetId===assetId;});
-    if (idx >= 0) {
-        _selTools.splice(idx, 1);
-    } else {
+    var idx = _selTools.findIndex(function(t){ return t.assetId===assetId; });
+    if (idx >= 0) { _selTools.splice(idx,1); }
+    else {
         if (_selTools.length >= 3) return;
-        var tool = _allTools.find(function(t){return t.assetId===assetId;});
+        var tool = _allTools.find(function(t){ return t.assetId===assetId; });
         if (tool) _selTools.push(tool);
     }
+    var wallet  = localStorage.getItem('naron_wallet');
+    var session = getSession(wallet);
     updateSelStrip();
-    renderToolGrid();
+    renderToolGrid(session);
     var btn = document.getElementById('confirm-btn');
     if (_selTools.length > 0) {
         btn.disabled = false;
@@ -724,11 +1046,8 @@ function updateSelStrip() {
     var html  = '';
     for (var i = 0; i < 3; i++) {
         var t = _selTools[i];
-        if (t) {
-            html += '<div class="sel-strip-card"><img src="tool.worlds/' + t.templateId + '.webp" onerror="this.style.opacity=0.3"><div class="sel-strip-card-name">' + t.name + '</div></div>';
-        } else {
-            html += '<div><div class="sel-placeholder">+</div></div>';
-        }
+        if (t) html += '<div class="sel-strip-card"><img src="tool.worlds/' + t.templateId + '.webp" onerror="this.style.opacity=0.3"><div class="sel-strip-card-name">' + t.name + '</div></div>';
+        else   html += '<div><div class="sel-placeholder">+</div></div>';
     }
     strip.innerHTML = html;
 }
@@ -737,7 +1056,6 @@ function confirmLoadout() {
     if (!_selTools.length) return;
     var wallet  = localStorage.getItem('naron_wallet');
     var session = getSession(wallet) || newSession(wallet);
-    // Apply any pending tick before swapping
     applyTick(session);
     session.loadout  = _selTools.slice();
     session.lastSwap = Date.now();
