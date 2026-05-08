@@ -768,9 +768,38 @@
         })();
     }
 
+    function _drawFallbackPlanet(planetKey) {
+        var canvas = document.getElementById('planet-webgl');
+        var ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        var W = canvas.width, H = canvas.height;
+        var cx = W/2, cy = H/2, r = Math.min(W,H)*0.22;
+        function drawSphere(img) {
+            ctx.clearRect(0,0,W,H);
+            ctx.save();
+            ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.clip();
+            if (img) {
+                ctx.drawImage(img, cx-r, cy-r, r*2, r*2);
+            } else {
+                var p = PLANETS[planetKey]||{color:'#5090e0'};
+                var g = ctx.createRadialGradient(cx-r*0.35,cy-r*0.35,r*0.05,cx,cy,r);
+                g.addColorStop(0,'rgba(255,255,255,0.55)'); g.addColorStop(0.3,p.color); g.addColorStop(1,'rgba(0,0,0,0.75)');
+                ctx.fillStyle=g; ctx.fillRect(cx-r,cy-r,r*2,r*2);
+            }
+            ctx.restore();
+            var shad = ctx.createRadialGradient(cx+r*0.3,cy-r*0.3,0,cx,cy,r);
+            shad.addColorStop(0,'rgba(255,255,255,0.12)'); shad.addColorStop(0.5,'rgba(0,0,0,0)'); shad.addColorStop(1,'rgba(0,0,0,0.65)');
+            ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle=shad; ctx.fill();
+        }
+        var img = new Image();
+        img.onload = function(){ drawSphere(img); canvas.classList.add('visible'); };
+        img.onerror = function(){ drawSphere(null); canvas.classList.add('visible'); };
+        img.src = 'planets/'+planetKey+'.jpg';
+    }
+
     function loadPlanetMesh(planetKey, doApproach) {
         initPlanetRenderer();
-        if (_webglFailed) return;
+        if (_webglFailed) { _drawFallbackPlanet(planetKey); return; }
         setPlanetVisible(false); // hide until texture ready — prevents ghost
         if (_mesh){_scene.remove(_mesh);_mesh=null;}
         var off=CAM_OFFSETS[planetKey]||{x:0.6,y:-0.25};
@@ -809,7 +838,7 @@
     // Called on tab switch: camera stays fixed, planet flies in from far ahead (warp arrival)
     function loadPlanetMeshWarpIn(planetKey) {
         initPlanetRenderer();
-        if (_webglFailed) return;
+        if (_webglFailed) { _drawFallbackPlanet(planetKey); return; }
         setPlanetVisible(false);
         if (_mesh){_scene.remove(_mesh);_mesh=null;}
         var off=CAM_OFFSETS[planetKey]||{x:0.6,y:-0.25};
