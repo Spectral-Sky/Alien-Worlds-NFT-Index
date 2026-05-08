@@ -676,6 +676,7 @@
     var _scene         = null;
     var _camera        = null;
     var _mesh          = null;
+    var _webglFailed   = false;
     var _eggCount      = 0;
     var _rendered      = {};
     var _sel           = null;
@@ -729,10 +730,15 @@
     }
 
     function initPlanetRenderer() {
-        if (_renderer) return;
+        if (_renderer || _webglFailed) return;
         var canvas=document.getElementById('planet-webgl');
         var W=window.innerWidth,H=window.innerHeight;
-        _renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true,preserveDrawingBuffer:false});
+        try {
+            _renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true,preserveDrawingBuffer:false});
+        } catch(e) {
+            _webglFailed=true;
+            return;
+        }
         _renderer.setClearColor(0x000000,0);
         _renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
         _renderer.setSize(W,H);
@@ -758,6 +764,7 @@
 
     function loadPlanetMesh(planetKey, doApproach) {
         initPlanetRenderer();
+        if (_webglFailed) return;
         setPlanetVisible(false); // hide until texture ready — prevents ghost
         if (_mesh){_scene.remove(_mesh);_mesh=null;}
         var off=CAM_OFFSETS[planetKey]||{x:0.6,y:-0.25};
@@ -796,6 +803,7 @@
     // Called on tab switch: camera stays fixed, planet flies in from far ahead (warp arrival)
     function loadPlanetMeshWarpIn(planetKey) {
         initPlanetRenderer();
+        if (_webglFailed) return;
         setPlanetVisible(false);
         if (_mesh){_scene.remove(_mesh);_mesh=null;}
         var off=CAM_OFFSETS[planetKey]||{x:0.6,y:-0.25};
