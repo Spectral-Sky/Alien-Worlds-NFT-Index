@@ -218,6 +218,51 @@
             .loadout-tool-img { width:118px; height:118px; }
             .fl-card { flex-direction:column; }
         }
+
+        /* INFO SECTIONS */
+        .info-main { max-width:980px; margin:0 auto; padding:0 20px 50px; }
+        .info-divider { border:none; border-top:1px solid #0d0d18; margin:0 0 32px; }
+
+        /* TOOL TYPE CARDS */
+        .ttc-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+        .ttc { border:1px solid #1a1a28; background:rgba(0,0,0,0.25); padding:14px; display:flex; flex-direction:column; }
+        .ttc-head { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+        .ttc-icon { font-size:1.5em; line-height:1; }
+        .ttc-desc { font-size:0.7em; color:#505870; line-height:1.55; margin-bottom:14px; flex:1; }
+        .ttc-dist-title { font-family:'Courier New',monospace; font-size:0.56em; letter-spacing:2px; color:#303040; text-transform:uppercase; margin-bottom:8px; }
+        .ttc-row { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
+        .ttc-mname { font-family:'Courier New',monospace; font-size:0.55em; color:#404050; width:48px; flex-shrink:0; }
+        .ttc-bar-bg { flex:1; height:5px; background:#0d0d18; }
+        .ttc-bar-fill { height:100%; }
+        .ttc-bar-fill.bm { background:var(--mine-green); }
+        .ttc-bar-fill.bs { background:var(--mine-blue); }
+        .ttc-bar-fill.bx { background:var(--mine-gray); }
+        .ttc-bar-fill.bc { background:var(--mine-purple); }
+        .ttc-pct { font-family:'Courier New',monospace; font-size:0.55em; color:#506070; width:26px; text-align:right; flex-shrink:0; }
+
+        /* LAND / PLANET GUIDE */
+        .lg-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+        .lg-card { border:1px solid #1a1a28; background:rgba(0,0,0,0.25); padding:13px; }
+        .lg-planet-row { display:flex; align-items:center; gap:7px; margin-bottom:9px; }
+        .lg-planet-name { font-family:'Courier New',monospace; font-size:0.8em; color:#c0b080; font-weight:bold; }
+        .lg-syn-table { width:100%; border-collapse:collapse; margin-bottom:8px; }
+        .lg-syn-table td { font-family:'Courier New',monospace; font-size:0.6em; padding:2px 0; border-bottom:1px solid #0d0d18; }
+        .lg-syn-table td:first-child { color:#808090; }
+        .lg-syn-table td:last-child { text-align:right; font-weight:bold; }
+        .syn-great { color:#e8a020; }
+        .syn-good  { color:#40c890; }
+        .syn-neut  { color:#505060; }
+        .syn-bad   { color:#383840; }
+        .lg-focus  { font-size:0.62em; color:#406060; font-family:'Courier New',monospace; line-height:1.5; padding-top:6px; border-top:1px solid #0d0d18; }
+
+        @media (max-width:700px) {
+            .ttc-grid { grid-template-columns:1fr 1fr; }
+            .lg-grid  { grid-template-columns:1fr 1fr; }
+        }
+        @media (max-width:420px) {
+            .ttc-grid { grid-template-columns:1fr; }
+            .lg-grid  { grid-template-columns:1fr; }
+        }
     </style>
 </head>
 <body>
@@ -348,6 +393,178 @@
     </div>
 
     <button class="confirm-btn" id="confirm-btn" onclick="confirmLoadout()" disabled>SELECT AT LEAST 1 TOOL</button>
+</div>
+
+<!-- ══ TOOL TYPE GUIDE ════════════════════════════════════════════════════════ -->
+<hr class="info-divider">
+<div class="info-main">
+    <div class="section-title" style="margin-bottom:16px;">TOOL TYPE GUIDE</div>
+    <div class="ttc-grid">
+
+        <!-- EXTRACTOR -->
+        <div class="ttc">
+            <div class="ttc-head">
+                <span class="ttc-icon">⛏</span>
+                <span class="type-badge type-Extractor">EXTRACTOR</span>
+            </div>
+            <div class="ttc-desc">Mechanical drills and bulk conveyor systems. Tears through surface and near-surface strata to pull raw deposits. Highest silica yield of any tool type, with strong biomass output from organic-rich layers. Almost no crystite recovery — drill heat destroys deep crystal formations before they reach the surface.</div>
+            <div class="ttc-dist-title">MINERAL OUTPUT PROFILE</div>
+            <div class="ttc-row"><span class="ttc-mname">BIOMASS</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bm" style="width:35%"></div></div><span class="ttc-pct">35%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">SILICA</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bs" style="width:40%"></div></div><span class="ttc-pct">40%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">METAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bx" style="width:20%"></div></div><span class="ttc-pct">20%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">CRYSTITE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bc" style="width:5%"></div></div><span class="ttc-pct">5%</span></div>
+        </div>
+
+        <!-- EXPLOSIVE -->
+        <div class="ttc">
+            <div class="ttc-head">
+                <span class="ttc-icon">💥</span>
+                <span class="type-badge type-Explosive">EXPLOSIVE</span>
+            </div>
+            <div class="ttc-desc">Shaped-charge detonation with a directed blast cone. Maximum biomass yield of any tool — ideal wherever organic material concentrates near the surface. The blast heat cracks and vaporises crystite formations on contact, making deep mineral recovery nearly impossible. Best raw throughput, worst precision.</div>
+            <div class="ttc-dist-title">MINERAL OUTPUT PROFILE</div>
+            <div class="ttc-row"><span class="ttc-mname">BIOMASS</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bm" style="width:55%"></div></div><span class="ttc-pct">55%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">SILICA</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bs" style="width:30%"></div></div><span class="ttc-pct">30%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">METAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bx" style="width:12%"></div></div><span class="ttc-pct">12%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">CRYSTITE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bc" style="width:3%"></div></div><span class="ttc-pct">3%</span></div>
+        </div>
+
+        <!-- EXOTOOL -->
+        <div class="ttc">
+            <div class="ttc-head">
+                <span class="ttc-icon">🦾</span>
+                <span class="type-badge type-ExoTool">EXOTOOL</span>
+            </div>
+            <div class="ttc-desc">Exo-suit integrated multi-tool combining coring, spectral scanning, and mechanical cutting. The most balanced output profile — a solid pick when your land type is unknown. Favours metal and silica with reasonable crystite recovery. Performs consistently across all land types with no major weakness.</div>
+            <div class="ttc-dist-title">MINERAL OUTPUT PROFILE</div>
+            <div class="ttc-row"><span class="ttc-mname">BIOMASS</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bm" style="width:20%"></div></div><span class="ttc-pct">20%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">SILICA</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bs" style="width:30%"></div></div><span class="ttc-pct">30%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">METAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bx" style="width:35%"></div></div><span class="ttc-pct">35%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">CRYSTITE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bc" style="width:15%"></div></div><span class="ttc-pct">15%</span></div>
+        </div>
+
+        <!-- MANIPULATOR -->
+        <div class="ttc">
+            <div class="ttc-head">
+                <span class="ttc-icon">🔬</span>
+                <span class="type-badge type-Manipulator">MANIPULATOR</span>
+            </div>
+            <div class="ttc-desc">Spectral resonance and chemical dissolution targeting deep crystalline structures. Near-zero surface yield but unmatched crystite and metal recovery from deep deposits — essentially the opposite of the Extractor. Comes into its own on Radiation and Luminite land types, where it can more than double other tools' score output.</div>
+            <div class="ttc-dist-title">MINERAL OUTPUT PROFILE</div>
+            <div class="ttc-row"><span class="ttc-mname">BIOMASS</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bm" style="width:5%"></div></div><span class="ttc-pct">5%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">SILICA</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bs" style="width:15%"></div></div><span class="ttc-pct">15%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">METAL</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bx" style="width:35%"></div></div><span class="ttc-pct">35%</span></div>
+            <div class="ttc-row"><span class="ttc-mname">CRYSTITE</span><div class="ttc-bar-bg"><div class="ttc-bar-fill bc" style="width:45%"></div></div><span class="ttc-pct">45%</span></div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ══ LAND & PLANET GUIDE ════════════════════════════════════════════════════ -->
+<hr class="info-divider">
+<div class="info-main" style="padding-bottom:80px;">
+    <div class="section-title" style="margin-bottom:6px;">LAND &amp; PLANET GUIDE</div>
+    <div style="font-size:0.7em; color:#404050; font-family:'Courier New',monospace; letter-spacing:0.5px; margin-bottom:16px; line-height:1.6;">
+        Each AW planet has a land type that determines which tools work best on it. Your daily featured land is picked from your owned lands with an Alien Legends building. Mine on that land in AW today to increase your Mine Mult bonus. Crystite is always the rarest and most valuable mineral — land types that boost Manipulators tend to produce the highest scores.
+    </div>
+    <div class="lg-grid">
+
+        <!-- NARON / VOLCANIC -->
+        <div class="lg-card">
+            <div class="lg-planet-row">
+                <span class="lg-planet-name">NARON</span>
+                <span class="land-type-pill lt-Volcanic">VOLCANIC</span>
+            </div>
+            <table class="lg-syn-table">
+                <tr><td>⛏ Extractor</td>  <td class="syn-great">+25%</td></tr>
+                <tr><td>💥 Explosive</td>  <td class="syn-good">+15%</td></tr>
+                <tr><td>🦾 ExoTool</td>   <td class="syn-neut">+0%</td></tr>
+                <tr><td>🔬 Manipulator</td><td class="syn-bad">−15%</td></tr>
+            </table>
+            <div class="lg-focus">Metal &amp; silica heavy — volcanic subduction pushes rich ore seams close to the surface. Extractors thrive here.</div>
+        </div>
+
+        <!-- EYEKE / BIOSPHERE -->
+        <div class="lg-card">
+            <div class="lg-planet-row">
+                <span class="lg-planet-name">EYEKE</span>
+                <span class="land-type-pill lt-Biosphere">BIOSPHERE</span>
+            </div>
+            <table class="lg-syn-table">
+                <tr><td>💥 Explosive</td>  <td class="syn-great">+30%</td></tr>
+                <tr><td>⛏ Extractor</td>  <td class="syn-good">+10%</td></tr>
+                <tr><td>🦾 ExoTool</td>   <td class="syn-neut">−5%</td></tr>
+                <tr><td>🔬 Manipulator</td><td class="syn-bad">−10%</td></tr>
+            </table>
+            <div class="lg-focus">Biomass dominant — dense organic surface layer from the living world. Explosives clear the most material per detonation here.</div>
+        </div>
+
+        <!-- KAVIAN / GLACIAL -->
+        <div class="lg-card">
+            <div class="lg-planet-row">
+                <span class="lg-planet-name">KAVIAN</span>
+                <span class="land-type-pill lt-Glacial">GLACIAL</span>
+            </div>
+            <table class="lg-syn-table">
+                <tr><td>🦾 ExoTool</td>   <td class="syn-great">+25%</td></tr>
+                <tr><td>🔬 Manipulator</td><td class="syn-good">+20%</td></tr>
+                <tr><td>⛏ Extractor</td>  <td class="syn-bad">−10%</td></tr>
+                <tr><td>💥 Explosive</td>  <td class="syn-bad">−20%</td></tr>
+            </table>
+            <div class="lg-focus">Silica crystals locked in permafrost, with some deep crystite pockets. Mechanical drills and blasting are inefficient in extreme cold.</div>
+        </div>
+
+        <!-- MAGOR / ELECTRICAL -->
+        <div class="lg-card">
+            <div class="lg-planet-row">
+                <span class="lg-planet-name">MAGOR</span>
+                <span class="land-type-pill lt-Electrical">ELECTRICAL</span>
+            </div>
+            <table class="lg-syn-table">
+                <tr><td>🦾 ExoTool</td>   <td class="syn-great">+30%</td></tr>
+                <tr><td>🔬 Manipulator</td><td class="syn-good">+20%</td></tr>
+                <tr><td>⛏ Extractor</td>  <td class="syn-neut">−5%</td></tr>
+                <tr><td>💥 Explosive</td>  <td class="syn-bad">−15%</td></tr>
+            </table>
+            <div class="lg-focus">Conductive metal deposits and charged silica formations. Electrical interference makes traditional drilling unreliable; ExoTools handle the interference better.</div>
+        </div>
+
+        <!-- VELES / RADIATION -->
+        <div class="lg-card">
+            <div class="lg-planet-row">
+                <span class="lg-planet-name">VELES</span>
+                <span class="land-type-pill lt-Radiation">RADIATION</span>
+            </div>
+            <table class="lg-syn-table">
+                <tr><td>🔬 Manipulator</td><td class="syn-great">+40%</td></tr>
+                <tr><td>🦾 ExoTool</td>   <td class="syn-good">+15%</td></tr>
+                <tr><td>⛏ Extractor</td>  <td class="syn-bad">−10%</td></tr>
+                <tr><td>💥 Explosive</td>  <td class="syn-bad">−25%</td></tr>
+            </table>
+            <div class="lg-focus">Irradiated deep deposits have amplified crystite growth. Radiation accelerates crystal formation — Manipulators can exploit this for very high crystite yields.</div>
+        </div>
+
+        <!-- AETHER / LUMINITE -->
+        <div class="lg-card">
+            <div class="lg-planet-row">
+                <span class="lg-planet-name">AETHER</span>
+                <span class="land-type-pill lt-Luminite">LUMINITE</span>
+            </div>
+            <table class="lg-syn-table">
+                <tr><td>🔬 Manipulator</td><td class="syn-great">+45%</td></tr>
+                <tr><td>🦾 ExoTool</td>   <td class="syn-good">+10%</td></tr>
+                <tr><td>⛏ Extractor</td>  <td class="syn-bad">−15%</td></tr>
+                <tr><td>💥 Explosive</td>  <td class="syn-bad">−30%</td></tr>
+            </table>
+            <div class="lg-focus">Maximum crystite concentration — pure luminite veins run through the entire landmass. The most valuable land type to mine on. A Manipulator here outscores everything else.</div>
+        </div>
+
+    </div>
+
+    <div style="margin-top:16px; font-size:0.62em; color:#303040; font-family:'Courier New',monospace; line-height:1.7;">
+        MINERAL VALUES: BIOMASS ×2 pts &nbsp;·&nbsp; SILICA ×5 pts &nbsp;·&nbsp; METAL ×10 pts &nbsp;·&nbsp; CRYSTITE ×20 pts &nbsp;&nbsp;—&nbsp;&nbsp;
+        SHINE BONUS: Gold ×1.10 &nbsp;·&nbsp; Stardust ×1.25 &nbsp;·&nbsp; Antimatter ×1.45 &nbsp;·&nbsp; X-Dimension ×1.70
+    </div>
 </div>
 
 <script>
