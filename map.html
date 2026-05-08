@@ -65,7 +65,11 @@
         }
         .ph-logo a { color:var(--gold); font-size:1.3em; letter-spacing:4px; text-decoration:none; text-transform:uppercase; text-shadow:0 0 10px rgba(232,160,32,0.4); transition:opacity 0.2s; }
         .ph-logo a:hover { opacity:0.8; }
+        .ph-right { display:flex; align-items:center; gap:12px; }
         .ph-right img { height:32px; opacity:0.6; }
+        #ph-wallet-btn { background:transparent; border:1px solid rgba(232,160,32,0.35); color:#888; font-family:'Courier New',monospace; font-size:0.7em; letter-spacing:1px; text-transform:uppercase; padding:5px 12px; cursor:pointer; transition:all 0.2s; }
+        #ph-wallet-btn:hover { border-color:var(--gold); color:var(--gold); }
+        #ph-wallet-btn.connected { color:var(--gold); border-color:rgba(232,160,32,0.6); }
 
         /* ── LOGIN GATE ──────────────────────────────────────────────────── */
         #login-gate { position:fixed; inset:0; z-index:9000; background:rgba(3,3,14,0.93); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; }
@@ -279,7 +283,10 @@
 
 <header class="page-header">
     <div class="ph-logo"><a href="index.html">NARON CODEX</a></div>
-    <div class="ph-right"><a href="https://play.alienworlds.io/arena" target="_blank" rel="noopener" style="opacity:1;display:flex;align-items:center;"><img src="ALElogo.png" alt="Alien Legends"></a></div>
+    <div class="ph-right">
+        <button id="ph-wallet-btn" onclick="phWalletClick()">CONNECT</button>
+        <a href="https://play.alienworlds.io/arena" target="_blank" rel="noopener" style="opacity:1;display:flex;align-items:center;"><img src="ALElogo.png" alt="Alien Legends"></a>
+    </div>
 </header>
 
 <!-- LOGIN GATE -->
@@ -466,7 +473,25 @@
     var _sceneStarted = false;
     function onWalletReady() {
         document.getElementById('login-gate').classList.add('gone');
+        updateWalletBtn();
         if (!_sceneStarted) { _sceneStarted = true; startScene(); }
+    }
+    function updateWalletBtn() {
+        var btn = document.getElementById('ph-wallet-btn');
+        if (!btn) return;
+        var w = getWallet();
+        if (w) { btn.textContent = w; btn.classList.add('connected'); btn.title = 'Click to disconnect'; }
+        else   { btn.textContent = 'CONNECT'; btn.classList.remove('connected'); btn.title = ''; }
+    }
+    function phWalletClick() {
+        var w = getWallet();
+        if (w) {
+            window.walletSession = null;
+            localStorage.removeItem('naron_wallet');
+            updateWalletBtn();
+        } else {
+            document.getElementById('login-gate').classList.remove('gone');
+        }
     }
 
     // ── CONSTANTS ─────────────────────────────────────────────────────────────
@@ -1477,6 +1502,7 @@
 
     // ── INIT ──────────────────────────────────────────────────────────────────
     initStars();
+    updateWalletBtn();
     if(localStorage.getItem('naron_wallet')) {
         document.getElementById('login-gate').classList.add('gone');
         _sceneStarted = true;
