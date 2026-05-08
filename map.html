@@ -701,8 +701,7 @@
         var stars=[];
         for (var i=0;i<160;i++) stars.push({x:(Math.random()-0.5)*W,y:(Math.random()-0.5)*H,z:Math.random()*W});
         function draw() {
-            var fa=_starSpeed>1?0.2:0.006;
-            ctx.fillStyle='rgba(3,3,14,'+fa+')';
+            ctx.fillStyle='rgba(3,3,14,0.2)';
             ctx.fillRect(0,0,W,H);
             for (var i=0;i<stars.length;i++){
                 var s=stars[i],pz=s.z;
