@@ -371,8 +371,8 @@ const WAX_RPC_NODES = [
     'https://wax.eosrio.io'
 ];
 const HYPERION_NODES = [
-    'https://wax.eosusa.io',
-    'https://wax.eosrio.io',
+    'https://wax.eosphere.io',
+    'https://wax-history.eosdac.io',
     'https://api.waxsweden.org'
 ];
 
@@ -619,19 +619,30 @@ function pickFeaturedLand(landNfts) {
     };
 }
 
-// Fetch today's mine actions from Hyperion for Mine Mult calculation
+// Fetch today's mine actions from Hyperion for Mine Mult calculation.
+// Filters by notify.mc:mine (the inline notification receiver for every AW mine event).
+// Falls back to alien.worlds:mine if notify.mc returns no results on a given node.
 async function fetchMineHist(wallet) {
     var todayStart = new Date();
     todayStart.setUTCHours(0, 0, 0, 0);
-    var after = todayStart.toISOString().slice(0, 19);
+    var after = encodeURIComponent(todayStart.toISOString().slice(0, 19));
+    var base  = '&limit=200&after=' + after + '&sort=desc';
 
     for (var node of HYPERION_NODES) {
         try {
+            // Primary: notify.mc is the inline notification receiver AW sends on every mine —
+            // faster to index against than querying the entire alien.worlds action table
             var url = node + '/v2/history/get_actions?account=' + encodeURIComponent(wallet) +
-                '&filter=alien.worlds%3Amine&limit=200&after=' + encodeURIComponent(after) +
-                '&sort=desc';
+                '&filter=notify.mc%3Amine' + base;
             var r = await fetch(url);
             var j = await r.json();
+            if (j.actions && j.actions.length > 0) return j.actions;
+
+            // Fallback: direct alien.worlds mine filter if notify.mc returned nothing
+            url = node + '/v2/history/get_actions?account=' + encodeURIComponent(wallet) +
+                '&filter=alien.worlds%3Amine' + base;
+            r = await fetch(url);
+            j = await r.json();
             if (j.actions) return j.actions;
         } catch(e) { continue; }
     }
