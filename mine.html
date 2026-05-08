@@ -108,7 +108,7 @@
         .loadout-strip { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:20px; }
         .loadout-tool { position:relative; width:160px; border:1px solid #252535; background:rgba(255,255,255,0.02); padding:10px; }
         .loadout-tool.active-slot { border-color:rgba(232,160,32,0.4); }
-        .loadout-tool-img { width:138px; height:138px; object-fit:cover; display:block; margin-bottom:8px; }
+        .loadout-tool-img { width:138px; height:196px; object-fit:contain; background:#050510; display:block; margin-bottom:8px; }
         .loadout-tool-name { font-family:'Courier New',monospace; font-size:0.75em; color:#c0b080; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .loadout-tool-stats { font-size:0.65em; color:#607080; line-height:1.6; }
         .loadout-tool-rate { font-size:0.72em; color:var(--mine-green); font-family:'Courier New',monospace; margin-top:4px; font-weight:bold; }
@@ -184,7 +184,7 @@
         .tool-card:hover { border-color:#363646; background:rgba(255,255,255,0.04); }
         .tool-card.sel { border-color:var(--theme-color); background:rgba(232,160,32,0.08); box-shadow:0 0 10px rgba(232,160,32,0.15); }
         .tool-card.disabled { opacity:0.28; cursor:default; pointer-events:none; }
-        .tool-card-img { width:104px; height:104px; object-fit:cover; display:block; margin-bottom:5px; }
+        .tool-card-img { width:104px; height:148px; object-fit:contain; background:#050510; display:block; margin-bottom:5px; }
         .tool-card-name { font-size:0.58em; color:#c0b080; text-align:center; line-height:1.2; max-height:2.4em; overflow:hidden; word-break:break-word; margin-bottom:2px; }
         .tool-card-score { font-size:0.6em; color:var(--mine-green); text-align:center; font-family:'Courier New',monospace; margin-top:2px; }
         .tool-card-num { position:absolute; top:4px; right:4px; width:16px; height:16px; background:var(--theme-color); color:#000; font-size:0.58em; font-weight:bold; display:flex; align-items:center; justify-content:center; }
@@ -215,7 +215,7 @@
             .mine-output-grid { grid-template-columns:1fr 1fr; }
             .loadout-strip { gap:10px; }
             .loadout-tool { width:140px; }
-            .loadout-tool-img { width:118px; height:118px; }
+            .loadout-tool-img { width:118px; height:167px; }
             .fl-card { flex-direction:column; }
         }
 
@@ -255,6 +255,15 @@
         .syn-bad   { color:#383840; }
         .lg-focus  { font-size:0.62em; color:#406060; font-family:'Courier New',monospace; line-height:1.5; padding-top:6px; border-top:1px solid #0d0d18; }
 
+        /* TESTING BANNER */
+        .test-banner { background:rgba(200,80,20,0.06); border-bottom:1px solid rgba(200,80,20,0.22); padding:6px 30px; font-family:'Courier New',monospace; font-size:0.62em; color:#c05010; letter-spacing:1px; text-align:center; }
+
+        /* DAILY POOL BADGE */
+        .pool-bonus-tag { font-family:'Courier New',monospace; font-size:0.58em; color:#40c890; font-weight:bold; text-align:center; padding:2px 0; letter-spacing:0.5px; }
+
+        /* STATS KEY */
+        .stats-key { font-family:'Courier New',monospace; font-size:0.62em; color:#404050; border:1px solid #181828; background:rgba(0,0,0,0.2); padding:7px 12px; margin:10px 0 14px; line-height:1.9; }
+
         @media (max-width:700px) {
             .ttc-grid { grid-template-columns:1fr 1fr; }
             .lg-grid  { grid-template-columns:1fr 1fr; }
@@ -288,6 +297,9 @@
     <div id="top-bar-info" style="font-family:'Courier New',monospace; font-size:0.75em; color:#505060; text-align:right;"></div>
 </div>
 
+<!-- TESTING BANNER — remove TESTING_MODE flag before full launch -->
+<div class="test-banner">⚠ TESTING MODE — loadout swap lock is disabled &nbsp;·&nbsp; scores are local only &nbsp;·&nbsp; this banner will be removed at full launch</div>
+
 <!-- ══ WALLET PROMPT ══════════════════════════════════════════════════════════ -->
 <div id="screen-wallet" class="mine-main">
     <div class="wallet-prompt-title">CONNECT WALLET TO BEGIN MINING</div>
@@ -302,6 +314,7 @@
         <div class="mine-season-stat"><div class="mine-season-val" id="sb-days">—</div><div class="mine-season-label">DAYS LEFT</div></div>
         <div class="mine-season-stat"><div class="mine-season-val" id="sb-tools">—</div><div class="mine-season-label">ACTIVE TOOLS</div></div>
         <div class="mine-season-stat"><div class="mine-season-val" id="sb-rate">—</div><div class="mine-season-label">COMBINED RATE/s</div></div>
+        <div class="mine-season-stat"><div class="mine-season-val" id="sb-pool" style="color:var(--mine-green);">—</div><div class="mine-season-label">TODAY'S POOL</div></div>
         <div style="flex:1"></div>
         <div style="font-size:0.62em; color:#303040; font-family:'Courier New',monospace; line-height:1.7; text-align:right;">PRIZE POOL: TBD<br>PHASE 1 — LOCAL TRACKING</div>
     </div>
@@ -384,6 +397,13 @@
     <div class="select-note">Pick 1–3 AW tools. Each tool mines independently. Loadout locks for 24 hours after confirming.</div>
     <div id="select-land-hint" class="select-land-hint" style="display:none;"></div>
     <div id="select-status" style="margin-top:10px; font-family:'Courier New',monospace; font-size:0.72em; color:#505060; letter-spacing:1px; margin-bottom:12px;">LOADING YOUR TOOLS…</div>
+
+    <div class="stats-key">
+        <b style="color:#606070;">OUTPUT</b> = mine_power — raw TLM yield per mining event &nbsp;·&nbsp;
+        <b style="color:#606070;">CHARGE</b> = delay in seconds — time between mines &nbsp;·&nbsp;
+        <b style="color:#606070;">SHARD</b> = nft_points — rare mineral luck bonus, scaled by charge speed &nbsp;·&nbsp;
+        <b style="color:var(--mine-green);">SHINE</b> = the primary score multiplier — invest in shine tiers to dominate the leaderboard
+    </div>
 
     <div class="tool-grid" id="tool-grid"></div>
 
@@ -562,8 +582,11 @@
     </div>
 
     <div style="margin-top:16px; font-size:0.62em; color:#303040; font-family:'Courier New',monospace; line-height:1.7;">
-        MINERAL VALUES: BIOMASS ×2 pts &nbsp;·&nbsp; SILICA ×5 pts &nbsp;·&nbsp; METAL ×10 pts &nbsp;·&nbsp; CRYSTITE ×20 pts &nbsp;&nbsp;—&nbsp;&nbsp;
-        SHINE BONUS: Gold ×1.10 &nbsp;·&nbsp; Stardust ×1.25 &nbsp;·&nbsp; Antimatter ×1.45 &nbsp;·&nbsp; X-Dimension ×1.70
+        MINERAL VALUES: BIOMASS ×2 pts &nbsp;·&nbsp; SILICA ×5 pts &nbsp;·&nbsp; METAL ×10 pts &nbsp;·&nbsp; CRYSTITE ×20 pts
+        <br>RARITY × SHINE MULT: Common Stone ×1 · Gold ×3 · Stardust ×12 &nbsp;/&nbsp;
+        Rare Stone ×3 · Gold ×10 · Stardust ×30 · Antimatter ×55 &nbsp;/&nbsp;
+        Epic Stone ×5 · Gold ×15 · Stardust ×45 · Antimatter ×64 · X-Dim ×85 &nbsp;/&nbsp;
+        Legendary Stone ×30 → X-Dim ×420 &nbsp;·&nbsp; Mythical Stone ×45 → X-Dim ×620
     </div>
 </div>
 
@@ -593,11 +616,30 @@ const HYPERION_NODES = [
     'https://api.waxsweden.org'
 ];
 
-const RARITY_MOD = { abundant:0.5, common:1.0, uncommon:1.08, rare:1.18, epic:1.3, legendary:1.5, mythical:1.75, mythic:1.75 };
+// Testing mode — disables the 24h swap lock so loadout can be freely swapped
+const TESTING_MODE = true;
+
+// Combined rarity × shine multiplier table.
+// Crossing tiers: common stardust ≈ rare stone ≈ epic stone (normalized at ×3–5)
+const RARITY_SHINE_MULT = {
+    abundant:  { stone:0.5,  gold:1.5 },
+    common:    { stone:1,    gold:3,    stardust:12 },
+    uncommon:  { stone:2,    gold:6,    stardust:20 },
+    rare:      { stone:3,    gold:10,   stardust:30,  antimatter:55 },
+    epic:      { stone:5,    gold:15,   stardust:45,  antimatter:64,  xdimension:85 },
+    legendary: { stone:30,   gold:90,   stardust:200, antimatter:300, xdimension:420 },
+    mythical:  { stone:45,   gold:135,  stardust:300, antimatter:450, xdimension:620 },
+    mythic:    { stone:45,   gold:135,  stardust:300, antimatter:450, xdimension:620 }
+};
+
+// Reference delay for the charge-time normalizer: sqrt(REF_DELAY / delay)
+// Fast tools (<60s) get a shard bonus boost; slow tools get it reduced
+const REF_DELAY = 60;
 const NFT_PTS_SCALE = 300;
 
-// Shine multiplier — each tier above stone adds to the score rate
-const SHINE_MULT = { stone:1.0, gold:1.10, stardust:1.25, antimatter:1.45, xdimension:1.70 };
+// 6-day rotating daily rarity pool — featured rarity gets a large score multiplier
+const RARITY_POOLS = ['common','uncommon','rare','epic','legendary','mythical'];
+const POOL_BONUS   = { common:8, uncommon:6, rare:4, epic:3, legendary:2, mythical:2 };
 
 const MINERAL_DIST = {
     Extractor:   { biomass:0.35, silica:0.40, metal:0.20, crystite:0.05 },
@@ -721,19 +763,52 @@ function daysLeftInWeek() {
     return Math.max(0, (getWeekStart() + WEEK_MS - Date.now()) / (24*3600*1000));
 }
 function hoursUntilSwap(lastSwap) {
+    if (TESTING_MODE) return 0;
     if (!lastSwap) return 0;
     return Math.max(0, (SWAP_LOCK_MS - (Date.now() - lastSwap)) / 3600000);
+}
+
+// ── BALANCE HELPERS ────────────────────────────────────────────────────────────
+function getRarityShine(rarity, shine) {
+    var row = RARITY_SHINE_MULT[(rarity||'common').toLowerCase()] || RARITY_SHINE_MULT.common;
+    return row[(shine||'stone').toLowerCase()] || row.stone || 1;
+}
+function getDailyPool() {
+    return RARITY_POOLS[Math.floor(Date.now() / 86400000) % RARITY_POOLS.length];
+}
+function getPoolBonus(rarity) {
+    var pool = getDailyPool();
+    return (rarity||'').toLowerCase() === pool ? (POOL_BONUS[pool] || 1) : 1;
+}
+function getEffectiveDist(tool) {
+    var base = MINERAL_DIST[tool.type] || MINERAL_DIST.ExoTool;
+    var r = (tool.rarity || '').toLowerCase();
+    if (r === 'legendary') return blendDist(base, MINERAL_DIST.Explosive, 0.15);
+    if (r === 'mythical' || r === 'mythic') return blendDist3(base, MINERAL_DIST.Explosive, MINERAL_DIST.ExoTool, 0.12, 0.12);
+    return base;
+}
+function blendDist(a, b, w) {
+    var r = {};
+    MINERAL_KEYS.forEach(function(k){ r[k] = a[k]*(1-w) + b[k]*w; });
+    return r;
+}
+function blendDist3(a, b, c, wb, wc) {
+    var wa = 1-wb-wc;
+    var r = {};
+    MINERAL_KEYS.forEach(function(k){ r[k] = a[k]*wa + b[k]*wb + c[k]*wc; });
+    return r;
 }
 
 // ── MINING ENGINE ──────────────────────────────────────────────────────────────
 function toolRate(tool, landType, mineMult) {
     if (!tool.mine_power || !tool.delay) return 0;
-    var rarMod   = RARITY_MOD[tool.rarity] || 1.0;
-    var shineMod = SHINE_MULT[(tool.shine||'stone').toLowerCase()] || 1.0;
-    var nftMod   = 1 + (tool.nft_points || 0) / NFT_PTS_SCALE;
-    var synMod   = (landType && TYPE_SYNERGY[landType]) ? (TYPE_SYNERGY[landType][tool.type] || 1.0) : 1.0;
-    var mMult    = mineMult || 1.0;
-    return (tool.mine_power / tool.delay) * rarMod * shineMod * nftMod * synMod * mMult;
+    var rsMult    = getRarityShine(tool.rarity, tool.shine);
+    var delayNorm = Math.sqrt(REF_DELAY / Math.max(tool.delay, 1));
+    var nftMod    = 1 + (tool.nft_points || 0) / NFT_PTS_SCALE * delayNorm;
+    var synMod    = (landType && TYPE_SYNERGY[landType]) ? (TYPE_SYNERGY[landType][tool.type] || 1.0) : 1.0;
+    var poolMult  = getPoolBonus(tool.rarity);
+    var mMult     = mineMult || 1.0;
+    return (tool.mine_power / tool.delay) * rsMult * nftMod * synMod * poolMult * mMult;
 }
 
 function applyTick(session) {
@@ -745,7 +820,7 @@ function applyTick(session) {
     for (var i = 0; i < session.loadout.length; i++) {
         var tool = session.loadout[i];
         var rate = toolRate(tool, landType, mineMult);
-        var dist = MINERAL_DIST[tool.type] || MINERAL_DIST.ExoTool;
+        var dist = getEffectiveDist(tool);
         var out  = rate * elapsed;
         MINERAL_KEYS.forEach(function(k){ session.accumulated[k] += out * dist[k]; });
     }
@@ -764,7 +839,7 @@ function projectedWeekScore(loadout, landType, mineMult) {
     var scorePerSec = 0;
     loadout.forEach(function(tool) {
         var rate = toolRate(tool, landType, mineMult);
-        var dist = MINERAL_DIST[tool.type] || MINERAL_DIST.ExoTool;
+        var dist = getEffectiveDist(tool);
         MINERAL_KEYS.forEach(function(k){ scorePerSec += rate * dist[k] * MINERAL_PTS[k]; });
     });
     return scorePerSec * daysLeftInWeek() * 86400;
@@ -1032,6 +1107,8 @@ function renderDashboard(wallet, session) {
     document.getElementById('sb-tools').textContent  = session.loadout.length || '—';
     var totalRate = session.loadout.reduce(function(s,t){ return s + toolRate(t, landType, mineMult); }, 0);
     document.getElementById('sb-rate').textContent   = totalRate.toFixed(4);
+    var pool = getDailyPool();
+    document.getElementById('sb-pool').textContent   = pool.toUpperCase() + ' ×' + (POOL_BONUS[pool] || 1);
     document.getElementById('top-bar-info').innerHTML = wallet + ' &nbsp;|&nbsp; Score: ' + fmtNum(session.weeklyScore);
 
     // Loadout strip
@@ -1045,7 +1122,7 @@ function renderDashboard(wallet, session) {
             var topM    = MINERAL_KEYS.reduce(function(best,k){ return dist[k] > dist[best] ? k : best; }, MINERAL_KEYS[0]);
             var synMod  = (landType && TYPE_SYNERGY[landType]) ? (TYPE_SYNERGY[landType][t.type] || 1.0) : 1.0;
             var synStr  = synMod !== 1.0 ? ('Land syn: ' + (synMod>1?'+':'-') + Math.abs(Math.round((synMod-1)*100)) + '%') : '';
-            var shStr   = t.shine && t.shine !== 'stone' ? ('Shine ×' + (SHINE_MULT[t.shine]||1.0).toFixed(2)) : '';
+            var shStr   = t.shine && t.shine !== 'stone' ? ('Shine ×' + getRarityShine(t.rarity, t.shine).toFixed(0)) : '';
             html += '<div class="loadout-tool active-slot">' +
                 '<span class="type-badge type-' + t.type + '">' + (TYPE_ICON[t.type]||'') + ' ' + t.type + '</span>' +
                 '<img class="loadout-tool-img" src="tool.worlds/' + t.templateId + '.webp" onerror="this.style.opacity=0.3" alt="' + t.name + '">' +
@@ -1212,7 +1289,7 @@ function parseTool(raw, session) {
 
 function dailyScore(tool, landType, mineMult) {
     var rate = toolRate(tool, landType, mineMult);
-    var dist = MINERAL_DIST[tool.type] || MINERAL_DIST.ExoTool;
+    var dist = getEffectiveDist(tool);
     var s = 0; MINERAL_KEYS.forEach(function(k){ s += rate * dist[k] * MINERAL_PTS[k]; });
     return s * 86400;
 }
@@ -1233,14 +1310,20 @@ function renderToolGrid(session) {
         var synColor = synM >= 1.2 ? '#e8a020' : synM >= 1.0 ? '#40c890' : '#505060';
         var synText  = lt ? ('<span style="color:' + synColor + ';">' + (synM>=1?'+':'') + Math.round((synM-1)*100) + '% ' + lt + '</span>') : '';
         var shineText = tool.shine !== 'stone' ? shineLabel(tool.shine) : '';
+        var poolM  = getPoolBonus(tool.rarity);
+        var poolTag = poolM > 1 ? '<div class="pool-bonus-tag">★ ' + getDailyPool().toUpperCase() + ' DAY ×' + poolM + '</div>' : '';
+        var rsMult = getRarityShine(tool.rarity, tool.shine);
+        var delayNorm = Math.sqrt(REF_DELAY / Math.max(tool.delay, 1));
         return '<div class="tool-card' + (isSel?' sel':'') + (dis?' disabled':'') + '" onclick="toggleTool(\'' + tool.assetId + '\')">' +
             (num ? '<div class="tool-card-num">' + num + '</div>' : '') +
             '<span class="tool-card-type"><span class="type-badge type-' + tool.type + '">' + (TYPE_ICON[tool.type]||'') + ' ' + tool.type + '</span></span>' +
             '<img class="tool-card-img" src="tool.worlds/' + tool.templateId + '.webp" onerror="this.style.opacity=0.3" alt="' + tool.name + '">' +
             '<div class="tool-card-name">' + tool.name + '</div>' +
-            '<div class="tool-card-score">⚡' + tool.mine_power + ' ⏱' + tool.delay + 's</div>' +
+            '<div class="tool-card-score" title="Output / Charge / Shard">⚡' + tool.mine_power + ' ⏱' + tool.delay + 's' + (tool.nft_points ? ' 🔮' + tool.nft_points : '') + '</div>' +
             '<div class="tool-card-score" style="color:#808090;">' + rarLabel(tool.rarity) + (shineText ? ' · ' + shineText : '') + '</div>' +
+            '<div class="tool-card-score" style="color:#c0a030;" title="Rarity×Shine multiplier">Shine ×' + rsMult.toFixed(0) + '</div>' +
             '<div class="tool-card-score">' + fmtNum(dailyScore(tool,lt,mm)) + ' pts/day</div>' +
+            poolTag +
             (synText ? '<div class="tool-card-syn">' + synText + '</div>' : '') +
         '</div>';
     }).join('');
