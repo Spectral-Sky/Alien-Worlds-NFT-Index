@@ -25,15 +25,17 @@
         });
         window.walletKit = kit;
         try {
-            const session = await kit.restore();
+            const _tout = new Promise((_,r) => setTimeout(() => r(new Error('timeout')), 4000));
+            const session = await Promise.race([kit.restore(), _tout]);
             if (session) {
                 window.walletSession = session;
                 localStorage.setItem('naron_wallet', String(session.actor));
                 if (typeof onWalletReady === 'function') onWalletReady();
             }
         } catch(e) {
-            localStorage.removeItem('naron_wallet');
-            if (typeof showLoginGate === 'function') showLoginGate();
+            if (!localStorage.getItem('naron_wallet')) {
+                if (typeof showLoginGate === 'function') showLoginGate();
+            }
         }
     </script>
     <style>
@@ -461,9 +463,10 @@
             onWalletReady();
         } catch(e){ gateStatus('FAILED — '+(e&&e.message||String(e))); }
     }
+    var _sceneStarted = false;
     function onWalletReady() {
         document.getElementById('login-gate').classList.add('gone');
-        startScene();
+        if (!_sceneStarted) { _sceneStarted = true; startScene(); }
     }
 
     // ── CONSTANTS ─────────────────────────────────────────────────────────────
@@ -1443,7 +1446,11 @@
 
     // ── INIT ──────────────────────────────────────────────────────────────────
     initStars();
-    if(localStorage.getItem('naron_wallet')) document.getElementById('login-gate').classList.add('gone');
+    if(localStorage.getItem('naron_wallet')) {
+        document.getElementById('login-gate').classList.add('gone');
+        _sceneStarted = true;
+        startScene();
+    }
 </script>
 
 </body>
