@@ -99,9 +99,9 @@
         .lt-Volcanic   { background:rgba(232,80,20,0.15);  color:#e05014; border:1px solid rgba(232,80,20,0.3); }
         .lt-Biosphere  { background:rgba(40,200,80,0.12);  color:#28c850; border:1px solid rgba(40,200,80,0.25); }
         .lt-Glacial    { background:rgba(80,160,240,0.12); color:#50a0f0; border:1px solid rgba(80,160,240,0.25); }
-        .lt-Electrical { background:rgba(240,220,40,0.12); color:#f0dc28; border:1px solid rgba(240,220,40,0.25); }
-        .lt-Radiation  { background:rgba(160,80,200,0.12); color:#a050c8; border:1px solid rgba(160,80,200,0.25); }
-        .lt-Luminite   { background:rgba(200,180,255,0.12);color:#c8b4ff; border:1px solid rgba(200,180,255,0.25); }
+        .lt-Arid    { background:rgba(240,180,60,0.12);  color:#f0b43c; border:1px solid rgba(240,180,60,0.25); }
+        .lt-Oceanic { background:rgba(40,160,220,0.12);  color:#28a0dc; border:1px solid rgba(40,160,220,0.25); }
+        .lt-Swamp   { background:rgba(60,140,80,0.12);   color:#3c8c50; border:1px solid rgba(60,140,80,0.25); }
         .lt-Unknown    { background:rgba(80,80,80,0.12);   color:#505050; border:1px solid #252535; }
 
         /* LOADOUT STRIP */
@@ -161,12 +161,6 @@
         .mine-lb-score { color:var(--theme-color); font-family:'Courier New',monospace; font-weight:bold; text-align:right; }
         .mine-lb-you { background:rgba(232,160,32,0.05); }
         .mine-empty { color:#303040; font-family:'Courier New',monospace; font-size:0.75em; letter-spacing:2px; padding:16px 0; text-align:center; }
-
-        /* PROOF CODE */
-        .proof-section { border:1px solid #1a1a28; padding:14px; margin-top:24px; }
-        .proof-label { font-family:'Courier New',monospace; font-size:0.68em; letter-spacing:2px; color:#404050; margin-bottom:6px; }
-        .proof-note  { font-size:0.7em; color:#406080; line-height:1.4; margin-bottom:10px; }
-        #proof-code-text { width:100%; background:#000; border:1px solid #1a1a28; color:#506080; padding:8px; font-family:'Courier New',monospace; font-size:0.65em; resize:none; height:60px; outline:none; word-break:break-all; }
 
         /* TOOL SELECTOR SCREEN */
         #screen-select { display:none; }
@@ -380,12 +374,6 @@
     <div class="section-title">SEASON LEADERBOARD (LOCAL)</div>
     <div class="mine-lb" id="mine-leaderboard"></div>
 
-    <div class="proof-section">
-        <div class="proof-label">PROOF CODE — SHARE WITH SEASON ADMIN</div>
-        <div class="proof-note">Submit this to Shade at end of week to record your score for prize distribution.</div>
-        <textarea id="proof-code-text" readonly></textarea>
-        <button class="mine-btn-ghost" onclick="copyProofCode()" style="margin-top:8px; font-size:0.7em; padding:7px 14px; letter-spacing:1px;">COPY PROOF CODE</button>
-    </div>
 </div>
 
 <!-- ══ TOOL SELECTOR SCREEN ═══════════════════════════════════════════════════ -->
@@ -489,10 +477,10 @@
     </div>
     <div class="lg-grid">
 
-        <!-- NARON / VOLCANIC -->
+        <!-- MAGOR / VOLCANIC -->
         <div class="lg-card">
             <div class="lg-planet-row">
-                <span class="lg-planet-name">NARON</span>
+                <span class="lg-planet-name">MAGOR</span>
                 <span class="land-type-pill lt-Volcanic">VOLCANIC</span>
             </div>
             <table class="lg-syn-table">
@@ -501,7 +489,7 @@
                 <tr><td>🦾 ExoTool</td>   <td class="syn-neut">+0%</td></tr>
                 <tr><td>🔬 Manipulator</td><td class="syn-bad">−15%</td></tr>
             </table>
-            <div class="lg-focus">Metal &amp; silica heavy — volcanic subduction pushes rich ore seams close to the surface. Extractors thrive here.</div>
+            <div class="lg-focus">Harsh volcanic mountains — constant tectonic activity pushes dense ore seams to the surface. Extractors and Explosives are built for this terrain. Deep crystite work is impractical in the heat.</div>
         </div>
 
         <!-- EYEKE / BIOSPHERE -->
@@ -516,7 +504,7 @@
                 <tr><td>🦾 ExoTool</td>   <td class="syn-neut">−5%</td></tr>
                 <tr><td>🔬 Manipulator</td><td class="syn-bad">−10%</td></tr>
             </table>
-            <div class="lg-focus">Biomass dominant — dense organic surface layer from the living world. Explosives clear the most material per detonation here.</div>
+            <div class="lg-focus">Vast oceans with lush coastal grasslands — enormous biomass accumulation across the surface layer. Explosives clear the most organic material per detonation anywhere in the system.</div>
         </div>
 
         <!-- KAVIAN / GLACIAL -->
@@ -531,52 +519,52 @@
                 <tr><td>⛏ Extractor</td>  <td class="syn-bad">−10%</td></tr>
                 <tr><td>💥 Explosive</td>  <td class="syn-bad">−20%</td></tr>
             </table>
-            <div class="lg-focus">Silica crystals locked in permafrost, with some deep crystite pockets. Mechanical drills and blasting are inefficient in extreme cold.</div>
+            <div class="lg-focus">Towering icy mountain ranges — silica and crystite locked deep in permafrost and glacial rock. Mechanical drills seize in the cold. Precision tools and chemical dissolution are the only practical approaches.</div>
         </div>
 
-        <!-- MAGOR / ELECTRICAL -->
+        <!-- NARON / ARID -->
         <div class="lg-card">
             <div class="lg-planet-row">
-                <span class="lg-planet-name">MAGOR</span>
-                <span class="land-type-pill lt-Electrical">ELECTRICAL</span>
+                <span class="lg-planet-name">NARON</span>
+                <span class="land-type-pill lt-Arid">ARID</span>
             </div>
             <table class="lg-syn-table">
-                <tr><td>🦾 ExoTool</td>   <td class="syn-great">+30%</td></tr>
-                <tr><td>🔬 Manipulator</td><td class="syn-good">+20%</td></tr>
-                <tr><td>⛏ Extractor</td>  <td class="syn-neut">−5%</td></tr>
-                <tr><td>💥 Explosive</td>  <td class="syn-bad">−15%</td></tr>
+                <tr><td>⛏ Extractor</td>  <td class="syn-great">+20%</td></tr>
+                <tr><td>💥 Explosive</td>  <td class="syn-good">+10%</td></tr>
+                <tr><td>🦾 ExoTool</td>   <td class="syn-neut">+0%</td></tr>
+                <tr><td>🔬 Manipulator</td><td class="syn-bad">−10%</td></tr>
             </table>
-            <div class="lg-focus">Conductive metal deposits and charged silica formations. Electrical interference makes traditional drilling unreliable; ExoTools handle the interference better.</div>
+            <div class="lg-focus">Mountains, desert plains, and scattered ocean coastline — exposed rock seams and wind-eroded mineral deposits reward bulk extraction. A versatile planet, but deep crystalline work is hampered by dry conditions.</div>
         </div>
 
-        <!-- VELES / RADIATION -->
+        <!-- VELES / OCEANIC -->
         <div class="lg-card">
             <div class="lg-planet-row">
                 <span class="lg-planet-name">VELES</span>
-                <span class="land-type-pill lt-Radiation">RADIATION</span>
+                <span class="land-type-pill lt-Oceanic">OCEANIC</span>
             </div>
             <table class="lg-syn-table">
-                <tr><td>🔬 Manipulator</td><td class="syn-great">+40%</td></tr>
+                <tr><td>🔬 Manipulator</td><td class="syn-great">+35%</td></tr>
                 <tr><td>🦾 ExoTool</td>   <td class="syn-good">+15%</td></tr>
-                <tr><td>⛏ Extractor</td>  <td class="syn-bad">−10%</td></tr>
+                <tr><td>⛏ Extractor</td>  <td class="syn-bad">−15%</td></tr>
                 <tr><td>💥 Explosive</td>  <td class="syn-bad">−25%</td></tr>
             </table>
-            <div class="lg-focus">Irradiated deep deposits have amplified crystite growth. Radiation accelerates crystal formation — Manipulators can exploit this for very high crystite yields.</div>
+            <div class="lg-focus">Vast shallow-water archipelagos — mineral-rich seafloor and submerged crystite formations. Manipulators dissolve marine crystal clusters with high precision. Mechanical drills and blasts are nearly useless underwater.</div>
         </div>
 
-        <!-- AETHER / LUMINITE -->
+        <!-- NERI / SWAMP -->
         <div class="lg-card">
             <div class="lg-planet-row">
-                <span class="lg-planet-name">AETHER</span>
-                <span class="land-type-pill lt-Luminite">LUMINITE</span>
+                <span class="lg-planet-name">NERI</span>
+                <span class="land-type-pill lt-Swamp">SWAMP</span>
             </div>
             <table class="lg-syn-table">
-                <tr><td>🔬 Manipulator</td><td class="syn-great">+45%</td></tr>
-                <tr><td>🦾 ExoTool</td>   <td class="syn-good">+10%</td></tr>
-                <tr><td>⛏ Extractor</td>  <td class="syn-bad">−15%</td></tr>
-                <tr><td>💥 Explosive</td>  <td class="syn-bad">−30%</td></tr>
+                <tr><td>💥 Explosive</td>  <td class="syn-great">+20%</td></tr>
+                <tr><td>🦾 ExoTool</td>   <td class="syn-good">+15%</td></tr>
+                <tr><td>⛏ Extractor</td>  <td class="syn-neut">+5%</td></tr>
+                <tr><td>🔬 Manipulator</td><td class="syn-bad">−10%</td></tr>
             </table>
-            <div class="lg-focus">Maximum crystite concentration — pure luminite veins run through the entire landmass. The most valuable land type to mine on. A Manipulator here outscores everything else.</div>
+            <div class="lg-focus">Desert, dense forest, and sprawling swampland — enormous biomass in the wet zones and exposed ore in the desert margins. Explosives unlock the richest organic layers. Crystite is scarce; Manipulators underperform here.</div>
         </div>
 
     </div>
@@ -585,8 +573,8 @@
         MINERAL VALUES: BIOMASS ×2 pts &nbsp;·&nbsp; SILICA ×5 pts &nbsp;·&nbsp; METAL ×10 pts &nbsp;·&nbsp; CRYSTITE ×20 pts
         <br>RARITY × SHINE MULT: Common Stone ×1 · Gold ×3 · Stardust ×12 &nbsp;/&nbsp;
         Rare Stone ×3 · Gold ×10 · Stardust ×30 · Antimatter ×55 &nbsp;/&nbsp;
-        Epic Stone ×5 · Gold ×15 · Stardust ×45 · Antimatter ×64 · X-Dim ×85 &nbsp;/&nbsp;
-        Legendary Stone ×30 → X-Dim ×4 &nbsp;·&nbsp; Mythical Stone ×45 → X-Dim ×5 &nbsp;·&nbsp; (X-Dim is a limited-run collector shine — intentionally modest)
+        Epic Stone ×5 · Gold ×15 · Stardust ×45 · Antimatter ×64 &nbsp;/&nbsp;
+        Legendary Stone ×30 · Mythical Stone ×45 &nbsp;·&nbsp; X-Dim ×4–5 (limited-run collector shine)
     </div>
 </div>
 
@@ -652,26 +640,27 @@ const MINERAL_KEYS = ['biomass','silica','metal','crystite'];
 const WEEK_MS  = 7 * 24 * 3600 * 1000;
 const SWAP_LOCK_MS = 24 * 3600 * 1000;
 
-// AW planets → land type (used for tool synergy)
+// AW planets → land type
+// Magor: volcanic harsh mountains. Eyeke: oceans + grasslands. Kavian: icy mountains.
+// Naron: mountains, desert, ocean. Veles: archipelagos, most ocean. Neri: deserts, forests, swamps.
 const PLANET_TYPE = {
-    naron: 'Volcanic', Naron: 'Volcanic',
+    magor: 'Volcanic', Magor: 'Volcanic',
     eyeke: 'Biosphere', Eyeke: 'Biosphere',
     kavian: 'Glacial', Kavian: 'Glacial',
-    magor: 'Electrical', Magor: 'Electrical',
-    veles: 'Radiation', Veles: 'Radiation',
-    aether: 'Luminite', Aether: 'Luminite'
+    naron: 'Arid', Naron: 'Arid',
+    veles: 'Oceanic', Veles: 'Oceanic',
+    neri: 'Swamp', Neri: 'Swamp',
+    aether: 'Swamp', Aether: 'Swamp'   // legacy fallback
 };
 
 // Land type × tool type → score multiplier
-// Volcanic = digging/blasting. Biosphere = organic clearing. Glacial/Electrical = precision.
-// Radiation/Luminite = chemical/spectral manipulation.
 const TYPE_SYNERGY = {
-    Volcanic:   { Extractor:1.25, Explosive:1.15, ExoTool:1.00, Manipulator:0.85 },
-    Biosphere:  { Extractor:1.10, Explosive:1.30, ExoTool:0.95, Manipulator:0.90 },
-    Glacial:    { Extractor:0.90, Explosive:0.80, ExoTool:1.25, Manipulator:1.20 },
-    Electrical: { Extractor:0.95, Explosive:0.85, ExoTool:1.30, Manipulator:1.20 },
-    Radiation:  { Extractor:0.90, Explosive:0.75, ExoTool:1.15, Manipulator:1.40 },
-    Luminite:   { Extractor:0.85, Explosive:0.70, ExoTool:1.10, Manipulator:1.45 }
+    Volcanic:  { Extractor:1.25, Explosive:1.15, ExoTool:1.00, Manipulator:0.85 },
+    Biosphere: { Extractor:1.10, Explosive:1.30, ExoTool:0.95, Manipulator:0.90 },
+    Glacial:   { Extractor:0.90, Explosive:0.80, ExoTool:1.25, Manipulator:1.20 },
+    Arid:      { Extractor:1.20, Explosive:1.10, ExoTool:1.00, Manipulator:0.90 },
+    Oceanic:   { Extractor:0.85, Explosive:0.75, ExoTool:1.15, Manipulator:1.35 },
+    Swamp:     { Extractor:1.05, Explosive:1.20, ExoTool:1.15, Manipulator:0.90 }
 };
 
 const TYPE_ICON = { Extractor:'⛏', Manipulator:'🔬', ExoTool:'🦾', Explosive:'💥' };
@@ -1164,16 +1153,6 @@ function renderDashboard(wallet, session) {
 
     renderLeaderboard(wallet, session.weeklyScore);
 
-    var proof = {
-        wallet: wallet, season: 1, weekStart: session.weekStart,
-        score: Math.round(session.weeklyScore),
-        loadout: session.loadout.map(function(t){ return { templateId:t.templateId, assetId:t.assetId, type:t.type, rarity:t.rarity, shine:t.shine }; }),
-        featuredLand: session.featuredLand ? session.featuredLand.assetId : null,
-        mineMult: session.landMineMult || 1.0,
-        mineCount: session.landMineCount || 0,
-        ts: Date.now()
-    };
-    document.getElementById('proof-code-text').value = btoa(JSON.stringify(proof));
 }
 
 function renderLeaderboard(myWallet, myScore) {
@@ -1189,13 +1168,6 @@ function renderLeaderboard(myWallet, myScore) {
     }).join('');
     var myRank = all.findIndex(function(r){ return r.wallet === myWallet; });
     document.getElementById('score-rank').textContent = myRank >= 0 ? 'RANK #' + (myRank+1) + ' of ' + all.length : '';
-}
-
-function copyProofCode() {
-    var txt = document.getElementById('proof-code-text').value;
-    navigator.clipboard.writeText(txt).catch(function(){});
-    event.target.textContent = '✓ COPIED';
-    setTimeout(function(){ event.target.textContent = 'COPY PROOF CODE'; }, 2000);
 }
 
 // ── TOOL SELECTOR ──────────────────────────────────────────────────────────────
