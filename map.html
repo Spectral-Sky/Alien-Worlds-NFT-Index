@@ -1303,6 +1303,13 @@
                 }
             }catch(e){}
         }
+        // Dedup by template_id — multiple assets from same template give no extra reduction
+        var seen={};
+        results=results.filter(function(n){
+            if(seen[n.template_id])return false;
+            seen[n.template_id]=true;
+            return true;
+        });
         // Sort highest AP reduction first
         results.sort(function(a,b){return b.mod_value-a.mod_value;});
         return results;
@@ -1408,9 +1415,9 @@
         if(!wallet){status.textContent='⚠ PLEASE LOG IN';status.className='err';return;}
         var cbs=document.querySelectorAll('.hire-nft-cb:checked');
         var asset_ids=[];
-        cbs.forEach(function(cb){asset_ids.push(cb.value);});
-        // Send base cost — contract validates NFTs and deducts the actual reduced amount
-        var authorizedCost=_hireBaseCost||100;
+        var reduction=0;
+        cbs.forEach(function(cb){asset_ids.push(cb.value);reduction+=Number(cb.dataset.mod||0);});
+        var authorizedCost=Math.max(1,(_hireBaseCost||100)-reduction);
         btn.disabled=true;btn.textContent='HIRING…';
         status.textContent='';status.className='';
         try{
