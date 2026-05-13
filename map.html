@@ -1239,30 +1239,41 @@
         _tavernTemplateMap=map;
     }
 
-    // Calculate total AP reduction for an nfttemplates row against a specific tavern's objectives
+    // Returns true if a single objective matches a template row
+    function _objMatch(tmplRow, obj){
+        if(!tmplRow||!obj)return false;
+        switch(obj.objective_type){
+            case 'schema':   return tmplRow.schema===obj.objective_string;
+            case 'rarity':   return tmplRow.rarity===obj.objective_string;
+            case 'shine':    return tmplRow.shine===obj.objective_string;
+            case 'element':  return tmplRow.element===obj.objective_string;
+            case 'race':     return tmplRow.race===obj.objective_string;
+            case 'cardname': return tmplRow.cardname===obj.objective_string;
+            case 'type':     return tmplRow.type===obj.objective_string;
+            case 'atk':      return Number(tmplRow.atk)===Number(obj.objective_value);
+            case 'def':      return Number(tmplRow.def)===Number(obj.objective_value);
+            case 'pow':      return Number(tmplRow.pow)===Number(obj.objective_value);
+            case 'movcost':  return Number(tmplRow.movcost)===Number(obj.objective_value);
+            case 'tlm.mp':   return Number(tmplRow.tlm_mp)===Number(obj.objective_value);
+            case 'nft.mp':   return Number(tmplRow.nft_mp)===Number(obj.objective_value);
+        }
+        return false;
+    }
+
+    // Per-NFT potential reduction (for display label only — not used for the final cost)
     function calcHireMod(tmplRow, objectives){
         if(!objectives||!tmplRow)return 0;
-        var total=0;
-        objectives.forEach(function(obj){
-            var match=false;
-            switch(obj.objective_type){
-                case 'schema':   match=tmplRow.schema===obj.objective_string; break;
-                case 'rarity':   match=tmplRow.rarity===obj.objective_string; break;
-                case 'shine':    match=tmplRow.shine===obj.objective_string; break;
-                case 'element':  match=tmplRow.element===obj.objective_string; break;
-                case 'race':     match=tmplRow.race===obj.objective_string; break;
-                case 'cardname': match=tmplRow.cardname===obj.objective_string; break;
-                case 'type':     match=tmplRow.type===obj.objective_string; break;
-                case 'atk':      match=Number(tmplRow.atk)===Number(obj.objective_value); break;
-                case 'def':      match=Number(tmplRow.def)===Number(obj.objective_value); break;
-                case 'pow':      match=Number(tmplRow.pow)===Number(obj.objective_value); break;
-                case 'movcost':  match=Number(tmplRow.movcost)===Number(obj.objective_value); break;
-                case 'tlm.mp':   match=Number(tmplRow.tlm_mp)===Number(obj.objective_value); break;
-                case 'nft.mp':   match=Number(tmplRow.nft_mp)===Number(obj.objective_value); break;
-            }
-            if(match)total+=Number(obj.mod_value||0);
-        });
-        return total;
+        return objectives.reduce(function(t,obj){return t+(_objMatch(tmplRow,obj)?Number(obj.mod_value||0):0);},0);
+    }
+
+    // True cost reduction: each objective counts once if ANY selected template covers it
+    function calcTotalReduction(checkedTids, objectives){
+        if(!objectives||!checkedTids||!checkedTids.length)return 0;
+        var tmpls=checkedTids.map(function(tid){return _tavernTemplateMap&&_tavernTemplateMap[tid];}).filter(Boolean);
+        return objectives.reduce(function(t,obj){
+            var covered=tmpls.some(function(tmpl){return _objMatch(tmpl,obj);});
+            return t+(covered?Number(obj.mod_value||0):0);
+        },0);
     }
 
     async function loadPlayerHireNFTs(wallet, objectives){
@@ -1370,8 +1381,9 @@
     function updateHireCost(){
         var base=_hireBaseCost||100;
         var checked=document.querySelectorAll('.hire-nft-cb:checked');
-        var reduction=0;
-        checked.forEach(function(cb){reduction+=Number(cb.dataset.mod||0);});
+        var checkedTids=[];
+        checked.forEach(function(cb){if(cb.dataset.tid)checkedTids.push(cb.dataset.tid);});
+        var reduction=calcTotalReduction(checkedTids,_hireObjectives);
         var final=Math.max(1,base-reduction);
         var btn=document.getElementById('hire-btn');
         if(btn)btn.textContent='HIRE FIGHTER ('+final+' AP)';
@@ -1388,6 +1400,7 @@
     }
 
     var _hireBaseCost=100;
+    var _hireObjectives=[];
 
     async function showHirePanel(){
         var el=document.getElementById('hire-nft-list');
@@ -1403,6 +1416,7 @@
         }catch(e){_hireBaseCost=100;}
         document.getElementById('hire-btn').textContent='HIRE FIGHTER ('+_hireBaseCost+' AP)';
         var objectives=(_sel&&_sel.tavernEntry&&_sel.tavernEntry.objectives)||[];
+        _hireObjectives=objectives;
         var nfts=await loadPlayerHireNFTs(wallet,objectives);
         renderHireNFTs(nfts,_hireBaseCost);
     }
@@ -1415,8 +1429,9 @@
         if(!wallet){status.textContent='⚠ PLEASE LOG IN';status.className='err';return;}
         var cbs=document.querySelectorAll('.hire-nft-cb:checked');
         var asset_ids=[];
-        var reduction=0;
-        cbs.forEach(function(cb){asset_ids.push(cb.value);reduction+=Number(cb.dataset.mod||0);});
+        var checkedTids=[];
+        cbs.forEach(function(cb){asset_ids.push(cb.value);if(cb.dataset.tid)checkedTids.push(cb.dataset.tid);});
+        var reduction=calcTotalReduction(checkedTids,_hireObjectives);
         var authorizedCost=Math.max(1,(_hireBaseCost||100)-reduction);
         btn.disabled=true;btn.textContent='HIRING…';
         status.textContent='';status.className='';
