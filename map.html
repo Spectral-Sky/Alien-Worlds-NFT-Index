@@ -202,6 +202,14 @@
         #pos-refresh:hover { border-color:#607080; color:#8898a8; }
         #pos-refresh:disabled { opacity:0.4; cursor:default; }
         #cell-tip { position:fixed; pointer-events:none; display:none; background:#000; border:1px solid #3060a0; color:#60a8e0; font-size:0.62em; letter-spacing:1px; padding:5px 9px; z-index:700; white-space:nowrap; border-radius:2px; box-shadow:0 2px 8px rgba(0,0,0,0.7); }
+        .map-toast { position:fixed; bottom:32px; left:50%; transform:translateX(-50%) translateY(8px); padding:8px 22px; z-index:900; border-radius:4px; font-size:0.82em; letter-spacing:1px; pointer-events:none; opacity:0; transition:opacity 0.28s, transform 0.28s; white-space:nowrap; }
+        .map-toast.visible { opacity:1; transform:translateX(-50%) translateY(0); }
+        .map-toast.success { background:#fff; border:1.5px solid #3a8a3a; color:#2a6a2a; }
+        #expand-toggle { padding:3px 8px; font-size:0.68em; letter-spacing:1px; background:transparent; border:1px solid #2a3040; color:#445; cursor:pointer; transition:all 0.2s; text-transform:uppercase; }
+        #expand-toggle:hover { border-color:#607080; color:#8898a8; }
+        #expand-toggle.on { border-color:#3060a0; color:#60a8e0; }
+        #map-overlay.map-expanded { align-items:stretch; }
+        #map-overlay.map-expanded #map-box { max-width:none; max-height:none; width:100%; border-left:none; border-right:none; border-bottom:none; border-radius:0; box-shadow:none; }
         #hire-nft-panel { position:fixed; top:50%; transform:translateY(-50%); width:224px; background:rgba(3,6,15,0.97); border:1px solid rgba(192,144,96,0.35); border-radius:6px; padding:10px 8px 8px; z-index:502; display:none; }
         .hnp-cards { display:flex; gap:4px; justify-content:center; }
         .hnp-card { display:flex; flex-direction:column; align-items:center; gap:3px; }
@@ -379,6 +387,7 @@
                     <span id="coord-display">X:&#8212; &nbsp;Y:&#8212;</span>
                     <span id="active-planet-label">MAGOR</span>
                     <button id="grid-toggle" onclick="toggleGrid()">GRID</button>
+                    <button id="expand-toggle" onclick="toggleExpandMap()">EXPAND</button>
                     <span id="player-planet-display"></span>
                     <button id="pos-refresh" onclick="refreshPlayerPos()" title="Refresh player position">&#8635;</button>
                     <span id="portal-hint" style="margin-left:auto"></span>
@@ -777,6 +786,9 @@
 
     // ── STARS ─────────────────────────────────────────────────────────────────
     var _starSpeed = 5;
+    var _bgFrozen = false;       // pauses both stars + planet rotation loops
+    var _starsRestartFn = null;  // set by initStars() — call to restart after freeze
+    var _mapExpanded = false;
 
     function initStars() {
         var canvas=document.getElementById('stars-canvas');
@@ -788,6 +800,7 @@
         var stars=[];
         for (var i=0;i<160;i++) stars.push({x:(Math.random()-0.5)*W,y:(Math.random()-0.5)*H,z:Math.random()*W});
         function draw() {
+            if(_bgFrozen) return; // loop stops; _starsRestartFn() resumes it
             ctx.fillStyle='rgba(3,3,14,0.2)';
             ctx.fillRect(0,0,W,H);
             for (var i=0;i<stars.length;i++){
@@ -801,9 +814,9 @@
                 ctx.lineWidth=sz;
                 ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(sx,sy);ctx.stroke();
             }
-            // Planet is on its own CSS layer above — no drawImage needed here
             requestAnimationFrame(draw);
         }
+        _starsRestartFn = draw;
         draw();
     }
 
@@ -847,6 +860,7 @@
         var _glCanvas=document.getElementById('planet-webgl');
         (function frame(){
             requestAnimationFrame(frame);
+            if(_bgFrozen) return; // skip rotation + render when background is paused
             if(_mesh){
                 var spd=_mesh.userData.speedMultiplier||1;
                 _mesh.rotation.y+=BASE_SPEED*spd;
@@ -1339,6 +1353,7 @@
             await signTravel(wallet,_sel.x,_sel.y);
             status.textContent='✓ ('+_sel.x+', '+_sel.y+')';
             status.className='ok';
+            showToast('✓ TRAVEL COMPLETE');
             var destPlanet=_sel.portal?_sel.portal.to:_activePlanet;
             _playerPos={x:_sel.x,y:_sel.y,planet:destPlanet};
             applyMarker();
@@ -1386,6 +1401,7 @@
             else if(wax&&wax.api)await wax.api.transact({actions},{blocksBehind:3,expireSeconds:30});
             else throw new Error('No wallet session — please log in.');
             status.textContent='✓ TRAVELLED & HIRED';status.className='ok';
+            showToast('✓ TRAVELLED & HIRED');
             _playerPos={planet:_activePlanet,x:_sel.x,y:_sel.y};
             applyMarker();
             updatePlayerPlanetLabel();
@@ -1768,6 +1784,40 @@
             }
         }catch(e){if(lbl){lbl.textContent='ERROR';lbl.style.color='#905050';}}
         if(btn)btn.disabled=false;
+    }
+
+    // ── TOAST ─────────────────────────────────────────────────────────────────
+    function showToast(msg,type){
+        var t=document.createElement('div');
+        t.className='map-toast '+(type||'success');
+        t.textContent=msg;
+        document.body.appendChild(t);
+        requestAnimationFrame(function(){t.classList.add('visible');});
+        setTimeout(function(){
+            t.classList.remove('visible');
+            setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},350);
+        },2500);
+    }
+
+    // ── EXPAND MAP ────────────────────────────────────────────────────────────
+    function toggleExpandMap(){
+        _mapExpanded=!_mapExpanded;
+        document.getElementById('map-overlay').classList.toggle('map-expanded',_mapExpanded);
+        var btn=document.getElementById('expand-toggle');
+        btn.textContent=_mapExpanded?'COMPACT':'EXPAND';
+        btn.classList.toggle('on',_mapExpanded);
+        var stars=document.getElementById('stars-canvas');
+        var planet=document.getElementById('planet-webgl');
+        if(_mapExpanded){
+            _bgFrozen=true;
+            stars.style.transition='opacity 0.5s'; stars.style.opacity='0';
+            planet.style.transition='opacity 0.5s'; planet.style.opacity='0';
+        } else {
+            _bgFrozen=false;
+            if(_starsRestartFn)_starsRestartFn();
+            stars.style.transition='opacity 0.5s'; stars.style.opacity='';
+            // planet opacity is managed by setPlanetVisible() — leave it
+        }
     }
 
     // ── GRID TOGGLE ───────────────────────────────────────────────────────────
