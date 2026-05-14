@@ -223,6 +223,55 @@
         .hnp-obj-sq { font-size:0.6em; padding:3px 5px; border:1px solid; border-radius:2px; text-align:center; line-height:1.3; white-space:nowrap; }
         .hnp-obj-sq.covered { border-color:rgba(232,160,32,0.65); color:var(--gold); background:rgba(232,160,32,0.07); }
         .hnp-obj-sq.uncovered { border-color:rgba(80,80,80,0.3); color:#3a3a3a; }
+        #fighter-stat-pane { position:fixed; pointer-events:none; display:none; background:rgba(3,6,15,0.97); border:1px solid rgba(192,96,96,0.4); color:#9098a8; font-size:0.62em; letter-spacing:1px; padding:8px 11px; z-index:800; border-radius:4px; box-shadow:0 2px 14px rgba(0,0,0,0.85); min-width:155px; }
+        .fsp-header { font-size:1.05em; color:#e09080; letter-spacing:2px; margin-bottom:5px; white-space:nowrap; }
+        .fsp-sub { font-size:0.9em; color:#806060; margin-bottom:6px; letter-spacing:0.5px; }
+        .fsp-stat { display:flex; align-items:center; gap:5px; padding:2px 0; }
+        .fsp-stat img { width:11px; height:11px; flex-shrink:0; opacity:0.8; }
+        .fsp-stat-lbl { color:#505060; width:28px; flex-shrink:0; }
+        .fsp-stat-val { color:#a0b0c0; }
+        .fsp-stat-var { color:#504050; }
+        .fsp-target { font-size:0.88em; color:#605060; margin-top:5px; padding-top:4px; border-top:1px solid rgba(192,96,96,0.15); }
+        .ale-fighter-badge { cursor:help; display:inline-flex; align-items:center; gap:4px; padding:3px 7px; background:rgba(192,96,96,0.07); border:1px solid rgba(192,96,96,0.22); border-radius:3px; font-size:0.7em; color:#c08080; margin-top:4px; letter-spacing:0.5px; }
+        #fighters-btn { display:block; width:100%; padding:6px 6px; font-size:0.65em; letter-spacing:2px; background:transparent; border:1px dashed #334; color:#b06060; cursor:crosshair; transition:all 0.2s; text-align:center; text-transform:uppercase; flex-shrink:0; margin-top:6px; }
+        #fighters-btn:hover { border-color:#c06060; color:#e09080; background:rgba(192,96,96,0.06); border-style:solid; }
+        #fighters-overlay { position:fixed; inset:0; z-index:650; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.78); }
+        #fighters-overlay.open { display:flex; }
+        #fighters-panel { width:min(660px,95vw); max-height:88vh; background:rgba(3,6,15,0.99); border:1px solid rgba(192,96,96,0.28); border-radius:4px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.9); }
+        .fp-header { display:flex; align-items:center; gap:10px; padding:9px 14px 8px; border-bottom:1px solid rgba(192,96,96,0.12); flex-shrink:0; }
+        .fp-title { font-size:0.68em; letter-spacing:3px; color:#906050; flex:1; }
+        .fp-count { font-size:0.58em; color:#445; letter-spacing:1px; }
+        .fp-close { background:transparent; border:none; color:#446; cursor:pointer; font-size:1.3em; line-height:1; padding:0 2px; }
+        .fp-close:hover { color:#c09060; }
+        .fp-sort-bar { display:flex; gap:4px; padding:5px 10px; border-bottom:1px solid rgba(192,96,96,0.07); flex-shrink:0; align-items:center; }
+        .fp-sort-lbl { font-size:0.55em; color:#445; letter-spacing:1px; margin-right:2px; flex-shrink:0; }
+        .fp-sort-btn { padding:2px 7px; font-size:0.58em; letter-spacing:1px; background:transparent; border:1px solid #223; color:#446; cursor:pointer; transition:all 0.15s; text-transform:uppercase; }
+        .fp-sort-btn.active { border-color:rgba(192,96,96,0.45); color:#c08080; background:rgba(192,96,96,0.06); }
+        .fp-sort-btn:hover:not(.active) { border-color:#445; color:#8898a8; }
+        .fp-list { flex:1; overflow-y:auto; padding:2px 0; }
+        .fp-row { display:flex; align-items:center; gap:7px; padding:5px 12px; cursor:pointer; transition:background 0.1s; border-bottom:1px solid rgba(255,255,255,0.025); }
+        .fp-row:hover { background:rgba(192,96,96,0.07); }
+        .fp-marker { width:14px; text-align:center; font-size:0.75em; flex-shrink:0; }
+        .fp-class-e { font-size:0.9em; flex-shrink:0; width:18px; text-align:center; }
+        .fp-el-e { font-size:0.75em; flex-shrink:0; width:16px; text-align:center; }
+        .fp-name { flex:1; font-size:0.64em; color:#b0b0c0; letter-spacing:0.5px; min-width:80px; }
+        .fp-race { font-size:0.59em; color:#555565; width:68px; flex-shrink:0; }
+        .fp-level { font-size:0.64em; color:#c09060; white-space:nowrap; flex-shrink:0; width:36px; text-align:right; }
+        .fp-empty { font-size:0.65em; color:#445; padding:16px; text-align:center; letter-spacing:1px; }
+        .fp-loading { font-size:0.65em; color:#445; padding:16px; text-align:center; letter-spacing:1px; }
+        .fp-sheet { flex:1; overflow-y:auto; padding:12px 16px; }
+        .fp-sheet-back { background:transparent; border:none; color:#806040; cursor:pointer; font-size:0.6em; letter-spacing:2px; padding:0 0 10px 0; text-transform:uppercase; display:block; }
+        .fp-sheet-back:hover { color:#c09060; }
+        .fp-sheet-title { font-size:0.85em; color:#e0c090; letter-spacing:2px; margin-bottom:4px; }
+        .fp-sheet-sub { font-size:0.65em; color:#706050; letter-spacing:1px; margin-bottom:2px; }
+        .fp-sheet-meta { font-size:0.6em; color:#504040; letter-spacing:0.5px; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(192,96,96,0.1); }
+        .fp-sheet-stats { display:grid; grid-template-columns:1fr 1fr; gap:4px 20px; }
+        .fp-sheet-stat { display:flex; align-items:center; gap:5px; padding:2px 0; }
+        .fp-sheet-stat img { width:13px; height:13px; opacity:0.8; flex-shrink:0; }
+        .fp-sheet-stat-lbl { font-size:0.6em; color:#504050; width:32px; flex-shrink:0; }
+        .fp-sheet-stat-val { font-size:0.66em; }
+        .fp-sheet-stat-var { font-size:0.6em; color:#403040; }
+        .fp-sheet-target { font-size:0.6em; color:#605060; margin-top:8px; }
 
         /* ── LEGEND COLUMN ───────────────────────────────────────────────── */
         .map-legend {
@@ -434,6 +483,7 @@
                 </div>
 
                 <button id="qt-toggle" onclick="toggleQuickTravel()">QUICK TRAVEL</button>
+                <button id="fighters-btn" onclick="loadMyFighters()">&#9876; MY FIGHTERS</button>
 
                 <!-- action panel: appears below legend when a cell is clicked -->
                 <hr class="action-divider">
@@ -542,6 +592,25 @@
     var BOOST_PER_CLICK = 10;
     var MAX_MULTIPLIER  = 10000;
 
+    var FIGHTER_CLASSES = {
+        'voidwarden':   {e:'🛡',  n:'Voidwarden'},
+        'juggernaut':   {e:'💪',  n:'Juggernaut'},
+        'lunatic':      {e:'🤪',  n:'Lunatic'},
+        'arcanist':     {e:'✨',       n:'Arcanist'},
+        'hunter':       {e:'🔫',  n:'Hunter'},
+        'explosioneer': {e:'💣',  n:'Explosioneer'},
+        'mindblade':    {e:'🧠',  n:'Mindblade'},
+        'desperado':    {e:'🃏',  n:'Desperado'},
+        'astralknight': {e:'🙏',  n:'Astral Knight'},
+        'mystic':       {e:'🧙',  n:'Mystic'},
+        'voidcaller':   {e:'🌀',  n:'Voidcaller'},
+        'tactician':    {e:'🎯',  n:'Tactician'},
+    };
+    var FIGHTER_ELEMENTS = {
+        'fire':'🔥', 'nature':'🌿', 'metal':'⚙️',
+        'air':'💨',  'gem':'💎',    'neutral':'⬜',
+    };
+
     var PLANETS = {
         magor:  {name:'Magor',  color:'#e05030'},
         naron:  {name:'Naron',  color:'#30a060'},
@@ -626,6 +695,10 @@
 
     var _playerPlayedDungeons=new Set(); // "planet.land_id" strings beaten today
     var _playerLockedArenas=new Set();   // "planet.x.y" arenas where player's fighter is defending
+    var _arenaDefenderIds={};            // planet.x.y -> {fid, wallet} for all live arenas
+    var _fighterCache={};               // assetId -> fighter row cache
+    var _myFighters=[];                  // loaded from fighters.ale for logged-in wallet
+    var _fighterSort='level';             // current sort: 'level'|'class'|'element'|'marker'
 
     var LOCKED_SVG='<svg width="18" height="19" viewBox="0 0 18 19" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 1C12.1919 1 14.7246 3.66329 14.7246 6.87988V7.50488C15.2323 7.63 15.705 7.85309 16.1035 8.26465C16.622 8.80012 16.8245 9.45859 16.915 10.1543C17.0022 10.8244 17 11.6684 17 12.6631C17 13.6576 17.0022 14.5009 16.915 15.1709C16.8245 15.8666 16.622 16.5251 16.1035 17.0605C15.5807 17.6004 14.9308 17.8155 14.2422 17.9111C13.5856 18.0023 12.7606 18 11.7998 18H6.2002C5.23941 18 4.4144 18.0023 3.75781 17.9111C3.06921 17.8155 2.41926 17.6004 1.89648 17.0605C1.37801 16.5251 1.17553 15.8666 1.08496 15.1709C0.997791 14.5009 0.999999 13.6576 1 12.6631C1 11.6684 0.997765 10.8244 1.08496 10.1543C1.17553 9.45859 1.37798 8.80012 1.89648 8.26465C2.29498 7.85309 2.76766 7.63 3.27539 7.50488V6.87988C3.27539 3.66329 5.80808 1 9 1ZM9 4.08398C7.55273 4.08398 6.3252 5.30557 6.3252 6.87988V7.3252H11.6748V6.87988C11.6748 5.30557 10.4473 4.08398 9 4.08398Z" fill="#FFB800" stroke="#1C274C" stroke-width="2"/></svg>';
 
@@ -670,7 +743,12 @@
                 var planet=row.planet?normalizePlanet(row.planet):null;
                 var x=row.x,y=row.y;
                 if((!x||!y)&&row.land_id){var c=decodeLandId(row.land_id);if(c){x=c.x;y=c.y;}}
-                if(planet&&x&&y)_playerLockedArenas.add(planet+'.'+x+'.'+y);
+                if(planet&&x&&y){
+                var arKey=planet+'.'+x+'.'+y;
+                var fid=row.fighter_id||row.fighter||row.defender_fighter||row.defender_id||row.asset_id||null;
+                _arenaDefenderIds[arKey]={fid:fid,wallet:def};
+                if(def===wallet)_playerLockedArenas.add(arKey);
+            }
             });
             if(_playerLockedArenas.size>0)_refreshAllMaps();
         }catch(e){}
@@ -1327,9 +1405,50 @@
             showHirePanel();
         } else if(isArena){
             var isArenaLocked=_playerLockedArenas.has(_activePlanet+'.'+x+'.'+y);
-            info.innerHTML=isArenaLocked
-                ?'<strong style="color:#c06060;">ARENA</strong><br><span style="font-size:0.7em;color:#805050;">✗ Fighter defending — wait for 5 defeats</span>'
-                :'<strong style="color:#c06060;">ARENA</strong>';
+            var _arKey=_activePlanet+'.'+x+'.'+y;
+            var _defEntry=_arenaDefenderIds[_arKey]||null;
+            var _defBadge='';
+            if(_defEntry&&_defEntry.fid){
+                var _fid=String(_defEntry.fid);
+                var _fwal=_defEntry.wallet||'';
+                var _cached=_fighterCache[_fid];
+                var _badgeId='arena-def-'+x+'-'+y;
+                if(_cached){
+                    var _cls=(_cached.class||_cached.fighter_class||'').toLowerCase().replace(/[\s_-]/g,'');
+                    var _ci=FIGHTER_CLASSES[_cls]||{e:'⚔️',n:_cached.class||'Fighter'};
+                    var _el=(_cached.element||_cached.fighter_element||'').toLowerCase();
+                    var _ee=FIGHTER_ELEMENTS[_el]||'';
+                    var _rc=_cached.race||_cached.fighter_race||'';
+                    _defBadge='<span class="ale-fighter-badge"'
+                        +' data-fid="'+_fid+'"'
+                        +' data-fwal="'+_fwal+'"'
+                        +' onmouseenter="fetchAndShowStatPane(this.dataset.fid,this.dataset.fwal,event)"'
+                        +' onmousemove="_moveStatPane(event)" onmouseleave="hideStatPane()">'
+                        +_ci.e+' '+_ci.n+(_ee?' '+_ee:'')+(_rc?' · '+_rc:'')+'</span>';
+                } else {
+                    _defBadge='<span class="ale-fighter-badge"'
+                        +' id="'+_badgeId+'"'
+                        +' data-fid="'+_fid+'"'
+                        +' data-fwal="'+_fwal+'"'
+                        +' onmouseenter="fetchAndShowStatPane(this.dataset.fid,this.dataset.fwal,event)"'
+                        +' onmousemove="_moveStatPane(event)" onmouseleave="hideStatPane()">⚔️ DEFENDER</span>';
+                    fetchFighterData(_fid,_fwal).then(function(d){
+                        if(!d)return;
+                        var b=document.getElementById(''+_badgeId);
+                        if(!b)return;
+                        var cls2=(d.class||d.fighter_class||'').toLowerCase().replace(/[\s_-]/g,'');
+                        var ci2=FIGHTER_CLASSES[cls2]||{e:'⚔️',n:d.class||'Fighter'};
+                        var el2=(d.element||d.fighter_element||'').toLowerCase();
+                        var ee2=FIGHTER_ELEMENTS[el2]||'';
+                        var rc2=d.race||d.fighter_race||'';
+                        b.textContent=ci2.e+' '+ci2.n+(ee2?' '+ee2:'')+(rc2?' · '+rc2:'');
+                    });
+                }
+            }
+            var _arInfo='<strong style="color:#c06060;">ARENA</strong>';
+            if(_defBadge) _arInfo+='<br>'+_defBadge;
+            if(isArenaLocked) _arInfo+='<br><span style="font-size:0.65em;color:#805050;">✗ Your fighter is defending</span>';
+            info.innerHTML=_arInfo;
             if(!atCurrentPos){tBtn.innerHTML='TRAVEL >>'+tcSuffix; tBtn.style.display='';}
             if(!isArenaLocked) aBtn.style.display='';
         } else {
@@ -1481,20 +1600,27 @@
     // Returns true if a single objective matches a template row
     function _objMatch(tmplRow, obj){
         if(!tmplRow||!obj)return false;
+        var s=String(obj.objective_string||'').toLowerCase();
+        var v=obj.objective_value;
+        function strEq(a){return String(a==null?'':a).toLowerCase()===s;}
         switch(obj.objective_type){
-            case 'schema':   return tmplRow.schema===obj.objective_string;
-            case 'rarity':   return tmplRow.rarity===obj.objective_string;
-            case 'shine':    return tmplRow.shine===obj.objective_string;
-            case 'element':  return tmplRow.element===obj.objective_string;
-            case 'race':     return tmplRow.race===obj.objective_string;
-            case 'cardname': return tmplRow.cardname===obj.objective_string;
-            case 'type':     return tmplRow.type===obj.objective_string;
-            case 'atk':      return Number(tmplRow.atk)===Number(obj.objective_value);
-            case 'def':      return Number(tmplRow.def)===Number(obj.objective_value);
-            case 'pow':      return Number(tmplRow.pow)===Number(obj.objective_value);
-            case 'movcost':  return Number(tmplRow.movcost)===Number(obj.objective_value);
-            case 'tlm.mp':   return Number(tmplRow.tlm_mp)===Number(obj.objective_value);
-            case 'nft.mp':   return Number(tmplRow.nft_mp)===Number(obj.objective_value);
+            case 'schema':   return strEq(tmplRow.schema);
+            case 'rarity':   return strEq(tmplRow.rarity);
+            case 'shine':    return strEq(tmplRow.shine)||strEq(tmplRow.element);
+            case 'element':  return strEq(tmplRow.element)||strEq(tmplRow.shine);
+            case 'race':     return strEq(tmplRow.race);
+            case 'cardname': return strEq(tmplRow.cardname);
+            case 'type':     return strEq(tmplRow.type);
+            case 'atk':      return Number(tmplRow.atk)===Number(v);
+            case 'def':      return Number(tmplRow.def)===Number(v);
+            case 'pow':      return Number(tmplRow.pow)===Number(v);
+            case 'movcost':  return Number(tmplRow.movcost)===Number(v);
+            case 'tlm.mp':   return Number(tmplRow.tlm_mp)===Number(v);
+            case 'nft.mp':   return Number(tmplRow.nft_mp)===Number(v);
+        }
+        // Unknown type: try matching any field by that name
+        if(obj.objective_type&&tmplRow[obj.objective_type]!=null){
+            return strEq(tmplRow[obj.objective_type]);
         }
         return false;
     }
@@ -1695,6 +1821,11 @@
         cbs.forEach(function(cb){asset_ids.push(cb.value);if(cb.dataset.tid)checkedTids.push(cb.dataset.tid);});
         var reduction=calcTotalReduction(checkedTids,_hireObjectives);
         var authorizedCost=Math.max(1,(_hireBaseCost||100)-reduction);
+        console.log('[ALE hire] tids:',checkedTids,'reduction:',reduction,'cost:',authorizedCost);
+        checkedTids.forEach(function(tid){
+            var tmpl=_tavernTemplateMap&&_tavernTemplateMap[tid];
+            console.log('[ALE hire] tmpl['+tid+']:', tmpl?JSON.stringify(tmpl):'NOT FOUND');
+        });
         btn.disabled=true;btn.textContent='HIRING…';
         status.textContent='';status.className='';
         try{
@@ -1967,6 +2098,214 @@
     function _qEsc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
     // ── INIT ──────────────────────────────────────────────────────────────────
+    // ── FIGHTERS PANEL ───────────────────────────────────────────────────────
+
+    function _fightersSorted() {
+        var s = _myFighters.slice();
+        if (_fighterSort==='level')   s.sort(function(a,b){return (b.level||0)-(a.level||0);});
+        if (_fighterSort==='class')   s.sort(function(a,b){return (a.class||'').localeCompare(b.class||'');});
+        if (_fighterSort==='element') s.sort(function(a,b){return (a.element||a.fighter_element||'').localeCompare(b.element||b.fighter_element||'');});
+        if (_fighterSort==='marker')  s.sort(function(a,b){return (a.marker||a.marker_id||0)-(b.marker||b.marker_id||0);});
+        return s;
+    }
+
+    function _markerSym(m) {
+        var map={'0':'','1':'♥','2':'▲','3':'●','4':'★','5':'◆','6':'♦','7':'❤'};
+        return map[String(m)]||String(m);
+    }
+
+    async function loadMyFighters() {
+        var wallet=getWallet();
+        if(!wallet){showToast('⚠ PLEASE LOG IN');return;}
+        var overlay=document.getElementById('fighters-overlay');
+        if(!overlay)return;
+        overlay.classList.add('open');
+        var list=document.getElementById('fighters-list-inner');
+        if(list) list.innerHTML='<div class="fp-loading">LOADING FIGHTERS…</div>';
+        try {
+            var res=await fetchRows({code:'fighters.ale',scope:wallet,table:'fighters',limit:500,json:true});
+            _myFighters=res&&res.rows?res.rows:[];
+            // Also cache each fighter for stat pane use
+            _myFighters.forEach(function(f){
+                var aid=String(f.asset_id||f.key||'');
+                if(aid) _fighterCache[aid]=f;
+            });
+            renderFighterList();
+        } catch(e){
+            if(list) list.innerHTML='<div class="fp-empty">ERROR FETCHING FIGHTERS</div>';
+        }
+    }
+
+    function renderFighterList() {
+        var list=document.getElementById('fighters-list-inner');
+        var countEl=document.getElementById('fighters-count');
+        if(!list) return;
+        var sorted=_fightersSorted();
+        if(countEl) countEl.textContent=sorted.length+' FIGHTERS';
+        if(!sorted.length){list.innerHTML='<div class="fp-empty">NO FIGHTERS FOUND</div>';return;}
+        var html='';
+        sorted.forEach(function(f){
+            var origIdx=_myFighters.indexOf(f);
+            var cls=(f.class||f.fighter_class||'').toLowerCase().replace(/[\s_-]/g,'');
+            var ci=FIGHTER_CLASSES[cls]||{e:'⚔️',n:f.class||f.fighter_class||'?'};
+            var el=(f.element||f.fighter_element||'').toLowerCase();
+            var ee=FIGHTER_ELEMENTS[el]||'';
+            var race=f.race||f.fighter_race||'';
+            var lvl=f.level||f.lvl||'?';
+            var marker=f.marker||f.marker_id||'';
+            var msym=marker?_markerSym(marker):'';
+            html+='<div class="fp-row" onclick="showFighterSheet('+origIdx+')">'
+                +'<span class="fp-marker">'+msym+'</span>'
+                +'<span class="fp-class-e">'+ci.e+'</span>'
+                +'<span class="fp-name">'+ci.n+'</span>'
+                +'<span class="fp-race">'+race.toUpperCase()+'</span>'
+                +'<span class="fp-el-e">'+ee+'</span>'
+                +'<span class="fp-level">LV'+lvl+'</span>'
+                +'</div>';
+        });
+        list.innerHTML=html;
+    }
+
+    function showFighterSheet(origIdx) {
+        var f=_myFighters[origIdx];
+        if(!f) return;
+        var list=document.getElementById('fighters-list-inner');
+        if(!list) return;
+        var cls=(f.class||f.fighter_class||'').toLowerCase().replace(/[\s_-]/g,'');
+        var ci=FIGHTER_CLASSES[cls]||{e:'⚔️',n:f.class||f.fighter_class||'Fighter'};
+        var el=(f.element||f.fighter_element||'').toLowerCase();
+        var ee=FIGHTER_ELEMENTS[el]||'';
+        var race=f.race||f.fighter_race||'';
+        var lvl=f.level||f.lvl||'?';
+        var agePct=f.age_penalty||f.age_pen||'';
+        var marker=f.marker||f.marker_id||'';
+        var target=f.target||(f.stats&&f.stats.target)||'';
+        var s=f.stats||f;
+        var statDefs=[
+            {k:'damage',  i:'damage.svg',  l:'DMG', col:'#60a860'},
+            {k:'health',  i:'health.svg',  l:'HP',  col:'#60a860'},
+            {k:'cooldown',i:'cooldown.svg',l:'CD',  col:'#c07060'},
+            {k:'windup',  i:'windup.svg',  l:'WU',  col:'#c07060'},
+            {k:'taunt',   i:'taunt.svg',   l:'TNT', col:'#a0b0c0'},
+        ];
+        var statsHtml='';
+        statDefs.forEach(function(sd){
+            var base=(s[sd.k]!==undefined)?s[sd.k]:((f[sd.k+'_base']!==undefined)?f[sd.k+'_base']:null);
+            var vari=(s[sd.k+'_var']!==undefined)?s[sd.k+'_var']:null;
+            if(base===null||base===undefined) return;
+            statsHtml+='<div class="fp-sheet-stat">'
+                +'<img src="Ale%20images/'+sd.i+'" alt="">'
+                +'<span class="fp-sheet-stat-lbl">'+sd.l+'</span>'
+                +'<span class="fp-sheet-stat-val" style="color:'+sd.col+'">'+base+'</span>'
+                +(vari!==null?'<span class="fp-sheet-stat-var"> (\xb1'+vari+')</span>':'')
+                +'</div>';
+        });
+        var html='<button class="fp-sheet-back" onclick="renderFighterList()">◂ BACK TO LIST</button>'
+            +'<div class="fp-sheet-title">'+ci.e+' '+ci.n.toUpperCase()+'</div>'
+            +'<div class="fp-sheet-sub">'+(ee?ee+' ':'')+el.toUpperCase()+(race?' \xb7 '+race.toUpperCase():'')+'</div>'
+            +'<div class="fp-sheet-meta">LEVEL '+lvl+(agePct?' \xb7 AGE PENALTY: '+agePct:'')+(marker?' \xb7 MARKER: '+_markerSym(marker):'')+'</div>'
+            +'<div class="fp-sheet-stats">'+statsHtml+'</div>'
+            +(target?'<div class="fp-sheet-target">TARGET: '+target+'</div>':'');
+        list.innerHTML=html;
+    }
+
+    function setFighterSort(s) {
+        _fighterSort=s;
+        document.querySelectorAll('.fp-sort-btn').forEach(function(b){
+            b.classList.toggle('active',b.dataset.sort===s);
+        });
+        renderFighterList();
+    }
+
+    function closeFightersPanel() {
+        var overlay=document.getElementById('fighters-overlay');
+        if(overlay) overlay.classList.remove('open');
+    }
+
+    // ── FIGHTER STAT PANE ─────────────────────────────────────────────────────
+
+    async function fetchFighterData(assetId, wallet) {
+        if (!assetId) return null;
+        var key = String(assetId);
+        if (_fighterCache[key]) return _fighterCache[key];
+        var row = null;
+        // Try global scope first
+        try {
+            var r1 = await fetchRows({code:'fighters.ale',scope:'fighters.ale',table:'fighters',lower_bound:key,upper_bound:key,limit:1,json:true});
+            if (r1 && r1.rows && r1.rows.length) row = r1.rows[0];
+        } catch(e) {}
+        // Fallback: scope by wallet
+        if (!row && wallet) {
+            try {
+                var r2 = await fetchRows({code:'fighters.ale',scope:wallet,table:'fighters',lower_bound:key,upper_bound:key,limit:1,json:true});
+                if (r2 && r2.rows && r2.rows.length) row = r2.rows[0];
+            } catch(e) {}
+        }
+        if (row) _fighterCache[key] = row;
+        return row;
+    }
+
+    function _fspStat(data, key, icon, label) {
+        // Flexible stat extraction: try top-level, then nested .stats
+        var s = data.stats || data;
+        var base = (s[key] !== undefined) ? s[key] : ((data[key+'_base'] !== undefined) ? data[key+'_base'] : null);
+        var vari = (s[key+'_var'] !== undefined) ? s[key+'_var'] : ((s[key+'_variance'] !== undefined) ? s[key+'_variance'] : null);
+        if (base === null || base === undefined) return '';
+        return '<div class="fsp-stat">'
+            + '<img src="Ale%20images/'+icon+'" alt="">'
+            + '<span class="fsp-stat-lbl">'+label+'</span>'
+            + '<span class="fsp-stat-val">'+base
+            + (vari !== null ? ' <span class="fsp-stat-var">(\xb1'+vari+')</span>' : '')
+            + '</span></div>';
+    }
+
+    function showStatPane(data, evt) {
+        var pane = document.getElementById('fighter-stat-pane');
+        if (!pane) return;
+        var cls = String(data.class||data.fighter_class||'').toLowerCase().replace(/[\s_-]/g,'');
+        var clsInfo = FIGHTER_CLASSES[cls] || {e:'⚔️', n:(data.class||data.fighter_class||'Fighter')};
+        var elKey = String(data.element||data.fighter_element||'').toLowerCase();
+        var elEmoji = FIGHTER_ELEMENTS[elKey] || '';
+        var race = data.race || data.fighter_race || '';
+        var lvl = data.level || data.lvl || '';
+        var target = data.target || (data.stats && data.stats.target) || '';
+
+        var html = '<div class="fsp-header">'+clsInfo.e+' '+clsInfo.n.toUpperCase()+'</div>';
+        html += '<div class="fsp-sub">';
+        if (elEmoji) html += elEmoji+' ';
+        if (elKey) html += elKey.toUpperCase();
+        if (race) html += ' \xb7 '+race.toUpperCase();
+        if (lvl) html += ' \xb7 LV'+lvl;
+        html += '</div>';
+        html += _fspStat(data,'damage','damage.svg','DMG');
+        html += _fspStat(data,'health','health.svg','HP');
+        html += _fspStat(data,'cooldown','cooldown.svg','CD');
+        html += _fspStat(data,'windup','windup.svg','WU');
+        html += _fspStat(data,'taunt','taunt.svg','TNT');
+        if (target) html += '<div class="fsp-target">TARGET: '+target+'</div>';
+        pane.innerHTML = html;
+        pane.style.display = 'block';
+        _moveStatPane(evt);
+    }
+
+    function _moveStatPane(e) {
+        if (!e) return;
+        var pane = document.getElementById('fighter-stat-pane');
+        if (!pane || pane.style.display === 'none') return;
+        pane.style.left = (e.clientX + 16) + 'px';
+        pane.style.top  = Math.max(10, e.clientY - 24) + 'px';
+    }
+
+    function hideStatPane() {
+        var pane = document.getElementById('fighter-stat-pane');
+        if (pane) pane.style.display = 'none';
+    }
+
+    async function fetchAndShowStatPane(assetId, wallet, evt) {
+        var data = await fetchFighterData(assetId, wallet);
+        if (data) showStatPane(data, evt);
+    }
+
     initStars();
     updateWalletBtn();
     if(localStorage.getItem('naron_wallet')) {
@@ -1976,6 +2315,24 @@
     }
 </script>
 
+<div id="fighters-overlay" onclick="if(event.target===this)closeFightersPanel()">
+    <div id="fighters-panel">
+        <div class="fp-header">
+            <span class="fp-title">&#9876; MY FIGHTERS</span>
+            <span id="fighters-count" class="fp-count"></span>
+            <button class="fp-close" onclick="closeFightersPanel()">&#215;</button>
+        </div>
+        <div class="fp-sort-bar">
+            <span class="fp-sort-lbl">SORT:</span>
+            <button class="fp-sort-btn active" data-sort="level"   onclick="setFighterSort('level')">LEVEL</button>
+            <button class="fp-sort-btn"        data-sort="class"   onclick="setFighterSort('class')">CLASS</button>
+            <button class="fp-sort-btn"        data-sort="element" onclick="setFighterSort('element')">ELEMENT</button>
+            <button class="fp-sort-btn"        data-sort="marker"  onclick="setFighterSort('marker')">MARKER</button>
+        </div>
+        <div class="fp-list" id="fighters-list-inner"></div>
+    </div>
+</div>
+<div id="fighter-stat-pane"></div>
 <div id="cell-tip"></div>
 <div id="hire-nft-panel">
     <div id="hnp-slots"></div>
