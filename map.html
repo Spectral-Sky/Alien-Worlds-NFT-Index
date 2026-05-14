@@ -424,9 +424,10 @@
                     <div class="legend-title">SELECTED</div>
                     <div id="action-info"></div>
                     <div id="action-coord"></div>
-                    <button id="confirm-travel-btn" class="act-btn confirm"  onclick="doConfirm()"    style="display:none;">CONFIRM TRAVEL</button>
+                    <button id="confirm-travel-btn" class="act-btn confirm"  onclick="doConfirm()"      style="display:none;">CONFIRM TRAVEL</button>
+                    <button id="travel-hire-btn"    class="act-btn hire"     onclick="doTravelHire()"  style="display:none;">TRAVEL &amp; HIRE (100 AP)</button>
                     <button id="view-map-btn"        class="act-btn view-map" onclick="doViewPlanet()" style="display:none;">VIEW MAP</button>
-                    <button id="hire-btn"            class="act-btn hire"     onclick="doHire()" style="display:none;">HIRE FIGHTER (100 AP)</button>
+                    <button id="hire-btn"            class="act-btn hire"     onclick="doHire()"        style="display:none;">HIRE FIGHTER (100 AP)</button>
                     <div id="hire-nft-list"></div>
                     <button id="dungeon-btn"         class="act-btn dungeon"  style="display:none;">&#9935; PLAY DUNGEON</button>
                     <button id="arena-btn"           class="act-btn arena"    style="display:none;">&#9876; FIGHT ARENA</button>
@@ -618,12 +619,15 @@
             if(!res||!res.rows||!res.rows[0]||res.rows[0].wallet!==wallet)return;
             // Dungeons beaten today
             _playerPlayedDungeons=new Set(res.rows[0].played_dungeons||[]);
-            Object.keys(ALE_LOCATIONS).forEach(function(p){ALE_LOCATIONS[p].taverns=[];});
+            // Build new tavern list atomically to avoid a gap where onCell sees empty taverns
+            var newTaverns={};
+            Object.keys(ALE_LOCATIONS).forEach(function(p){newTaverns[p]=[];});
             (res.rows[0].active_taverns||[]).forEach(function(t){
                 var planet=normalizePlanet(t.planet);
                 if(!planet||!ALE_LOCATIONS[planet])return;
-                ALE_LOCATIONS[planet].taverns.push({x:t.x,y:t.y,objectives:t.objectives||[],land_id:t.land_id});
+                newTaverns[planet].push({x:t.x,y:t.y,objectives:t.objectives||[],land_id:t.land_id});
             });
+            Object.keys(newTaverns).forEach(function(p){ALE_LOCATIONS[p].taverns=newTaverns[p];});
             _refreshAllMaps();
             checkAndOpenTavern();
         }catch(e){}
@@ -1251,6 +1255,7 @@
         var info=document.getElementById('action-info');
         var coord=document.getElementById('action-coord');
         var tBtn=document.getElementById('confirm-travel-btn');
+        var thBtn=document.getElementById('travel-hire-btn');
         var vBtn=document.getElementById('view-map-btn');
         var hBtn=document.getElementById('hire-btn');
         var dBtn=document.getElementById('dungeon-btn');
@@ -1258,7 +1263,7 @@
         document.getElementById('action-status').textContent='';
         document.getElementById('action-status').className='';
         // hide all action buttons and clear NFT list
-        [tBtn,vBtn,hBtn,dBtn,aBtn].forEach(function(b){b.style.display='none';});
+        [tBtn,thBtn,vBtn,hBtn,dBtn,aBtn].forEach(function(b){b.style.display='none';});
         var hl=document.getElementById('hire-nft-list');
         if(hl){hl.classList.remove('open');hl.innerHTML='';}
         coord.textContent='('+x+', '+y+')';
@@ -1275,8 +1280,13 @@
             if(!isDungeonLocked) dBtn.style.display='';
         } else if(isTavern){
             info.innerHTML='<strong style="color:#c09060;">TAVERN</strong>';
-            tBtn.textContent='TRAVEL >>'; tBtn.style.display='';
-            hBtn.style.display='';
+            var atTavern=_playerPos&&_playerPos.planet===_activePlanet&&_playerPos.x===x&&_playerPos.y===y;
+            if(atTavern){
+                hBtn.style.display='';
+            } else {
+                tBtn.textContent='TRAVEL >>'; tBtn.style.display='';
+                thBtn.textContent='TRAVEL & HIRE ('+(_hireBaseCost||100)+' AP)'; thBtn.style.display='';
+            }
             showHirePanel();
         } else if(isArena){
             var isArenaLocked=_playerLockedArenas.has(_activePlanet+'.'+x+'.'+y);
@@ -1343,6 +1353,42 @@
         }
         btn.disabled=false;
         btn.textContent=(_sel&&_sel.portal)?'TRAVEL TO PORTAL':(_sel&&(_sel.isTavern||_sel.isDungeon||_sel.isArena))?'TRAVEL >>':'CONFIRM TRAVEL';
+    }
+
+    async function doTravelHire(){
+        if(!_sel||!_sel.isTavern)return;
+        var wallet=getWallet();
+        var btn=document.getElementById('travel-hire-btn');
+        var status=document.getElementById('action-status');
+        if(!wallet){status.textContent='⚠ PLEASE LOG IN';status.className='err';return;}
+        var cbs=document.querySelectorAll('.hire-nft-cb:checked');
+        if(!cbs.length){status.textContent='Select at least one NFT';status.className='err';return;}
+        var asset_ids=[],checkedTids=[];
+        cbs.forEach(function(cb){asset_ids.push(cb.value);if(cb.dataset.tid)checkedTids.push(cb.dataset.tid);});
+        var reduction=calcTotalReduction(checkedTids,_hireObjectives);
+        var authorizedCost=Math.max(1,(_hireBaseCost||100)-reduction);
+        btn.disabled=true;btn.textContent='SENDING…';
+        status.textContent='';status.className='';
+        try{
+            var actions=[
+                {account:'players.ale',name:'travel',authorization:[{actor:wallet,permission:'active'}],
+                 data:{wallet:wallet,x:_sel.x,y:_sel.y}},
+                {account:'players.ale',name:'hire',authorization:[{actor:wallet,permission:'active'}],
+                 data:{wallet:wallet,asset_ids:asset_ids,cost_action_points:authorizedCost}}
+            ];
+            if(window.walletSession)await window.walletSession.transact({actions});
+            else if(wax&&wax.api)await wax.api.transact({actions},{blocksBehind:3,expireSeconds:30});
+            else throw new Error('No wallet session — please log in.');
+            status.textContent='✓ TRAVELLED & HIRED';status.className='ok';
+            _playerPos={planet:_activePlanet,x:_sel.x,y:_sel.y};
+            applyMarker();
+            updatePlayerPlanetLabel();
+            setTimeout(dismissStrip,3000);
+        }catch(e){
+            status.textContent='✗ '+((e&&e.message)||'Failed').substring(0,60);
+            status.className='err';
+        }
+        btn.disabled=false;btn.textContent='TRAVEL & HIRE ('+authorizedCost+' AP)';
     }
 
     // ── HIRE FIGHTER ──────────────────────────────────────────────────────────
@@ -1511,6 +1557,8 @@
         var final=Math.max(1,base-reduction);
         var btn=document.getElementById('hire-btn');
         if(btn)btn.textContent='HIRE FIGHTER ('+final+' AP)';
+        var thBtn=document.getElementById('travel-hire-btn');
+        if(thBtn&&thBtn.style.display!=='none')thBtn.textContent='TRAVEL & HIRE ('+final+' AP)';
         var summary=document.getElementById('hire-cost-summary');
         var count=checked.length;
         if(summary&&reduction>0)summary.textContent='est. ~'+final+' AP with '+count+' NFT'+(count!==1?'s':'');
