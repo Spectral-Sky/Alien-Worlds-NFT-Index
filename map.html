@@ -1035,6 +1035,12 @@
         }catch(e){}
         _activePlanet=playerPlanet;
         loadPlanetMesh(playerPlanet,true);
+        if(_skipReq){
+            // User clicked SKIP before fetch completed — map already visible on default planet; correct it now
+            setActiveTab(playerPlanet);
+            buildMap(playerPlanet);
+            checkAndOpenTavern();
+        }
         setTimeout(function(){
             rampStars(0.35,1800,function(){
                 if(!_skipReq){showArrival(playerPlanet);setTimeout(revealMap,800);}
@@ -1542,6 +1548,25 @@
 
     function _hEsc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
+    // Greedy optimal: pick up to 3 cards that together maximise calcTotalReduction
+    function autoSelectOptimalNFTs(nfts, objectives){
+        var selected=[], remaining=nfts.filter(function(n){return n.mod_value>0;});
+        for(var i=0;i<3;i++){
+            if(!remaining.length)break;
+            var baseTids=selected.map(function(n){return n.template_id;});
+            var baseR=calcTotalReduction(baseTids,objectives);
+            var bestIdx=-1, bestR=baseR;
+            for(var j=0;j<remaining.length;j++){
+                var r=calcTotalReduction(baseTids.concat([remaining[j].template_id]),objectives);
+                if(r>bestR){bestR=r;bestIdx=j;}
+            }
+            if(bestIdx<0)break;
+            selected.push(remaining[bestIdx]);
+            remaining.splice(bestIdx,1);
+        }
+        return selected.map(function(n){return n.template_id;});
+    }
+
     function renderHireNFTs(nfts,baseCost){
         var el=document.getElementById('hire-nft-list');
         if(!el)return;
@@ -1551,15 +1576,13 @@
         }
         var html='<div class="hire-cost-note">Select up to 3 NFTs to reduce AP cost:</div>';
         var schemaShort={'arms.worlds':'arms','tool.worlds':'tool','crew.worlds':'crew','level.worlds':'level','faces.worlds':'face','land.worlds':'land'};
-        var autoCount=0;
+        var optimalTids=autoSelectOptimalNFTs(nfts,_hireObjectives);
         nfts.forEach(function(n,i){
-            // Auto-check top 3 with mod_value > 0
-            var autoCheck=n.mod_value>0&&autoCount<3;
-            if(autoCheck)autoCount++;
+            var autoCheck=optimalTids.indexOf(n.template_id)>=0;
             var sc=schemaShort[n.schema]||n.schema||'';
             var meta='#'+n.asset_id+' · '+_hEsc(n.rarity)+(n.shine&&n.shine!=='-'?' · '+_hEsc(n.shine):'')+' · '+sc;
-            html+='<label class="hire-nft-row" onclick="onHireNftChange(event,this)">'
-                +'<input type="checkbox" class="hire-nft-cb" value="'+_hEsc(n.asset_id)+'" data-mod="'+Number(n.mod_value)+'"'+(autoCheck?' checked':'')+' data-tid="'+_hEsc(n.template_id||'')+'">'
+            html+='<label class="hire-nft-row">'
+                +'<input type="checkbox" class="hire-nft-cb" value="'+_hEsc(n.asset_id)+'" data-mod="'+Number(n.mod_value)+'"'+(autoCheck?' checked':'')+' data-tid="'+_hEsc(n.template_id||'')+'" onchange="onHireNftChange(this)">'
                 +'<div class="hire-nft-info">'
                 +'<span class="hire-nft-name">'+_hEsc(n.name)+'</span>'
                 +'<span class="hire-nft-meta">'+meta+'</span>'
@@ -1574,19 +1597,11 @@
         showHireNFTPanel();
     }
 
-    function onHireNftChange(e,label){
-        // Enforce max 3 selected
-        var cb=label.querySelector('.hire-nft-cb');
-        var allCbs=document.querySelectorAll('.hire-nft-cb');
+    function onHireNftChange(cb){
         var checked=document.querySelectorAll('.hire-nft-cb:checked');
-        if(cb&&cb.checked&&checked.length>3){
-            cb.checked=false;
-            e.preventDefault();
-            return;
-        }
-        // Dim labels that can't be selected when at limit
+        if(cb.checked&&checked.length>3){cb.checked=false;return;}
         var nowChecked=document.querySelectorAll('.hire-nft-cb:checked').length;
-        allCbs.forEach(function(c){
+        document.querySelectorAll('.hire-nft-cb').forEach(function(c){
             c.closest('label').style.opacity=(nowChecked>=3&&!c.checked)?'0.35':'';
             c.disabled=nowChecked>=3&&!c.checked;
         });
@@ -1780,6 +1795,7 @@
                     _playerPos={planet:pn,x:row.x||1,y:row.y||1};
                     applyMarker();
                     updatePlayerPlanetLabel();
+                    if(pn!==_activePlanet)switchPlanet(pn);
                 }
             }
         }catch(e){if(lbl){lbl.textContent='ERROR';lbl.style.color='#905050';}}
