@@ -41,7 +41,7 @@
     <style>
         :root { --gold: #e8a020; }
         *, *::before, *::after { box-sizing: border-box; }
-        body { margin:0; padding:0; background:#03030e; color:#d0d0d0; font-family:'Courier New',monospace; overflow:hidden; height:100vh; width:100vw; cursor:crosshair; }
+        body { margin:0; padding:0; background:#03030e; color:#d0d0d0; font-family:'Segoe UI', system-ui, -apple-system, Arial, sans-serif; font-size:16px; overflow:hidden; height:100vh; width:100vw; cursor:crosshair; }
         a, button { cursor:crosshair !important; }
 
         /* ── BACKGROUND LAYERS ──────────────────────────────────────────── */
@@ -67,7 +67,7 @@
         .ph-logo a:hover { opacity:0.8; }
         .ph-right { display:flex; align-items:center; gap:12px; }
         .ph-right img { height:32px; opacity:0.6; }
-        #ph-wallet-btn { background:transparent; border:1px solid rgba(232,160,32,0.35); color:#888; font-family:'Courier New',monospace; font-size:0.7em; letter-spacing:1px; text-transform:uppercase; padding:5px 12px; cursor:pointer; transition:all 0.2s; }
+        #ph-wallet-btn { background:transparent; border:1px solid rgba(232,160,32,0.35); color:#888; font-size:0.7em; letter-spacing:1px; text-transform:uppercase; padding:5px 12px; cursor:pointer; transition:all 0.2s; }
         #ph-wallet-btn:hover { border-color:var(--gold); color:var(--gold); }
         #ph-wallet-btn.connected { color:var(--gold); border-color:rgba(232,160,32,0.6); }
 
@@ -79,7 +79,7 @@
         .gate-logo img { height:52px; opacity:0.85; }
         .gate-title { color:var(--gold); font-size:1.1em; letter-spacing:5px; margin:0 0 6px; text-transform:uppercase; }
         .gate-sub { color:#445; font-size:0.68em; letter-spacing:2px; margin:0 0 30px; }
-        .gate-btn { display:block; width:100%; padding:13px 0; margin-bottom:12px; background:transparent; border:1px dashed var(--gold); color:var(--gold); font-family:'Courier New',monospace; font-size:0.88em; letter-spacing:3px; text-transform:uppercase; cursor:pointer; transition:all 0.25s; }
+        .gate-btn { display:block; width:100%; padding:13px 0; margin-bottom:12px; background:transparent; border:1px dashed var(--gold); color:var(--gold); font-size:0.88em; letter-spacing:3px; text-transform:uppercase; cursor:pointer; transition:all 0.25s; }
         .gate-btn:hover { background:var(--gold); color:#000; border-style:solid; }
         #gate-status { color:#555; font-size:0.67em; letter-spacing:2px; margin-top:18px; min-height:1.5em; }
 
@@ -100,7 +100,7 @@
         #egg-msg.pop { animation:egg-pop 2s ease forwards; }
 
         /* ── SKIP BUTTON ─────────────────────────────────────────────────── */
-        #skip-btn { position:fixed; bottom:22px; right:22px; z-index:700; padding:7px 18px; background:rgba(0,0,0,0.7); border:1px solid #2a2a3a; color:#444; font-family:'Courier New',monospace; font-size:0.66em; letter-spacing:2px; cursor:pointer; display:none; transition:all 0.2s; }
+        #skip-btn { position:fixed; bottom:22px; right:22px; z-index:700; padding:7px 18px; background:rgba(0,0,0,0.7); border:1px solid #2a2a3a; color:#444; font-size:0.66em; letter-spacing:2px; cursor:pointer; display:none; transition:all 0.2s; }
         #skip-btn:hover { color:#888; border-color:#555; }
 
         /* ── MAP OVERLAY: centered floating panel ────────────────────────── */
@@ -129,7 +129,7 @@
             padding:5px; background:rgba(0,0,0,0.5);
             border-bottom:1px solid rgba(232,160,32,0.1);
             color:#446; font-size:0.58em; letter-spacing:3px; cursor:pointer;
-            font-family:'Courier New',monospace; text-transform:uppercase;
+            text-transform:uppercase;
             transition:color 0.2s; user-select:none; flex-shrink:0;
         }
         #minimize-btn:hover { color:#aaa; }
@@ -140,7 +140,7 @@
             border-bottom:2px solid rgba(232,160,32,0.15);
             padding:0 12px; overflow-x:auto; flex-shrink:0;
         }
-        .planet-tab { padding:8px 18px 10px; font-family:'Courier New',monospace; font-weight:bold; font-size:0.82em; letter-spacing:2px; text-transform:uppercase; background:transparent; border:none; color:#555; cursor:pointer; transition:all 0.2s; border-bottom:2px solid transparent; white-space:nowrap; flex-shrink:0; }
+        .planet-tab { padding:8px 18px 10px; font-weight:bold; font-size:0.82em; letter-spacing:2px; text-transform:uppercase; background:transparent; border:none; color:#555; cursor:pointer; transition:all 0.2s; border-bottom:2px solid transparent; white-space:nowrap; flex-shrink:0; }
         .planet-tab:hover { color:var(--gold); }
         .planet-tab.active { color:#000; background:var(--gold); border-bottom-color:var(--gold); }
 
@@ -155,7 +155,7 @@
         .map-left-col { display:flex; flex-direction:column; flex:1; min-width:0; }
 
         /* ── MAP STATUS BAR ──────────────────────────────────────────────── */
-        .map-status-bar { display:flex; align-items:center; gap:16px; padding:6px 20px; background:rgba(0,0,0,0.6); border-bottom:1px solid rgba(232,160,32,0.1); font-family:'Courier New',monospace; font-size:0.78em; min-width:1200px; flex-shrink:0; }
+        .map-status-bar { display:flex; align-items:center; gap:16px; padding:6px 20px; background:rgba(0,0,0,0.6); border-bottom:1px solid rgba(232,160,32,0.1); font-size:0.78em; min-width:1200px; flex-shrink:0; }
         #coord-display { color:var(--gold); letter-spacing:1px; min-width:130px; }
         #active-planet-label { color:#a09060; letter-spacing:2px; }
         #portal-hint { color:#607080; font-size:0.9em; margin-left:auto; }
@@ -189,26 +189,25 @@
         .ale-grid-on .ale-cell { border-color:rgba(0,0,0,0.55) !important; }
         .ale-grid-on .ale-cell:hover { border-color:rgba(232,160,32,0.5) !important; }
         .ale-grid-on .ale-cell.selected { border-color:var(--gold) !important; }
-        #grid-toggle { padding:3px 8px; font-family:'Courier New',monospace; font-size:0.68em; letter-spacing:1px; background:transparent; border:1px solid #2a3040; color:#445; cursor:pointer; transition:all 0.2s; text-transform:uppercase; }
+        #grid-toggle { padding:3px 8px; font-size:0.68em; letter-spacing:1px; background:transparent; border:1px solid #2a3040; color:#445; cursor:pointer; transition:all 0.2s; text-transform:uppercase; }
         #grid-toggle:hover { border-color:#607080; color:#8898a8; }
         #grid-toggle.on { border-color:#3060a0; color:#60a8e0; }
         #player-planet-display { font-size:0.72em; letter-spacing:1px; color:#a09060; }
-        #pos-refresh { padding:2px 7px; font-family:'Courier New',monospace; font-size:0.82em; background:transparent; border:1px solid #2a3040; color:#445; cursor:pointer; transition:all 0.2s; }
+        #pos-refresh { padding:2px 7px; font-size:0.82em; background:transparent; border:1px solid #2a3040; color:#445; cursor:pointer; transition:all 0.2s; }
         #pos-refresh:hover { border-color:#607080; color:#8898a8; }
         #pos-refresh:disabled { opacity:0.4; cursor:default; }
         #cell-tip { position:fixed; pointer-events:none; display:none; background:#000; border:1px solid #3060a0; color:#60a8e0; font-size:0.62em; letter-spacing:1px; padding:5px 9px; z-index:700; white-space:nowrap; border-radius:2px; box-shadow:0 2px 8px rgba(0,0,0,0.7); }
-        #hire-nft-panel { position:fixed; top:50%; transform:translateY(-50%); width:210px; background:rgba(3,6,15,0.97); border:1px solid rgba(192,144,96,0.4); border-left:none; border-radius:0 6px 6px 0; padding:10px 8px; z-index:502; transition:transform 0.35s ease; display:none; }
-        #hire-nft-panel.hnp-hidden { transform:translateY(-50%) translateX(232px); }
-        #hire-nft-tab { position:fixed; top:50%; transform:translateY(-50%); width:22px; height:70px; background:rgba(3,6,15,0.97); border:1px solid rgba(192,144,96,0.4); border-left:none; border-radius:0 6px 6px 0; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:601; color:#c09060; font-size:0.85em; transition:background 0.2s; }
-        #hire-nft-tab:hover { background:rgba(192,144,96,0.15); }
-        .hnp-title { font-size:0.6em; letter-spacing:3px; color:#706050; margin-bottom:8px; border-bottom:1px solid rgba(192,144,96,0.15); padding-bottom:4px; }
-        .hnp-slot { display:flex; gap:6px; align-items:center; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.04); min-height:44px; }
-        .hnp-slot-img { width:32px; height:44px; object-fit:cover; object-position:top; border:1px solid rgba(192,144,96,0.2); border-radius:2px; flex-shrink:0; }
-        .hnp-slot-empty { width:32px; height:44px; border:1px dashed rgba(192,144,96,0.15); border-radius:2px; flex-shrink:0; }
-        .hnp-slot-info { flex:1; }
-        .hnp-slot-name { font-size:0.58em; color:#c0b090; line-height:1.3; }
-        .hnp-slot-ap { font-size:0.6em; color:#c09060; }
-        .hnp-total { font-size:0.62em; color:var(--gold); letter-spacing:1px; padding-top:6px; text-align:center; }
+        #hire-nft-panel { position:fixed; top:50%; transform:translateY(-50%); width:224px; background:rgba(3,6,15,0.97); border:1px solid rgba(192,144,96,0.35); border-radius:6px; padding:10px 8px 8px; z-index:502; display:none; }
+        .hnp-cards { display:flex; gap:4px; justify-content:center; }
+        .hnp-card { display:flex; flex-direction:column; align-items:center; gap:3px; }
+        .hnp-slot-img { width:64px; height:88px; object-fit:cover; object-position:top; border:1px solid rgba(192,144,96,0.3); border-radius:3px; display:block; }
+        .hnp-slot-empty { width:64px; height:88px; border:1px dashed rgba(192,144,96,0.12); border-radius:3px; background:rgba(255,255,255,0.01); }
+        .hnp-ap { font-size:0.72em; color:#c09060; text-align:center; min-height:1em; }
+        .hnp-reduction { font-size:0.72em; color:var(--gold); text-align:center; padding:5px 0 4px; letter-spacing:1px; }
+        .hnp-objs { display:flex; flex-wrap:wrap; gap:4px; justify-content:center; padding-top:4px; border-top:1px solid rgba(192,144,96,0.1); }
+        .hnp-obj-sq { font-size:0.6em; padding:3px 5px; border:1px solid; border-radius:2px; text-align:center; line-height:1.3; white-space:nowrap; }
+        .hnp-obj-sq.covered { border-color:rgba(232,160,32,0.65); color:var(--gold); background:rgba(232,160,32,0.07); }
+        .hnp-obj-sq.uncovered { border-color:rgba(80,80,80,0.3); color:#3a3a3a; }
 
         /* ── LEGEND COLUMN ───────────────────────────────────────────────── */
         .map-legend {
@@ -231,7 +230,7 @@
         #action-info { font-size:0.7em; color:#c8c0a0; line-height:1.5; word-break:break-word; }
         #action-info strong { color:var(--gold); }
         #action-coord { font-size:0.68em; color:#607080; letter-spacing:1px; }
-        .act-btn { display:block; width:100%; padding:6px 6px; font-family:'Courier New',monospace; font-size:0.7em; letter-spacing:1px; background:transparent; border:1px solid; cursor:crosshair; transition:all 0.2s; text-align:center; text-transform:uppercase; }
+        .act-btn { display:block; width:100%; padding:6px 6px; font-size:0.7em; letter-spacing:1px; background:transparent; border:1px solid; cursor:crosshair; transition:all 0.2s; text-align:center; text-transform:uppercase; }
         .act-btn.confirm   { color:var(--gold); border-color:var(--gold); }
         .act-btn.confirm:hover   { background:var(--gold); color:#000; }
         .act-btn.view-map  { color:#5090e0; border-color:#5090e0; }
@@ -244,7 +243,7 @@
         .act-btn.arena:hover     { background:#c06060; color:#000; }
         .act-btn.cancel    { color:#555; border-color:#333; }
         .act-btn.cancel:hover    { color:#aaa; border-color:#666; }
-        #action-status { font-family:'Courier New',monospace; font-size:0.68em; }
+        #action-status { font-size:0.68em; }
         #action-status.ok  { color:#40c070; }
         #action-status.err { color:#c04040; }
 
@@ -263,18 +262,18 @@
         .hire-nft-empty { font-size:0.63em; color:#446; padding:6px 0; text-align:center; }
 
         /* ── QUICK TRAVEL TOGGLE ─────────────────────────────────────────── */
-        #qt-toggle { display:block; width:100%; padding:7px 6px; font-family:'Courier New',monospace; font-size:0.68em; letter-spacing:2px; background:transparent; border:1px dashed #334; color:#446; cursor:crosshair; transition:all 0.2s; text-align:center; text-transform:uppercase; flex-shrink:0; }
+        #qt-toggle { display:block; width:100%; padding:7px 6px; font-size:0.68em; letter-spacing:2px; background:transparent; border:1px dashed #334; color:#446; cursor:crosshair; transition:all 0.2s; text-align:center; text-transform:uppercase; flex-shrink:0; }
         #qt-toggle.on { border-color:var(--gold); border-style:solid; color:var(--gold); background:rgba(232,160,32,0.07); }
         #qt-toggle.on::before { content:'⚡ '; }
 
         /* ── QUEST OVERLAY ───────────────────────────────────────────────── */
-        #quest-overlay { position:fixed; bottom:16px; right:16px; z-index:550; width:268px; font-family:'Courier New',monospace; }
-        #qo-toggle { display:block; width:100%; padding:7px 12px; background:rgba(4,8,20,0.82); backdrop-filter:blur(6px); border:1px solid rgba(232,160,32,0.18); color:#557; font-family:'Courier New',monospace; font-size:0.64em; letter-spacing:2px; text-transform:uppercase; cursor:crosshair; text-align:left; transition:all 0.2s; }
+        #quest-overlay { position:fixed; bottom:16px; right:16px; z-index:550; width:268px; }
+        #qo-toggle { display:block; width:100%; padding:7px 12px; background:rgba(4,8,20,0.82); backdrop-filter:blur(6px); border:1px solid rgba(232,160,32,0.18); color:#557; font-size:0.64em; letter-spacing:2px; text-transform:uppercase; cursor:crosshair; text-align:left; transition:all 0.2s; }
         #qo-toggle:hover,#qo-toggle.open { color:var(--gold); border-color:rgba(232,160,32,0.45); }
         #qo-panel { display:none; background:rgba(4,8,20,0.88); backdrop-filter:blur(8px); border:1px solid rgba(232,160,32,0.18); border-top:none; max-height:420px; overflow-y:auto; }
         #qo-panel.open { display:block; }
         .qo-tabs { display:flex; border-bottom:1px solid rgba(232,160,32,0.1); }
-        .qo-tab { flex:1; padding:5px 0; background:transparent; border:none; color:#446; font-family:'Courier New',monospace; font-size:0.62em; letter-spacing:1px; cursor:crosshair; transition:all 0.15s; text-transform:uppercase; }
+        .qo-tab { flex:1; padding:5px 0; background:transparent; border:none; color:#446; font-size:0.62em; letter-spacing:1px; cursor:crosshair; transition:all 0.15s; text-transform:uppercase; }
         .qo-tab.active { color:var(--gold); background:rgba(232,160,32,0.06); }
         .qo-tab:hover { color:#99a; }
         #qo-list { padding:8px; display:flex; flex-direction:column; gap:5px; }
@@ -439,7 +438,6 @@
         </div>
     </div>
     <div class="map-footer"></div>
-    <div id="cell-tip"></div>
 </div>
 </div>
 
@@ -1261,16 +1259,16 @@
             info.innerHTML=isDungeonLocked
                 ?'<strong style="color:#507050;">DUNGEON</strong><br><span style="font-size:0.7em;color:#446;">✓ Won today — resets 0 UTC</span>'
                 :'<strong style="color:#70a870;">DUNGEON</strong>';
-            tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
+            tBtn.textContent='TRAVEL >>'; tBtn.style.display='';
             if(!isDungeonLocked) dBtn.style.display='';
         } else if(isTavern){
             info.innerHTML='<strong style="color:#c09060;">TAVERN</strong>';
-            tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
+            tBtn.textContent='TRAVEL >>'; tBtn.style.display='';
             hBtn.style.display='';
             showHirePanel();
         } else if(isArena){
             info.innerHTML='<strong style="color:#c06060;">ARENA</strong>';
-            tBtn.textContent='TRAVEL HERE'; tBtn.style.display='';
+            tBtn.textContent='TRAVEL >>'; tBtn.style.display='';
             aBtn.style.display='';
         } else {
             info.innerHTML=(PLANETS[_activePlanet]||{name:_activePlanet}).name;
@@ -1329,7 +1327,7 @@
             status.className='err';
         }
         btn.disabled=false;
-        btn.textContent=(_sel&&_sel.portal)?'TRAVEL TO PORTAL':'CONFIRM TRAVEL';
+        btn.textContent=(_sel&&_sel.portal)?'TRAVEL TO PORTAL':(_sel&&(_sel.isTavern||_sel.isDungeon||_sel.isArena))?'TRAVEL >>':'CONFIRM TRAVEL';
     }
 
     // ── HIRE FIGHTER ──────────────────────────────────────────────────────────
@@ -1585,55 +1583,30 @@
     function positionHirePanel(){
         var box=document.getElementById('map-box');
         var panel=document.getElementById('hire-nft-panel');
-        var tab=document.getElementById('hire-nft-tab');
-        if(!box||!panel||!tab)return;
+        if(!box||!panel)return;
         var rect=box.getBoundingClientRect();
-        // Tab sits at the map-box right edge; panel is to the right of the tab
-        tab.style.left=rect.right+'px';
-        panel.style.left=(rect.right+22)+'px';
+        panel.style.left=(rect.right+8)+'px';
     }
 
     function showHireNFTPanel(){
         var panel=document.getElementById('hire-nft-panel');
-        var tab=document.getElementById('hire-nft-tab');
         if(!panel)return;
         positionHirePanel();
         panel.style.display='block';
-        tab.style.display='flex';
-        panel.classList.remove('hnp-hidden');
-        tab.innerHTML='&#10095;';  // ▶ = collapse right
         _hnpOpen=true;
-    }
-
-    function hideHireNFTPanel(){
-        var panel=document.getElementById('hire-nft-panel');
-        var tab=document.getElementById('hire-nft-tab');
-        if(!panel)return;
-        positionHirePanel();
-        panel.style.display='block';
-        tab.style.display='flex';
-        panel.classList.add('hnp-hidden');
-        tab.innerHTML='&#10094;';  // ◀ = expand left
-        _hnpOpen=false;
     }
 
     function closeHireNFTPanel(){
         var panel=document.getElementById('hire-nft-panel');
-        var tab=document.getElementById('hire-nft-tab');
         if(panel)panel.style.display='none';
-        if(tab)tab.style.display='none';
         _hnpOpen=false;
-    }
-
-    function toggleHirePanel(){
-        if(_hnpOpen)hideHireNFTPanel();else showHireNFTPanel();
     }
 
     window.addEventListener('resize',function(){if(_hnpOpen)positionHirePanel();});
 
     function updateHireNFTPanel(){
         var slots=document.getElementById('hnp-slots');
-        var total=document.getElementById('hnp-total');
+        var objsEl=document.getElementById('hnp-objs');
         if(!slots)return;
         var checked=document.querySelectorAll('.hire-nft-cb:checked');
         var checkedTids=[];
@@ -1647,25 +1620,42 @@
             var tmpl=_tavernTemplateMap&&_tavernTemplateMap[tid];
             nfts.push({tid:tid,tmpl:tmpl,mod:Number(cb.dataset.mod||0)});
         });
-        var html='';
+
+        // Card row (3 slots)
+        var html='<div class="hnp-cards">';
         for(var i=0;i<3;i++){
             var n=nfts[i];
+            html+='<div class="hnp-card">';
             if(n&&n.tmpl){
                 var schema=n.tmpl.schema||'';
                 var folder=schema==='arms.worlds'?'arms.worlds':schema==='crew.worlds'?'crew.worlds':schema==='faces.worlds'?'faces.worlds':'tool.worlds';
-                html+='<div class="hnp-slot">'
-                    +'<img class="hnp-slot-img" src="'+folder+'/'+n.tid+'.webp" onerror="this.style.opacity=\'0\'">'
-                    +'<div class="hnp-slot-info">'
-                    +'<div class="hnp-slot-name">'+(n.tmpl.cardname||'NFT')+'</div>'
-                    +(n.mod?'<div class="hnp-slot-ap">-'+n.mod+' AP</div>':'')
-                    +'</div></div>';
+                html+='<img class="hnp-slot-img" src="'+folder+'/'+n.tid+'.webp" onerror="this.style.opacity=\'0\'">';
+                html+='<div class="hnp-ap">'+(n.mod?'−'+n.mod+' AP':'')+'</div>';
             } else {
-                html+='<div class="hnp-slot"><div class="hnp-slot-empty"></div>'
-                    +'<div class="hnp-slot-info" style="font-size:0.55em;color:#333;padding-left:4px;">EMPTY</div></div>';
+                html+='<div class="hnp-slot-empty"></div><div class="hnp-ap"></div>';
+            }
+            html+='</div>';
+        }
+        html+='</div>';
+        html+='<div class="hnp-reduction">'+(reduction>0?'−'+reduction+' AP &rarr; '+final+' AP':base+' AP')+'</div>';
+        slots.innerHTML=html;
+
+        // Objectives squares
+        if(objsEl){
+            if(!_hireObjectives||!_hireObjectives.length){
+                objsEl.innerHTML='';
+            } else {
+                var tmpls=checkedTids.map(function(tid){return _tavernTemplateMap&&_tavernTemplateMap[tid];}).filter(Boolean);
+                var ohtml='';
+                _hireObjectives.forEach(function(obj){
+                    var covered=tmpls.some(function(tmpl){return _objMatch(tmpl,obj);});
+                    var label=obj.objective_string||obj.objective_value||obj.objective_type||'?';
+                    var ap=Number(obj.mod_value||0);
+                    ohtml+='<div class="hnp-obj-sq '+(covered?'covered':'uncovered')+'">'+label+(ap?'<br>−'+ap+' AP':'')+'</div>';
+                });
+                objsEl.innerHTML=ohtml;
             }
         }
-        slots.innerHTML=html;
-        total.textContent=reduction>0?'REDUCTION: -'+reduction+' AP  →  '+final+' AP':'BASE COST: '+base+' AP';
     }
 
     // ── PLAYER POSITION REFRESH ───────────────────────────────────────────────
@@ -1790,12 +1780,11 @@
     }
 </script>
 
+<div id="cell-tip"></div>
 <div id="hire-nft-panel">
-    <div class="hnp-title">BATTLE PREP</div>
     <div id="hnp-slots"></div>
-    <div class="hnp-total" id="hnp-total"></div>
+    <div id="hnp-objs"></div>
 </div>
-<div id="hire-nft-tab" onclick="toggleHirePanel()">&#10094;</div>
 
 </body>
 </html>
