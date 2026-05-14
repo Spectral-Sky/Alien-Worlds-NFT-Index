@@ -1300,22 +1300,22 @@
         if(hl){hl.classList.remove('open');hl.innerHTML='';}
         coord.textContent='('+x+', '+y+')';
         var tc=calcTravelCost(x,y);
-        var tcSuffix=tc!==null?' ('+tc+' '+_AP_ICON+')':'';
+        var atCurrentPos=_playerPos&&_playerPos.planet===_activePlanet&&_playerPos.x===x&&_playerPos.y===y;
+        var tcSuffix=(!atCurrentPos&&tc!==null)?' ('+tc+' '+_AP_ICON+')':'';
         if(portal){
             var dest=(PLANETS[portal.to]||{name:portal.to.toUpperCase()}).name.toUpperCase();
             info.innerHTML='<strong>PORTAL</strong><br>→ '+dest;
-            tBtn.innerHTML='TRAVEL TO PORTAL'+tcSuffix; tBtn.style.display='';
+            if(!atCurrentPos){tBtn.innerHTML='TRAVEL TO PORTAL'+tcSuffix; tBtn.style.display='';}
             vBtn.innerHTML='VIEW '+dest; vBtn.style.display='';
         } else if(isDungeon){
             info.innerHTML=isDungeonLocked
                 ?'<strong style="color:#507050;">DUNGEON</strong><br><span style="font-size:0.7em;color:#446;">✓ Won today — resets 0 UTC</span>'
                 :'<strong style="color:#70a870;">DUNGEON</strong>';
-            tBtn.innerHTML='TRAVEL >>'+tcSuffix; tBtn.style.display='';
+            if(!atCurrentPos){tBtn.innerHTML='TRAVEL >>'+tcSuffix; tBtn.style.display='';}
             if(!isDungeonLocked) dBtn.style.display='';
         } else if(isTavern){
             info.innerHTML='<strong style="color:#c09060;">TAVERN</strong>';
-            var atTavern=_playerPos&&_playerPos.planet===_activePlanet&&_playerPos.x===x&&_playerPos.y===y;
-            if(atTavern){
+            if(atCurrentPos){
                 hBtn.style.display='';
             } else {
                 tBtn.innerHTML='TRAVEL >>'+tcSuffix; tBtn.style.display='';
@@ -1329,11 +1329,11 @@
             info.innerHTML=isArenaLocked
                 ?'<strong style="color:#c06060;">ARENA</strong><br><span style="font-size:0.7em;color:#805050;">✗ Fighter defending — wait for 5 defeats</span>'
                 :'<strong style="color:#c06060;">ARENA</strong>';
-            tBtn.innerHTML='TRAVEL >>'+tcSuffix; tBtn.style.display='';
+            if(!atCurrentPos){tBtn.innerHTML='TRAVEL >>'+tcSuffix; tBtn.style.display='';}
             if(!isArenaLocked) aBtn.style.display='';
         } else {
             info.innerHTML=(PLANETS[_activePlanet]||{name:_activePlanet}).name;
-            tBtn.innerHTML='CONFIRM TRAVEL'+tcSuffix; tBtn.style.display='';
+            if(!atCurrentPos){tBtn.innerHTML='CONFIRM TRAVEL'+tcSuffix; tBtn.style.display='';}
         }
         document.getElementById('action-panel').classList.add('open');
         if (_quickTravel) doConfirm();
