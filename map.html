@@ -1302,10 +1302,11 @@
         var tc=calcTravelCost(x,y);
         var atCurrentPos=_playerPos&&_playerPos.planet===_activePlanet&&_playerPos.x===x&&_playerPos.y===y;
         var tcSuffix=(!atCurrentPos&&tc!==null)?' <span style="white-space:nowrap">('+tc+' '+_AP_ICON+')</span>':'';
+        var portalTcSuffix=(!atCurrentPos&&tc!==null)?' <span style="white-space:nowrap">'+(tc+35)+' '+_AP_ICON+'</span>':'';
         if(portal){
             var dest=(PLANETS[portal.to]||{name:portal.to.toUpperCase()}).name.toUpperCase();
             info.innerHTML='<strong>PORTAL</strong><br>→ '+dest;
-            if(!atCurrentPos){tBtn.innerHTML='TRAVEL TO PORTAL'+tcSuffix; tBtn.style.display='';}
+            if(!atCurrentPos){tBtn.innerHTML='TRAVEL TO PORTAL'+portalTcSuffix; tBtn.style.display='';}
             vBtn.innerHTML='VIEW '+dest; vBtn.style.display='';
         } else if(isDungeon){
             info.innerHTML=isDungeonLocked
