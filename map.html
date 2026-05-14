@@ -41,7 +41,7 @@
     <style>
         :root { --gold: #e8a020; }
         *, *::before, *::after { box-sizing: border-box; }
-        body { margin:0; padding:0; background:#03030e; color:#d0d0d0; font-family:'Segoe UI', system-ui, -apple-system, Arial, sans-serif; font-size:16px; overflow:hidden; height:100vh; width:100vw; cursor:crosshair; }
+        body { margin:0; padding:0; background:#03030e; color:#d0d0d0; font-family:'Segoe UI', system-ui, -apple-system, Arial, sans-serif; font-size:18px; overflow:hidden; height:100vh; width:100vw; cursor:crosshair; }
         a, button { cursor:crosshair !important; }
 
         /* ── BACKGROUND LAYERS ──────────────────────────────────────────── */
@@ -1429,8 +1429,10 @@
             var tv=(locs.taverns||[]).length;
             var ar=(locs.arenas||[]).length;
             var parts=[];
-            if(tv>0)parts.push('<span class="tab-ct">'+tv+' tvn</span>');
-            if(ar>0)parts.push('<span class="tab-ca">'+ar+' ar</span>');
+            var tvIcon='<img src="Ale%20images/tavern.svg" style="width:10px;height:10px;vertical-align:middle;display:inline-block;opacity:0.85;filter:sepia(1) saturate(2) hue-rotate(10deg) brightness(0.85);">';
+            var arIcon='<img src="Ale%20images/Arena.svg" style="width:10px;height:10px;vertical-align:middle;display:inline-block;opacity:0.85;filter:sepia(1) saturate(3) hue-rotate(300deg) brightness(0.7);">';
+            if(tv>0)parts.push('<span class="tab-ct">'+tv+' '+tvIcon+'</span>');
+            if(ar>0)parts.push('<span class="tab-ca">'+ar+' '+arIcon+'</span>');
             el.innerHTML=parts.join(' ');
         });
     }
