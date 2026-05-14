@@ -995,6 +995,14 @@
                 var pn=normalizePlanet(row.planet||'');
                 if(pn&&PLANETS[pn])playerPlanet=pn;
                 _playerPos={planet:playerPlanet,x:row.x||1,y:row.y||1};
+                // Pre-load taverns so they're ready when the map builds
+                _playerPlayedDungeons=new Set(row.played_dungeons||[]);
+                Object.keys(ALE_LOCATIONS).forEach(function(p){ALE_LOCATIONS[p].taverns=[];});
+                (row.active_taverns||[]).forEach(function(t){
+                    var planet=normalizePlanet(t.planet);
+                    if(!planet||!ALE_LOCATIONS[planet])return;
+                    ALE_LOCATIONS[planet].taverns.push({x:t.x,y:t.y,objectives:t.objectives||[],land_id:t.land_id});
+                });
             }
         }catch(e){}
         _activePlanet=playerPlanet;
@@ -1015,7 +1023,8 @@
         buildRulers();
         buildMap(_activePlanet);
         setActiveTab(_activePlanet);
-        // Kick off data fetches in background
+        checkAndOpenTavern();
+        // Kick off data fetches in background (refresh + updates)
         var w=getWallet();
         if(w) fetchPlayerTaverns(w);
         fetchAllDungeons().then(function(){ fetchAllBuildings(); });
