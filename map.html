@@ -186,12 +186,17 @@
         .cell-icon img.icon-portal { width:40px; height:40px; }
         .ale-player-dot { position:absolute; bottom:3px; right:3px; width:7px; height:7px; border-radius:50%; background:#60c8ff; box-shadow:0 0 4px #60c8ff99; z-index:3; cursor:help; pointer-events:all; }
         .ale-player-dot.multi { background:#e06060; box-shadow:0 0 5px #e0606099; }
-        #cell-tip { position:fixed; pointer-events:none; display:none; background:rgba(3,6,15,0.95); border:1px solid rgba(232,160,32,0.25); color:#9098a8; font-size:0.62em; letter-spacing:1px; padding:5px 9px; z-index:700; white-space:nowrap; border-radius:2px; box-shadow:0 2px 8px rgba(0,0,0,0.7); }
-        #hire-nft-panel { position:fixed; left:0; top:50%; transform:translateY(-50%) translateX(0); width:200px; background:rgba(3,6,15,0.97); border:1px solid rgba(192,144,96,0.4); border-left:none; border-radius:0 6px 6px 0; padding:10px 8px; z-index:600; transition:transform 0.35s ease; display:none; }
-        #hire-nft-panel.hnp-hidden { transform:translateY(-50%) translateX(-200px); }
-        #hire-nft-tab { position:fixed; left:200px; top:50%; transform:translateY(-50%); width:22px; height:70px; background:rgba(3,6,15,0.97); border:1px solid rgba(192,144,96,0.4); border-left:none; border-radius:0 6px 6px 0; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:601; color:#c09060; font-size:0.85em; transition:left 0.35s ease, background 0.2s; }
+        .ale-grid-on .ale-cell { border-color:rgba(0,0,0,0.55) !important; }
+        .ale-grid-on .ale-cell:hover { border-color:rgba(232,160,32,0.5) !important; }
+        .ale-grid-on .ale-cell.selected { border-color:var(--gold) !important; }
+        #grid-toggle { padding:3px 8px; font-family:'Courier New',monospace; font-size:0.68em; letter-spacing:1px; background:transparent; border:1px solid #2a3040; color:#445; cursor:pointer; transition:all 0.2s; text-transform:uppercase; }
+        #grid-toggle:hover { border-color:#607080; color:#8898a8; }
+        #grid-toggle.on { border-color:#3060a0; color:#60a8e0; }
+        #cell-tip { position:fixed; pointer-events:none; display:none; background:#000; border:1px solid #3060a0; color:#60a8e0; font-size:0.62em; letter-spacing:1px; padding:5px 9px; z-index:700; white-space:nowrap; border-radius:2px; box-shadow:0 2px 8px rgba(0,0,0,0.7); }
+        #hire-nft-panel { position:fixed; top:50%; transform:translateY(-50%); width:200px; background:rgba(3,6,15,0.97); border:1px solid rgba(192,144,96,0.4); border-right:none; border-radius:6px 0 0 6px; padding:10px 8px; z-index:499; transition:transform 0.35s ease; display:none; }
+        #hire-nft-panel.hnp-hidden { transform:translateY(-50%) translateX(200px); }
+        #hire-nft-tab { position:fixed; top:50%; transform:translateY(-50%); width:22px; height:70px; background:rgba(3,6,15,0.97); border:1px solid rgba(192,144,96,0.4); border-left:none; border-radius:0 6px 6px 0; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:601; color:#c09060; font-size:0.85em; transition:background 0.2s; }
         #hire-nft-tab:hover { background:rgba(192,144,96,0.15); }
-        #hire-nft-tab.hnp-hidden { left:0; }
         .hnp-title { font-size:0.6em; letter-spacing:3px; color:#706050; margin-bottom:8px; border-bottom:1px solid rgba(192,144,96,0.15); padding-bottom:4px; }
         .hnp-slot { display:flex; gap:6px; align-items:center; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.04); min-height:44px; }
         .hnp-slot-img { width:32px; height:44px; object-fit:cover; object-position:top; border:1px solid rgba(192,144,96,0.2); border-radius:2px; flex-shrink:0; }
@@ -365,6 +370,7 @@
                 <div class="map-status-bar">
                     <span id="coord-display">X:&#8212; &nbsp;Y:&#8212;</span>
                     <span id="active-planet-label">MAGOR</span>
+                    <button id="grid-toggle" onclick="toggleGrid()">GRID</button>
                     <span id="portal-hint" style="margin-left:auto"></span>
                 </div>
                 <div class="map-scroll">
@@ -1197,8 +1203,8 @@
         if(!e)return;
         var tip=document.getElementById('cell-tip');
         if(!tip||tip.style.display==='none')return;
-        tip.style.left=(e.clientX+14)+'px';
-        tip.style.top=(e.clientY-40)+'px';
+        tip.style.left=(e.clientX+12)+'px';
+        tip.style.top=(e.clientY+14)+'px';
     }
     function onLeave(){
         document.getElementById('coord-display').innerHTML='X:&#8212;  Y:&#8212;';
@@ -1564,14 +1570,24 @@
     // ── HIRE NFT POP-OUT PANEL ────────────────────────────────────────────────
     var _hnpOpen=false;
 
+    function positionHirePanel(){
+        var box=document.getElementById('map-box');
+        var panel=document.getElementById('hire-nft-panel');
+        var tab=document.getElementById('hire-nft-tab');
+        if(!box||!panel||!tab)return;
+        var rect=box.getBoundingClientRect();
+        panel.style.left=(rect.left-200)+'px';
+        tab.style.left=rect.left+'px';
+    }
+
     function showHireNFTPanel(){
         var panel=document.getElementById('hire-nft-panel');
         var tab=document.getElementById('hire-nft-tab');
         if(!panel)return;
+        positionHirePanel();
         panel.style.display='';
         tab.style.display='flex';
         panel.classList.remove('hnp-hidden');
-        tab.classList.remove('hnp-hidden');
         tab.innerHTML='&#10094;';
         _hnpOpen=true;
     }
@@ -1580,10 +1596,10 @@
         var panel=document.getElementById('hire-nft-panel');
         var tab=document.getElementById('hire-nft-tab');
         if(!panel)return;
+        positionHirePanel();
         panel.style.display='';
         tab.style.display='flex';
         panel.classList.add('hnp-hidden');
-        tab.classList.add('hnp-hidden');
         tab.innerHTML='&#10095;';
         _hnpOpen=false;
     }
@@ -1599,6 +1615,8 @@
     function toggleHirePanel(){
         if(_hnpOpen)hideHireNFTPanel();else showHireNFTPanel();
     }
+
+    window.addEventListener('resize',function(){if(_hnpOpen)positionHirePanel();});
 
     function updateHireNFTPanel(){
         var slots=document.getElementById('hnp-slots');
@@ -1635,6 +1653,14 @@
         }
         slots.innerHTML=html;
         total.textContent=reduction>0?'REDUCTION: -'+reduction+' AP  →  '+final+' AP':'BASE COST: '+base+' AP';
+    }
+
+    // ── GRID TOGGLE ───────────────────────────────────────────────────────────
+    var _gridOn=false;
+    function toggleGrid(){
+        _gridOn=!_gridOn;
+        document.querySelector('.maps-stack').classList.toggle('ale-grid-on',_gridOn);
+        document.getElementById('grid-toggle').classList.toggle('on',_gridOn);
     }
 
     // ── QUICK TRAVEL TOGGLE ───────────────────────────────────────────────────
