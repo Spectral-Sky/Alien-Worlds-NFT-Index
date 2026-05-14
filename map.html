@@ -821,7 +821,7 @@
             return;
         }
         _renderer.setClearColor(0x000000,0);
-        _renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+        _renderer.setPixelRatio(1);
         _renderer.setSize(W,H);
         _scene=new THREE.Scene();
         _camera=new THREE.PerspectiveCamera(55,W/H,0.1,500);
@@ -832,6 +832,7 @@
             W=window.innerWidth;H=window.innerHeight;
             _renderer.setSize(W,H);_camera.aspect=W/H;_camera.updateProjectionMatrix();
         });
+        var _glCanvas=document.getElementById('planet-webgl');
         (function frame(){
             requestAnimationFrame(frame);
             if(_mesh){
@@ -839,7 +840,10 @@
                 _mesh.rotation.y+=BASE_SPEED*spd;
                 if(spd>1) _mesh.userData.speedMultiplier=Math.max(1,spd*0.993);
             }
-            _renderer.render(_scene,_camera);
+            // Skip GPU render when planet is invisible (map overlay covers it)
+            if(_glCanvas.classList.contains('visible')){
+                _renderer.render(_scene,_camera);
+            }
         })();
     }
 
@@ -1525,6 +1529,7 @@
         document.getElementById('hire-btn').textContent='HIRE FIGHTER ('+_hireBaseCost+' AP)';
         var objectives=(_sel&&_sel.tavernEntry&&_sel.tavernEntry.objectives)||[];
         _hireObjectives=objectives;
+        console.log('[ALE hire] base AP:', _hireBaseCost, '| objectives:', JSON.stringify(objectives));
         var nfts=await loadPlayerHireNFTs(wallet,objectives);
         renderHireNFTs(nfts,_hireBaseCost);
     }
@@ -1593,7 +1598,7 @@
         var tab=document.getElementById('hire-nft-tab');
         if(!panel)return;
         positionHirePanel();
-        panel.style.display='';
+        panel.style.display='block';
         tab.style.display='flex';
         panel.classList.remove('hnp-hidden');
         tab.innerHTML='&#10095;';  // ▶ = collapse right
@@ -1605,7 +1610,7 @@
         var tab=document.getElementById('hire-nft-tab');
         if(!panel)return;
         positionHirePanel();
-        panel.style.display='';
+        panel.style.display='block';
         tab.style.display='flex';
         panel.classList.add('hnp-hidden');
         tab.innerHTML='&#10094;';  // ◀ = expand left
@@ -1647,7 +1652,7 @@
             var n=nfts[i];
             if(n&&n.tmpl){
                 var schema=n.tmpl.schema||'';
-                var folder=schema==='arms.worlds'?'arms.worlds':schema==='crew.worlds'?'crew.worlds':'tool.worlds';
+                var folder=schema==='arms.worlds'?'arms.worlds':schema==='crew.worlds'?'crew.worlds':schema==='faces.worlds'?'faces.worlds':'tool.worlds';
                 html+='<div class="hnp-slot">'
                     +'<img class="hnp-slot-img" src="'+folder+'/'+n.tid+'.webp" onerror="this.style.opacity=\'0\'">'
                     +'<div class="hnp-slot-info">'
