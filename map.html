@@ -1300,17 +1300,17 @@
         if(hl){hl.classList.remove('open');hl.innerHTML='';}
         coord.textContent='('+x+', '+y+')';
         var tc=calcTravelCost(x,y);
-        var tcSuffix=tc!==null?' ('+tc+' AP)':'';
+        var tcSuffix=tc!==null?' ('+tc+' '+_AP_ICON+')':'';
         if(portal){
             var dest=(PLANETS[portal.to]||{name:portal.to.toUpperCase()}).name.toUpperCase();
             info.innerHTML='<strong>PORTAL</strong><br>→ '+dest;
-            tBtn.textContent='TRAVEL TO PORTAL'+tcSuffix; tBtn.style.display='';
-            vBtn.textContent='VIEW '+dest; vBtn.style.display='';
+            tBtn.innerHTML='TRAVEL TO PORTAL'+tcSuffix; tBtn.style.display='';
+            vBtn.innerHTML='VIEW '+dest; vBtn.style.display='';
         } else if(isDungeon){
             info.innerHTML=isDungeonLocked
                 ?'<strong style="color:#507050;">DUNGEON</strong><br><span style="font-size:0.7em;color:#446;">✓ Won today — resets 0 UTC</span>'
                 :'<strong style="color:#70a870;">DUNGEON</strong>';
-            tBtn.textContent='TRAVEL >>'+tcSuffix; tBtn.style.display='';
+            tBtn.innerHTML='TRAVEL >>'+tcSuffix; tBtn.style.display='';
             if(!isDungeonLocked) dBtn.style.display='';
         } else if(isTavern){
             info.innerHTML='<strong style="color:#c09060;">TAVERN</strong>';
@@ -1318,9 +1318,9 @@
             if(atTavern){
                 hBtn.style.display='';
             } else {
-                tBtn.textContent='TRAVEL >>'+tcSuffix; tBtn.style.display='';
+                tBtn.innerHTML='TRAVEL >>'+tcSuffix; tBtn.style.display='';
                 var hireCost=_hireBaseCost||100;
-                thBtn.textContent=tc!==null?'TRAVEL & HIRE ('+tc+' + '+hireCost+' AP)':'TRAVEL & HIRE ('+hireCost+' AP)';
+                thBtn.innerHTML=tc!==null?'TRAVEL & HIRE ('+tc+' + '+hireCost+' '+_AP_ICON+')':'TRAVEL & HIRE ('+hireCost+' '+_AP_ICON+')';
                 thBtn.style.display='';
             }
             showHirePanel();
@@ -1329,11 +1329,11 @@
             info.innerHTML=isArenaLocked
                 ?'<strong style="color:#c06060;">ARENA</strong><br><span style="font-size:0.7em;color:#805050;">✗ Fighter defending — wait for 5 defeats</span>'
                 :'<strong style="color:#c06060;">ARENA</strong>';
-            tBtn.textContent='TRAVEL >>'+tcSuffix; tBtn.style.display='';
+            tBtn.innerHTML='TRAVEL >>'+tcSuffix; tBtn.style.display='';
             if(!isArenaLocked) aBtn.style.display='';
         } else {
             info.innerHTML=(PLANETS[_activePlanet]||{name:_activePlanet}).name;
-            tBtn.textContent='CONFIRM TRAVEL'+tcSuffix; tBtn.style.display='';
+            tBtn.innerHTML='CONFIRM TRAVEL'+tcSuffix; tBtn.style.display='';
         }
         document.getElementById('action-panel').classList.add('open');
         if (_quickTravel) doConfirm();
@@ -1426,7 +1426,7 @@
             status.textContent='✗ '+((e&&e.message)||'Failed').substring(0,60);
             status.className='err';
         }
-        btn.disabled=false;btn.textContent='TRAVEL & HIRE ('+authorizedCost+' AP)';
+        btn.disabled=false;btn.innerHTML='TRAVEL & HIRE ('+authorizedCost+' '+_AP_ICON+')';
     }
 
     // ── PLANET TAB COUNTS ─────────────────────────────────────────────────────
@@ -1450,7 +1450,19 @@
     // ── HIRE FIGHTER ──────────────────────────────────────────────────────────
     // nfttemplates: {templateid_string → full row} — eligibility + properties for AP calc
     var _tavernTemplateMap=null;
-    var _templateImages={}; // template_id → IPFS image URL for schemas without local folders
+    var _AP_ICON='<img src="Ale%20images/energy.png" alt="" style="width:12px;height:12px;vertical-align:middle;display:inline-block;margin:0 1px;">';
+    // Pre-populated: level.worlds card images (no local folder)
+    var _templateImages={
+        '516022':'https://ipfs.io/ipfs/QmNhAzdcisMhVnaUKKdAhJswEyuvyTvmp7gWhRhpsvMUU3',
+        '516021':'https://ipfs.io/ipfs/QmV3mzrRGfTvMv2CgoJhVguMDNYtayxnzGpCP9cQv4XbNX',
+        '516020':'https://ipfs.io/ipfs/QmSigBSCfzQrXtCJWVtF26TSKgkiSSoSNNVS9uAhHFMEMH',
+        '516019':'https://ipfs.io/ipfs/QmYQCw17v5ffkkCPE7m1ZfzYUMjJwubydNjNXrhWTWaK4e',
+        '516018':'https://ipfs.io/ipfs/QmSoPv28RFWCafeX8gfsLiHQbFdyMh7E8Yw2h61eGYBF34',
+        '515561':'https://ipfs.io/ipfs/QmZwQYmEqv9VbDjV7tRG9FvuMiUKej61UuD3TSiPYVmM7G',
+        '515560':'https://ipfs.io/ipfs/QmZgVYvRvG59bCH43kPbXG8hJpXbyBtz8Aa1Nxc6MscA2s',
+        '515559':'https://ipfs.io/ipfs/QmVgCEAEw2dgfTuqzAhj8zPArFKkxUkfEXjEx3ZC8XfmwL',
+        '515558':'https://ipfs.io/ipfs/QmbVNZPpqNe9rbqTzTJKsHVF6PvktkutiFRTQxqfYjXKNu'
+    };
 
     async function loadTavernData(){
         if(_tavernTemplateMap)return;
@@ -1586,7 +1598,7 @@
             el.innerHTML='<div class="hire-nft-empty">No eligible NFTs in wallet.</div>';
             el.classList.add('open');return;
         }
-        var html='<div class="hire-cost-note">Select up to 3 NFTs to reduce AP cost:</div>';
+        var html='<div class="hire-cost-note">Select up to 3 NFTs to reduce energy cost:</div>';
         var schemaShort={'arms.worlds':'arms','tool.worlds':'tool','crew.worlds':'crew','level.worlds':'level','faces.worlds':'face','land.worlds':'land'};
         var optimalTids=autoSelectOptimalNFTs(nfts,_hireObjectives);
         nfts.forEach(function(n,i){
@@ -1628,16 +1640,16 @@
         var reduction=calcTotalReduction(checkedTids,_hireObjectives);
         var final=Math.max(1,base-reduction);
         var btn=document.getElementById('hire-btn');
-        if(btn)btn.textContent='HIRE FIGHTER ('+final+' AP)';
+        if(btn)btn.innerHTML='HIRE FIGHTER ('+final+' '+_AP_ICON+')';
         var thBtn=document.getElementById('travel-hire-btn');
         if(thBtn&&thBtn.style.display!=='none'){
             var _tc=(_sel&&_playerPos&&_playerPos.planet===_activePlanet)?calcTravelCost(_sel.x,_sel.y):null;
-            thBtn.textContent=_tc!==null?'TRAVEL & HIRE ('+_tc+' + '+final+' AP)':'TRAVEL & HIRE ('+final+' AP)';
+            thBtn.innerHTML=_tc!==null?'TRAVEL & HIRE ('+_tc+' + '+final+' '+_AP_ICON+')':'TRAVEL & HIRE ('+final+' '+_AP_ICON+')';
         }
         var summary=document.getElementById('hire-cost-summary');
         var count=checked.length;
-        if(summary&&reduction>0)summary.textContent='est. ~'+final+' AP with '+count+' NFT'+(count!==1?'s':'');
-        else if(summary)summary.textContent=base+' AP — no NFTs selected';
+        if(summary&&reduction>0)summary.innerHTML='est. ~'+final+' '+_AP_ICON+' with '+count+' NFT'+(count!==1?'s':'');
+        else if(summary)summary.innerHTML=base+' '+_AP_ICON+' — no NFTs selected';
         // Apply dim state on initial render
         var allCbs=document.querySelectorAll('.hire-nft-cb');
         allCbs.forEach(function(c){
@@ -1662,7 +1674,7 @@
             var cfg=await fetchRows({code:'tavern.ale',scope:'tavern.ale',table:'config',limit:1,json:true});
             if(cfg&&cfg.rows&&cfg.rows[0])_hireBaseCost=Number(cfg.rows[0].cost_hire_ap)||100;
         }catch(e){_hireBaseCost=100;}
-        document.getElementById('hire-btn').textContent='HIRE FIGHTER ('+_hireBaseCost+' AP)';
+        document.getElementById('hire-btn').innerHTML='HIRE FIGHTER ('+_hireBaseCost+' '+_AP_ICON+')';
         var objectives=(_sel&&_sel.tavernEntry&&_sel.tavernEntry.objectives)||[];
         _hireObjectives=objectives;
         console.log('[ALE hire] base AP:', _hireBaseCost, '| objectives:', JSON.stringify(objectives));
@@ -1696,7 +1708,7 @@
             status.textContent='✗ '+((e&&e.message)||'Failed').substring(0,60);
             status.className='err';
         }
-        btn.disabled=false;btn.textContent='HIRE FIGHTER ('+authorizedCost+' AP)';
+        btn.disabled=false;btn.innerHTML='HIRE FIGHTER ('+authorizedCost+' '+_AP_ICON+')';
     }
 
     // ── HIRE NFT POP-OUT PANEL ────────────────────────────────────────────────
@@ -1756,14 +1768,14 @@
                     imgSrc=folder+'/'+n.tid+'.webp';
                 }
                 html+='<img class="hnp-slot-img" src="'+imgSrc+'" onerror="this.style.opacity=\'0\'">';
-                html+='<div class="hnp-ap">'+(n.mod?'−'+n.mod+' AP':'')+'</div>';
+                html+='<div class="hnp-ap">'+(n.mod?'−'+n.mod+' '+_AP_ICON:'')+'</div>';
             } else {
                 html+='<div class="hnp-slot-empty"></div><div class="hnp-ap"></div>';
             }
             html+='</div>';
         }
         html+='</div>';
-        html+='<div class="hnp-reduction">'+(reduction>0?'−'+reduction+' AP &rarr; '+final+' AP':base+' AP')+'</div>';
+        html+='<div class="hnp-reduction">'+(reduction>0?'−'+reduction+' '+_AP_ICON+' &rarr; '+final+' '+_AP_ICON:base+' '+_AP_ICON)+'</div>';
         slots.innerHTML=html;
 
         // Objectives squares
@@ -1777,7 +1789,7 @@
                     var covered=tmpls.some(function(tmpl){return _objMatch(tmpl,obj);});
                     var label=obj.objective_string||obj.objective_value||obj.objective_type||'?';
                     var ap=Number(obj.mod_value||0);
-                    ohtml+='<div class="hnp-obj-sq '+(covered?'covered':'uncovered')+'">'+label+(ap?'<br>−'+ap+' AP':'')+'</div>';
+                    ohtml+='<div class="hnp-obj-sq '+(covered?'covered':'uncovered')+'">'+label+(ap?'<br>−'+ap+' '+_AP_ICON:'')+'</div>';
                 });
                 objsEl.innerHTML=ohtml;
             }
@@ -1802,7 +1814,7 @@
         if(!el)return;
         if(_playerAP===null){el.style.display='none';return;}
         el.style.display='flex';
-        el.innerHTML='<img src="Ale%20images/energy.png" alt="AP"> '+_playerAP+' AP';
+        el.innerHTML='<img src="Ale%20images/energy.png" alt="Energy" style="width:14px;height:14px;vertical-align:middle;"> '+_playerAP+' Energy';
     }
 
     // ── PLAYER POSITION REFRESH ───────────────────────────────────────────────
