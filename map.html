@@ -2123,16 +2123,49 @@
         var list=document.getElementById('fighters-list-inner');
         if(list) list.innerHTML='<div class="fp-loading">LOADING FIGHTERS…</div>';
         try {
-            var res=await fetchRows({code:'fighters.ale',scope:wallet,table:'fighters',limit:500,json:true});
-            _myFighters=res&&res.rows?res.rows:[];
-            // Also cache each fighter for stat pane use
+            // fighters table is globally scoped at fighters.ale;
+            // secondary index 2 (name type) is the owner/wallet
+            var allRows=[];
+            var lb=wallet;
+            while(true){
+                var res=await fetchRows({
+                    code:'fighters.ale',scope:'fighters.ale',table:'fighters',
+                    index_position:'2',key_type:'name',
+                    lower_bound:lb,upper_bound:wallet,
+                    limit:100,json:true
+                });
+                if(!res||!res.rows||!res.rows.length)break;
+                // Keep only rows owned by this wallet
+                res.rows.forEach(function(r){
+                    var owner=r.owner||r.wallet||r.player||'';
+                    if(owner===wallet)allRows.push(r);
+                });
+                if(!res.more)break;
+                lb=res.next_key||'';
+                if(!lb)break;
+            }
+            _myFighters=allRows;
             _myFighters.forEach(function(f){
                 var aid=String(f.asset_id||f.key||'');
                 if(aid) _fighterCache[aid]=f;
             });
+            console.log('[fighters] loaded',_myFighters.length,'for',wallet);
+            if(_myFighters.length===0){
+                // Fallback: try wallet as scope (some contract versions use per-wallet scope)
+                var res2=await fetchRows({code:'fighters.ale',scope:wallet,table:'fighters',limit:500,json:true});
+                if(res2&&res2.rows&&res2.rows.length){
+                    _myFighters=res2.rows;
+                    _myFighters.forEach(function(f){
+                        var aid=String(f.asset_id||f.key||'');
+                        if(aid) _fighterCache[aid]=f;
+                    });
+                    console.log('[fighters] fallback scope gave',_myFighters.length,'rows');
+                }
+            }
             renderFighterList();
         } catch(e){
-            if(list) list.innerHTML='<div class="fp-empty">ERROR FETCHING FIGHTERS</div>';
+            console.error('[fighters] load error:',e);
+            if(list) list.innerHTML='<div class="fp-empty">ERROR: '+(e&&e.message||'Failed')+'</div>';
         }
     }
 
@@ -2229,12 +2262,12 @@
         var key = String(assetId);
         if (_fighterCache[key]) return _fighterCache[key];
         var row = null;
-        // Try global scope first
+        // Primary key lookup in global scope
         try {
             var r1 = await fetchRows({code:'fighters.ale',scope:'fighters.ale',table:'fighters',lower_bound:key,upper_bound:key,limit:1,json:true});
             if (r1 && r1.rows && r1.rows.length) row = r1.rows[0];
         } catch(e) {}
-        // Fallback: scope by wallet
+        // Fallback: wallet scope
         if (!row && wallet) {
             try {
                 var r2 = await fetchRows({code:'fighters.ale',scope:wallet,table:'fighters',lower_bound:key,upper_bound:key,limit:1,json:true});
