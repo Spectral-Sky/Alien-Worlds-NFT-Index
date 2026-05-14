@@ -183,9 +183,23 @@
         .ale-me::after { content:'📍'; position:absolute; top:50%; left:50%; transform:translate(-50%,-52%); font-size:15px; pointer-events:none; z-index:5; filter:drop-shadow(0 0 4px rgba(232,160,32,0.8)); }
         .cell-icon { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; display:flex; align-items:center; justify-content:center; width:32px; height:32px; z-index:2; }
         .cell-icon img { width:32px; height:32px; opacity:0.95; filter:drop-shadow(0 0 3px rgba(0,0,0,0.9)); }
-        .cell-icon img.icon-portal { width:42px; height:42px; }
+        .cell-icon img.icon-portal { width:40px; height:40px; }
         .ale-player-dot { position:absolute; bottom:3px; right:3px; width:7px; height:7px; border-radius:50%; background:#60c8ff; box-shadow:0 0 4px #60c8ff99; z-index:3; cursor:help; pointer-events:all; }
         .ale-player-dot.multi { background:#e06060; box-shadow:0 0 5px #e0606099; }
+        #cell-tip { position:fixed; pointer-events:none; display:none; background:rgba(3,6,15,0.95); border:1px solid rgba(232,160,32,0.25); color:#9098a8; font-size:0.62em; letter-spacing:1px; padding:5px 9px; z-index:700; white-space:nowrap; border-radius:2px; box-shadow:0 2px 8px rgba(0,0,0,0.7); }
+        #hire-nft-panel { position:fixed; left:0; top:50%; transform:translateY(-50%) translateX(0); width:200px; background:rgba(3,6,15,0.97); border:1px solid rgba(192,144,96,0.4); border-left:none; border-radius:0 6px 6px 0; padding:10px 8px; z-index:600; transition:transform 0.35s ease; display:none; }
+        #hire-nft-panel.hnp-hidden { transform:translateY(-50%) translateX(-200px); }
+        #hire-nft-tab { position:fixed; left:200px; top:50%; transform:translateY(-50%); width:22px; height:70px; background:rgba(3,6,15,0.97); border:1px solid rgba(192,144,96,0.4); border-left:none; border-radius:0 6px 6px 0; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:601; color:#c09060; font-size:0.85em; transition:left 0.35s ease, background 0.2s; }
+        #hire-nft-tab:hover { background:rgba(192,144,96,0.15); }
+        #hire-nft-tab.hnp-hidden { left:0; }
+        .hnp-title { font-size:0.6em; letter-spacing:3px; color:#706050; margin-bottom:8px; border-bottom:1px solid rgba(192,144,96,0.15); padding-bottom:4px; }
+        .hnp-slot { display:flex; gap:6px; align-items:center; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.04); min-height:44px; }
+        .hnp-slot-img { width:32px; height:44px; object-fit:cover; object-position:top; border:1px solid rgba(192,144,96,0.2); border-radius:2px; flex-shrink:0; }
+        .hnp-slot-empty { width:32px; height:44px; border:1px dashed rgba(192,144,96,0.15); border-radius:2px; flex-shrink:0; }
+        .hnp-slot-info { flex:1; }
+        .hnp-slot-name { font-size:0.58em; color:#c0b090; line-height:1.3; }
+        .hnp-slot-ap { font-size:0.6em; color:#c09060; }
+        .hnp-total { font-size:0.62em; color:var(--gold); letter-spacing:1px; padding-top:6px; text-align:center; }
 
         /* ── LEGEND COLUMN ───────────────────────────────────────────────── */
         .map-legend {
@@ -413,6 +427,7 @@
         </div>
     </div>
     <div class="map-footer"></div>
+    <div id="cell-tip"></div>
 </div>
 </div>
 
@@ -582,6 +597,9 @@
     }
 
     var _playerPlayedDungeons=new Set(); // "planet.land_id" strings beaten today
+    var _playerUsedTaverns=new Set();   // "planet.land_id" strings hired from today
+
+    var LOCKED_TAVERN_SVG='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 36" width="26" height="26"><path d="M19.2969 2C20.4937 2 21.6476 2.11499 22.7085 2.33051C23.7695 2.54602 24.7299 2.85792 25.5494 3.25684C26.3689 3.65576 27.0432 4.13452 27.5303 4.67578C28.0174 5.21704 28.3125 5.81641 28.3125 6.44336C28.3125 7.07031 28.0174 7.66968 27.5303 8.21094C27.0432 8.7522 26.3689 9.23096 25.5494 9.62988C24.7299 10.0288 23.7695 10.3407 22.7085 10.5562C21.6476 10.7718 20.4937 10.8867 19.2969 10.8867C18.1 10.8867 16.9461 10.7718 15.8852 10.5562C14.8242 10.3407 13.8638 10.0288 13.0443 9.62988C12.2248 9.23096 11.5505 8.7522 11.0635 8.21094C10.5764 7.66968 10.2812 7.07031 10.2812 6.44336C10.2812 5.81641 10.5764 5.21704 11.0635 4.67578C11.5505 4.13452 12.2248 3.65576 13.0443 3.25684C13.8638 2.85792 14.8242 2.54602 15.8852 2.33051C16.9461 2.11499 18.1 2 19.2969 2ZM6.02344 12.3555L7.11523 11.7832C8.26172 13.2441 10.0596 14.5303 12.3027 15.4951C14.5459 16.46 17.2246 17.0879 20.1621 17.2373V18.7285C17.2246 18.5791 14.5459 17.9512 12.3027 16.9863C10.0596 16.0215 8.26172 14.7354 7.11523 13.2744L6.02344 12.3555ZM20.1621 21.7715V23.2627C17.2246 23.1133 14.5459 22.4854 12.3027 21.5205C10.0596 20.5557 8.26172 19.2695 7.11523 17.8086L6.02344 16.8896L7.11523 16.3174C8.26172 17.7783 10.0596 19.0645 12.3027 20.0293C14.5459 20.9941 17.2246 21.6221 20.1621 21.7715ZM6.02344 21.4355L7.11523 20.8633C8.26172 22.3242 10.0596 23.6104 12.3027 24.5752C14.5459 25.54 17.2246 26.168 20.1621 26.3174V27.8086C17.2246 27.6592 14.5459 27.0312 12.3027 26.0664C10.0596 25.1016 8.26172 23.8154 7.11523 22.3545L6.02344 21.4355ZM20.1621 31.3516V32.8428C17.2246 32.6934 14.5459 32.0654 12.3027 31.1006C10.0596 30.1357 8.26172 28.8496 7.11523 27.3887L6.02344 26.4697L7.11523 25.8975C8.26172 27.3584 10.0596 28.6445 12.3027 29.6094C14.5459 30.5742 17.2246 31.2021 20.1621 31.3516Z" fill="#0087C0" stroke="#002738" stroke-width="2"/><path d="M27 20C27 26.0751 22.0751 31 16 31C9.92487 31 5 26.0751 5 20C5 13.9249 9.92487 9 16 9C22.0751 9 27 13.9249 27 20Z" fill="#005A8C"/><path d="M16 13C18.7614 13 21 15.2386 21 18V18.5C21.5523 18.5 22 18.9477 22 19.5V24.5C22 25.0523 21.5523 25.5 21 25.5H11C10.4477 25.5 10 25.0523 10 24.5V19.5C10 18.9477 10.4477 18.5 11 18.5V18C11 15.2386 13.2386 13 16 13ZM16 14.5C14.067 14.5 12.5 16.067 12.5 18V18.5H19.5V18C19.5 16.067 17.933 14.5 16 14.5Z" fill="#60C8FF" stroke="#002738" stroke-width="0.5"/></svg>';
 
     var LOCKED_SVG='<svg width="18" height="19" viewBox="0 0 18 19" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 1C12.1919 1 14.7246 3.66329 14.7246 6.87988V7.50488C15.2323 7.63 15.705 7.85309 16.1035 8.26465C16.622 8.80012 16.8245 9.45859 16.915 10.1543C17.0022 10.8244 17 11.6684 17 12.6631C17 13.6576 17.0022 14.5009 16.915 15.1709C16.8245 15.8666 16.622 16.5251 16.1035 17.0605C15.5807 17.6004 14.9308 17.8155 14.2422 17.9111C13.5856 18.0023 12.7606 18 11.7998 18H6.2002C5.23941 18 4.4144 18.0023 3.75781 17.9111C3.06921 17.8155 2.41926 17.6004 1.89648 17.0605C1.37801 16.5251 1.17553 15.8666 1.08496 15.1709C0.997791 14.5009 0.999999 13.6576 1 12.6631C1 11.6684 0.997765 10.8244 1.08496 10.1543C1.17553 9.45859 1.37798 8.80012 1.89648 8.26465C2.29498 7.85309 2.76766 7.63 3.27539 7.50488V6.87988C3.27539 3.66329 5.80808 1 9 1ZM9 4.08398C7.55273 4.08398 6.3252 5.30557 6.3252 6.87988V7.3252H11.6748V6.87988C11.6748 5.30557 10.4473 4.08398 9 4.08398Z" fill="#FFB800" stroke="#1C274C" stroke-width="2"/></svg>';
 
@@ -599,6 +617,26 @@
                 ALE_LOCATIONS[planet].taverns.push({x:t.x,y:t.y,objectives:t.objectives||[],land_id:t.land_id});
             });
             _refreshAllMaps();
+            checkAndOpenTavern();
+        }catch(e){}
+    }
+
+    function checkAndOpenTavern(){
+        if(!_playerPos)return;
+        var locs=ALE_LOCATIONS[_playerPos.planet]||{};
+        var tv=(locs.taverns||[]).find(function(t){return t.x===_playerPos.x&&t.y===_playerPos.y;});
+        if(tv)onCell(_playerPos.x,_playerPos.y);
+    }
+
+    function loadUsedTaverns(){
+        var today=new Date().toISOString().slice(0,10);
+        try{
+            var saved=JSON.parse(localStorage.getItem('naron_used_taverns')||'{}');
+            if(saved.date===today){
+                (saved.keys||[]).forEach(function(k){_playerUsedTaverns.add(k);});
+            } else {
+                localStorage.removeItem('naron_used_taverns');
+            }
         }catch(e){}
     }
 
@@ -958,6 +996,7 @@
         document.getElementById('skip-btn').style.display='none';
         document.getElementById('map-overlay').classList.remove('gone');
         document.getElementById('quest-overlay').style.display='';
+        loadUsedTaverns();
         buildRulers();
         buildMap(_activePlanet);
         setActiveTab(_activePlanet);
@@ -1067,16 +1106,20 @@
                         ?'<span class="cell-icon" style="opacity:0.45;filter:grayscale(0.5)">'+LOCKED_SVG+'</span>'
                         :'<span class="cell-icon"><img src="Ale%20images/dungeon.svg" alt="dungeon"></span>';
                 } else if(tavernMap[key]){
-                    cls+=' ale-tavern';
-                    sty=' style="border-color:#b0784090;box-shadow:inset 0 0 5px #b0784050"';
-                    icon='<span class="cell-icon"><img src="Ale%20images/tavern.svg" alt="tavern"></span>';
+                    var tv=tavernMap[key];
+                    var tvLocked=tv.land_id&&_playerUsedTaverns.has(planet+'.'+tv.land_id);
+                    cls+=' ale-tavern'+(tvLocked?' ale-tv-locked':'');
+                    sty=' style="border-color:'+(tvLocked?'#7a5030':'#b07840')+'90;box-shadow:inset 0 0 5px '+(tvLocked?'#7a5030':'#b07840')+'50"';
+                    icon=tvLocked
+                        ?'<span class="cell-icon" style="opacity:0.45;filter:grayscale(0.5)">'+LOCKED_TAVERN_SVG+'</span>'
+                        :'<span class="cell-icon"><img src="Ale%20images/tavern.svg" alt="tavern"></span>';
                 } else if(arenaSet[key]){
                     cls+=' ale-arena';
                     sty=' style="border-color:#c0404090;box-shadow:inset 0 0 5px #c0404050"';
                     icon='<span class="cell-icon"><img src="Ale%20images/Arena.svg" alt="arena"></span>';
                 }
                 html+='<div class="'+cls+'" data-x="'+x+'" data-y="'+y+'"'+dataTo+sty
-                    +' onmouseenter="onHov('+x+','+y+')" onmouseleave="onLeave()" onclick="onCell('+x+','+y+')">'
+                    +' onmouseenter="onHov('+x+','+y+',event)" onmousemove="_tipMove(event)" onmouseleave="onLeave()" onclick="onCell('+x+','+y+')">'
                     +icon+'</div>';
             }
         }
@@ -1112,16 +1155,55 @@
         });
         _activePlanet=planet;
         dismissStrip();
+        clearSelection();
         buildMap(planet);
         warpSwitch(planet,function(){setActiveTab(planet);});
     }
 
     // ── CELL INTERACTION ──────────────────────────────────────────────────────
-    function onHov(x,y){
+    function onHov(x,y,evt){
         document.getElementById('coord-display').textContent='X:'+x+'  Y:'+y;
+        var tip=document.getElementById('cell-tip');
+        if(!tip)return;
+        var lines=['('+x+', '+y+')'];
+        var portals=ALE_PORTALS[_activePlanet]||[];
+        var portal=portals.find(function(p){return p.x===x&&p.y===y;});
+        if(portal){
+            var dest=(PLANETS[portal.to]||{name:portal.to}).name.toUpperCase();
+            lines.push('PORTAL → '+dest);
+        } else {
+            var locs=ALE_LOCATIONS[_activePlanet]||{};
+            var dg=(locs.dungeons||[]).find(function(d){return d.x===x&&d.y===y;});
+            var tv=(locs.taverns||[]).find(function(t){return t.x===x&&t.y===y;});
+            var ar=(locs.arenas||[]).some(function(a){return a.x===x&&a.y===y;});
+            if(dg){
+                var dgLk=dg.land_id&&_playerPlayedDungeons.has(_activePlanet+'.'+dg.land_id);
+                lines.push('DUNGEON'+(dgLk?' · ✓ COMPLETED TODAY':''));
+            } else if(tv){
+                var tvLk=tv.land_id&&_playerUsedTaverns.has(_activePlanet+'.'+tv.land_id);
+                lines.push('TAVERN'+(tvLk?' · ✓ HIRED TODAY':''));
+            } else if(ar){
+                lines.push('ARENA');
+            }
+        }
+        if(_playerPos&&_playerPos.planet===_activePlanet&&_playerPos.x===x&&_playerPos.y===y){
+            lines.push('YOUR POSITION');
+        }
+        tip.innerHTML=lines.join('<br>');
+        tip.style.display='block';
+        _tipMove(evt);
+    }
+    function _tipMove(e){
+        if(!e)return;
+        var tip=document.getElementById('cell-tip');
+        if(!tip||tip.style.display==='none')return;
+        tip.style.left=(e.clientX+14)+'px';
+        tip.style.top=(e.clientY-40)+'px';
     }
     function onLeave(){
         document.getElementById('coord-display').innerHTML='X:&#8212;  Y:&#8212;';
+        var tip=document.getElementById('cell-tip');
+        if(tip)tip.style.display='none';
     }
 
     function onCell(x,y){
@@ -1185,8 +1267,13 @@
         document.getElementById('action-panel').classList.remove('open');
         var hl=document.getElementById('hire-nft-list');
         if(hl){hl.classList.remove('open');hl.innerHTML='';}
+        closeHireNFTPanel();
+    }
+
+    function clearSelection(){
         document.querySelectorAll('.ale-cell.selected').forEach(function(el){el.classList.remove('selected');});
         _sel=null;
+        closeHireNFTPanel();
     }
 
     function doViewPlanet(){
@@ -1209,11 +1296,17 @@
             var destPlanet=_sel.portal?_sel.portal.to:_activePlanet;
             _playerPos={x:_sel.x,y:_sel.y,planet:destPlanet};
             applyMarker();
+            var wasTavern=_sel&&_sel.isTavern;
+            var savedSel=_sel?{x:_sel.x,y:_sel.y}:null;
             if(_sel.portal){
                 var to=_sel.portal.to;
                 setTimeout(function(){switchPlanet(to);_playerPos={x:_sel.x,y:_sel.y,planet:to};applyMarker();},1400);
+                setTimeout(function(){dismissStrip();clearSelection();},3000);
+            } else if(wasTavern&&savedSel){
+                setTimeout(function(){onCell(savedSel.x,savedSel.y);},1200);
+            } else {
+                setTimeout(function(){dismissStrip();clearSelection();},3000);
             }
-            setTimeout(dismissStrip,3000);
         }catch(e){
             status.textContent='✗ '+((e&&e.message)||'Failed').substring(0,60);
             status.className='err';
@@ -1357,6 +1450,7 @@
         el.innerHTML=html;
         el.classList.add('open');
         updateHireCost();
+        showHireNFTPanel();
     }
 
     function onHireNftChange(e,label){
@@ -1397,6 +1491,7 @@
             c.closest('label').style.opacity=(count>=3&&!c.checked)?'0.35':'';
             c.disabled=count>=3&&!c.checked;
         });
+        updateHireNFTPanel();
     }
 
     var _hireBaseCost=100;
@@ -1442,12 +1537,104 @@
             else if(wax&&wax.api)await wax.api.transact({actions},{blocksBehind:3,expireSeconds:30});
             else throw new Error('No wallet session — please log in.');
             status.textContent='✓ FIGHTER HIRED';status.className='ok';
+            if(_sel&&_sel.tavernEntry&&_sel.tavernEntry.land_id){
+                var tvKey=_activePlanet+'.'+_sel.tavernEntry.land_id;
+                _playerUsedTaverns.add(tvKey);
+                var tvToday=new Date().toISOString().slice(0,10);
+                try{localStorage.setItem('naron_used_taverns',JSON.stringify({date:tvToday,keys:Array.from(_playerUsedTaverns)}));}catch(e){}
+                var tvContainer=document.getElementById('map-'+_activePlanet);
+                if(tvContainer){
+                    var tvCell=tvContainer.querySelector('[data-x="'+_sel.x+'"][data-y="'+_sel.y+'"]');
+                    if(tvCell){
+                        tvCell.classList.add('ale-tv-locked');
+                        tvCell.style.borderColor='#7a503090';
+                        var tvIc=tvCell.querySelector('.cell-icon');
+                        if(tvIc){tvIc.style.opacity='0.45';tvIc.style.filter='grayscale(0.5)';tvIc.innerHTML=LOCKED_TAVERN_SVG;}
+                    }
+                }
+            }
             setTimeout(dismissStrip,3000);
         }catch(e){
             status.textContent='✗ '+((e&&e.message)||'Failed').substring(0,60);
             status.className='err';
         }
         btn.disabled=false;btn.textContent='HIRE FIGHTER ('+authorizedCost+' AP)';
+    }
+
+    // ── HIRE NFT POP-OUT PANEL ────────────────────────────────────────────────
+    var _hnpOpen=false;
+
+    function showHireNFTPanel(){
+        var panel=document.getElementById('hire-nft-panel');
+        var tab=document.getElementById('hire-nft-tab');
+        if(!panel)return;
+        panel.style.display='';
+        tab.style.display='flex';
+        panel.classList.remove('hnp-hidden');
+        tab.classList.remove('hnp-hidden');
+        tab.innerHTML='&#10094;';
+        _hnpOpen=true;
+    }
+
+    function hideHireNFTPanel(){
+        var panel=document.getElementById('hire-nft-panel');
+        var tab=document.getElementById('hire-nft-tab');
+        if(!panel)return;
+        panel.style.display='';
+        tab.style.display='flex';
+        panel.classList.add('hnp-hidden');
+        tab.classList.add('hnp-hidden');
+        tab.innerHTML='&#10095;';
+        _hnpOpen=false;
+    }
+
+    function closeHireNFTPanel(){
+        var panel=document.getElementById('hire-nft-panel');
+        var tab=document.getElementById('hire-nft-tab');
+        if(panel)panel.style.display='none';
+        if(tab)tab.style.display='none';
+        _hnpOpen=false;
+    }
+
+    function toggleHirePanel(){
+        if(_hnpOpen)hideHireNFTPanel();else showHireNFTPanel();
+    }
+
+    function updateHireNFTPanel(){
+        var slots=document.getElementById('hnp-slots');
+        var total=document.getElementById('hnp-total');
+        if(!slots)return;
+        var checked=document.querySelectorAll('.hire-nft-cb:checked');
+        var checkedTids=[];
+        checked.forEach(function(cb){if(cb.dataset.tid)checkedTids.push(cb.dataset.tid);});
+        var reduction=calcTotalReduction(checkedTids,_hireObjectives);
+        var base=_hireBaseCost||100;
+        var final=Math.max(1,base-reduction);
+        var nfts=[];
+        checked.forEach(function(cb){
+            var tid=cb.dataset.tid;
+            var tmpl=_tavernTemplateMap&&_tavernTemplateMap[tid];
+            nfts.push({tid:tid,tmpl:tmpl,mod:Number(cb.dataset.mod||0)});
+        });
+        var html='';
+        for(var i=0;i<3;i++){
+            var n=nfts[i];
+            if(n&&n.tmpl){
+                var schema=n.tmpl.schema||'';
+                var folder=schema==='arms.worlds'?'arms.worlds':schema==='crew.worlds'?'crew.worlds':'tool.worlds';
+                html+='<div class="hnp-slot">'
+                    +'<img class="hnp-slot-img" src="'+folder+'/'+n.tid+'.webp" onerror="this.style.opacity=\'0\'">'
+                    +'<div class="hnp-slot-info">'
+                    +'<div class="hnp-slot-name">'+(n.tmpl.cardname||'NFT')+'</div>'
+                    +(n.mod?'<div class="hnp-slot-ap">-'+n.mod+' AP</div>':'')
+                    +'</div></div>';
+            } else {
+                html+='<div class="hnp-slot"><div class="hnp-slot-empty"></div>'
+                    +'<div class="hnp-slot-info" style="font-size:0.55em;color:#333;padding-left:4px;">EMPTY</div></div>';
+            }
+        }
+        slots.innerHTML=html;
+        total.textContent=reduction>0?'REDUCTION: -'+reduction+' AP  →  '+final+' AP':'BASE COST: '+base+' AP';
     }
 
     // ── QUICK TRAVEL TOGGLE ───────────────────────────────────────────────────
@@ -1531,6 +1718,13 @@
         startScene();
     }
 </script>
+
+<div id="hire-nft-panel">
+    <div class="hnp-title">BATTLE PREP</div>
+    <div id="hnp-slots"></div>
+    <div class="hnp-total" id="hnp-total"></div>
+</div>
+<div id="hire-nft-tab" onclick="toggleHirePanel()">&#10094;</div>
 
 </body>
 </html>
