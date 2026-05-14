@@ -140,9 +140,14 @@
             border-bottom:2px solid rgba(232,160,32,0.15);
             padding:0 12px; overflow-x:auto; flex-shrink:0;
         }
-        .planet-tab { padding:8px 18px 10px; font-weight:bold; font-size:0.82em; letter-spacing:2px; text-transform:uppercase; background:transparent; border:none; color:#555; cursor:pointer; transition:all 0.2s; border-bottom:2px solid transparent; white-space:nowrap; flex-shrink:0; }
+        .planet-tab { padding:6px 18px 8px; font-weight:bold; font-size:0.82em; letter-spacing:2px; text-transform:uppercase; background:transparent; border:none; color:#555; cursor:pointer; transition:all 0.2s; border-bottom:2px solid transparent; white-space:nowrap; flex-shrink:0; }
         .planet-tab:hover { color:var(--gold); }
         .planet-tab.active { color:#000; background:var(--gold); border-bottom-color:var(--gold); }
+        .tab-counts { display:block; font-size:0.6em; font-weight:normal; letter-spacing:0.5px; margin-top:2px; line-height:1.2; color:#444; }
+        .planet-tab.active .tab-counts { color:rgba(0,0,0,0.45); }
+        .tab-ct { color:#b07840; }
+        .tab-ca { color:#904040; }
+        .planet-tab.active .tab-ct, .planet-tab.active .tab-ca { color:rgba(0,0,0,0.5); }
 
         /* ── MAP PANEL (collapsible) ─────────────────────────────────────── */
         #map-panel { overflow:hidden; transition:max-height 0.35s ease; max-height:700px; }
@@ -357,12 +362,12 @@
     <div id="minimize-btn" onclick="togglePanel()">&#8213; MINIMIZE MAP &#8213;</div>
 
     <div id="planet-tabs">
-        <button class="planet-tab active" data-planet="magor"  onclick="switchPlanet('magor')">MAGOR</button>
-        <button class="planet-tab"        data-planet="naron"  onclick="switchPlanet('naron')">NARON</button>
-        <button class="planet-tab"        data-planet="eyeke"  onclick="switchPlanet('eyeke')">EYEKE</button>
-        <button class="planet-tab"        data-planet="kavian" onclick="switchPlanet('kavian')">KAVIAN</button>
-        <button class="planet-tab"        data-planet="neri"   onclick="switchPlanet('neri')">NERI</button>
-        <button class="planet-tab"        data-planet="veles"  onclick="switchPlanet('veles')">VELES</button>
+        <button class="planet-tab active" data-planet="magor"  onclick="switchPlanet('magor')">MAGOR<span  class="tab-counts" id="tab-count-magor"></span></button>
+        <button class="planet-tab"        data-planet="naron"  onclick="switchPlanet('naron')">NARON<span  class="tab-counts" id="tab-count-naron"></span></button>
+        <button class="planet-tab"        data-planet="eyeke"  onclick="switchPlanet('eyeke')">EYEKE<span  class="tab-counts" id="tab-count-eyeke"></span></button>
+        <button class="planet-tab"        data-planet="kavian" onclick="switchPlanet('kavian')">KAVIAN<span class="tab-counts" id="tab-count-kavian"></span></button>
+        <button class="planet-tab"        data-planet="neri"   onclick="switchPlanet('neri')">NERI<span   class="tab-counts" id="tab-count-neri"></span></button>
+        <button class="planet-tab"        data-planet="veles"  onclick="switchPlanet('veles')">VELES<span  class="tab-counts" id="tab-count-veles"></span></button>
     </div>
 
     <div id="map-panel">
@@ -629,6 +634,7 @@
             });
             Object.keys(newTaverns).forEach(function(p){ALE_LOCATIONS[p].taverns=newTaverns[p];});
             _refreshAllMaps();
+            updateTabCounts();
             checkAndOpenTavern();
         }catch(e){}
     }
@@ -700,7 +706,7 @@
                 }
             });
         }
-        if (added>0) _refreshAllMaps();
+        if (added>0){ _refreshAllMaps(); updateTabCounts(); }
         return added;
     }
 
@@ -1391,9 +1397,26 @@
         btn.disabled=false;btn.textContent='TRAVEL & HIRE ('+authorizedCost+' AP)';
     }
 
+    // ── PLANET TAB COUNTS ─────────────────────────────────────────────────────
+    function updateTabCounts(){
+        var planetList=['magor','naron','eyeke','kavian','neri','veles'];
+        planetList.forEach(function(p){
+            var el=document.getElementById('tab-count-'+p);
+            if(!el)return;
+            var locs=ALE_LOCATIONS[p]||{};
+            var tv=(locs.taverns||[]).length;
+            var ar=(locs.arenas||[]).length;
+            var parts=[];
+            if(tv>0)parts.push('<span class="tab-ct">'+tv+' tvn</span>');
+            if(ar>0)parts.push('<span class="tab-ca">'+ar+' ar</span>');
+            el.innerHTML=parts.join(' ');
+        });
+    }
+
     // ── HIRE FIGHTER ──────────────────────────────────────────────────────────
     // nfttemplates: {templateid_string → full row} — eligibility + properties for AP calc
     var _tavernTemplateMap=null;
+    var _templateImages={}; // template_id → IPFS image URL for schemas without local folders
 
     async function loadTavernData(){
         if(_tavernTemplateMap)return;
@@ -1468,6 +1491,12 @@
                         var tid=String(a.template&&a.template.template_id);
                         var tmpl=_tavernTemplateMap[tid];
                         if(!tmpl)return; // not in eligible list
+                        // Cache IPFS image URL for schemas without local folders
+                        if(!_templateImages[tid]){
+                            var imgHash=(a.template&&a.template.immutable_data&&a.template.immutable_data.img)||
+                                        (a.data&&a.data.img)||'';
+                            if(imgHash)_templateImages[tid]='https://atomichub-ipfs.com/ipfs/'+imgHash;
+                        }
                         var mod=calcHireMod(tmpl,objectives);
                         results.push({
                             asset_id:a.asset_id,
@@ -1675,8 +1704,12 @@
             html+='<div class="hnp-card">';
             if(n&&n.tmpl){
                 var schema=n.tmpl.schema||'';
-                var folder=schema==='arms.worlds'?'arms.worlds':schema==='crew.worlds'?'crew.worlds':schema==='faces.worlds'?'faces.worlds':'tool.worlds';
-                html+='<img class="hnp-slot-img" src="'+folder+'/'+n.tid+'.webp" onerror="this.style.opacity=\'0\'">';
+                var imgSrc=_templateImages[n.tid];
+                if(!imgSrc){
+                    var folder=schema==='arms.worlds'?'arms.worlds':schema==='crew.worlds'?'crew.worlds':schema==='faces.worlds'?'faces.worlds':'tool.worlds';
+                    imgSrc=folder+'/'+n.tid+'.webp';
+                }
+                html+='<img class="hnp-slot-img" src="'+imgSrc+'" onerror="this.style.opacity=\'0\'">';
                 html+='<div class="hnp-ap">'+(n.mod?'−'+n.mod+' AP':'')+'</div>';
             } else {
                 html+='<div class="hnp-slot-empty"></div><div class="hnp-ap"></div>';
