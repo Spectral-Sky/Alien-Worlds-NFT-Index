@@ -198,6 +198,8 @@
         #grid-toggle:hover { border-color:#607080; color:#8898a8; }
         #grid-toggle.on { border-color:#3060a0; color:#60a8e0; }
         #player-planet-display { font-size:0.72em; letter-spacing:1px; color:#a09060; }
+        #player-ap-display { display:none; align-items:center; gap:4px; font-size:0.78em; color:#50d890; letter-spacing:1px; white-space:nowrap; }
+        #player-ap-display img { width:14px; height:14px; vertical-align:middle; display:inline-block; }
         #pos-refresh { padding:2px 7px; font-size:0.82em; background:transparent; border:1px solid #2a3040; color:#445; cursor:pointer; transition:all 0.2s; }
         #pos-refresh:hover { border-color:#607080; color:#8898a8; }
         #pos-refresh:disabled { opacity:0.4; cursor:default; }
@@ -389,6 +391,7 @@
                     <button id="grid-toggle" onclick="toggleGrid()">GRID</button>
                     <button id="expand-toggle" onclick="toggleExpandMap()">EXPAND</button>
                     <span id="player-planet-display"></span>
+                    <span id="player-ap-display"></span>
                     <button id="pos-refresh" onclick="refreshPlayerPos()" title="Refresh player position">&#8635;</button>
                     <span id="portal-hint" style="margin-left:auto"></span>
                 </div>
@@ -771,6 +774,7 @@
     // ── STATE ─────────────────────────────────────────────────────────────────
     var _activePlanet  = 'magor';
     var _playerPos     = null;
+    var _playerAP      = null;
     var _panelOpen     = true;
     var _skipReq       = false;
     var _quickTravel   = false;
@@ -1023,6 +1027,7 @@
                 var pn=normalizePlanet(row.planet||'');
                 if(pn&&PLANETS[pn])playerPlanet=pn;
                 _playerPos={planet:playerPlanet,x:row.x||1,y:row.y||1};
+                _playerAP=parseAP(row.activestats&&row.activestats.action_points);
                 // Pre-load taverns so they're ready when the map builds
                 _playerPlayedDungeons=new Set(row.played_dungeons||[]);
                 Object.keys(ALE_LOCATIONS).forEach(function(p){ALE_LOCATIONS[p].taverns=[];});
@@ -1053,6 +1058,7 @@
         document.getElementById('map-overlay').classList.remove('gone');
         document.getElementById('quest-overlay').style.display='';
         updatePlayerPlanetLabel();
+        updateAPDisplay();
         buildRulers();
         buildMap(_activePlanet);
         setActiveTab(_activePlanet);
@@ -1293,16 +1299,18 @@
         var hl=document.getElementById('hire-nft-list');
         if(hl){hl.classList.remove('open');hl.innerHTML='';}
         coord.textContent='('+x+', '+y+')';
+        var tc=calcTravelCost(x,y);
+        var tcSuffix=tc!==null?' ('+tc+' AP)':'';
         if(portal){
             var dest=(PLANETS[portal.to]||{name:portal.to.toUpperCase()}).name.toUpperCase();
             info.innerHTML='<strong>PORTAL</strong><br>→ '+dest;
-            tBtn.textContent='TRAVEL TO PORTAL'; tBtn.style.display='';
+            tBtn.textContent='TRAVEL TO PORTAL'+tcSuffix; tBtn.style.display='';
             vBtn.textContent='VIEW '+dest; vBtn.style.display='';
         } else if(isDungeon){
             info.innerHTML=isDungeonLocked
                 ?'<strong style="color:#507050;">DUNGEON</strong><br><span style="font-size:0.7em;color:#446;">✓ Won today — resets 0 UTC</span>'
                 :'<strong style="color:#70a870;">DUNGEON</strong>';
-            tBtn.textContent='TRAVEL >>'; tBtn.style.display='';
+            tBtn.textContent='TRAVEL >>'+tcSuffix; tBtn.style.display='';
             if(!isDungeonLocked) dBtn.style.display='';
         } else if(isTavern){
             info.innerHTML='<strong style="color:#c09060;">TAVERN</strong>';
@@ -1310,8 +1318,10 @@
             if(atTavern){
                 hBtn.style.display='';
             } else {
-                tBtn.textContent='TRAVEL >>'; tBtn.style.display='';
-                thBtn.textContent='TRAVEL & HIRE ('+(_hireBaseCost||100)+' AP)'; thBtn.style.display='';
+                tBtn.textContent='TRAVEL >>'+tcSuffix; tBtn.style.display='';
+                var hireCost=_hireBaseCost||100;
+                thBtn.textContent=tc!==null?'TRAVEL & HIRE ('+tc+' + '+hireCost+' AP)':'TRAVEL & HIRE ('+hireCost+' AP)';
+                thBtn.style.display='';
             }
             showHirePanel();
         } else if(isArena){
@@ -1319,11 +1329,11 @@
             info.innerHTML=isArenaLocked
                 ?'<strong style="color:#c06060;">ARENA</strong><br><span style="font-size:0.7em;color:#805050;">✗ Fighter defending — wait for 5 defeats</span>'
                 :'<strong style="color:#c06060;">ARENA</strong>';
-            tBtn.textContent='TRAVEL >>'; tBtn.style.display='';
+            tBtn.textContent='TRAVEL >>'+tcSuffix; tBtn.style.display='';
             if(!isArenaLocked) aBtn.style.display='';
         } else {
             info.innerHTML=(PLANETS[_activePlanet]||{name:_activePlanet}).name;
-            tBtn.textContent='CONFIRM TRAVEL'; tBtn.style.display='';
+            tBtn.textContent='CONFIRM TRAVEL'+tcSuffix; tBtn.style.display='';
         }
         document.getElementById('action-panel').classList.add('open');
         if (_quickTravel) doConfirm();
@@ -1620,7 +1630,10 @@
         var btn=document.getElementById('hire-btn');
         if(btn)btn.textContent='HIRE FIGHTER ('+final+' AP)';
         var thBtn=document.getElementById('travel-hire-btn');
-        if(thBtn&&thBtn.style.display!=='none')thBtn.textContent='TRAVEL & HIRE ('+final+' AP)';
+        if(thBtn&&thBtn.style.display!=='none'){
+            var _tc=(_sel&&_playerPos&&_playerPos.planet===_activePlanet)?calcTravelCost(_sel.x,_sel.y):null;
+            thBtn.textContent=_tc!==null?'TRAVEL & HIRE ('+_tc+' + '+final+' AP)':'TRAVEL & HIRE ('+final+' AP)';
+        }
         var summary=document.getElementById('hire-cost-summary');
         var count=checked.length;
         if(summary&&reduction>0)summary.textContent='est. ~'+final+' AP with '+count+' NFT'+(count!==1?'s':'');
@@ -1771,6 +1784,27 @@
         }
     }
 
+    // ── PLAYER AP / ENERGY ────────────────────────────────────────────────────
+    function parseAP(v){
+        if(v===null||v===undefined)return null;
+        if(typeof v==='number')return Math.floor(v);
+        var m=String(v).match(/^(\d+\.?\d*)/);
+        return m?Math.floor(parseFloat(m[1])):null;
+    }
+
+    function calcTravelCost(x,y){
+        if(!_playerPos||_playerPos.planet!==_activePlanet)return null;
+        return 10+Math.abs(x-_playerPos.x)+Math.abs(y-_playerPos.y);
+    }
+
+    function updateAPDisplay(){
+        var el=document.getElementById('player-ap-display');
+        if(!el)return;
+        if(_playerAP===null){el.style.display='none';return;}
+        el.style.display='flex';
+        el.innerHTML='<img src="Ale%20images/energy.png" alt="AP"> '+_playerAP+' AP';
+    }
+
     // ── PLAYER POSITION REFRESH ───────────────────────────────────────────────
     function updatePlayerPlanetLabel(){
         var lbl=document.getElementById('player-planet-display');
@@ -1795,8 +1829,10 @@
                 var pn=normalizePlanet(row.planet||'');
                 if(pn&&PLANETS[pn]){
                     _playerPos={planet:pn,x:row.x||1,y:row.y||1};
+                    _playerAP=parseAP(row.activestats&&row.activestats.action_points);
                     applyMarker();
                     updatePlayerPlanetLabel();
+                    updateAPDisplay();
                     if(pn!==_activePlanet)switchPlanet(pn);
                 }
             }
