@@ -189,7 +189,7 @@
         .cell-icon { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; display:flex; align-items:center; justify-content:center; width:32px; height:32px; z-index:2; }
         .cell-icon img { width:32px; height:32px; opacity:0.95; filter:drop-shadow(0 0 3px rgba(0,0,0,0.9)); }
         .cell-icon img.icon-portal { width:40px; height:40px; }
-        .ale-player-dot { position:absolute; bottom:3px; right:3px; width:7px; height:7px; border-radius:50%; background:#60c8ff; box-shadow:0 0 4px #60c8ff99; z-index:3; cursor:help; pointer-events:all; }
+        .ale-player-dot { position:absolute; bottom:3px; right:3px; width:7px; height:7px; border-radius:50%; background:#60c8ff; box-shadow:0 0 4px #60c8ff99; z-index:3; cursor:help; pointer-events:all; border:1.5px solid rgba(0,0,0,0.8); }
         .ale-player-dot.multi { background:#9060d0; box-shadow:0 0 5px #9060d099; }
         .ale-grid-on .ale-cell { border-color:rgba(0,0,0,0.55) !important; }
         .ale-grid-on .ale-cell:hover { border-color:rgba(232,160,32,0.5) !important; }
@@ -245,7 +245,7 @@
         #action-info { font-size:0.7em; color:#c8c0a0; line-height:1.5; word-break:break-word; }
         #action-info strong { color:var(--gold); }
         #action-coord { font-size:0.68em; color:#607080; letter-spacing:1px; }
-        .act-btn { display:flex; align-items:center; justify-content:center; gap:3px; width:100%; padding:6px 6px; font-size:0.7em; letter-spacing:1px; background:transparent; border:1px solid; cursor:crosshair; transition:all 0.2s; text-align:center; text-transform:uppercase; white-space:nowrap; }
+        .act-btn { display:block; width:100%; padding:6px 6px; font-size:0.7em; letter-spacing:0.5px; background:transparent; border:1px solid; cursor:crosshair; transition:all 0.2s; text-align:center; text-transform:uppercase; }
         .act-btn.confirm   { color:var(--gold); border-color:var(--gold); }
         .act-btn.confirm:hover   { background:var(--gold); color:#000; }
         .act-btn.view-map  { color:#5090e0; border-color:#5090e0; }
@@ -1763,11 +1763,10 @@
             html+='<div class="hnp-card">';
             if(n&&n.tmpl){
                 var schema=n.tmpl.schema||'';
-                var imgSrc=_templateImages[n.tid];
-                if(!imgSrc){
-                    var folder=schema==='arms.worlds'?'arms.worlds':schema==='crew.worlds'?'crew.worlds':schema==='faces.worlds'?'faces.worlds':'tool.worlds';
-                    imgSrc=folder+'/'+n.tid+'.webp';
-                }
+                var _localFolders={'arms.worlds':1,'crew.worlds':1,'faces.worlds':1,'tool.worlds':1};
+                var imgSrc=_localFolders[schema]
+                    ?(schema+'/'+n.tid+'.webp')
+                    :(_templateImages[n.tid]||('tool.worlds/'+n.tid+'.webp'));
                 html+='<img class="hnp-slot-img" src="'+imgSrc+'" onerror="this.style.opacity=\'0\'">';
                 html+='<div class="hnp-ap">'+(n.mod?'−'+n.mod+' '+_AP_ICON:'')+'</div>';
             } else {
