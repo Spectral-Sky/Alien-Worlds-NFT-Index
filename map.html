@@ -272,6 +272,13 @@
         .fp-sheet-stat-val { font-size:0.66em; }
         .fp-sheet-stat-var { font-size:0.6em; color:#403040; }
         .fp-sheet-target { font-size:0.6em; color:#605060; margin-top:8px; }
+        .fp-in-use { font-size:0.55em; color:#50a0e0; letter-spacing:1px; background:rgba(30,80,150,0.18); border:1px solid rgba(50,120,200,0.25); border-radius:2px; padding:1px 5px; margin-left:2px; }
+        .fp-sheet-exp { font-size:0.6em; color:#505060; margin:6px 0 8px; display:flex; align-items:center; gap:6px; }
+        .fp-sheet-exp-bar { flex:1; height:4px; background:rgba(255,255,255,0.06); border-radius:2px; overflow:hidden; display:inline-block; }
+        .fp-sheet-exp-bar span { display:block; height:100%; background:#b07040; border-radius:2px; }
+        .fp-sheet-abl-title { font-size:0.57em; color:#504050; letter-spacing:2px; margin-top:10px; margin-bottom:4px; border-top:1px solid rgba(192,96,192,0.1); padding-top:6px; }
+        .fp-sheet-abls { display:flex; flex-wrap:wrap; gap:4px; }
+        .fp-sheet-abl { font-size:0.58em; color:#907080; background:rgba(120,60,120,0.12); border:1px solid rgba(160,80,160,0.2); border-radius:2px; padding:2px 6px; }
 
         /* ── LEGEND COLUMN ───────────────────────────────────────────────── */
         .map-legend {
@@ -2102,16 +2109,32 @@
 
     function _fightersSorted() {
         var s = _myFighters.slice();
-        if (_fighterSort==='level')   s.sort(function(a,b){return (b.level||0)-(a.level||0);});
-        if (_fighterSort==='class')   s.sort(function(a,b){return (a.class||'').localeCompare(b.class||'');});
-        if (_fighterSort==='element') s.sort(function(a,b){return (a.element||a.fighter_element||'').localeCompare(b.element||b.fighter_element||'');});
-        if (_fighterSort==='marker')  s.sort(function(a,b){return (a.marker||a.marker_id||0)-(b.marker||b.marker_id||0);});
+        if (_fighterSort==='level')   s.sort(function(a,b){return ((b.stats&&b.stats.level)||0)-((a.stats&&a.stats.level)||0);});
+        if (_fighterSort==='class')   s.sort(function(a,b){return (a.classname||'').localeCompare(b.classname||'');});
+        if (_fighterSort==='element') s.sort(function(a,b){return (a.element||'').localeCompare(b.element||'');});
+        if (_fighterSort==='marker')  s.sort(function(a,b){return (a.marker||'').localeCompare(b.marker||'');});
         return s;
     }
 
     function _markerSym(m) {
-        var map={'0':'','1':'♥','2':'▲','3':'●','4':'★','5':'◆','6':'♦','7':'❤'};
-        return map[String(m)]||String(m);
+        if(!m) return '';
+        var lm=String(m).toLowerCase();
+        // Color-prefix markers (gold-up, green-duble-up, etc.)
+        if(lm.indexOf('gold')===0)  return '<span style="color:#d4a017">▲</span>';
+        if(lm.indexOf('green')===0) return '<span style="color:#40c070">▲</span>';
+        if(lm.indexOf('red')===0)   return '<span style="color:#e05050">▲</span>';
+        if(lm.indexOf('blue')===0)  return '<span style="color:#5090e0">▲</span>';
+        if(lm.indexOf('purple')===0)return '<span style="color:#9060d0">▲</span>';
+        if(lm.indexOf('white')===0) return '<span style="color:#c0c0c0">▲</span>';
+        // Stat-name markers
+        var icons={'health':'<span style="color:#e06060">❤</span>',
+                   'damage':'<span style="color:#e08040">⚔</span>',
+                   'attackspeed':'<span style="color:#d4a017">⚡</span>',
+                   'taunt':'<span style="color:#5090e0">🛡</span>',
+                   'target':'<span style="color:#c060c0">🎯</span>',
+                   'initiative':'<span style="color:#40c0c0">⚡</span>'};
+        if(icons[lm]) return icons[lm];
+        return '<span style="color:#446;font-size:0.55em">'+String(m).slice(0,3).toUpperCase()+'</span>';
     }
 
     async function loadMyFighters() {
@@ -2123,52 +2146,20 @@
         var list=document.getElementById('fighters-list-inner');
         if(list) list.innerHTML='<div class="fp-loading">LOADING FIGHTERS…</div>';
         try {
-            // fighters table is globally scoped at fighters.ale;
-            // secondary index 2 (name type) is the owner/wallet
-            var allRows=[];
-            var lb=wallet;
-            while(true){
-                var res=await fetchRows({
-                    code:'fighters.ale',scope:'fighters.ale',table:'fighters',
-                    index_position:'2',key_type:'name',
-                    lower_bound:lb,upper_bound:wallet,
-                    limit:100,json:true
-                });
-                if(!res||!res.rows||!res.rows.length)break;
-                // Keep only rows owned by this wallet
-                res.rows.forEach(function(r){
-                    var owner=r.owner||r.wallet||r.player||'';
-                    if(owner===wallet)allRows.push(r);
-                });
-                if(!res.more)break;
-                lb=res.next_key||'';
-                if(!lb)break;
-            }
-            _myFighters=allRows;
+            var res=await fetchRows({code:'fighters.ale',scope:wallet,table:'fighters',limit:500,json:true});
+            var rows=res&&res.rows?res.rows:[];
+            _myFighters=rows.filter(function(f){ return f.active===1||f.active==='1'; });
             _myFighters.forEach(function(f){
-                var aid=String(f.asset_id||f.key||'');
-                if(aid) _fighterCache[aid]=f;
+                var fid=String(f.fighter_id!=null?f.fighter_id:'');
+                if(fid) _fighterCache[fid]=f;
             });
-            console.log('[fighters] loaded',_myFighters.length,'for',wallet);
-            if(_myFighters.length===0){
-                // Fallback: try wallet as scope (some contract versions use per-wallet scope)
-                var res2=await fetchRows({code:'fighters.ale',scope:wallet,table:'fighters',limit:500,json:true});
-                if(res2&&res2.rows&&res2.rows.length){
-                    _myFighters=res2.rows;
-                    _myFighters.forEach(function(f){
-                        var aid=String(f.asset_id||f.key||'');
-                        if(aid) _fighterCache[aid]=f;
-                    });
-                    console.log('[fighters] fallback scope gave',_myFighters.length,'rows');
-                }
-            }
+            console.log('[fighters] loaded',_myFighters.length,'active fighters for',wallet);
             renderFighterList();
         } catch(e){
             console.error('[fighters] load error:',e);
             if(list) list.innerHTML='<div class="fp-empty">ERROR: '+(e&&e.message||'Failed')+'</div>';
         }
     }
-
     function renderFighterList() {
         var list=document.getElementById('fighters-list-inner');
         var countEl=document.getElementById('fighters-count');
@@ -2179,14 +2170,15 @@
         var html='';
         sorted.forEach(function(f){
             var origIdx=_myFighters.indexOf(f);
-            var cls=(f.class||f.fighter_class||'').toLowerCase().replace(/[\s_-]/g,'');
-            var ci=FIGHTER_CLASSES[cls]||{e:'⚔️',n:f.class||f.fighter_class||'?'};
-            var el=(f.element||f.fighter_element||'').toLowerCase();
+            var cls=(f.classname||'').toLowerCase().replace(/[\s_-]/g,'');
+            var ci=FIGHTER_CLASSES[cls]||{e:'⚔️',n:f.classname||'?'};
+            var el=(f.element||'').toLowerCase();
             var ee=FIGHTER_ELEMENTS[el]||'';
-            var race=f.race||f.fighter_race||'';
-            var lvl=f.level||f.lvl||'?';
-            var marker=f.marker||f.marker_id||'';
-            var msym=marker?_markerSym(marker):'';
+            var race=f.racename||'';
+            var lvl=(f.stats&&f.stats.level!=null)?f.stats.level:'?';
+            var marker=f.marker||'';
+            var msym=_markerSym(marker);
+            var inUse=f.in_use===1||f.in_use==='1';
             html+='<div class="fp-row" onclick="showFighterSheet('+origIdx+')">'
                 +'<span class="fp-marker">'+msym+'</span>'
                 +'<span class="fp-class-e">'+ci.e+'</span>'
@@ -2194,54 +2186,65 @@
                 +'<span class="fp-race">'+race.toUpperCase()+'</span>'
                 +'<span class="fp-el-e">'+ee+'</span>'
                 +'<span class="fp-level">LV'+lvl+'</span>'
+                +(inUse?'<span class="fp-in-use">DEPLOYED</span>':'')
                 +'</div>';
         });
         list.innerHTML=html;
     }
-
     function showFighterSheet(origIdx) {
         var f=_myFighters[origIdx];
         if(!f) return;
         var list=document.getElementById('fighters-list-inner');
         if(!list) return;
-        var cls=(f.class||f.fighter_class||'').toLowerCase().replace(/[\s_-]/g,'');
-        var ci=FIGHTER_CLASSES[cls]||{e:'⚔️',n:f.class||f.fighter_class||'Fighter'};
-        var el=(f.element||f.fighter_element||'').toLowerCase();
+        var cls=(f.classname||'').toLowerCase().replace(/[\s_-]/g,'');
+        var ci=FIGHTER_CLASSES[cls]||{e:'⚔️',n:f.classname||'Fighter'};
+        var el=(f.element||'').toLowerCase();
         var ee=FIGHTER_ELEMENTS[el]||'';
-        var race=f.race||f.fighter_race||'';
-        var lvl=f.level||f.lvl||'?';
-        var agePct=f.age_penalty||f.age_pen||'';
-        var marker=f.marker||f.marker_id||'';
-        var target=f.target||(f.stats&&f.stats.target)||'';
-        var s=f.stats||f;
+        var race=f.racename||'';
+        var s=f.stats||{};
+        var lvl=s.level!=null?s.level:'?';
+        var marker=f.marker||'';
+        var target=s.target||'';
+        var inUse=f.in_use===1||f.in_use==='1';
         var statDefs=[
-            {k:'damage',  i:'damage.svg',  l:'DMG', col:'#60a860'},
-            {k:'health',  i:'health.svg',  l:'HP',  col:'#60a860'},
-            {k:'cooldown',i:'cooldown.svg',l:'CD',  col:'#c07060'},
-            {k:'windup',  i:'windup.svg',  l:'WU',  col:'#c07060'},
-            {k:'taunt',   i:'taunt.svg',   l:'TNT', col:'#a0b0c0'},
+            {mn:'damage_min',     mx:'damage_max',      l:'DMG', col:'#60a860'},
+            {mn:'health_min',     mx:'health_max',       l:'HP',  col:'#60a860'},
+            {mn:'attackspeed_min',mx:'attackspeed_max',  l:'CD',  col:'#c07060'},
+            {mn:'initiative_min', mx:'initiative_max',   l:'WU',  col:'#c07060'},
+            {mn:'taunt_min',      mx:'taunt_max',        l:'TNT', col:'#a0b0c0'},
         ];
         var statsHtml='';
         statDefs.forEach(function(sd){
-            var base=(s[sd.k]!==undefined)?s[sd.k]:((f[sd.k+'_base']!==undefined)?f[sd.k+'_base']:null);
-            var vari=(s[sd.k+'_var']!==undefined)?s[sd.k+'_var']:null;
-            if(base===null||base===undefined) return;
+            var mn=s[sd.mn],mx=s[sd.mx];
+            if(mn==null&&mx==null)return;
             statsHtml+='<div class="fp-sheet-stat">'
-                +'<img src="Ale%20images/'+sd.i+'" alt="">'
-                +'<span class="fp-sheet-stat-lbl">'+sd.l+'</span>'
-                +'<span class="fp-sheet-stat-val" style="color:'+sd.col+'">'+base+'</span>'
-                +(vari!==null?'<span class="fp-sheet-stat-var"> (\xb1'+vari+')</span>':'')
+                +'<span class="fp-sheet-stat-lbl" style="color:'+sd.col+'">'+sd.l+'</span>'
+                +'<span class="fp-sheet-stat-val">'+mn+' – '+mx+'</span>'
                 +'</div>';
         });
+        var expHtml='';
+        if(s.experience!=null&&s.required_experience){
+            var pct=Math.round(100*s.experience/s.required_experience);
+            expHtml='<div class="fp-sheet-exp">XP: '+s.experience+' / '+s.required_experience
+                +' <span class="fp-sheet-exp-bar"><span style="width:'+pct+'%"></span></span></div>';
+        }
+        var ablHtml='';
+        if(s.abilities&&s.abilities.length){
+            ablHtml='<div class="fp-sheet-abl-title">ABILITIES</div><div class="fp-sheet-abls">'
+                +s.abilities.map(function(a){return '<span class="fp-sheet-abl">'+(a.displayname||a.name||'?')+'</span>';}).join('')
+                +'</div>';
+        }
         var html='<button class="fp-sheet-back" onclick="renderFighterList()">◂ BACK TO LIST</button>'
             +'<div class="fp-sheet-title">'+ci.e+' '+ci.n.toUpperCase()+'</div>'
-            +'<div class="fp-sheet-sub">'+(ee?ee+' ':'')+el.toUpperCase()+(race?' \xb7 '+race.toUpperCase():'')+'</div>'
-            +'<div class="fp-sheet-meta">LEVEL '+lvl+(agePct?' \xb7 AGE PENALTY: '+agePct:'')+(marker?' \xb7 MARKER: '+_markerSym(marker):'')+'</div>'
+            +'<div class="fp-sheet-sub">'+(ee?ee+' ':'')+el.toUpperCase()+(race?' · '+race.toUpperCase():'')+'</div>'
+            +'<div class="fp-sheet-meta">LEVEL '+lvl+(inUse?' · <span class="fp-in-use">DEPLOYED</span>':'')
+                +(marker?' · MARKER: '+_markerSym(marker):'')+'</div>'
+            +expHtml
             +'<div class="fp-sheet-stats">'+statsHtml+'</div>'
-            +(target?'<div class="fp-sheet-target">TARGET: '+target+'</div>':'');
+            +(target?'<div class="fp-sheet-target">TARGET: '+target+'</div>':'')
+            +ablHtml;
         list.innerHTML=html;
     }
-
     function setFighterSort(s) {
         _fighterSort=s;
         document.querySelectorAll('.fp-sort-btn').forEach(function(b){
@@ -2279,48 +2282,44 @@
     }
 
     function _fspStat(data, key, icon, label) {
-        // Flexible stat extraction: try top-level, then nested .stats
-        var s = data.stats || data;
-        var base = (s[key] !== undefined) ? s[key] : ((data[key+'_base'] !== undefined) ? data[key+'_base'] : null);
-        var vari = (s[key+'_var'] !== undefined) ? s[key+'_var'] : ((s[key+'_variance'] !== undefined) ? s[key+'_variance'] : null);
-        if (base === null || base === undefined) return '';
+        var s = data.stats || {};
+        var mn = s[key+'_min'], mx = s[key+'_max'];
+        if (mn == null && mx == null) return '';
         return '<div class="fsp-stat">'
-            + '<img src="Ale%20images/'+icon+'" alt="">'
+            + (icon ? '<img src="Ale%20images/'+icon+'" alt="">' : '')
             + '<span class="fsp-stat-lbl">'+label+'</span>'
-            + '<span class="fsp-stat-val">'+base
-            + (vari !== null ? ' <span class="fsp-stat-var">(\xb1'+vari+')</span>' : '')
-            + '</span></div>';
+            + '<span class="fsp-stat-val">'+mn+' – '+mx+'</span>'
+            + '</div>';
     }
-
     function showStatPane(data, evt) {
         var pane = document.getElementById('fighter-stat-pane');
         if (!pane) return;
-        var cls = String(data.class||data.fighter_class||'').toLowerCase().replace(/[\s_-]/g,'');
-        var clsInfo = FIGHTER_CLASSES[cls] || {e:'⚔️', n:(data.class||data.fighter_class||'Fighter')};
-        var elKey = String(data.element||data.fighter_element||'').toLowerCase();
+        var cls = String(data.classname||'').toLowerCase().replace(/[\s_-]/g,'');
+        var clsInfo = FIGHTER_CLASSES[cls] || {e:'⚔️', n:(data.classname||'Fighter')};
+        var elKey = String(data.element||'').toLowerCase();
         var elEmoji = FIGHTER_ELEMENTS[elKey] || '';
-        var race = data.race || data.fighter_race || '';
-        var lvl = data.level || data.lvl || '';
-        var target = data.target || (data.stats && data.stats.target) || '';
+        var race = data.racename || '';
+        var s = data.stats || {};
+        var lvl = s.level != null ? s.level : '';
+        var target = s.target || '';
 
         var html = '<div class="fsp-header">'+clsInfo.e+' '+clsInfo.n.toUpperCase()+'</div>';
         html += '<div class="fsp-sub">';
         if (elEmoji) html += elEmoji+' ';
         if (elKey) html += elKey.toUpperCase();
-        if (race) html += ' \xb7 '+race.toUpperCase();
-        if (lvl) html += ' \xb7 LV'+lvl;
+        if (race) html += ' · '+race.toUpperCase();
+        if (lvl) html += ' · LV'+lvl;
         html += '</div>';
         html += _fspStat(data,'damage','damage.svg','DMG');
         html += _fspStat(data,'health','health.svg','HP');
-        html += _fspStat(data,'cooldown','cooldown.svg','CD');
-        html += _fspStat(data,'windup','windup.svg','WU');
+        html += _fspStat(data,'attackspeed','cooldown.svg','CD');
+        html += _fspStat(data,'initiative','windup.svg','WU');
         html += _fspStat(data,'taunt','taunt.svg','TNT');
         if (target) html += '<div class="fsp-target">TARGET: '+target+'</div>';
         pane.innerHTML = html;
         pane.style.display = 'block';
         _moveStatPane(evt);
     }
-
     function _moveStatPane(e) {
         if (!e) return;
         var pane = document.getElementById('fighter-stat-pane');
