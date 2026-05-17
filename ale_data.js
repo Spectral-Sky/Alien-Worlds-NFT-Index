@@ -1,4 +1,4 @@
-// ALE Card Stats — sourced from Alien Legends Stats CSVs
+// ALE Card Stats â€” sourced from Alien Legends Stats CSVs
 // Format: [template, name, rarity, shine, race, element, hp, dmg, taunt, windup, cooldown, fire, nature, air, gem, metal, neutral, ability]
 // windup & cooldown: LOWER IS BETTER. All elemental stats: HIGHER IS BETTER.
 
@@ -15,7 +15,7 @@ var ALE_ARMS = [
   [19591,"Widow Maker","Common","Stone","","Metal",20,14,12.5,12,21,3.5,8.5,23.5,13.5,18.5,13.5,"Reduces the lowest opposing health by 25%"],
   [19592,"Storm Edge Sword","Rare","Stone","","Air",23.5,19.5,13.5,11.5,23.5,9.5,14.5,4.5,19.5,24.5,14.5,"Reduces the highest opposing air resistance 12%"],
   [19593,"Waxon Staff","Epic","Stone","","Nature",32,18,20.5,14.5,24.5,25.5,5.5,20.5,10.5,15.5,15.5,"Gains 17.5 increased damage and health for each enemy Khaured"],
-  [19594,"Spike Hammer","Common","Stone","","Metal",18,17,9,10,22,3,8,23,13,18,13,"Gains 20 damage for each enemy over 100 health"],
+  [19594,"Spike Hammer","Common","Stone","","Metal",18,17,9,10,22,3,8,23,13,18,13,"Gains 30 damage for each enemy over 180 health"],
   [19595,"Star Fire Sword","Epic","Stone","","Fire",23.5,26.5,11.5,10,25.5,15,20,10,25,5,15,"Gains 1 damage per strike for the rest of the fight"],
   [19596,"Sandmaster Spear","Epic","Stone","","Nature",20.5,30.5,8,8,26.5,25,5,20,10,15,15,"Gains 3 increased damage and reduced cooldown for each enemy Onoros"],
   [19597,"Waxon Sword","Rare","Stone","","Gem",23.5,19.5,13.5,11.5,23.5,19.5,24.5,14.5,4.5,9.5,14.5,"In combat, gains 35 damage"],
@@ -69,7 +69,7 @@ var ALE_ARMS = [
   [141415,"Widow Maker","Common","Gold","","Metal",20.5,17,12,11.5,22.5,4,9,24,14,19,14,"Reduces the lowest opposing health by 40%"],
   [141416,"Storm Edge Sword","Rare","Gold","","Air",25,23.5,13.5,11,25,10,15,5,20,25,15,"Reduces the highest opposing air resistance 14%"],
   [141417,"Waxon Staff","Epic","Gold","","Nature",37,20.5,22,14.5,25.5,26.5,6.5,21.5,11.5,16.5,16.5,"Gains 20 increased damage and health for each enemy Khaured"],
-  [141418,"Spike Hammer","Common","Gold","","Metal",18.5,20,8.5,9.5,23,3.5,8.5,23.5,13.5,18.5,13.5,"Gains 22.5 damage for each enemy over 100 health"],
+  [141418,"Spike Hammer","Common","Gold","","Metal",18.5,20,8.5,9.5,23,3.5,8.5,23.5,13.5,18.5,13.5,"Gains 35 damage for each enemy over 180 health"],
   [141419,"Star Fire Sword","Epic","Gold","","Fire",25.5,32.5,11.5,9,27.5,15.5,20.5,10.5,25.5,5.5,15.5,"Gains 1.5 damage per strike for the rest of the fight"],
   [141420,"Sandmaster Spear","Epic","Gold","","Nature",21.5,37,7.5,7,28.5,25.5,5.5,20.5,10.5,15.5,15.5,"Gains 4 increased damage and reduced cooldown for each enemy Onoros"],
   [141421,"Waxon Sword","Rare","Gold","","Gem",25,23.5,13.5,11,25,20,25,15,5,10,15,"In combat, gains 37.5 damage"],
@@ -111,7 +111,7 @@ var ALE_ARMS = [
   [141457,"Widow Maker","Common","Stardust","","Metal",23,18.5,13.5,12,23.5,4.5,9.5,24.5,14.5,19.5,14.5,"Reduces the lowest opposing health by 55%"],
   [141458,"Storm Edge Sword","Rare","Stardust","","Air",26.5,29,13,10,27,10.5,15.5,5.5,20.5,25.5,15.5,"Reduces the highest opposing air resistance 18%"],
   [141459,"Waxon Staff","Epic","Stardust","","Nature",41.5,26,21.5,13.5,27.5,27,7,22,12,17,17,"Gains 22.5 increased damage and health for each enemy Khaured"],
-  [141460,"Spike Hammer","Common","Stardust","","Metal",20,22,10,10,24,4,9,24,14,19,14,"Gains 25 damage for each enemy over 100 health"],
+  [141460,"Spike Hammer","Common","Stardust","","Metal",20,22,10,10,24,4,9,24,14,19,14,"Gains 40 damage for each enemy over 180 health"],
   [141461,"Star Fire Sword","Epic","Stardust","","Fire",30,37,13,9,29,16.5,21.5,11.5,26.5,6.5,16.5,"Gains 2 damage per strike for the rest of the fight"],
   [141462,"Sandmaster Spear","Epic","Stardust","","Nature",25.5,42.5,9,7,30.5,26.5,6.5,21.5,11.5,16.5,16.5,"Gains 5 increased damage and reduced cooldown for each enemy Onoros"],
   [141463,"Waxon Sword","Rare","Stardust","","Gem",28.5,26.5,15,11,26.5,20.5,25.5,15.5,5.5,10.5,15.5,"In combat, gains 45 damage"],
@@ -271,7 +271,7 @@ var ALE_CREW = [
   [254357,"Interstellar Emissary","Epic","Antimatter","Unknown","Air",34,14,19,16.5,17.5,18.5,23.5,19.5,26,33.5,27.5,"Gains 29 increased damage for each enemy Astral Knight"]
 ];
 
-// ALE Tools � format: [template_id, name, rarity, shine, img_cid, shrd_mp, tlm_mp, luck, ease]
+// ALE Tools — format: [template_id, name, rarity, shine, img_cid, shrd_mp, tlm_mp, luck, ease]
 var ALE_TOOLS = [
   [19552,'Standard Shovel','Abundant','Stone','QmeFeDuobVKxgxyASKsYVKB3UoNjULyqS3VS7tuXsAuLoW',5,10,5,10],
   [19553,'Standard Drill','Abundant','Stone','QmVUZHpUkc3PuLkJ7BDvJ3S3AgDySjsqWQib1sVKziHCbS',7,20,7,20],
