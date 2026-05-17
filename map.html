@@ -280,23 +280,41 @@
         .fp-sheet-abls { display:flex; flex-wrap:wrap; gap:4px; }
         .fp-sheet-abl { font-size:0.58em; color:#907080; background:rgba(120,60,120,0.12); border:1px solid rgba(160,80,160,0.2); border-radius:2px; padding:2px 6px; }
 
-        /* ── LEGEND COLUMN ───────────────────────────────────────────────── */
+        /* ── LEGEND BAR (bottom) ─────────────────────────────────────────── */
         .map-legend {
-            width:152px; flex-shrink:0;
-            background:rgba(0,0,0,0.55);
-            border-left:1px solid rgba(232,160,32,0.1);
-            padding:14px 12px;
-            display:flex; flex-direction:column; gap:10px;
-            overflow-y:auto;
+            background:rgba(0,0,0,0.6);
+            border-top:1px solid rgba(232,160,32,0.1);
+            display:flex; flex-direction:row; align-items:center;
+            flex-shrink:0; overflow-x:auto; overflow-y:visible;
+            min-height:36px; padding:0; gap:0;
         }
-        .legend-title { color:#a09060; font-size:0.62em; letter-spacing:3px; text-transform:uppercase; border-bottom:1px solid rgba(232,160,32,0.15); padding-bottom:6px; margin-bottom:2px; flex-shrink:0; }
-        .legend-row { display:flex; align-items:center; gap:8px; font-size:0.72em; color:#8898a8; letter-spacing:1px; }
-        .legend-row img { width:22px; height:22px; opacity:0.85; flex-shrink:0; filter:drop-shadow(0 0 2px rgba(0,0,0,0.8)); }
-        .legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+        .lb-items { display:flex; align-items:center; gap:10px; padding:5px 14px; flex:1; overflow-x:auto; }
+        .legend-title { color:#a09060; font-size:0.62em; letter-spacing:3px; text-transform:uppercase;
+            border-bottom:1px solid rgba(232,160,32,0.15); padding-bottom:5px; margin-bottom:6px; flex-shrink:0; }
+        .legend-row { display:inline-flex; align-items:center; gap:5px; font-size:0.65em; color:#7888a0;
+            letter-spacing:0.5px; flex-shrink:0; white-space:nowrap; }
+        .legend-row img { width:16px; height:16px; opacity:0.8; flex-shrink:0;
+            filter:drop-shadow(0 0 2px rgba(0,0,0,0.8)); }
+        .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+        .lb-sep { width:1px; height:22px; background:rgba(232,160,32,0.1); flex-shrink:0; }
+        .lb-controls { display:flex; align-items:center; gap:5px; padding:3px 10px; flex-shrink:0; }
+        #lb-cmds-btn { padding:4px 9px; font-size:0.64em; letter-spacing:1px; background:rgba(232,160,32,0.08);
+            border:1px solid rgba(232,160,32,0.35); color:var(--gold); cursor:pointer; transition:all 0.15s; }
+        #lb-cmds-btn:hover { background:rgba(232,160,32,0.18); }
 
-        /* ── ACTION PANEL (inside legend) ────────────────────────────────── */
-        .action-divider { border:none; border-top:1px solid rgba(232,160,32,0.15); margin:4px 0 8px; flex-shrink:0; }
-        #action-panel { display:none; flex-direction:column; gap:5px; }
+        /* ── ACTION PANEL (floating right side) ──────────────────────────── */
+        .action-divider { display:none; }
+        #action-panel {
+            position:fixed; right:0; top:52px;
+            width:200px; max-height:calc(100vh - 90px);
+            background:rgba(3,6,15,0.97);
+            border-left:1px solid rgba(232,160,32,0.12);
+            border-bottom:1px solid rgba(232,160,32,0.08);
+            padding:10px 11px; z-index:601;
+            overflow-y:auto; flex-direction:column; gap:5px;
+            display:none;
+            box-shadow:-4px 0 20px rgba(0,0,0,0.7);
+        }
         #action-panel.open { display:flex; }
         #action-info { font-size:0.7em; color:#c8c0a0; line-height:1.5; word-break:break-word; }
         #action-info strong { color:var(--gold); }
@@ -320,7 +338,7 @@
 
         /* ── HIRE NFT SELECTOR ───────────────────────────────────────────────── */
         #hire-nft-list { display:none; flex-direction:column; gap:3px; }
-        #hire-nft-list.open { display:flex; }
+        #hire-nft-list.open { display:flex; max-height:260px; overflow-y:auto; }
         .hire-cost-note { font-size:0.62em; color:#706050; letter-spacing:0.5px; padding:2px 0; }
         .hire-cost-summary { font-size:0.68em; color:var(--gold); letter-spacing:1px; padding:3px 0 2px; border-top:1px solid rgba(232,160,32,0.15); }
         .hire-nft-row { display:flex; align-items:flex-start; gap:5px; padding:3px 5px; border:1px solid rgba(192,144,96,0.12); cursor:crosshair; transition:background 0.12s; }
@@ -469,47 +487,41 @@
                 </div>
             </div>
 
-            <!-- right: legend + action panel -->
-            <div class="map-legend">
-                <div class="legend-title">LEGEND</div>
-                <div class="legend-row"><img src="Ale%20images/portal.png" alt="portal"><span>Portal</span></div>
-                <div class="legend-row"><img src="Ale%20images/dungeon.svg" alt="dungeon"><span>Dungeon</span></div>
-                <div class="legend-row"><img src="Ale%20images/tavern.svg" alt="tavern"><span>Tavern</span></div>
-                <div class="legend-row"><img src="Ale%20images/Arena.svg" alt="arena"><span>Arena</span></div>
-                <div class="legend-row">
-                    <span style="font-size:16px;line-height:1;width:22px;text-align:center;">📍</span>
-                    <span>Your position</span>
-                </div>
-                <div class="legend-row">
-                    <span class="legend-dot" style="background:#60c8ff;box-shadow:0 0 4px #60c8ff99;"></span>
-                    <span>Other player</span>
-                </div>
-                <div class="legend-row">
-                    <span class="legend-dot" style="background:#9060d0;box-shadow:0 0 4px #9060d099;"></span>
-                    <span>Multiple players</span>
-                </div>
+        </div><!-- end map-inner-row -->
 
+        <!-- legend bar along the bottom of the map -->
+        <div class="map-legend">
+            <div class="lb-items">
+                <span class="legend-row"><img src="Ale%20images/portal.png" alt="portal"><span>Portal</span></span>
+                <span class="legend-row"><img src="Ale%20images/dungeon.svg" alt="dungeon"><span>Dungeon</span></span>
+                <span class="legend-row"><img src="Ale%20images/tavern.svg" alt="tavern"><span>Tavern</span></span>
+                <span class="legend-row"><img src="Ale%20images/Arena.svg" alt="arena"><span>Arena</span></span>
+                <span class="legend-row"><span style="font-size:14px;line-height:1;width:16px;text-align:center;">📍</span><span>You</span></span>
+                <span class="legend-row"><span class="legend-dot" style="background:#60c8ff;box-shadow:0 0 4px #60c8ff99;"></span><span>Players</span></span>
+                <span class="legend-row"><span class="legend-dot" style="background:#9060d0;box-shadow:0 0 4px #9060d099;"></span><span>Multi</span></span>
+            </div>
+            <div class="lb-sep"></div>
+            <div class="lb-controls">
                 <button id="qt-toggle" onclick="toggleQuickTravel()">QUICK TRAVEL</button>
                 <button id="fighters-btn" onclick="loadMyFighters()">&#9876; MY FIGHTERS</button>
-
-                <!-- action panel: appears below legend when a cell is clicked -->
-                <hr class="action-divider">
-                <div id="action-panel">
-                    <div class="legend-title">SELECTED</div>
-                    <div id="action-info"></div>
-                    <div id="action-coord"></div>
-                    <button id="confirm-travel-btn" class="act-btn confirm"  onclick="doConfirm()"      style="display:none;">CONFIRM TRAVEL</button>
-                    <button id="travel-hire-btn"    class="act-btn hire"     onclick="doTravelHire()"  style="display:none;">TRAVEL &amp; HIRE (100 AP)</button>
-                    <button id="view-map-btn"        class="act-btn view-map" onclick="doViewPlanet()" style="display:none;">VIEW MAP</button>
-                    <button id="hire-btn"            class="act-btn hire"     onclick="doHire()"        style="display:none;">HIRE FIGHTER (100 AP)</button>
-                    <div id="hire-nft-list"></div>
-                    <button id="dungeon-btn"         class="act-btn dungeon"  style="display:none;">&#9935; PLAY DUNGEON</button>
-                    <button id="arena-btn"           class="act-btn arena"    style="display:none;">&#9876; FIGHT ARENA</button>
-                    <span id="action-status"></span>
-                    <button class="act-btn cancel" onclick="dismissStrip()">&#10005; CANCEL</button>
-                </div>
+                <button id="lb-cmds-btn" onclick="toggleCommandsPanel()" style="display:none">ALL COMMANDS &#9656;</button>
             </div>
+        </div>
 
+        <!-- action panel: floating right side panel, shown when cell selected -->
+        <div id="action-panel">
+            <div class="legend-title">SELECTED</div>
+            <div id="action-info"></div>
+            <div id="action-coord"></div>
+            <button id="confirm-travel-btn" class="act-btn confirm"  onclick="doConfirm()"     style="display:none;">CONFIRM TRAVEL</button>
+            <button id="travel-hire-btn"    class="act-btn hire"     onclick="doTravelHire()"  style="display:none;">TRAVEL &amp; HIRE (100 AP)</button>
+            <button id="view-map-btn"        class="act-btn view-map" onclick="doViewPlanet()" style="display:none;">VIEW MAP</button>
+            <button id="hire-btn"            class="act-btn hire"     onclick="doHire()"        style="display:none;">HIRE FIGHTER (100 AP)</button>
+            <div id="hire-nft-list"></div>
+            <button id="dungeon-btn"         class="act-btn dungeon"  style="display:none;">&#9935; PLAY DUNGEON</button>
+            <button id="arena-btn"           class="act-btn arena"    style="display:none;">&#9876; FIGHT ARENA</button>
+            <span id="action-status"></span>
+            <button class="act-btn cancel" onclick="dismissStrip()">&#10005; CANCEL</button>
         </div>
     </div>
     <div class="map-footer"></div>
@@ -1308,6 +1320,20 @@
         warpSwitch(planet,function(){setActiveTab(planet);});
     }
 
+    function toggleCommandsPanel(){
+        var panel=document.getElementById('action-panel');
+        var btn=document.getElementById('lb-cmds-btn');
+        if(!panel)return;
+        var isOpen=panel.classList.contains('open');
+        if(isOpen){
+            panel.classList.remove('open');
+            if(btn)btn.textContent='ALL COMMANDS ▶';
+        } else if(_sel){
+            panel.classList.add('open');
+            if(btn)btn.textContent='COMMANDS ◂';
+        }
+    }
+
     // ── CELL INTERACTION ──────────────────────────────────────────────────────
     function onHov(x,y,evt){
         document.getElementById('coord-display').textContent='X:'+x+'  Y:'+y;
@@ -1463,6 +1489,8 @@
             if(!atCurrentPos){tBtn.innerHTML='CONFIRM TRAVEL'+tcSuffix; tBtn.style.display='';}
         }
         document.getElementById('action-panel').classList.add('open');
+        var _cmdsBtn=document.getElementById('lb-cmds-btn');
+        if(_cmdsBtn){_cmdsBtn.style.display='';_cmdsBtn.textContent='COMMANDS ◂';}
         if (_quickTravel) doConfirm();
     }
 
@@ -1470,6 +1498,8 @@
         document.getElementById('action-panel').classList.remove('open');
         var hl=document.getElementById('hire-nft-list');
         if(hl){hl.classList.remove('open');hl.innerHTML='';}
+        var _cmdsBtn=document.getElementById('lb-cmds-btn');
+        if(_cmdsBtn){_cmdsBtn.style.display='none';}
         closeHireNFTPanel();
     }
 
@@ -1477,6 +1507,8 @@
         document.querySelectorAll('.ale-cell.selected').forEach(function(el){el.classList.remove('selected');});
         _sel=null;
         closeHireNFTPanel();
+        var _cmdsBtn=document.getElementById('lb-cmds-btn');
+        if(_cmdsBtn){_cmdsBtn.style.display='none';}
     }
 
     function doViewPlanet(){
@@ -1526,7 +1558,6 @@
         var status=document.getElementById('action-status');
         if(!wallet){status.textContent='⚠ PLEASE LOG IN';status.className='err';return;}
         var cbs=document.querySelectorAll('.hire-nft-cb:checked');
-        if(!cbs.length){status.textContent='Select at least one NFT';status.className='err';return;}
         var asset_ids=[],checkedTids=[];
         cbs.forEach(function(cb){asset_ids.push(cb.value);if(cb.dataset.tid)checkedTids.push(cb.dataset.tid);});
         var reduction=calcTotalReduction(checkedTids,_hireObjectives);
@@ -1577,6 +1608,7 @@
     // ── HIRE FIGHTER ──────────────────────────────────────────────────────────
     // nfttemplates: {templateid_string → full row} — eligibility + properties for AP calc
     var _tavernTemplateMap=null;
+    var _tavernTemplateMapAge=0;
     var _AP_ICON='<img src="Ale%20images/energy.png" alt="" style="width:12px;height:12px;vertical-align:middle;display:inline-block;margin:0 1px;flex-shrink:0;">';
     // Pre-populated: level.worlds card images (no local folder)
     var _templateImages={
@@ -1592,7 +1624,8 @@
     };
 
     async function loadTavernData(){
-        if(_tavernTemplateMap)return;
+        var _now=Date.now();
+        if(_tavernTemplateMap&&_now-_tavernTemplateMapAge<300000)return; // 5-min cache
         var map={},lb='';
         while(true){
             var d=await fetchRows({code:'tavern.ale',scope:'tavern.ale',table:'nfttemplates',limit:500,lower_bound:lb||undefined,json:true});
@@ -1602,15 +1635,19 @@
             lb=d.next_key||'';if(!lb)break;
         }
         _tavernTemplateMap=map;
+        _tavernTemplateMapAge=Date.now();
     }
 
     // Returns true if a single objective matches a template row
     function _objMatch(tmplRow, obj){
         if(!tmplRow||!obj)return false;
+        // Blank or '-' objective_type = wildcard (chain treats as always-covered)
+        var type=String(obj.objective_type||'');
+        if(!type||type==='-')return true;
         var s=String(obj.objective_string||'').toLowerCase();
         var v=obj.objective_value;
         function strEq(a){return String(a==null?'':a).toLowerCase()===s;}
-        switch(obj.objective_type){
+        switch(type){
             case 'schema':   return strEq(tmplRow.schema);
             case 'rarity':   return strEq(tmplRow.rarity);
             case 'shine':    return strEq(tmplRow.shine)||strEq(tmplRow.element);
@@ -1626,8 +1663,8 @@
             case 'nft.mp':   return Number(tmplRow.nft_mp)===Number(v);
         }
         // Unknown type: try matching any field by that name
-        if(obj.objective_type&&tmplRow[obj.objective_type]!=null){
-            return strEq(tmplRow[obj.objective_type]);
+        if(type&&tmplRow[type]!=null){
+            return strEq(tmplRow[type]);
         }
         return false;
     }
@@ -1925,7 +1962,9 @@
                 var ohtml='';
                 _hireObjectives.forEach(function(obj){
                     var covered=tmpls.some(function(tmpl){return _objMatch(tmpl,obj);});
-                    var label=obj.objective_string||obj.objective_value||obj.objective_type||'?';
+                    // Show type when string is blank/dash so user can see what the objective is
+                    var _ot=String(obj.objective_type||''), _os=String(obj.objective_string||'');
+                    var label=(_os&&_os!=='-')?_os:(_ot&&_ot!=='-')?'['+_ot+']':(obj.objective_value!=null?String(obj.objective_value):'?');
                     var ap=Number(obj.mod_value||0);
                     ohtml+='<div class="hnp-obj-sq '+(covered?'covered':'uncovered')+'">'+label+(ap?'<br>−'+ap+' '+_AP_ICON:'')+'</div>';
                 });
@@ -2020,7 +2059,7 @@
             _bgFrozen=false;
             if(_starsRestartFn)_starsRestartFn();
             stars.style.transition='opacity 0.5s'; stars.style.opacity='';
-            // planet opacity is managed by setPlanetVisible() — leave it
+            planet.style.transition='opacity 0.5s'; planet.style.opacity='';
         }
     }
 
