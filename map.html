@@ -189,6 +189,7 @@
         .cell-icon { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; display:flex; align-items:center; justify-content:center; width:32px; height:32px; z-index:2; }
         .cell-icon img { width:32px; height:32px; opacity:0.95; filter:drop-shadow(0 0 3px rgba(0,0,0,0.9)); }
         .cell-icon img.icon-portal { width:40px; height:40px; }
+        .portal-label { position:absolute; bottom:1px; left:50%; transform:translateX(-50%); font-size:6px; font-weight:700; color:#000; letter-spacing:0.3px; white-space:nowrap; pointer-events:none; z-index:3; text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff; line-height:1; }
         .ale-player-dot { position:absolute; bottom:3px; right:3px; width:7px; height:7px; border-radius:50%; background:#60c8ff; box-shadow:0 0 4px #60c8ff99; z-index:3; cursor:help; pointer-events:all; border:1.5px solid rgba(0,0,0,0.8); }
         .ale-player-dot.multi { background:#9060d0; box-shadow:0 0 5px #9060d099; }
         .ale-grid-on .ale-cell { border-color:rgba(0,0,0,0.55) !important; }
@@ -1257,7 +1258,8 @@
                     cls+=' ale-portal';
                     sty=' style="border-color:'+c+'90;box-shadow:inset 0 0 7px '+c+'60;"';
                     dataTo=' data-to="'+portal.to+'"';
-                    icon='<span class="cell-icon"><img src="Ale%20images/portal.png" alt="portal" class="icon-portal"></span>';
+                    var _pname=(PLANETS[portal.to]||{name:portal.to}).name.toUpperCase();
+                    icon='<span class="cell-icon"><img src="Ale%20images/portal.png" alt="portal" class="icon-portal"></span><span class="portal-label">'+_pname+'</span>';
                 } else if(dungeonMap[key]){
                     var dg=dungeonMap[key];
                     var dgLocked=dg.land_id&&_playerPlayedDungeons.has(planet+'.'+dg.land_id);
