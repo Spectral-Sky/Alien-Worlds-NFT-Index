@@ -94,6 +94,11 @@
         .wallet-btn:hover { background: var(--theme-hover); box-shadow: var(--theme-shadow); }
         .wallet-btn.logged-in { background: var(--theme-color); color: #000; border: 1px solid #fff; }
 
+        #lang-btns { display:flex; gap:4px; align-items:center; margin-right:12px; }
+        #lang-btns button { background:transparent; color:#557766; border:1px solid #1a3a2a; padding:6px 10px; font-family:'Courier New',monospace; font-size:0.75em; letter-spacing:1px; cursor:pointer; transition:all 0.2s; text-transform:uppercase; }
+        #lang-btns button:hover { color:var(--theme-color); border-color:var(--theme-color); }
+        #lang-btns button.lang-active { color:#000; background:var(--theme-color); border-color:var(--theme-color); }
+
         /* --- HUB CONTENT (2-COLUMN LAYOUT) --- */
         .hub-container { max-width: 1400px; margin: 50px auto; padding: 0 20px; flex: 1; width: 100%; box-sizing: border-box; }
         
@@ -521,6 +526,11 @@
         </nav>
 
         <div class="wallet-section">
+        <div id="lang-btns">
+            <button onclick="setLang('fr')" title="Translate to French">FR</button>
+            <button onclick="setLang('de')" title="Translate to German">DE</button>
+            <button onclick="setLang('en')" title="Show original English" class="lang-active">EN</button>
+        </div>
         <button id="wallet-connect-btn" class="wallet-btn" onclick="disconnectWallet()" style="display:none;"></button>
         <button id="wallet-btn-anchor" class="wallet-btn" onclick="loginWithAnchor()">[ &#9875; ANCHOR ]</button>
         <button id="wallet-btn-wcc" class="wallet-btn" onclick="loginWithWCC()">[ &#9729; CLOUD WALLET ]</button>
@@ -924,7 +934,7 @@
 
         </div>
         <div style="text-align:center; padding: 12px 0 4px; font-family:'Courier New',monospace; font-size:0.72em; color:#252535; letter-spacing:2px; display:flex; justify-content:center; align-items:center; gap:14px;">
-            <span>v 1.1.44</span>
+            <span>v 1.1.45</span>
             <a href="ep.html" style="color:#252535; text-decoration:none; border:1px solid #1a1a2a; padding:2px 10px; letter-spacing:2px; transition:all 0.2s;" onmouseover="this.style.color='var(--theme-color)';this.style.borderColor='var(--theme-color)'" onmouseout="this.style.color='#252535';this.style.borderColor='#1a1a2a'">ENDPOINTS</a>
         </div>
     </footer>
@@ -1456,6 +1466,34 @@
         <div id="chest-modal-empty"></div>
     </div>
 </div>
+<div id="google_translate_element" style="display:none;"></div>
+<script>
+    function googleTranslateElementInit(){
+        new google.translate.TranslateElement({pageLanguage:'en',includedLanguages:'fr,de',autoDisplay:false},'google_translate_element');
+    }
+    function setLang(lang){
+        document.querySelectorAll('#lang-btns button').forEach(function(b){b.classList.remove('lang-active');});
+        document.querySelectorAll('#lang-btns button').forEach(function(b){if(b.textContent.trim()===lang.toUpperCase())b.classList.add('lang-active');});
+        if(lang==='en'){
+            document.cookie='googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            document.cookie='googtrans=; domain=.'+location.hostname+'; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            location.reload();
+            return;
+        }
+        var el=document.querySelector('.goog-te-combo');
+        if(el){el.value=lang;el.dispatchEvent(new Event('change'));return;}
+        document.cookie='googtrans=/en/'+lang+'; path=/';
+        location.reload();
+    }
+    (function(){
+        var m=document.cookie.match(/googtrans=\/en\/(\w+)/);
+        if(m&&m[1]&&m[1]!=='en'){
+            document.querySelectorAll('#lang-btns button').forEach(function(b){b.classList.remove('lang-active');});
+            document.querySelectorAll('#lang-btns button').forEach(function(b){if(b.textContent.trim()===m[1].toUpperCase())b.classList.add('lang-active');});
+        }
+    })();
+</script>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 
 </html>
