@@ -386,6 +386,33 @@
         ::-webkit-scrollbar { height:6px; width:6px; }
         ::-webkit-scrollbar-track { background:rgba(0,0,0,0.4); }
         ::-webkit-scrollbar-thumb { background:#1a2030; border:1px solid rgba(232,160,32,0.2); }
+
+        /* ── TAVERN SWEEP ────────────────────────────────────────────────── */
+        #sweep-console { position:fixed; inset:0; z-index:2000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.78); backdrop-filter:blur(3px); }
+        #sweep-inner { background:rgba(3,6,15,0.98); border:1px solid rgba(192,144,96,0.45); border-radius:4px; padding:16px 18px; width:290px; max-width:92vw; box-shadow:0 0 30px rgba(192,144,96,0.12); }
+        .sw-title { font-size:0.68em; letter-spacing:3px; color:var(--gold); text-transform:uppercase; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid rgba(192,144,96,0.2); }
+        .sw-stat  { font-size:0.64em; color:#c0b090; letter-spacing:1px; margin-bottom:2px; }
+        .sw-ap    { font-size:0.62em; letter-spacing:1px; margin-bottom:8px; }
+        .sw-list  { max-height:150px; overflow-y:auto; margin-bottom:8px; }
+        .sw-row   { display:flex; justify-content:space-between; font-size:0.62em; padding:3px 4px; border-bottom:1px solid rgba(192,144,96,0.07); transition:background 0.2s, color 0.2s; }
+        .sw-row-name { color:#907860; }
+        .sw-row-ap   { color:#604840; }
+        .sw-prog-wrap { margin-bottom:6px; display:none; }
+        .sw-prog-bar  { height:4px; background:rgba(192,144,96,0.1); border-radius:2px; overflow:hidden; }
+        .sw-prog-fill { height:100%; background:var(--gold); border-radius:2px; transition:width 0.35s; }
+        .sw-prog-lbl  { font-size:0.6em; color:var(--gold); text-align:center; margin-top:3px; letter-spacing:1px; min-height:1em; }
+        .sw-run-btn   { width:100%; margin-top:6px; padding:7px; background:rgba(192,144,96,0.1); border:1px solid rgba(192,144,96,0.45); color:var(--gold); font-family:inherit; font-size:0.7em; letter-spacing:2px; cursor:pointer; border-radius:2px; transition:all 0.2s; text-transform:uppercase; }
+        .sw-run-btn:hover { background:rgba(192,144,96,0.2); }
+        .sw-run-btn:disabled { opacity:0.4; cursor:default; }
+        .sw-close-btn { width:100%; margin-top:5px; padding:5px; background:transparent; border:1px solid rgba(255,255,255,0.07); color:#444; font-family:inherit; font-size:0.6em; letter-spacing:1px; cursor:pointer; border-radius:2px; transition:color 0.2s, border-color 0.2s; }
+        .sw-close-btn:hover { color:#888; border-color:#444; }
+        .sw-kp-display { background:#030608; border:1px solid rgba(192,144,96,0.2); padding:6px 10px; text-align:center; letter-spacing:8px; color:var(--gold); font-size:1.05em; min-height:30px; margin-bottom:8px; border-radius:2px; }
+        .sw-kp-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; margin-bottom:4px; }
+        .sw-kp-row  { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; }
+        .sw-kp-btn  { background:rgba(12,8,3,0.9); border:1px solid rgba(192,144,96,0.15); color:#c0b090; padding:7px 4px; cursor:pointer; border-radius:2px; font-family:inherit; font-size:0.82em; transition:all 0.1s; }
+        .sw-kp-btn:hover  { background:rgba(192,144,96,0.14); border-color:rgba(192,144,96,0.4); }
+        .sw-kp-btn:active { transform:scale(0.95); }
+        .sw-kp-status { font-size:0.6em; text-align:center; margin-top:6px; color:var(--gold); min-height:1em; letter-spacing:1px; }
     </style>
 </head>
 <body>
@@ -447,12 +474,12 @@
     <div id="minimize-btn" onclick="togglePanel()">&#8213; MINIMIZE MAP &#8213;</div>
 
     <div id="planet-tabs">
-        <button class="planet-tab active" data-planet="magor"  onclick="switchPlanet('magor')">MAGOR<span  class="tab-counts" id="tab-count-magor"></span></button>
-        <button class="planet-tab"        data-planet="naron"  onclick="switchPlanet('naron')">NARON<span  class="tab-counts" id="tab-count-naron"></span></button>
-        <button class="planet-tab"        data-planet="eyeke"  onclick="switchPlanet('eyeke')">EYEKE<span  class="tab-counts" id="tab-count-eyeke"></span></button>
-        <button class="planet-tab"        data-planet="kavian" onclick="switchPlanet('kavian')">KAVIAN<span class="tab-counts" id="tab-count-kavian"></span></button>
-        <button class="planet-tab"        data-planet="neri"   onclick="switchPlanet('neri')">NERI<span   class="tab-counts" id="tab-count-neri"></span></button>
-        <button class="planet-tab"        data-planet="veles"  onclick="switchPlanet('veles')">VELES<span  class="tab-counts" id="tab-count-veles"></span></button>
+        <button class="planet-tab active" data-planet="magor"  onclick="onPlanetTabClick('magor')">MAGOR<span  class="tab-counts" id="tab-count-magor"></span></button>
+        <button class="planet-tab"        data-planet="naron"  onclick="onPlanetTabClick('naron')">NARON<span  class="tab-counts" id="tab-count-naron"></span></button>
+        <button class="planet-tab"        data-planet="eyeke"  onclick="onPlanetTabClick('eyeke')">EYEKE<span  class="tab-counts" id="tab-count-eyeke"></span></button>
+        <button class="planet-tab"        data-planet="kavian" onclick="onPlanetTabClick('kavian')">KAVIAN<span class="tab-counts" id="tab-count-kavian"></span></button>
+        <button class="planet-tab"        data-planet="neri"   onclick="onPlanetTabClick('neri')">NERI<span   class="tab-counts" id="tab-count-neri"></span></button>
+        <button class="planet-tab"        data-planet="veles"  onclick="onPlanetTabClick('veles')">VELES<span  class="tab-counts" id="tab-count-veles"></span></button>
     </div>
 
     <div id="map-panel">
@@ -2460,5 +2487,233 @@
     })();
 </script>
 <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<!-- ══ TAVERN SWEEP CONSOLE ══════════════════════════════════════════════ -->
+<div id="sweep-console">
+    <div id="sweep-inner"></div>
+</div>
+
+<script>
+// ── TAVERN SWEEP ─────────────────────────────────────────────────────────────
+var SWEEP_CODE      = '62766'; // NARON
+var _tabClickCount  = 0;
+var _tabClickTimer  = null;
+var _sweepUnlocked  = false;
+var _sweepRunning   = false;
+var _sweepAbort     = false;
+var _sweepKpBuf     = '';
+
+function onPlanetTabClick(planet) {
+    if (planet === _activePlanet) {
+        _tabClickCount++;
+        clearTimeout(_tabClickTimer);
+        _tabClickTimer = setTimeout(function(){ _tabClickCount = 0; }, 1800);
+        if (_tabClickCount >= 5) {
+            _tabClickCount = 0;
+            openSweepConsole();
+        }
+    } else {
+        _tabClickCount = 0;
+        switchPlanet(planet);
+    }
+}
+
+function openSweepConsole() {
+    var el = document.getElementById('sweep-console');
+    if (!el) return;
+    el.style.display = 'flex';
+    if (_sweepUnlocked) renderSweepPanel();
+    else renderSweepLogin();
+}
+
+function closeSweepConsole() {
+    var el = document.getElementById('sweep-console');
+    if (el) el.style.display = 'none';
+    if (_sweepRunning) _sweepAbort = true;
+}
+
+function renderSweepLogin() {
+    _sweepKpBuf = '';
+    document.getElementById('sweep-inner').innerHTML =
+        '<div class="sw-title">⚡ SWEEP ACCESS</div>' +
+        '<div id="sw-kp-display" class="sw-kp-display">_</div>' +
+        '<div class="sw-kp-grid">' +
+        [1,2,3,4,5,6,7,8,9].map(function(n){
+            return '<button class="sw-kp-btn" onclick="swKp(\''+n+'\')">'+n+'</button>';
+        }).join('') +
+        '</div>' +
+        '<div class="sw-kp-row">' +
+        '<button class="sw-kp-btn" onclick="swKpClear()">CLR</button>' +
+        '<button class="sw-kp-btn" onclick="swKp(\'0\')">0</button>' +
+        '<button class="sw-kp-btn" onclick="swKpEnter()">OK</button>' +
+        '</div>' +
+        '<div id="sw-kp-status" class="sw-kp-status"></div>' +
+        '<button class="sw-close-btn" onclick="closeSweepConsole()">CANCEL</button>';
+}
+
+function swKp(d) {
+    if (_sweepKpBuf.length < 8) {
+        _sweepKpBuf += d;
+        var el = document.getElementById('sw-kp-display');
+        if (el) el.textContent = '●'.repeat(_sweepKpBuf.length);
+    }
+}
+function swKpClear() {
+    _sweepKpBuf = '';
+    var el = document.getElementById('sw-kp-display');
+    if (el) el.textContent = '_';
+}
+function swKpEnter() {
+    if (_sweepKpBuf === SWEEP_CODE) {
+        _sweepUnlocked = true;
+        var s = document.getElementById('sw-kp-status');
+        if (s) { s.textContent = '✓ UNLOCKED'; s.style.color = '#60e090'; }
+        setTimeout(renderSweepPanel, 500);
+    } else {
+        var s = document.getElementById('sw-kp-status');
+        if (s) { s.textContent = '✗ ACCESS DENIED'; s.style.color = '#ff4466'; }
+        setTimeout(function() {
+            _sweepKpBuf = '';
+            var d = document.getElementById('sw-kp-display');
+            if (d) d.textContent = '_';
+            if (s) { s.textContent = ''; }
+        }, 900);
+    }
+}
+
+function renderSweepPanel() {
+    var wallet = getWallet();
+    var locs   = ALE_LOCATIONS[_activePlanet] || {};
+    var available = (locs.taverns || []).filter(function(t) {
+        return !(t.land_id && _playerUsedTaverns.has(_activePlanet + '.' + t.land_id));
+    });
+
+    // Simulate sequential travel to calculate cumulative AP
+    var simX = _playerPos ? _playerPos.x : 0;
+    var simY = _playerPos ? _playerPos.y : 0;
+    var totalAP = 0;
+    var rowData = available.map(function(tv) {
+        var tAP = 10 + Math.abs(tv.x - simX) + Math.abs(tv.y - simY);
+        var ap  = tAP + (_hireBaseCost || 100);
+        totalAP += ap;
+        simX = tv.x; simY = tv.y;
+        return { tv: tv, ap: ap };
+    });
+
+    var haveAP = _playerAP !== null ? _playerAP : null;
+    var apOk   = haveAP === null || haveAP >= totalAP;
+    var apNote = haveAP === null
+        ? '(AP unknown — log in to check)'
+        : apOk
+            ? '✓ Sufficient AP  (' + haveAP + ' available)'
+            : '⚠ Need ' + (totalAP - haveAP) + ' more AP  (have ' + haveAP + ')';
+
+    var planetName = (PLANETS[_activePlanet]||{name:_activePlanet}).name.toUpperCase();
+
+    var listHtml = rowData.length
+        ? rowData.map(function(r, i) {
+            return '<div class="sw-row" id="sw-row-' + i + '">' +
+                '<span class="sw-row-name">' + (r.tv.name || ('Tavern ' + (i+1))) + '</span>' +
+                '<span class="sw-row-ap">' + r.ap + ' AP</span>' +
+            '</div>';
+        }).join('')
+        : '<div style="color:#555;font-size:0.65em;padding:6px 0;">All taverns already hired today.</div>';
+
+    document.getElementById('sweep-inner').innerHTML =
+        '<div class="sw-title">⚡ ' + planetName + ' — TAVERN SWEEP</div>' +
+        '<div class="sw-stat">' + available.length + ' available taverns · ' + totalAP + ' AP total</div>' +
+        '<div class="sw-ap" style="color:' + (apOk ? '#60e090' : '#ff7744') + ';">' + apNote + '</div>' +
+        '<div class="sw-list">' + listHtml + '</div>' +
+        '<div class="sw-prog-wrap" id="sw-prog-wrap">' +
+            '<div class="sw-prog-bar"><div class="sw-prog-fill" id="sw-prog-fill" style="width:0%"></div></div>' +
+            '<div class="sw-prog-lbl" id="sw-prog-lbl"></div>' +
+        '</div>' +
+        (available.length
+            ? '<button class="sw-run-btn" id="sw-run-btn" onclick="runTavernSweep()"' +
+              (wallet ? '' : ' disabled') + '>' +
+              (wallet ? '▶ RUN SWEEP  (' + available.length + ' TAVERNS)' : '⚠ LOG IN FIRST') +
+              '</button>'
+            : '') +
+        '<button class="sw-close-btn" id="sw-close-btn" onclick="closeSweepConsole()">CLOSE</button>';
+}
+
+async function runTavernSweep() {
+    var wallet = getWallet();
+    if (!wallet || _sweepRunning) return;
+    var locs = ALE_LOCATIONS[_activePlanet] || {};
+    var available = (locs.taverns || []).filter(function(t) {
+        return !(t.land_id && _playerUsedTaverns.has(_activePlanet + '.' + t.land_id));
+    });
+    if (!available.length) return;
+
+    _sweepRunning = true;
+    _sweepAbort   = false;
+
+    var runBtn   = document.getElementById('sw-run-btn');
+    var closeBtn = document.getElementById('sw-close-btn');
+    var progWrap = document.getElementById('sw-prog-wrap');
+    var progFill = document.getElementById('sw-prog-fill');
+    var progLbl  = document.getElementById('sw-prog-lbl');
+
+    if (runBtn)   { runBtn.disabled = true; runBtn.textContent = 'RUNNING…'; }
+    if (closeBtn) { closeBtn.textContent = '■ ABORT'; closeBtn.style.color = '#ff6666'; closeBtn.style.borderColor = 'rgba(255,68,68,0.3)'; }
+    if (progWrap) progWrap.style.display = 'block';
+
+    var succeeded = 0, failed = 0;
+    for (var i = 0; i < available.length; i++) {
+        if (_sweepAbort) break;
+        var tv  = available[i];
+        var row = document.getElementById('sw-row-' + i);
+        if (row) row.style.background = 'rgba(192,144,96,0.08)';
+        if (progLbl)  progLbl.textContent  = (i+1) + ' / ' + available.length + '  ·  ' + (tv.name || 'Tavern');
+        if (progFill) progFill.style.width = (i / available.length * 100).toFixed(0) + '%';
+
+        try {
+            var actions = [
+                { account:'players.ale', name:'travel',
+                  authorization:[{actor:wallet,permission:'active'}],
+                  data:{wallet:wallet, x:tv.x, y:tv.y} },
+                { account:'players.ale', name:'hire',
+                  authorization:[{actor:wallet,permission:'active'}],
+                  data:{wallet:wallet, asset_ids:[], cost_action_points:_hireBaseCost||100} }
+            ];
+            if (window.walletSession) await window.walletSession.transact({actions});
+            else if (wax && wax.api)  await wax.api.transact({actions},{blocksBehind:3,expireSeconds:30});
+            else throw new Error('No wallet session');
+
+            _playerPos = {planet:_activePlanet, x:tv.x, y:tv.y};
+            if (tv.land_id) {
+                var key = _activePlanet + '.' + tv.land_id;
+                _playerUsedTaverns.add(key);
+                try {
+                    var today = new Date().toISOString().slice(0,10);
+                    localStorage.setItem('naron_used_taverns', JSON.stringify({date:today, keys:Array.from(_playerUsedTaverns)}));
+                } catch(e){}
+            }
+            if (row) { row.style.background='rgba(96,224,144,0.06)'; row.querySelector('.sw-row-name').style.color='#60e090'; }
+            succeeded++;
+        } catch(e) {
+            if (row) { row.style.background='rgba(255,68,68,0.06)'; row.querySelector('.sw-row-name').style.color='#ff6688'; }
+            failed++;
+        }
+
+        if (i < available.length - 1 && !_sweepAbort) {
+            await new Promise(function(r){ setTimeout(r, 2500); });
+        }
+    }
+
+    if (progFill) progFill.style.width = '100%';
+    if (progLbl)  progLbl.textContent  = _sweepAbort
+        ? '⚠ ABORTED  (' + succeeded + ' done)'
+        : '✓ COMPLETE  · ' + succeeded + ' hired' + (failed ? '  · ' + failed + ' failed' : '');
+    if (closeBtn) { closeBtn.textContent = 'CLOSE'; closeBtn.style.color = ''; closeBtn.style.borderColor = ''; }
+
+    _sweepRunning = false;
+    applyMarker();
+    updatePlayerPlanetLabel();
+    _refreshAllMaps();
+    setTimeout(function(){ fetchPlayerTaverns(wallet); }, 1200);
+}
+</script>
 </body>
 </html>
