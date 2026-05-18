@@ -485,17 +485,6 @@
 <header class="page-header">
     <div class="ph-logo"><a href="index.html">NARON CODEX</a></div>
     <div class="ph-right">
-        <div class="nav-dropdown-wrap" id="lang-picker">
-            <button style="padding:4px 9px;font-size:0.68em;letter-spacing:1px;background:transparent;border:1px solid rgba(232,160,32,0.2);color:#556677;cursor:pointer;transition:all 0.2s;font-family:'Courier New',monospace;" id="lang-btn">&#127760; &#9660;</button>
-            <div class="nav-dropdown-menu" style="min-width:130px;right:0;left:auto;">
-                <a class="nav-dropdown-item" href="#" onclick="setLang('fr');return false;"><img src="https://flagcdn.com/16x12/fr.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> FR</a>
-                <a class="nav-dropdown-item" href="#" onclick="setLang('de');return false;"><img src="https://flagcdn.com/16x12/de.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> DE</a>
-                <a class="nav-dropdown-item" href="#" onclick="setLang('it');return false;"><img src="https://flagcdn.com/16x12/it.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> IT</a>
-                <a class="nav-dropdown-item" href="#" onclick="setLang('tl');return false;"><img src="https://flagcdn.com/16x12/ph.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> PH</a>
-                <a class="nav-dropdown-item" href="#" onclick="setLang('id');return false;"><img src="https://flagcdn.com/16x12/id.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> ID</a>
-                <a class="nav-dropdown-item active" href="#" onclick="setLang('en');return false;"><img src="https://flagcdn.com/16x12/gb.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> EN</a>
-            </div>
-        </div>
         <button id="ph-wallet-btn" onclick="phWalletClick()">CONNECT</button>
         <a href="https://alienlegends.io/" target="_blank" rel="noopener" style="opacity:1;display:flex;align-items:center;"><img src="ALElogo.png" alt="Alien Legends"></a>
     </div>
@@ -2523,37 +2512,6 @@
     <div id="hnp-objs"></div>
 </div>
 
-<div id="google_translate_element" style="display:none;"></div>
-<script>
-    function googleTranslateElementInit(){
-        new google.translate.TranslateElement({pageLanguage:'en',includedLanguages:'fr,de,it,tl,id',autoDisplay:false},'google_translate_element');
-    }
-    function setLang(lang){
-        document.querySelectorAll('#lang-picker .nav-dropdown-item').forEach(function(a){a.classList.remove('active');});
-        var btns=document.querySelectorAll('#lang-btns button');
-        btns.forEach(function(b){if(b.textContent.trim()===lang.toUpperCase())b.classList.add('lang-active');});
-        if(lang==='en'){
-            document.cookie='googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-            document.cookie='googtrans=; domain=.'+location.hostname+'; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-            location.reload();
-            return;
-        }
-        var el=document.querySelector('.goog-te-combo');
-        if(el){el.value=lang;el.dispatchEvent(new Event('change'));return;}
-        // Widget not ready yet — set cookie directly then reload
-        document.cookie='googtrans=/en/'+lang+'; path=/';
-        location.reload();
-    }
-    // Mark active lang on load if a translation cookie is already set
-    (function(){
-        var m=document.cookie.match(/googtrans=\/en\/(\w+)/);
-        if(m&&m[1]&&m[1]!=='en'){
-            document.querySelectorAll('#lang-picker .nav-dropdown-item').forEach(function(a){a.classList.remove('active');});
-            document.querySelectorAll('#lang-btns button').forEach(function(b){if(b.textContent.trim()===m[1].toUpperCase())b.classList.add('lang-active');});
-        }
-    })();
-</script>
-<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
 <!-- ══ TAVERN SWEEP CONSOLE ══════════════════════════════════════════════ -->
 <div id="sweep-console">
