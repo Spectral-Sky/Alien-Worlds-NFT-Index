@@ -5,7 +5,7 @@
     <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-48CCMEYHXG');</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RECOVERY.ALE // CANDLE INTERFACE</title>
+    <title>Candle Calculator — recovery.ale profit interface</title>
     <link rel="icon" type="image/png" href="NCico.png">
     <style>
         :root {
@@ -168,6 +168,15 @@
             font-size:0.62em; letter-spacing:2px; padding:5px 10px; cursor:pointer; transition:all 0.2s;
         }
         .lock-btn:hover { color:var(--red); border-color:var(--red); }
+        .font-picker-btn {
+            background:transparent; border:1px solid rgba(255,68,204,0.2);
+            color:rgba(255,68,204,0.45); font-family:'Courier New',monospace;
+            font-size:0.68em; letter-spacing:1px; padding:5px 10px; cursor:pointer; transition:all 0.2s;
+        }
+        .font-picker-btn:hover { color:var(--pink); border-color:var(--pink-dim); }
+        .font-opt-menu { min-width:180px; right:0; left:auto; }
+        .font-opt-menu .nav-dropdown-item { font-size:0.8em; }
+        .font-opt-menu .nav-dropdown-item .font-preview { display:block; font-size:1.2em; color:var(--text); margin-top:1px; letter-spacing:0; }
 
         .content-wrap { padding:20px 24px; }
 
@@ -528,7 +537,7 @@
 <div id="main">
     <div class="main-header">
         <div>
-            <h1>🕯 Recovery.ALE — Candle Interface</h1>
+            <h1>🕯 Candle Calculator — recovery.ale profit interface</h1>
             <div class="hdr-sub" id="fetch-status">Loading chain data…</div>
         </div>
         <div class="wallet-area">
@@ -538,6 +547,23 @@
         </div>
         <button class="refresh-btn" onclick="refreshAll()">⟳ REFRESH</button>
         <button class="lock-btn" onclick="lockScreen()">⌁ LOCK</button>
+        <div class="nav-dropdown-wrap" style="position:relative;">
+            <button class="font-picker-btn" id="font-picker-btn">Aa ▾</button>
+            <div class="nav-dropdown-menu font-opt-menu">
+                <a class="nav-dropdown-item font-opt active" href="#" data-font="terminal" onclick="setFont('terminal');return false;">
+                    TERMINAL<span class="font-preview" style="font-family:'Courier New',monospace;">Courier New</span>
+                </a>
+                <a class="nav-dropdown-item font-opt" href="#" data-font="consolas" onclick="setFont('consolas');return false;">
+                    DIGITAL<span class="font-preview" style="font-family:'Consolas','Lucida Console',monospace;">Consolas</span>
+                </a>
+                <a class="nav-dropdown-item font-opt" href="#" data-font="calibri" onclick="setFont('calibri');return false;">
+                    CLEAN<span class="font-preview" style="font-family:'Calibri','Trebuchet MS',sans-serif;">Calibri</span>
+                </a>
+                <a class="nav-dropdown-item font-opt" href="#" data-font="segoe" onclick="setFont('segoe');return false;">
+                    MODERN<span class="font-preview" style="font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">Segoe UI</span>
+                </a>
+            </div>
+        </div>
     </div>
 
     <div style="margin:0 0 10px;padding:7px 14px;background:rgba(255,170,0,0.07);border:1px solid rgba(255,170,0,0.25);border-radius:3px;font-size:0.65em;color:#bb8800;letter-spacing:1px;text-align:center;">
@@ -628,6 +654,26 @@
             `<img src="${LOGO_TLM}" style="width:14px;height:14px;vertical-align:middle;border-radius:50%;margin-right:3px;">` +
             `$${_liveTlmUsd.toFixed(5)}<br>1 WAX = ${ratio} TLM (live)`;
     }
+
+    // ── FONT SWITCHER ─────────────────────────────────────────────────────────
+    const FONT_MAP = {
+        terminal: "'Courier New', Courier, monospace",
+        consolas:  "'Consolas', 'Lucida Console', monospace",
+        calibri:   "'Calibri', 'Trebuchet MS', sans-serif",
+        segoe:     "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+    };
+    window.setFont = function(key) {
+        if (!FONT_MAP[key]) return;
+        document.body.style.fontFamily = FONT_MAP[key];
+        localStorage.setItem('naron_wax_font', key);
+        document.querySelectorAll('.font-opt').forEach(function(a) {
+            a.classList.toggle('active', a.dataset.font === key);
+        });
+    };
+    (function() {
+        var saved = localStorage.getItem('naron_wax_font');
+        if (saved && FONT_MAP[saved]) setFont(saved);
+    })();
 
     // ── KEYPAD ────────────────────────────────────────────────────────────────
     const ALPHA_MAP = {
