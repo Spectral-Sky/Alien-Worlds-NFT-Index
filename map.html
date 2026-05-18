@@ -2692,7 +2692,8 @@ function txqAddCell(x, y) {
         _txQueue.push({ type:'portal', x:x, y:y, planet:_activePlanet });
     } else if (tavern) {
         _txQueue.push({ type:'travel+hire', x:x, y:y,
-            name: tavern.name || ('Tavern '+x+','+y), land_id: tavern.land_id });
+            name: tavern.name || ('Tavern '+x+','+y), land_id: tavern.land_id,
+            objectives: tavern.objectives || [] });
     } else {
         _txQueue.push({ type:'travel', x:x, y:y });
     }
@@ -2708,7 +2709,8 @@ function txqAddAllTaverns() {
     if (!available.length) return;
     available.forEach(function(tv){
         _txQueue.push({ type:'travel+hire', x:tv.x, y:tv.y,
-            name: tv.name || ('Tavern '+tv.x+','+tv.y), land_id: tv.land_id });
+            name: tv.name || ('Tavern '+tv.x+','+tv.y), land_id: tv.land_id,
+            objectives: tv.objectives || [] });
     });
     renderTxQueue();
 }
@@ -2794,6 +2796,28 @@ function renderTxQueue() {
     }
 }
 
+// Re-score NFTs for a specific tavern's objectives and return optimal hire action data
+function txqBestHire(wallet, allNFTs, objectives) {
+    var objs = objectives || [];
+    if (allNFTs && allNFTs.length && objs.length) {
+        var scored = allNFTs.map(function(n) {
+            var tmpl = (_tavernTemplateMap && _tavernTemplateMap[n.template_id]) || {};
+            return { asset_id: n.asset_id, template_id: n.template_id,
+                     mod_value: calcHireMod(tmpl, objs) };
+        });
+        var optTids  = autoSelectOptimalNFTs(scored, objs);
+        var aids = [];
+        optTids.forEach(function(tid){
+            var nft = scored.find(function(n){ return n.template_id === tid; });
+            if (nft) aids.push(nft.asset_id);
+        });
+        var reduction = calcTotalReduction(optTids, objs);
+        return { wallet: wallet, asset_ids: aids,
+                 cost_action_points: Math.max(1, (_hireBaseCost||100) - reduction) };
+    }
+    return { wallet: wallet, asset_ids: [], cost_action_points: _hireBaseCost || 100 };
+}
+
 async function runTxQueue() {
     var wallet = getWallet();
     if (!wallet || _txQueueRunning || !_txQueue.length) return;
@@ -2810,29 +2834,32 @@ async function runTxQueue() {
     if (runBtn)   { runBtn.disabled = true; runBtn.textContent = 'RUNNING…'; }
     if (closeBtn) { closeBtn.textContent = '■ ABORT'; closeBtn.style.color = '#ff6666'; }
     if (progWrap) { progWrap.style.display = 'block'; }
+    if (progLbl)  { progLbl.textContent = 'Loading NFTs…'; }
+
+    // Load player NFTs once; re-scored per tavern's objectives in txqBestHire
+    var _allNFTs = [];
+    try { _allNFTs = await loadPlayerHireNFTs(wallet, []); } catch(e) {}
 
     // Build execution plan
     var plan = [];
     if (_txQueueStacked) {
-        // Stacked: fold consecutive travel+hire items into one TX each; travel+hire items already combined
         for (var i = 0; i < _txQueue.length; ) {
             var item = _txQueue[i];
             if (item.type === 'travel+hire') {
                 plan.push({ label: item.name || 'TRAVEL+HIRE ('+item.x+','+item.y+')', qIdx: i, tavern: item,
                     actions: [
                         { account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} },
-                        { account:'players.ale', name:'hire',   authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, asset_ids:[], cost_action_points:_hireBaseCost||100} }
+                        { account:'players.ale', name:'hire',   authorization:[{actor:wallet,permission:'active'}], data: txqBestHire(wallet, _allNFTs, item.objectives) }
                     ]
                 });
                 i++;
             } else if (item.type === 'travel') {
-                // Check if next item is a standalone hire
                 var nxt = _txQueue[i+1];
                 if (nxt && nxt.type === 'hire') {
                     plan.push({ label: 'TRAVEL+HIRE ('+item.x+','+item.y+')', qIdx: i,
                         actions: [
                             { account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} },
-                            { account:'players.ale', name:'hire',   authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, asset_ids:[], cost_action_points:_hireBaseCost||100} }
+                            { account:'players.ale', name:'hire',   authorization:[{actor:wallet,permission:'active'}], data: txqBestHire(wallet, _allNFTs, nxt.objectives) }
                         ]
                     });
                     i += 2;
@@ -2844,7 +2871,7 @@ async function runTxQueue() {
                 }
             } else if (item.type === 'hire') {
                 plan.push({ label: 'HIRE', qIdx: i, tavern: item.tavern || null,
-                    actions: [{ account:'players.ale', name:'hire', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, asset_ids:[], cost_action_points:_hireBaseCost||100} }]
+                    actions: [{ account:'players.ale', name:'hire', authorization:[{actor:wallet,permission:'active'}], data: txqBestHire(wallet, _allNFTs, item.objectives) }]
                 });
                 i++;
             } else if (item.type === 'portal') {
@@ -2855,7 +2882,6 @@ async function runTxQueue() {
             } else { i++; }
         }
     } else {
-        // Separate: every action is its own TX
         _txQueue.forEach(function(item, i){
             if (item.type === 'travel' || item.type === 'portal') {
                 plan.push({ label: 'TRAVEL ('+item.x+','+item.y+')', qIdx: i,
@@ -2866,11 +2892,11 @@ async function runTxQueue() {
                     actions: [{ account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} }]
                 });
                 plan.push({ label: 'HIRE — '+(item.name||''), qIdx: i, tavern: item,
-                    actions: [{ account:'players.ale', name:'hire', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, asset_ids:[], cost_action_points:_hireBaseCost||100} }]
+                    actions: [{ account:'players.ale', name:'hire', authorization:[{actor:wallet,permission:'active'}], data: txqBestHire(wallet, _allNFTs, item.objectives) }]
                 });
             } else if (item.type === 'hire') {
                 plan.push({ label: 'HIRE', qIdx: i,
-                    actions: [{ account:'players.ale', name:'hire', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, asset_ids:[], cost_action_points:_hireBaseCost||100} }]
+                    actions: [{ account:'players.ale', name:'hire', authorization:[{actor:wallet,permission:'active'}], data: txqBestHire(wallet, _allNFTs, item.objectives) }]
                 });
             }
         });
@@ -2911,28 +2937,13 @@ async function runTxQueue() {
             }
             succeeded++;
         } catch(e) {
-            // Only count as failed if the user explicitly rejected/cancelled.
-            // Post-broadcast errors (response parsing, network noise) still mean the TX went through.
-            var msg = (e && (e.message || String(e))).toLowerCase();
-            var rejected = msg.includes('cancel') || msg.includes('reject') || msg.includes('denied') || msg.includes('abort') || msg.includes('declined');
             console.error('Queue TX error (step '+j+'):', e);
-            if (rejected) {
-                if (itemEl) {
-                    itemEl.style.background = 'rgba(255,68,68,0.06)';
-                    var lbl = itemEl.querySelector('.txq-item-label');
-                    if (lbl) lbl.style.color = '#ff6688';
-                }
-                failed++;
-                _txQueueAbort = true; // stop queue on explicit rejection
-            } else {
-                // TX likely went through — treat as success
-                if (itemEl) {
-                    itemEl.style.background = 'rgba(96,224,144,0.06)';
-                    var lbl = itemEl.querySelector('.txq-item-label');
-                    if (lbl) lbl.style.color = '#60e090';
-                }
-                succeeded++;
+            if (itemEl) {
+                itemEl.style.background = 'rgba(255,68,68,0.06)';
+                var lbl = itemEl.querySelector('.txq-item-label');
+                if (lbl) lbl.style.color = '#ff6688';
             }
+            failed++;
         }
 
         if (j < plan.length - 1 && !_txQueueAbort) {
