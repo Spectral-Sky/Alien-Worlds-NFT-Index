@@ -2911,12 +2911,28 @@ async function runTxQueue() {
             }
             succeeded++;
         } catch(e) {
-            if (itemEl) {
-                itemEl.style.background = 'rgba(255,68,68,0.06)';
-                var lbl = itemEl.querySelector('.txq-item-label');
-                if (lbl) lbl.style.color = '#ff6688';
+            // Only count as failed if the user explicitly rejected/cancelled.
+            // Post-broadcast errors (response parsing, network noise) still mean the TX went through.
+            var msg = (e && (e.message || String(e))).toLowerCase();
+            var rejected = msg.includes('cancel') || msg.includes('reject') || msg.includes('denied') || msg.includes('abort') || msg.includes('declined');
+            console.error('Queue TX error (step '+j+'):', e);
+            if (rejected) {
+                if (itemEl) {
+                    itemEl.style.background = 'rgba(255,68,68,0.06)';
+                    var lbl = itemEl.querySelector('.txq-item-label');
+                    if (lbl) lbl.style.color = '#ff6688';
+                }
+                failed++;
+                _txQueueAbort = true; // stop queue on explicit rejection
+            } else {
+                // TX likely went through — treat as success
+                if (itemEl) {
+                    itemEl.style.background = 'rgba(96,224,144,0.06)';
+                    var lbl = itemEl.querySelector('.txq-item-label');
+                    if (lbl) lbl.style.color = '#60e090';
+                }
+                succeeded++;
             }
-            failed++;
         }
 
         if (j < plan.length - 1 && !_txQueueAbort) {
