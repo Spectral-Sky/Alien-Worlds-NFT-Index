@@ -1167,6 +1167,7 @@
         fetchAllDungeons();
         if(w){ fetchPlayerTaverns(w); fetchArenaLock(w); }
         fetchAllPlayers();
+        loadTavernData(); // pre-warm template cache so first tavern click is instant
     }
 
     function skipWarp(){
@@ -1704,7 +1705,10 @@
                         +'&collection_name=alien.worlds'
                         +'&schema_name='+encodeURIComponent(schemaList[i])
                         +'&limit=100&page='+pg;
-                    var r=await fetch(url);
+                    var _ac=new AbortController();
+                    var _at=setTimeout(function(){_ac.abort();},8000);
+                    var r=await fetch(url,{signal:_ac.signal});
+                    clearTimeout(_at);
                     var j=await r.json();
                     if(!j.success||!j.data||!j.data.length)break;
                     j.data.forEach(function(a){
