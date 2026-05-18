@@ -204,10 +204,6 @@
         #pos-refresh { padding:2px 7px; font-size:0.82em; background:transparent; border:1px solid #2a3040; color:#445; cursor:pointer; transition:all 0.2s; }
         #pos-refresh:hover { border-color:#607080; color:#8898a8; }
         #pos-refresh:disabled { opacity:0.4; cursor:default; }
-        #lang-btns { display:flex; gap:4px; margin-left:auto; }
-        #lang-btns button { padding:2px 7px; font-size:0.68em; letter-spacing:1px; background:transparent; border:1px solid #2a3040; color:#445566; cursor:pointer; transition:all 0.2s; text-transform:uppercase; }
-        #lang-btns button:hover { border-color:#607080; color:#8898a8; }
-        #lang-btns button.lang-active { border-color:#3060a0; color:#60a8e0; }
         #cell-tip { position:fixed; pointer-events:none; display:none; background:#000; border:1px solid #3060a0; color:#60a8e0; font-size:0.62em; letter-spacing:1px; padding:5px 9px; z-index:700; white-space:nowrap; border-radius:2px; box-shadow:0 2px 8px rgba(0,0,0,0.7); }
         .map-toast { position:fixed; bottom:32px; left:50%; transform:translateX(-50%) translateY(8px); padding:8px 22px; z-index:900; border-radius:4px; font-size:0.82em; letter-spacing:1px; pointer-events:none; opacity:0; transition:opacity 0.28s, transform 0.28s; white-space:nowrap; }
         .map-toast.visible { opacity:1; transform:translateX(-50%) translateY(0); }
@@ -473,10 +469,16 @@
                     <span id="player-ap-display"></span>
                     <button id="pos-refresh" onclick="refreshPlayerPos()" title="Refresh player position">&#8635;</button>
                     <span id="portal-hint"></span>
-                    <div id="lang-btns">
-                        <button onclick="setLang('fr')" title="Translate to French">FR</button>
-                        <button onclick="setLang('de')" title="Translate to German">DE</button>
-                        <button onclick="setLang('en')" title="Show original English" class="lang-active">EN</button>
+                    <div class="nav-dropdown-wrap" id="lang-picker" style="position:relative;">
+                        <button style="padding:2px 7px;font-size:0.68em;letter-spacing:1px;background:transparent;border:1px solid #2a3040;color:#445566;cursor:pointer;transition:all 0.2s;font-family:'Courier New',monospace;" id="lang-btn">&#127760; &#9660;</button>
+                        <div class="nav-dropdown-menu" style="min-width:130px;left:auto;right:0;position:absolute;">
+                            <a class="nav-dropdown-item" href="#" onclick="setLang('fr');return false;"><img src="https://flagcdn.com/16x12/fr.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> FR</a>
+                            <a class="nav-dropdown-item" href="#" onclick="setLang('de');return false;"><img src="https://flagcdn.com/16x12/de.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> DE</a>
+                            <a class="nav-dropdown-item" href="#" onclick="setLang('it');return false;"><img src="https://flagcdn.com/16x12/it.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> IT</a>
+                            <a class="nav-dropdown-item" href="#" onclick="setLang('tl');return false;"><img src="https://flagcdn.com/16x12/ph.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> TL</a>
+                            <a class="nav-dropdown-item" href="#" onclick="setLang('id');return false;"><img src="https://flagcdn.com/16x12/id.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> ID</a>
+                            <a class="nav-dropdown-item active" href="#" onclick="setLang('en');return false;"><img src="https://flagcdn.com/16x12/gb.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> EN</a>
+                        </div>
                     </div>
                 </div>
                 <div class="map-scroll">
@@ -2430,10 +2432,10 @@
 <div id="google_translate_element" style="display:none;"></div>
 <script>
     function googleTranslateElementInit(){
-        new google.translate.TranslateElement({pageLanguage:'en',includedLanguages:'fr,de',autoDisplay:false},'google_translate_element');
+        new google.translate.TranslateElement({pageLanguage:'en',includedLanguages:'fr,de,it,tl,id',autoDisplay:false},'google_translate_element');
     }
     function setLang(lang){
-        document.querySelectorAll('#lang-btns button').forEach(function(b){b.classList.remove('lang-active');});
+        document.querySelectorAll('#lang-picker .nav-dropdown-item').forEach(function(a){a.classList.remove('active');});
         var btns=document.querySelectorAll('#lang-btns button');
         btns.forEach(function(b){if(b.textContent.trim()===lang.toUpperCase())b.classList.add('lang-active');});
         if(lang==='en'){
@@ -2452,7 +2454,7 @@
     (function(){
         var m=document.cookie.match(/googtrans=\/en\/(\w+)/);
         if(m&&m[1]&&m[1]!=='en'){
-            document.querySelectorAll('#lang-btns button').forEach(function(b){b.classList.remove('lang-active');});
+            document.querySelectorAll('#lang-picker .nav-dropdown-item').forEach(function(a){a.classList.remove('active');});
             document.querySelectorAll('#lang-btns button').forEach(function(b){if(b.textContent.trim()===m[1].toUpperCase())b.classList.add('lang-active');});
         }
     })();

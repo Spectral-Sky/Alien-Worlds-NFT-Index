@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
@@ -499,7 +499,18 @@
                 <a href="ep.html" class="nav-dropdown-item">&#9672; ENDPOINTS</a>
             </div>
         </div>
-        </nav>
+                    <div class="nav-dropdown-wrap" id="lang-picker">
+                <button class="nav-btn nav-dropdown-btn" id="lang-btn">&#127760; &#9660;</button>
+                <div class="nav-dropdown-menu" style="min-width:130px;left:auto;right:0;">
+                    <a class="nav-dropdown-item" href="#" onclick="setLang('fr');return false;"><img src="https://flagcdn.com/16x12/fr.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> FR</a>
+                    <a class="nav-dropdown-item" href="#" onclick="setLang('de');return false;"><img src="https://flagcdn.com/16x12/de.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> DE</a>
+                    <a class="nav-dropdown-item" href="#" onclick="setLang('it');return false;"><img src="https://flagcdn.com/16x12/it.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> IT</a>
+                    <a class="nav-dropdown-item" href="#" onclick="setLang('tl');return false;"><img src="https://flagcdn.com/16x12/ph.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> TL</a>
+                    <a class="nav-dropdown-item" href="#" onclick="setLang('id');return false;"><img src="https://flagcdn.com/16x12/id.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> ID</a>
+                    <a class="nav-dropdown-item active" href="#" onclick="setLang('en');return false;"><img src="https://flagcdn.com/16x12/gb.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> EN</a>
+                </div>
+            </div>
+</nav>
 
         <div class="wallet-section">
         <button id="wallet-connect-btn" class="wallet-btn" onclick="disconnectWallet()" style="display:none;"></button>
@@ -1617,5 +1628,35 @@
 })();
 // ── END HEADER NARON PLANET ──────────────────────────────────────────────────
     </script>
+<div id="google_translate_element" style="display:none;"></div>
+<script>
+    function googleTranslateElementInit(){
+        new google.translate.TranslateElement({pageLanguage:'en',includedLanguages:'fr,de,it,tl,id',autoDisplay:false},'google_translate_element');
+    }
+    function setLang(lang){
+        document.querySelectorAll('#lang-picker .nav-dropdown-item').forEach(function(a){
+            a.classList.toggle('active', a.textContent.trim().toUpperCase()===lang.toUpperCase());
+        });
+        if(lang==='en'){
+            document.cookie='googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            document.cookie='googtrans=; domain=.'+location.hostname+'; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            location.reload();
+            return;
+        }
+        var el=document.querySelector('.goog-te-combo');
+        if(el){el.value=lang;el.dispatchEvent(new Event('change'));return;}
+        document.cookie='googtrans=/en/'+lang+'; path=/';
+        location.reload();
+    }
+    (function(){
+        var m=document.cookie.match(/googtrans=\/en\/(\w+)/);
+        if(m&&m[1]&&m[1]!=='en'){
+            document.querySelectorAll('#lang-picker .nav-dropdown-item').forEach(function(a){
+                a.classList.toggle('active', a.textContent.trim().toUpperCase()===m[1].toUpperCase());
+            });
+        }
+    })();
+</script>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
