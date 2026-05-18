@@ -413,6 +413,68 @@
         .sw-kp-btn:hover  { background:rgba(192,144,96,0.14); border-color:rgba(192,144,96,0.4); }
         .sw-kp-btn:active { transform:scale(0.95); }
         .sw-kp-status { font-size:0.6em; text-align:center; margin-top:6px; color:var(--gold); min-height:1em; letter-spacing:1px; }
+
+        /* ── TX ACTION QUEUE ─────────────────────────────────────────────── */
+        #txq-panel {
+            position:fixed; bottom:0; left:50%; transform:translateX(-50%) translateY(100%);
+            width:680px; max-width:99vw; z-index:1500;
+            background:rgba(3,4,12,0.97); border:1px solid rgba(192,144,96,0.35);
+            border-bottom:none; border-radius:6px 6px 0 0;
+            display:flex; flex-direction:column; max-height:52vh;
+            transition:transform 0.35s ease;
+            box-shadow:0 -4px 28px rgba(0,0,0,0.75);
+        }
+        #txq-panel.open { transform:translateX(-50%) translateY(0); }
+        .txq-header { display:flex; align-items:center; gap:6px; padding:7px 12px;
+            border-bottom:1px solid rgba(192,144,96,0.15); flex-shrink:0; flex-wrap:wrap; }
+        .txq-title { font-size:0.62em; letter-spacing:3px; color:var(--gold); margin-right:2px; white-space:nowrap; }
+        .txq-ap-total { font-size:0.62em; color:#c09060; margin-left:auto; letter-spacing:1px; white-space:nowrap; }
+        .txq-mode-wrap { display:flex; gap:0; }
+        .txq-mode-btn { font-size:0.58em; letter-spacing:1px; padding:3px 7px;
+            background:transparent; border:1px solid rgba(192,144,96,0.2); color:#556;
+            cursor:pointer; transition:all 0.15s; }
+        .txq-mode-btn:first-child { border-radius:2px 0 0 2px; }
+        .txq-mode-btn:last-child  { border-radius:0 2px 2px 0; border-left:none; }
+        .txq-mode-btn.active { background:rgba(192,144,96,0.15); color:var(--gold); border-color:rgba(192,144,96,0.5); }
+        .txq-mode-btn:hover:not(.active) { color:#c0b090; border-color:rgba(192,144,96,0.35); }
+        .txq-qm-btn { font-size:0.58em; letter-spacing:1px; padding:3px 8px;
+            background:transparent; border:1px solid rgba(96,200,255,0.2); color:#445566;
+            cursor:pointer; transition:all 0.15s; border-radius:2px; white-space:nowrap; }
+        .txq-qm-btn.active { background:rgba(96,200,255,0.12); color:#60c8ff; border-color:rgba(96,200,255,0.5); }
+        .txq-qm-btn:hover { color:#70b8d0; border-color:rgba(96,200,255,0.35); }
+        .txq-add-btn, .txq-clr-btn { font-size:0.58em; letter-spacing:1px; padding:3px 8px;
+            background:transparent; border:1px solid rgba(192,144,96,0.18); color:#665544;
+            cursor:pointer; transition:all 0.15s; border-radius:2px; white-space:nowrap; }
+        .txq-add-btn:hover, .txq-clr-btn:hover { color:#c0b090; border-color:rgba(192,144,96,0.4); }
+        .txq-close-btn { font-size:0.72em; padding:2px 8px; background:transparent;
+            border:1px solid rgba(255,255,255,0.07); color:#333; cursor:pointer;
+            transition:color 0.15s; border-radius:2px; }
+        .txq-close-btn:hover { color:#888; }
+        #txq-list { flex:1; overflow-y:auto; padding:3px 8px; min-height:55px; }
+        .txq-empty { font-size:0.6em; color:#333; padding:14px 6px; text-align:center; letter-spacing:1px; }
+        .txq-item { display:flex; align-items:center; gap:6px; padding:4px 6px;
+            border-bottom:1px solid rgba(192,144,96,0.06); transition:background 0.2s, opacity 0.2s; }
+        .txq-item-icon { font-size:0.72em; color:#604840; width:20px; flex-shrink:0; text-align:center; font-style:normal; }
+        .txq-item-label { flex:1; font-size:0.6em; color:#907060; letter-spacing:1px; }
+        .txq-item-ap { font-size:0.58em; color:#503830; white-space:nowrap; margin-right:4px; }
+        .txq-item-del { background:transparent; border:none; color:#332; font-size:0.9em;
+            cursor:pointer; padding:0 3px; line-height:1; transition:color 0.1s; }
+        .txq-item-del:hover { color:#ff6666; }
+        .txq-footer { padding:5px 12px 8px; border-top:1px solid rgba(192,144,96,0.1); flex-shrink:0; }
+        #txq-prog-wrap { margin-bottom:5px; display:none; }
+        #txq-prog-bar  { height:3px; background:rgba(192,144,96,0.1); border-radius:2px; overflow:hidden; }
+        #txq-prog-fill { height:100%; background:var(--gold); border-radius:2px; transition:width 0.35s; width:0%; }
+        #txq-prog-lbl  { font-size:0.58em; color:var(--gold); text-align:center; margin-top:3px; letter-spacing:1px; min-height:1em; }
+        .txq-run-wrap { display:flex; gap:6px; }
+        #txq-run-btn { flex:1; padding:6px; background:rgba(192,144,96,0.1);
+            border:1px solid rgba(192,144,96,0.4); color:var(--gold); font-family:inherit;
+            font-size:0.68em; letter-spacing:2px; cursor:pointer; transition:all 0.2s; text-transform:uppercase; }
+        #txq-run-btn:hover { background:rgba(192,144,96,0.2); }
+        #txq-run-btn:disabled { opacity:0.35; cursor:default; }
+        #txq-mode-badge { position:fixed; top:58px; left:50%; transform:translateX(-50%);
+            background:rgba(96,200,255,0.1); border:1px solid rgba(96,200,255,0.35);
+            color:#60c8ff; font-size:0.58em; letter-spacing:2px; padding:3px 12px;
+            z-index:1400; display:none; pointer-events:none; border-radius:2px; }
     </style>
 </head>
 <body>
@@ -423,6 +485,17 @@
 <header class="page-header">
     <div class="ph-logo"><a href="index.html">NARON CODEX</a></div>
     <div class="ph-right">
+        <div class="nav-dropdown-wrap" id="lang-picker">
+            <button style="padding:4px 9px;font-size:0.68em;letter-spacing:1px;background:transparent;border:1px solid rgba(232,160,32,0.2);color:#556677;cursor:pointer;transition:all 0.2s;font-family:'Courier New',monospace;" id="lang-btn">&#127760; &#9660;</button>
+            <div class="nav-dropdown-menu" style="min-width:130px;right:0;left:auto;">
+                <a class="nav-dropdown-item" href="#" onclick="setLang('fr');return false;"><img src="https://flagcdn.com/16x12/fr.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> FR</a>
+                <a class="nav-dropdown-item" href="#" onclick="setLang('de');return false;"><img src="https://flagcdn.com/16x12/de.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> DE</a>
+                <a class="nav-dropdown-item" href="#" onclick="setLang('it');return false;"><img src="https://flagcdn.com/16x12/it.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> IT</a>
+                <a class="nav-dropdown-item" href="#" onclick="setLang('tl');return false;"><img src="https://flagcdn.com/16x12/ph.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> PH</a>
+                <a class="nav-dropdown-item" href="#" onclick="setLang('id');return false;"><img src="https://flagcdn.com/16x12/id.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> ID</a>
+                <a class="nav-dropdown-item active" href="#" onclick="setLang('en');return false;"><img src="https://flagcdn.com/16x12/gb.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> EN</a>
+            </div>
+        </div>
         <button id="ph-wallet-btn" onclick="phWalletClick()">CONNECT</button>
         <a href="https://alienlegends.io/" target="_blank" rel="noopener" style="opacity:1;display:flex;align-items:center;"><img src="ALElogo.png" alt="Alien Legends"></a>
     </div>
@@ -496,17 +569,6 @@
                     <span id="player-ap-display"></span>
                     <button id="pos-refresh" onclick="refreshPlayerPos()" title="Refresh player position">&#8635;</button>
                     <span id="portal-hint"></span>
-                    <div class="nav-dropdown-wrap" id="lang-picker" style="position:relative;">
-                        <button style="padding:2px 7px;font-size:0.68em;letter-spacing:1px;background:transparent;border:1px solid #2a3040;color:#445566;cursor:pointer;transition:all 0.2s;font-family:'Courier New',monospace;" id="lang-btn">&#127760; &#9660;</button>
-                        <div class="nav-dropdown-menu" style="min-width:130px;left:auto;right:0;position:absolute;">
-                            <a class="nav-dropdown-item" href="#" onclick="setLang('fr');return false;"><img src="https://flagcdn.com/16x12/fr.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> FR</a>
-                            <a class="nav-dropdown-item" href="#" onclick="setLang('de');return false;"><img src="https://flagcdn.com/16x12/de.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> DE</a>
-                            <a class="nav-dropdown-item" href="#" onclick="setLang('it');return false;"><img src="https://flagcdn.com/16x12/it.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> IT</a>
-                            <a class="nav-dropdown-item" href="#" onclick="setLang('tl');return false;"><img src="https://flagcdn.com/16x12/ph.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> PH</a>
-                            <a class="nav-dropdown-item" href="#" onclick="setLang('id');return false;"><img src="https://flagcdn.com/16x12/id.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> ID</a>
-                            <a class="nav-dropdown-item active" href="#" onclick="setLang('en');return false;"><img src="https://flagcdn.com/16x12/gb.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> EN</a>
-                        </div>
-                    </div>
                 </div>
                 <div class="map-scroll">
                     <div class="map-ruler-outer">
@@ -1422,6 +1484,11 @@
     }
 
     function onCell(x,y){
+        // Queue mode: add cell to queue instead of opening action panel
+        if(window._txQueueMode && window._txQPanelOpen){
+            if(typeof txqAddCell==='function') txqAddCell(x,y);
+            return;
+        }
         var portals=ALE_PORTALS[_activePlanet]||[],portal=null;
         for(var i=0;i<portals.length;i++){if(portals[i].x===x&&portals[i].y===y){portal=portals[i];break;}}
         // also check location type
@@ -2493,16 +2560,50 @@
     <div id="sweep-inner"></div>
 </div>
 
+<!-- TX ACTION QUEUE PANEL — bottom dock, unlocked via keypad -->
+<div id="txq-panel">
+    <div class="txq-header">
+        <span class="txq-title">⚡ ACTION QUEUE</span>
+        <div class="txq-mode-wrap">
+            <button class="txq-mode-btn active" id="txq-mode-stk" onclick="setTxqRunMode('stacked')">STACKED</button>
+            <button class="txq-mode-btn" id="txq-mode-sep" onclick="setTxqRunMode('separate')">SEPARATE</button>
+        </div>
+        <button class="txq-qm-btn" id="txq-qm-btn" onclick="toggleTxQueueMode()">○ QUEUE MODE</button>
+        <button class="txq-add-btn" onclick="txqAddAllTaverns()">+ ALL TAVERNS</button>
+        <button class="txq-clr-btn" onclick="txqClear()">CLEAR</button>
+        <span class="txq-ap-total" id="txq-ap-total">0 AP</span>
+        <button class="txq-close-btn" id="txq-close-btn" onclick="closeTxQueuePanel()">▼</button>
+    </div>
+    <div id="txq-list"></div>
+    <div class="txq-footer">
+        <div id="txq-prog-wrap">
+            <div id="txq-prog-bar"><div id="txq-prog-fill"></div></div>
+            <div id="txq-prog-lbl"></div>
+        </div>
+        <div class="txq-run-wrap">
+            <button id="txq-run-btn" onclick="runTxQueue()" disabled>▶ RUN QUEUE</button>
+        </div>
+    </div>
+</div>
+<div id="txq-mode-badge">◎ QUEUE MODE — CLICK CELLS TO ADD</div>
+
 <script>
-// ── TAVERN SWEEP ─────────────────────────────────────────────────────────────
+// ── ACTION QUEUE + KEYPAD UNLOCK ──────────────────────────────────────────────
 var SWEEP_CODE      = '62766'; // NARON
 var _tabClickCount  = 0;
 var _tabClickTimer  = null;
 var _sweepUnlocked  = false;
-var _sweepRunning   = false;
-var _sweepAbort     = false;
 var _sweepKpBuf     = '';
 
+// Queue state (exposed on window so onCell can read them)
+window._txQueue        = [];   // [{type,x,y,name,land_id}]
+window._txQueueMode    = false; // when true, map clicks add to queue
+window._txQPanelOpen   = false;
+var _txQueueStacked    = true;  // stacked=travel+hire in one TX; separate=one TX each
+var _txQueueRunning    = false;
+var _txQueueAbort      = false;
+
+// ── KEYPAD unlock trigger ────────────────────────────────────────────────────
 function onPlanetTabClick(planet) {
     if (planet === _activePlanet) {
         _tabClickCount++;
@@ -2519,23 +2620,23 @@ function onPlanetTabClick(planet) {
 }
 
 function openSweepConsole() {
+    // If already unlocked, skip keypad and go straight to queue panel
+    if (_sweepUnlocked) { openTxQueuePanel(); return; }
     var el = document.getElementById('sweep-console');
     if (!el) return;
     el.style.display = 'flex';
-    if (_sweepUnlocked) renderSweepPanel();
-    else renderSweepLogin();
+    renderSweepLogin();
 }
 
 function closeSweepConsole() {
     var el = document.getElementById('sweep-console');
     if (el) el.style.display = 'none';
-    if (_sweepRunning) _sweepAbort = true;
 }
 
 function renderSweepLogin() {
     _sweepKpBuf = '';
     document.getElementById('sweep-inner').innerHTML =
-        '<div class="sw-title">⚡ SWEEP ACCESS</div>' +
+        '<div class="sw-title">⚡ ACTION QUEUE ACCESS</div>' +
         '<div id="sw-kp-display" class="sw-kp-display">_</div>' +
         '<div class="sw-kp-grid">' +
         [1,2,3,4,5,6,7,8,9].map(function(n){
@@ -2568,7 +2669,10 @@ function swKpEnter() {
         _sweepUnlocked = true;
         var s = document.getElementById('sw-kp-status');
         if (s) { s.textContent = '✓ UNLOCKED'; s.style.color = '#60e090'; }
-        setTimeout(renderSweepPanel, 500);
+        setTimeout(function() {
+            closeSweepConsole();
+            openTxQueuePanel();
+        }, 500);
     } else {
         var s = document.getElementById('sw-kp-status');
         if (s) { s.textContent = '✗ ACCESS DENIED'; s.style.color = '#ff4466'; }
@@ -2576,139 +2680,300 @@ function swKpEnter() {
             _sweepKpBuf = '';
             var d = document.getElementById('sw-kp-display');
             if (d) d.textContent = '_';
-            if (s) { s.textContent = ''; }
+            if (s) s.textContent = '';
         }, 900);
     }
 }
 
-function renderSweepPanel() {
-    var wallet = getWallet();
-    var locs   = ALE_LOCATIONS[_activePlanet] || {};
-    var available = (locs.taverns || []).filter(function(t) {
-        return !(t.land_id && _playerUsedTaverns.has(_activePlanet + '.' + t.land_id));
-    });
-
-    // Simulate sequential travel to calculate cumulative AP
-    var simX = _playerPos ? _playerPos.x : 0;
-    var simY = _playerPos ? _playerPos.y : 0;
-    var totalAP = 0;
-    var rowData = available.map(function(tv) {
-        var tAP = 10 + Math.abs(tv.x - simX) + Math.abs(tv.y - simY);
-        var ap  = tAP + (_hireBaseCost || 100);
-        totalAP += ap;
-        simX = tv.x; simY = tv.y;
-        return { tv: tv, ap: ap };
-    });
-
-    var haveAP = _playerAP !== null ? _playerAP : null;
-    var apOk   = haveAP === null || haveAP >= totalAP;
-    var apNote = haveAP === null
-        ? '(AP unknown — log in to check)'
-        : apOk
-            ? '✓ Sufficient AP  (' + haveAP + ' available)'
-            : '⚠ Need ' + (totalAP - haveAP) + ' more AP  (have ' + haveAP + ')';
-
-    var planetName = (PLANETS[_activePlanet]||{name:_activePlanet}).name.toUpperCase();
-
-    var listHtml = rowData.length
-        ? rowData.map(function(r, i) {
-            return '<div class="sw-row" id="sw-row-' + i + '">' +
-                '<span class="sw-row-name">' + (r.tv.name || ('Tavern ' + (i+1))) + '</span>' +
-                '<span class="sw-row-ap">' + r.ap + ' AP</span>' +
-            '</div>';
-        }).join('')
-        : '<div style="color:#555;font-size:0.65em;padding:6px 0;">All taverns already hired today.</div>';
-
-    document.getElementById('sweep-inner').innerHTML =
-        '<div class="sw-title">⚡ ' + planetName + ' — TAVERN SWEEP</div>' +
-        '<div class="sw-stat">' + available.length + ' available taverns · ' + totalAP + ' AP total</div>' +
-        '<div class="sw-ap" style="color:' + (apOk ? '#60e090' : '#ff7744') + ';">' + apNote + '</div>' +
-        '<div class="sw-list">' + listHtml + '</div>' +
-        '<div class="sw-prog-wrap" id="sw-prog-wrap">' +
-            '<div class="sw-prog-bar"><div class="sw-prog-fill" id="sw-prog-fill" style="width:0%"></div></div>' +
-            '<div class="sw-prog-lbl" id="sw-prog-lbl"></div>' +
-        '</div>' +
-        (available.length
-            ? '<button class="sw-run-btn" id="sw-run-btn" onclick="runTavernSweep()"' +
-              (wallet ? '' : ' disabled') + '>' +
-              (wallet ? '▶ RUN SWEEP  (' + available.length + ' TAVERNS)' : '⚠ LOG IN FIRST') +
-              '</button>'
-            : '') +
-        '<button class="sw-close-btn" id="sw-close-btn" onclick="closeSweepConsole()">CLOSE</button>';
+// ── QUEUE PANEL ──────────────────────────────────────────────────────────────
+function openTxQueuePanel() {
+    window._txQPanelOpen = true;
+    var panel = document.getElementById('txq-panel');
+    if (panel) { panel.style.display = 'flex'; setTimeout(function(){ panel.classList.add('open'); }, 10); }
+    renderTxQueue();
 }
 
-async function runTavernSweep() {
-    var wallet = getWallet();
-    if (!wallet || _sweepRunning) return;
+function closeTxQueuePanel() {
+    window._txQueueMode = false;
+    window._txQPanelOpen = false;
+    if (_txQueueRunning) _txQueueAbort = true;
+    var panel = document.getElementById('txq-panel');
+    if (panel) {
+        panel.classList.remove('open');
+        setTimeout(function(){ panel.style.display = 'none'; }, 380);
+    }
+    var badge = document.getElementById('txq-mode-badge');
+    if (badge) badge.style.display = 'none';
+}
+
+function setTxqRunMode(mode) {
+    _txQueueStacked = (mode === 'stacked');
+    document.getElementById('txq-mode-stk').classList.toggle('active', _txQueueStacked);
+    document.getElementById('txq-mode-sep').classList.toggle('active', !_txQueueStacked);
+    renderTxQueue();
+}
+
+function toggleTxQueueMode() {
+    window._txQueueMode = !window._txQueueMode;
+    var btn = document.getElementById('txq-qm-btn');
+    if (btn) {
+        btn.textContent = window._txQueueMode ? '◎ QUEUE MODE: ON' : '○ QUEUE MODE';
+        btn.classList.toggle('active', window._txQueueMode);
+    }
+    var badge = document.getElementById('txq-mode-badge');
+    if (badge) badge.style.display = window._txQueueMode ? 'block' : 'none';
+}
+
+// Called from onCell when queue mode is active
+function txqAddCell(x, y) {
+    var locs    = ALE_LOCATIONS[_activePlanet] || {};
+    var portals = ALE_PORTALS[_activePlanet]   || [];
+    var isPortal = portals.some(function(p){ return p.x===x && p.y===y; });
+    var tavern   = (locs.taverns||[]).find(function(t){ return t.x===x && t.y===y; });
+    if (isPortal) {
+        _txQueue.push({ type:'portal', x:x, y:y, planet:_activePlanet });
+    } else if (tavern) {
+        _txQueue.push({ type:'travel+hire', x:x, y:y,
+            name: tavern.name || ('Tavern '+x+','+y), land_id: tavern.land_id });
+    } else {
+        _txQueue.push({ type:'travel', x:x, y:y });
+    }
+    renderTxQueue();
+}
+window.txqAddCell = txqAddCell;
+
+function txqAddAllTaverns() {
     var locs = ALE_LOCATIONS[_activePlanet] || {};
-    var available = (locs.taverns || []).filter(function(t) {
-        return !(t.land_id && _playerUsedTaverns.has(_activePlanet + '.' + t.land_id));
+    var available = (locs.taverns||[]).filter(function(t){
+        return !(t.land_id && _playerUsedTaverns.has(_activePlanet+'.'+t.land_id));
     });
     if (!available.length) return;
+    available.forEach(function(tv){
+        _txQueue.push({ type:'travel+hire', x:tv.x, y:tv.y,
+            name: tv.name || ('Tavern '+tv.x+','+tv.y), land_id: tv.land_id });
+    });
+    renderTxQueue();
+}
 
-    _sweepRunning = true;
-    _sweepAbort   = false;
+function txqClear() {
+    _txQueue = [];
+    var pw = document.getElementById('txq-prog-wrap');
+    if (pw) pw.style.display = 'none';
+    var pl = document.getElementById('txq-prog-lbl');
+    if (pl) pl.textContent = '';
+    var pf = document.getElementById('txq-prog-fill');
+    if (pf) pf.style.width = '0%';
+    renderTxQueue();
+}
 
-    var runBtn   = document.getElementById('sw-run-btn');
-    var closeBtn = document.getElementById('sw-close-btn');
-    var progWrap = document.getElementById('sw-prog-wrap');
-    var progFill = document.getElementById('sw-prog-fill');
-    var progLbl  = document.getElementById('sw-prog-lbl');
+function txqRemove(i) {
+    _txQueue.splice(i, 1);
+    renderTxQueue();
+}
+
+function txqCalcAP() {
+    var simX = _playerPos ? _playerPos.x : 0, simY = _playerPos ? _playerPos.y : 0;
+    var total = 0;
+    _txQueue.forEach(function(item){
+        if (item.type==='travel' || item.type==='travel+hire' || item.type==='portal') {
+            total += 10 + Math.abs(item.x - simX) + Math.abs(item.y - simY);
+            simX = item.x; simY = item.y;
+        }
+        if (item.type==='travel+hire' || item.type==='hire') {
+            total += _hireBaseCost || 100;
+        }
+    });
+    return total;
+}
+
+function renderTxQueue() {
+    var list   = document.getElementById('txq-list');
+    var apEl   = document.getElementById('txq-ap-total');
+    var runBtn = document.getElementById('txq-run-btn');
+    if (!list) return;
+
+    var totalAP = txqCalcAP();
+    if (apEl) {
+        var haveAP = _playerAP !== null ? _playerAP : null;
+        var apColor = haveAP === null ? '#c09060' : haveAP >= totalAP ? '#60e090' : '#ff7744';
+        apEl.textContent = totalAP + ' AP';
+        apEl.style.color = apColor;
+    }
+
+    if (!_txQueue.length) {
+        list.innerHTML = '<div class="txq-empty">'
+            + (window._txQueueMode ? 'Click cells on the map to add actions.' : 'Enable QUEUE MODE then click cells, or use + ALL TAVERNS.')
+            + '</div>';
+    } else {
+        var simX = _playerPos ? _playerPos.x : 0, simY = _playerPos ? _playerPos.y : 0;
+        var icons = { travel:'→', hire:'⊕', portal:'◈', 'travel+hire':'→⊕' };
+        list.innerHTML = _txQueue.map(function(item, i){
+            var ap = 0;
+            if (item.type==='travel'||item.type==='travel+hire'||item.type==='portal') {
+                ap += 10 + Math.abs(item.x - simX) + Math.abs(item.y - simY);
+                simX = item.x; simY = item.y;
+            }
+            if (item.type==='travel+hire'||item.type==='hire') ap += _hireBaseCost||100;
+            var label = item.type==='travel'      ? 'TRAVEL  ('+item.x+', '+item.y+')'
+                      : item.type==='hire'        ? 'HIRE'
+                      : item.type==='portal'      ? 'PORTAL  ('+item.x+', '+item.y+')'
+                      : (item.name || 'TRAVEL + HIRE  ('+item.x+', '+item.y+')');
+            return '<div class="txq-item" id="txq-item-'+i+'">'
+                + '<span class="txq-item-icon">' + (icons[item.type]||'→') + '</span>'
+                + '<span class="txq-item-label">' + label + '</span>'
+                + '<span class="txq-item-ap">' + ap + ' AP</span>'
+                + '<button class="txq-item-del" onclick="txqRemove('+i+')" title="Remove">×</button>'
+                + '</div>';
+        }).join('');
+    }
+
+    if (runBtn) runBtn.disabled = (!_txQueue.length || !getWallet() || _txQueueRunning);
+
+    var btn = document.getElementById('txq-qm-btn');
+    if (btn) {
+        btn.textContent = window._txQueueMode ? '◎ QUEUE MODE: ON' : '○ QUEUE MODE';
+        btn.classList.toggle('active', !!window._txQueueMode);
+    }
+}
+
+async function runTxQueue() {
+    var wallet = getWallet();
+    if (!wallet || _txQueueRunning || !_txQueue.length) return;
+
+    _txQueueRunning = true;
+    _txQueueAbort   = false;
+
+    var runBtn   = document.getElementById('txq-run-btn');
+    var closeBtn = document.getElementById('txq-close-btn');
+    var progWrap = document.getElementById('txq-prog-wrap');
+    var progFill = document.getElementById('txq-prog-fill');
+    var progLbl  = document.getElementById('txq-prog-lbl');
 
     if (runBtn)   { runBtn.disabled = true; runBtn.textContent = 'RUNNING…'; }
-    if (closeBtn) { closeBtn.textContent = '■ ABORT'; closeBtn.style.color = '#ff6666'; closeBtn.style.borderColor = 'rgba(255,68,68,0.3)'; }
-    if (progWrap) progWrap.style.display = 'block';
+    if (closeBtn) { closeBtn.textContent = '■ ABORT'; closeBtn.style.color = '#ff6666'; }
+    if (progWrap) { progWrap.style.display = 'block'; }
+
+    // Build execution plan
+    var plan = [];
+    if (_txQueueStacked) {
+        // Stacked: fold consecutive travel+hire items into one TX each; travel+hire items already combined
+        for (var i = 0; i < _txQueue.length; ) {
+            var item = _txQueue[i];
+            if (item.type === 'travel+hire') {
+                plan.push({ label: item.name || 'TRAVEL+HIRE ('+item.x+','+item.y+')', qIdx: i, tavern: item,
+                    actions: [
+                        { account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} },
+                        { account:'players.ale', name:'hire',   authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, asset_ids:[], cost_action_points:_hireBaseCost||100} }
+                    ]
+                });
+                i++;
+            } else if (item.type === 'travel') {
+                // Check if next item is a standalone hire
+                var nxt = _txQueue[i+1];
+                if (nxt && nxt.type === 'hire') {
+                    plan.push({ label: 'TRAVEL+HIRE ('+item.x+','+item.y+')', qIdx: i,
+                        actions: [
+                            { account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} },
+                            { account:'players.ale', name:'hire',   authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, asset_ids:[], cost_action_points:_hireBaseCost||100} }
+                        ]
+                    });
+                    i += 2;
+                } else {
+                    plan.push({ label: 'TRAVEL ('+item.x+','+item.y+')', qIdx: i,
+                        actions: [{ account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} }]
+                    });
+                    i++;
+                }
+            } else if (item.type === 'hire') {
+                plan.push({ label: 'HIRE', qIdx: i, tavern: item.tavern || null,
+                    actions: [{ account:'players.ale', name:'hire', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, asset_ids:[], cost_action_points:_hireBaseCost||100} }]
+                });
+                i++;
+            } else if (item.type === 'portal') {
+                plan.push({ label: 'PORTAL ('+item.x+','+item.y+')', qIdx: i,
+                    actions: [{ account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} }]
+                });
+                i++;
+            } else { i++; }
+        }
+    } else {
+        // Separate: every action is its own TX
+        _txQueue.forEach(function(item, i){
+            if (item.type === 'travel' || item.type === 'portal') {
+                plan.push({ label: 'TRAVEL ('+item.x+','+item.y+')', qIdx: i,
+                    actions: [{ account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} }]
+                });
+            } else if (item.type === 'travel+hire') {
+                plan.push({ label: 'TRAVEL ('+item.x+','+item.y+')', qIdx: i,
+                    actions: [{ account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} }]
+                });
+                plan.push({ label: 'HIRE — '+(item.name||''), qIdx: i, tavern: item,
+                    actions: [{ account:'players.ale', name:'hire', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, asset_ids:[], cost_action_points:_hireBaseCost||100} }]
+                });
+            } else if (item.type === 'hire') {
+                plan.push({ label: 'HIRE', qIdx: i,
+                    actions: [{ account:'players.ale', name:'hire', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, asset_ids:[], cost_action_points:_hireBaseCost||100} }]
+                });
+            }
+        });
+    }
 
     var succeeded = 0, failed = 0;
-    for (var i = 0; i < available.length; i++) {
-        if (_sweepAbort) break;
-        var tv  = available[i];
-        var row = document.getElementById('sw-row-' + i);
-        if (row) row.style.background = 'rgba(192,144,96,0.08)';
-        if (progLbl)  progLbl.textContent  = (i+1) + ' / ' + available.length + '  ·  ' + (tv.name || 'Tavern');
-        if (progFill) progFill.style.width = (i / available.length * 100).toFixed(0) + '%';
+    for (var j = 0; j < plan.length; j++) {
+        if (_txQueueAbort) break;
+        var step = plan[j];
+        var itemEl = document.getElementById('txq-item-' + step.qIdx);
+        if (itemEl) itemEl.style.background = 'rgba(192,144,96,0.08)';
+        if (progLbl)  progLbl.textContent  = (j+1) + ' / ' + plan.length + '  ·  ' + step.label;
+        if (progFill) progFill.style.width = (j / plan.length * 100).toFixed(0) + '%';
 
         try {
-            var actions = [
-                { account:'players.ale', name:'travel',
-                  authorization:[{actor:wallet,permission:'active'}],
-                  data:{wallet:wallet, x:tv.x, y:tv.y} },
-                { account:'players.ale', name:'hire',
-                  authorization:[{actor:wallet,permission:'active'}],
-                  data:{wallet:wallet, asset_ids:[], cost_action_points:_hireBaseCost||100} }
-            ];
-            if (window.walletSession) await window.walletSession.transact({actions});
-            else if (wax && wax.api)  await wax.api.transact({actions},{blocksBehind:3,expireSeconds:30});
+            if (window.walletSession) await window.walletSession.transact({actions: step.actions});
+            else if (wax && wax.api)  await wax.api.transact({actions: step.actions},{blocksBehind:3,expireSeconds:30});
             else throw new Error('No wallet session');
 
-            _playerPos = {planet:_activePlanet, x:tv.x, y:tv.y};
-            if (tv.land_id) {
-                var key = _activePlanet + '.' + tv.land_id;
+            // Update player position after any travel action
+            var travelAct = step.actions.find(function(a){ return a.name==='travel'; });
+            if (travelAct) _playerPos = {planet:_activePlanet, x:travelAct.data.x, y:travelAct.data.y};
+
+            // Track used tavern
+            var tav = step.tavern;
+            if (tav && tav.land_id) {
+                var key = _activePlanet + '.' + tav.land_id;
                 _playerUsedTaverns.add(key);
                 try {
                     var today = new Date().toISOString().slice(0,10);
                     localStorage.setItem('naron_used_taverns', JSON.stringify({date:today, keys:Array.from(_playerUsedTaverns)}));
                 } catch(e){}
             }
-            if (row) { row.style.background='rgba(96,224,144,0.06)'; row.querySelector('.sw-row-name').style.color='#60e090'; }
+            if (itemEl) {
+                itemEl.style.background = 'rgba(96,224,144,0.06)';
+                var lbl = itemEl.querySelector('.txq-item-label');
+                if (lbl) lbl.style.color = '#60e090';
+            }
             succeeded++;
         } catch(e) {
-            if (row) { row.style.background='rgba(255,68,68,0.06)'; row.querySelector('.sw-row-name').style.color='#ff6688'; }
+            if (itemEl) {
+                itemEl.style.background = 'rgba(255,68,68,0.06)';
+                var lbl = itemEl.querySelector('.txq-item-label');
+                if (lbl) lbl.style.color = '#ff6688';
+            }
             failed++;
         }
 
-        if (i < available.length - 1 && !_sweepAbort) {
+        if (j < plan.length - 1 && !_txQueueAbort) {
             await new Promise(function(r){ setTimeout(r, 2500); });
         }
     }
 
     if (progFill) progFill.style.width = '100%';
-    if (progLbl)  progLbl.textContent  = _sweepAbort
+    if (progLbl)  progLbl.textContent = _txQueueAbort
         ? '⚠ ABORTED  (' + succeeded + ' done)'
-        : '✓ COMPLETE  · ' + succeeded + ' hired' + (failed ? '  · ' + failed + ' failed' : '');
-    if (closeBtn) { closeBtn.textContent = 'CLOSE'; closeBtn.style.color = ''; closeBtn.style.borderColor = ''; }
+        : '✓ COMPLETE  ·  ' + succeeded + ' / ' + plan.length + (failed ? '  ·  ' + failed + ' failed' : '');
+    if (runBtn)   { runBtn.textContent = '▶ RUN QUEUE'; runBtn.disabled = false; }
+    if (closeBtn) { closeBtn.textContent = '▼'; closeBtn.style.color = ''; }
 
-    _sweepRunning = false;
+    _txQueueRunning = false;
     applyMarker();
     updatePlayerPlanetLabel();
     _refreshAllMaps();
