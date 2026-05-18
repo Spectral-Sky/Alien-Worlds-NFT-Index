@@ -31,7 +31,7 @@
             height:100%; width:100%;
             background: var(--bg);
             color: var(--text);
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
             overflow-x: hidden;
         }
 
@@ -415,6 +415,34 @@
         .opt-sk { color:var(--muted); letter-spacing:1px; }
         .opt-sv { color:var(--text); text-align:right; }
 
+        /* ── SHARD VALUATOR ─────────────────────────────────────────── */
+        .sv-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:10px 16px; border-bottom:1px solid var(--border); }
+        .sv-filter-bar { display:flex; gap:5px; flex-wrap:wrap; flex:1; }
+        .sv-tier-btn { background:transparent; border:1px solid rgba(255,68,204,0.25); color:rgba(255,68,204,0.4); font-family:inherit; font-size:0.62em; letter-spacing:2px; padding:3px 11px; cursor:pointer; border-radius:2px; transition:all 0.15s; text-transform:uppercase; }
+        .sv-tier-btn:hover { border-color:var(--pink); color:var(--pink); }
+        .sv-tier-btn.sv-active { background:rgba(255,68,204,0.1); border-color:var(--pink); color:var(--pink); font-weight:bold; }
+        .sv-tier-btn.rare     { border-color:rgba(68,136,255,0.35); color:rgba(68,136,255,0.5); }
+        .sv-tier-btn.rare.sv-active     { background:rgba(68,136,255,0.1); border-color:#4499ff; color:#4499ff; }
+        .sv-tier-btn.epic     { border-color:rgba(188,19,254,0.35); color:rgba(188,19,254,0.5); }
+        .sv-tier-btn.epic.sv-active     { background:rgba(188,19,254,0.1); border-color:#bc13fe; color:#bc13fe; }
+        .sv-tier-btn.legendary { border-color:rgba(255,170,0,0.35); color:rgba(255,170,0,0.5); }
+        .sv-tier-btn.legendary.sv-active { background:rgba(255,170,0,0.1); border-color:#ffaa00; color:#ffaa00; }
+        .sv-tier-btn.mythical  { border-color:rgba(255,0,85,0.35); color:rgba(255,0,85,0.5); }
+        .sv-tier-btn.mythical.sv-active  { background:rgba(255,0,85,0.1); border-color:#ff0055; color:#ff0055; }
+        .sv-scan-btn { background:transparent; border:1px solid rgba(255,68,204,0.3); color:rgba(255,68,204,0.5); font-family:inherit; font-size:0.62em; letter-spacing:2px; padding:3px 11px; cursor:pointer; transition:all 0.2s; text-transform:uppercase; flex-shrink:0; }
+        .sv-scan-btn:hover { border-color:var(--pink); color:var(--pink); }
+        .sv-body { padding:10px 16px; }
+        .sv-table { width:100%; border-collapse:collapse; font-size:0.68em; }
+        .sv-table thead th { color:var(--muted); font-size:0.85em; letter-spacing:2px; text-transform:uppercase; padding:5px 10px; text-align:left; border-bottom:1px solid var(--border); }
+        .sv-table tbody tr { border-bottom:1px solid rgba(255,68,204,0.06); }
+        .sv-table tbody tr:hover { background:rgba(60,0,60,0.2); }
+        .sv-table tbody td { padding:5px 10px; color:var(--text); }
+        .sv-ratio { color:var(--gold); font-weight:bold; }
+        .sv-avg-bar { margin-top:10px; padding:7px 10px; background:rgba(255,170,0,0.07); border:1px solid rgba(255,170,0,0.2); border-radius:2px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:0.7em; }
+        .sv-avg-val { color:var(--gold); font-weight:bold; font-size:1.1em; }
+        .sv-apply-btn { background:transparent; border:1px solid var(--border-gold); color:var(--gold-dim); font-family:inherit; font-size:0.65em; letter-spacing:2px; padding:4px 12px; cursor:pointer; border-radius:2px; transition:all 0.2s; text-transform:uppercase; }
+        .sv-apply-btn:hover { border-color:var(--gold); color:var(--gold); box-shadow:0 0 6px var(--gold-glow); }
+
         /* ── WALLET BUTTONS ───────────────────────────────────────────────── */
         .wallet-btn {
             background: rgba(8,0,12,0.95); color: var(--pink);
@@ -550,7 +578,7 @@
         <div class="nav-dropdown-wrap" style="position:relative;">
             <button class="font-picker-btn" id="font-picker-btn">Aa ▾</button>
             <div class="nav-dropdown-menu font-opt-menu">
-                <a class="nav-dropdown-item font-opt active" href="#" data-font="terminal" onclick="setFont('terminal');return false;">
+                <a class="nav-dropdown-item font-opt" href="#" data-font="terminal" onclick="setFont('terminal');return false;">
                     TERMINAL<span class="font-preview" style="font-family:'Courier New',monospace;">Courier New</span>
                 </a>
                 <a class="nav-dropdown-item font-opt" href="#" data-font="consolas" onclick="setFont('consolas');return false;">
@@ -559,7 +587,7 @@
                 <a class="nav-dropdown-item font-opt" href="#" data-font="calibri" onclick="setFont('calibri');return false;">
                     CLEAN<span class="font-preview" style="font-family:'Calibri','Trebuchet MS',sans-serif;">Calibri</span>
                 </a>
-                <a class="nav-dropdown-item font-opt" href="#" data-font="segoe" onclick="setFont('segoe');return false;">
+                <a class="nav-dropdown-item font-opt active" href="#" data-font="segoe" onclick="setFont('segoe');return false;">
                     MODERN<span class="font-preview" style="font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">Segoe UI</span>
                 </a>
             </div>
@@ -578,6 +606,8 @@
         </div>
 
         <div id="optimizer-section" style="margin-bottom:24px;"></div>
+
+        <div id="shard-val-section" style="margin-bottom:24px;background:var(--panel-bg);border:1px solid var(--border);border-radius:4px;overflow:hidden;"></div>
 
         <div class="req-section">
             <div class="req-header">
@@ -709,7 +739,7 @@
                 setTimeout(() => {
                     document.getElementById('lock-screen').style.display = 'none';
                     document.getElementById('main').classList.add('visible');
-                    refreshAll();
+                    refreshAll(); initShardValuator();
                 }, 600);
             }, 600);
         } else {
@@ -1292,13 +1322,16 @@
                 var myRwdFmt  = rwd.type.includes('tlm')   ? fmtTlm(myRwdAmt) + ' TLM'
                               : rwd.type.includes('wax')   ? fmtWax(myRwdAmt) + ' WAX'
                               : Math.round(myRwdAmt).toLocaleString() + ' ' + rwd.type.toUpperCase();
+                var myCostTlm = myCostWax * tlmPerWax;
+                var myNetTlm  = myNetWax  * tlmPerWax;
                 myPosHtml = '<div class="opt-my-pos">'
-                    + '<div class="opt-my-pos-row"><span class="opt-ms-k">YOUR SHARE</span>'
-                    + '<span class="opt-ms-v">' + (myAmt / currentPool * 100).toFixed(1) + '%  →  ' + myRwdFmt + '</span></div>'
-                    + '<div class="opt-my-pos-row"><span class="opt-ms-k">NET P&L</span>'
+                    + '<div class="opt-my-pos-row"><span class="opt-ms-k">INVESTED</span>'
+                    + '<span class="opt-ms-v" style="color:var(--pink-dim);">' + fmtTlm(myCostTlm) + ' TLM  (' + fmtBig(myAmt) + ' gems)</span></div>'
+                    + '<div class="opt-my-pos-row"><span class="opt-ms-k">REWARD</span>'
+                    + '<span class="opt-ms-v">' + myRwdFmt + '  (' + (myAmt / currentPool * 100).toFixed(1) + '% share)</span></div>'
+                    + '<div class="opt-my-pos-row"><span class="opt-ms-k">RETURN</span>'
                     + '<span class="opt-ms-v opt-ms-net ' + (myNetWax >= 0 ? 'opt-profit' : 'opt-loss') + '">'
-                    + (myNetWax >= 0 ? '+' : '') + fmtTlm(myNetWax * tlmPerWax) + ' TLM'
-                    + ' (' + (myNetWax >= 0 ? '+' : '') + fmtWax(myNetWax) + ' WAX)'
+                    + currentDeal.toFixed(2) + 'x  |  ' + (myNetTlm >= 0 ? '+' : '') + fmtTlm(myNetTlm) + ' TLM net'
                     + '</span></div></div>';
             }
 
@@ -1315,8 +1348,8 @@
                 + '<div class="opt-hbar-track"><div class="opt-hbar-fill" style="width:' + fillPct.toFixed(1) + '%;background:' + hc + ';box-shadow:0 0 4px ' + hc + '55;"></div></div>'
                 + '<div class="opt-hbar-lbl" style="color:' + hc + ';">'
                 + (headroom > 0
-                    ? fmtBig(Math.round(headroom)) + ' gems of headroom  →  break-even at 1×'
-                    : '<span style="color:#ff7744">Pool past break-even — adding more is a net loss</span>')
+                    ? fmtBig(Math.round(headroom)) + ' gems before deal drops to 1× (loss zone)'
+                    : '<span style="color:#ff7744">Pool past 1× — adding gems costs more than it returns</span>')
                 + '</div>'
                 + myPosHtml
                 + '</div>'
@@ -1483,8 +1516,190 @@
         renderOptimizer();
     }
 
+    // ── SHARD VALUATOR ───────────────────────────────────────────────────────
+    const AA_ENDPOINTS = [
+        'https://wax.api.atomicassets.io',
+        'https://aa.wax.blacklusion.io',
+        'https://wax-aa.eu.eosamsterdam.net',
+    ];
+    async function aaFetch(path) {
+        for (var ep of AA_ENDPOINTS) {
+            try {
+                var r = await fetch(ep + path, { cache:'no-store' });
+                if (r.ok) return await r.json();
+            } catch(e) {}
+        }
+        return null;
+    }
+
+    var _shardListings   = [];   // { tmplId, name, rarity, costShards, floorWax, ratio }
+    var _shardTierFilter = new Set(['epic','legendary','mythical']);
+
+    function initShardValuator() {
+        var el = document.getElementById('shard-val-section');
+        if (!el) return;
+        var tiers = ['rare','epic','legendary','mythical'];
+        var tierBtns = tiers.map(function(t) {
+            var active = _shardTierFilter.has(t) ? ' sv-active' : '';
+            return '<button class="sv-tier-btn ' + t + active + '" onclick="toggleShardTier(\'' + t + '\')">' + t.toUpperCase() + '</button>';
+        }).join('');
+        el.innerHTML =
+            '<div class="opt-header">' +
+                '<h2>◈ Shard Valuator — live floor pricing</h2>' +
+            '</div>' +
+            '<div class="sv-toolbar">' +
+                '<div class="sv-filter-bar" id="sv-filter-bar">' + tierBtns + '</div>' +
+                '<button class="sv-scan-btn" id="sv-scan-btn" onclick="scanOutpostFloors()">⟳ SCAN OUTPOST</button>' +
+            '</div>' +
+            '<div class="sv-body" id="sv-body">' +
+                '<div style="color:var(--muted);font-size:0.68em;letter-spacing:1px;">Click SCAN to fetch live floor prices from active outpost listings.</div>' +
+            '</div>';
+    }
+
+    window.toggleShardTier = function(tier) {
+        if (_shardTierFilter.has(tier)) _shardTierFilter.delete(tier);
+        else _shardTierFilter.add(tier);
+        // Update button active state
+        document.querySelectorAll('.sv-tier-btn').forEach(function(b) {
+            b.classList.toggle('sv-active', _shardTierFilter.has(b.textContent.trim().toLowerCase()));
+        });
+        if (_shardListings.length) renderShardValuator();
+    };
+
+    window.scanOutpostFloors = async function() {
+        var bodyEl = document.getElementById('sv-body');
+        var scanBtn = document.getElementById('sv-scan-btn');
+        if (!bodyEl) return;
+        if (scanBtn) { scanBtn.disabled = true; scanBtn.textContent = '⟳ SCANNING…'; }
+        bodyEl.innerHTML = '<div style="color:var(--muted);font-size:0.68em;" class="loading-pulse">Fetching active outpost listings…</div>';
+
+        var rows;
+        try {
+            rows = await fetchAllRows({ code:'uspts.worlds', scope:'uspts.worlds', table:'pointoffers', limit:200 });
+        } catch(e) {
+            bodyEl.innerHTML = '<div style="color:var(--red);font-size:0.68em;">Failed: ' + (e.message||e) + '</div>';
+            if (scanBtn) { scanBtn.disabled = false; scanBtn.textContent = '⟳ SCAN OUTPOST'; }
+            return;
+        }
+
+        function parseTs(v) {
+            if (v == null) return null;
+            var n = Number(v);
+            return isNaN(n) ? new Date(String(v)+'Z').getTime()/1000 : n;
+        }
+        var now = Date.now() / 1000;
+        var active = rows.filter(function(r) {
+            var endTs = parseTs(r.end != null ? r.end : (r.end_time != null ? r.end_time : r.ends));
+            return endTs == null || now < endTs;
+        });
+
+        if (!active.length) {
+            bodyEl.innerHTML = '<div style="color:var(--muted);font-size:0.68em;padding:6px 0;">No active outpost listings found.</div>';
+            if (scanBtn) { scanBtn.disabled = false; scanBtn.textContent = '⟳ SCAN OUTPOST'; }
+            return;
+        }
+
+        bodyEl.innerHTML = '<div style="color:var(--muted);font-size:0.68em;" class="loading-pulse">Scanning floor prices for ' + active.length + ' listings…</div>';
+
+        // Batch 3 at a time to avoid rate-limiting
+        var results = [];
+        for (var i = 0; i < active.length; i += 3) {
+            var batch = active.slice(i, i + 3);
+            var batchRes = await Promise.all(batch.map(async function(r) {
+                var rawCost   = r.required != null ? r.required : (r.cost != null ? r.cost : r.points_required || 0);
+                var costShards = rawCost / 10;
+                var tmplId    = String(r.template_id || '');
+                if (!tmplId || tmplId === '0' || costShards <= 0) return null;
+
+                // Template metadata (name + rarity)
+                var tmplJson = await aaFetch('/atomicassets/v1/templates?collection_name=alien.worlds&template_id=' + tmplId + '&limit=1');
+                var name = 'Template #' + tmplId, rarity = null;
+                if (tmplJson && tmplJson.data && tmplJson.data[0]) {
+                    var im = tmplJson.data[0].immutable_data || {};
+                    if (im.name) name = String(im.name);
+                    if (im.rarity) rarity = String(im.rarity).toLowerCase();
+                }
+
+                // Floor price
+                var floorJson = await aaFetch('/atomicmarket/v1/sales?state=1&collection_name=alien.worlds&template_id=' + tmplId + '&sort=price&order=asc&limit=1');
+                var floorWax = null;
+                if (floorJson && floorJson.data && floorJson.data[0]) {
+                    var p = floorJson.data[0].price;
+                    if (p && p.amount) floorWax = parseInt(p.amount) / Math.pow(10, p.token_precision || 8);
+                }
+
+                return { tmplId, name, rarity, costShards, floorWax, ratio: (floorWax && costShards > 0) ? floorWax / costShards : null };
+            }));
+            batchRes.forEach(function(x) { if (x && x.ratio !== null) results.push(x); });
+            bodyEl.innerHTML = '<div style="color:var(--muted);font-size:0.68em;" class="loading-pulse">Scanned ' + results.length + ' / ' + active.length + '…</div>';
+        }
+
+        _shardListings = results;
+        if (scanBtn) { scanBtn.disabled = false; scanBtn.textContent = '⟳ RESCAN'; }
+        renderShardValuator();
+    };
+
+    function renderShardValuator() {
+        var bodyEl = document.getElementById('sv-body');
+        if (!bodyEl || !_shardListings.length) return;
+
+        var filtered = _shardListings.filter(function(x) {
+            return !x.rarity || _shardTierFilter.has(x.rarity);
+        });
+
+        var rarityColor = { rare:'#4499ff', epic:'#bc13fe', legendary:'#ffaa00', mythical:'#ff0055' };
+
+        var rows = filtered.map(function(x) {
+            var rc = rarityColor[x.rarity] || '#888';
+            return '<tr>' +
+                '<td>' + x.name + '</td>' +
+                '<td style="color:' + rc + ';font-weight:bold;text-transform:uppercase;font-size:0.88em;">' + (x.rarity || '—') + '</td>' +
+                '<td>' + x.costShards.toLocaleString(undefined,{maximumFractionDigits:1}) + '</td>' +
+                '<td>' + (x.floorWax ? x.floorWax.toFixed(4) + ' WAX' : '—') + '</td>' +
+                '<td class="sv-ratio">' + (x.ratio ? x.ratio.toFixed(6) + ' WAX' : '—') + '</td>' +
+                '</tr>';
+        }).join('');
+
+        // Average WAX/shard across filtered set
+        var ratios = filtered.map(function(x){ return x.ratio; }).filter(Boolean);
+        var avgRatio = ratios.length ? ratios.reduce(function(a,b){return a+b;},0) / ratios.length : null;
+
+        var avgHtml = '';
+        if (avgRatio !== null) {
+            var tierLabel = Array.from(_shardTierFilter).map(function(t){return t.toUpperCase();}).join('+') || 'ALL';
+            avgHtml = '<div class="sv-avg-bar">' +
+                '<span style="color:var(--muted);font-size:0.9em;letter-spacing:1px;">' + tierLabel + ' AVG (' + ratios.length + ' listings)</span>' +
+                '<span class="sv-avg-val">' + avgRatio.toFixed(6) + ' WAX / shard</span>' +
+                '<button class="sv-apply-btn" onclick="applyShardFloorRate(' + avgRatio + ')">◈ USE THIS RATE</button>' +
+            '</div>';
+        }
+
+        bodyEl.innerHTML =
+            '<div style="overflow-x:auto;max-height:280px;overflow-y:auto;">' +
+            '<table class="sv-table"><thead><tr>' +
+            '<th>NFT</th><th>RARITY</th><th>SHARDS</th><th>FLOOR</th><th>WAX / SHARD</th>' +
+            '</tr></thead><tbody>' + (rows || '<tr><td colspan="5" style="color:var(--muted);padding:10px;">No listings matched selected tiers.</td></tr>') + '</tbody></table>' +
+            '</div>' + avgHtml;
+    }
+
+    window.applyShardFloorRate = function(rate) {
+        _customShardWax = rate;
+        var inp = document.getElementById('custom-shard-input');
+        if (inp) inp.value = rate.toFixed(6);
+        var hint = document.getElementById('custom-shard-hint');
+        var tlmPerWax = (_liveWaxUsd && _liveTlmUsd) ? _liveWaxUsd / _liveTlmUsd : 3.8;
+        if (hint) hint.textContent = '≈ ' + (rate * tlmPerWax).toFixed(6) + ' TLM per shard (from outpost floor)';
+        // Show the custom panel as active
+        var panel = document.getElementById('calc-custom-panel');
+        var btn   = document.getElementById('calc-custom-btn');
+        if (panel) panel.classList.add('open');
+        if (btn)   btn.classList.add('active');
+        calcUpdate();
+        if (_offersCache.length) { renderOffers(_offersCache); renderOptimizer(); }
+    };
+
     setInterval(fetchLivePrices, 5 * 60 * 1000);
-    if (sessionStorage.getItem('rcv_unlocked') === '1') { refreshAll(); checkWalletState(); }
+    if (sessionStorage.getItem('rcv_unlocked') === '1') { refreshAll(); checkWalletState(); initShardValuator(); }
 </script>
 
 <div class="nav-dropdown-wrap" id="lang-picker" style="position:fixed;bottom:16px;right:16px;z-index:9000;" id="lang-picker-float">
