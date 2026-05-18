@@ -526,6 +526,7 @@
                     <a class="nav-dropdown-item" href="#" onclick="setLang('de');return false;"><img src="https://flagcdn.com/16x12/de.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> DE</a>
                     <a class="nav-dropdown-item" href="#" onclick="setLang('it');return false;"><img src="https://flagcdn.com/16x12/it.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> IT</a>
                     <a class="nav-dropdown-item" href="#" onclick="setLang('tl');return false;"><img src="https://flagcdn.com/16x12/ph.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> TL</a>
+                    <a class="nav-dropdown-item" href="#" onclick="setLang('id');return false;"><img src="https://flagcdn.com/16x12/id.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> ID</a>
                     <a class="nav-dropdown-item active" href="#" onclick="setLang('en');return false;"><img src="https://flagcdn.com/16x12/gb.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> EN</a>
                 </div>
             </div>
@@ -935,7 +936,7 @@
 
         </div>
         <div style="text-align:center; padding: 12px 0 4px; font-family:'Courier New',monospace; font-size:0.72em; color:#252535; letter-spacing:2px; display:flex; justify-content:center; align-items:center; gap:14px;">
-            <span>v 1.1.48</span>
+            <span>v 1.1.49</span>
             <a href="ep.html" style="color:#252535; text-decoration:none; border:1px solid #1a1a2a; padding:2px 10px; letter-spacing:2px; transition:all 0.2s;" onmouseover="this.style.color='var(--theme-color)';this.style.borderColor='var(--theme-color)'" onmouseout="this.style.color='#252535';this.style.borderColor='#1a1a2a'">ENDPOINTS</a>
         </div>
     </footer>
@@ -1470,7 +1471,7 @@
 <div id="google_translate_element" style="display:none;"></div>
 <script>
     function googleTranslateElementInit(){
-        new google.translate.TranslateElement({pageLanguage:'en',includedLanguages:'fr,de,it,tl',autoDisplay:false},'google_translate_element');
+        new google.translate.TranslateElement({pageLanguage:'en',includedLanguages:'fr,de,it,tl,id',autoDisplay:false},'google_translate_element');
     }
     function setLang(lang){
         document.querySelectorAll('#lang-picker .nav-dropdown-item').forEach(function(a){
