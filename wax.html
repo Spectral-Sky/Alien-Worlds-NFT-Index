@@ -421,6 +421,8 @@
         .contrib-row.contrib-me .contrib-amt { color:var(--gold-dim); }
         .contrib-share { color:var(--muted); font-size:0.85em; min-width:36px; text-align:right; }
         .contrib-row.contrib-me .contrib-share { color:var(--gold-dim); }
+        .contrib-reward { color:var(--pink-dim); font-size:0.85em; min-width:70px; text-align:right; white-space:nowrap; letter-spacing:0.5px; }
+        .contrib-reward.contrib-reward-me { color:var(--gold); font-weight:bold; text-shadow:0 0 6px var(--gold-glow); }
         .contrib-empty { font-size:0.62em; color:var(--muted); letter-spacing:1px; padding:4px 0; }
             .nav-dropdown-wrap{position:relative;display:inline-block;}
         .nav-dropdown-menu{display:none;position:absolute;background:rgba(10,0,10,0.98);border:1px solid rgba(255,68,204,0.4);min-width:130px;padding:6px 0;z-index:9001;}
@@ -879,19 +881,38 @@
         </div>`;
     }
 
-    function contribListHtml(offerId, totalGems) {
+    function contribListHtml(offer, totalGems) {
+        const offerId = offer ? (offer.offer_id ?? offer.id) : null;
         const me   = localStorage.getItem('naron_wallet') || '';
-        const list = _allContribs[offerId];
+        const list = offerId !== null ? _allContribs[offerId] : null;
         if (!list) return '';
         if (!list.length) return `<div class="contrib-section"><div class="contrib-empty">No contributions yet</div></div>`;
+
+        const { amount: rwdAmt, type: rwdType } = offer ? parseReward(offer) : { amount: 0, type: '' };
+        let rwdFmt, rwdLabel, rwdLogo;
+        if (rwdType.includes('wax'))        { rwdFmt = n => n.toLocaleString(undefined,{minimumFractionDigits:4,maximumFractionDigits:4}); rwdLabel = 'WAX';    rwdLogo = LOGO_WAX; }
+        else if (rwdType.includes('tlm'))   { rwdFmt = n => n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); rwdLabel = 'TLM';    rwdLogo = LOGO_TLM; }
+        else if (rwdType.includes('shard')) { rwdFmt = n => Math.round(n).toLocaleString();                                                  rwdLabel = 'SHARDS'; rwdLogo = LOGO_SHARDS; }
+        else if (rwdType.includes('gem'))   { rwdFmt = n => Math.round(n).toLocaleString();                                                  rwdLabel = 'GEMS';   rwdLogo = LOGO_GEMS; }
+        else                                { rwdFmt = n => Math.round(n).toLocaleString();                                                  rwdLabel = rwdType.toUpperCase() || '?'; rwdLogo = ''; }
+
         const rows = list.map(c => {
             const isMe = me && c.wallet === me;
-            const pct  = totalGems > 0 ? Math.round(c.amount / totalGems * 100) : 0;
+            const pct  = totalGems > 0 ? c.amount / totalGems * 100 : 0;
+            const pctDisplay = pct < 1 ? pct.toFixed(1) + '%' : Math.round(pct) + '%';
+            let rwdShareHtml = '';
+            if (rwdAmt > 0 && totalGems > 0) {
+                const share = (c.amount / totalGems) * rwdAmt;
+                rwdShareHtml = `<span class="contrib-reward${isMe ? ' contrib-reward-me' : ''}">` +
+                    (rwdLogo ? `<img src="${rwdLogo}" style="width:10px;height:10px;object-fit:contain;border-radius:50%;vertical-align:middle;margin-right:2px;opacity:0.8;">` : '') +
+                    `${rwdFmt(share)} ${rwdLabel}</span>`;
+            }
             return `<div class="contrib-row${isMe ? ' contrib-me' : ''}">
                 <img src="${LOGO_GEMS}" style="width:11px;height:11px;object-fit:contain;opacity:0.7;flex-shrink:0;">
                 <span class="contrib-wallet">${isMe ? '◈ ' : ''}${c.wallet}</span>
                 <span class="contrib-amt">${fmtBig(c.amount)}</span>
-                <span class="contrib-share">${pct}%</span>
+                <span class="contrib-share">${pctDisplay}</span>
+                ${rwdShareHtml}
             </div>`;
         }).join('');
         return `<div class="contrib-section">
@@ -975,7 +996,7 @@
                 ${rewardValueHtml(o)}
                 ${contributedValueHtml(contrib)}
                 ${dealBarHtml(o)}
-                ${contribListHtml(o.offer_id, gems)}
+                ${contribListHtml(o, gems)}
             </div>`;
         });
 
