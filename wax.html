@@ -379,6 +379,33 @@
         ::-webkit-scrollbar-track { background:#030003; }
         ::-webkit-scrollbar-thumb { background:var(--pink-dim); border-radius:2px; }
 
+        /* ── OPTIMIZER ──────────────────────────────────────────────────── */
+        .opt-header { background:rgba(12,0,16,0.98); padding:10px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+        .opt-header h2 { font-size:0.72em; letter-spacing:3px; color:var(--pink); text-transform:uppercase; flex:1; }
+        .opt-row { display:grid; grid-template-columns:190px 1fr 210px; gap:14px; padding:12px 16px; border-bottom:1px solid rgba(255,68,204,0.07); align-items:start; }
+        .opt-row:last-child { border-bottom:none; }
+        .opt-offer-name { font-size:0.73em; color:#ffccee; font-weight:bold; margin-bottom:5px; line-height:1.3; }
+        .opt-deal-line { display:flex; align-items:baseline; gap:5px; }
+        .opt-deal-sub { font-size:0.6em; color:var(--muted); letter-spacing:1px; }
+        .opt-hbar-track { height:5px; background:rgba(50,0,50,0.8); border-radius:3px; overflow:hidden; margin:5px 0 3px; }
+        .opt-hbar-fill { height:100%; border-radius:3px; transition:width 0.4s; }
+        .opt-hbar-lbl { font-size:0.58em; letter-spacing:1px; margin-bottom:6px; }
+        .opt-my-pos { padding:4px 7px; background:rgba(255,170,0,0.07); border:1px solid rgba(255,170,0,0.18); border-radius:2px; margin-top:4px; }
+        .opt-my-pos-row { display:flex; gap:6px; font-size:0.6em; padding:1px 0; flex-wrap:wrap; }
+        .opt-ms-k { color:var(--muted); letter-spacing:1px; flex-shrink:0; }
+        .opt-ms-v { color:var(--gold); }
+        .opt-ms-net { font-weight:bold; }
+        .opt-profit { color:#60e090; }
+        .opt-loss   { color:#ff4466; }
+        .opt-sim-lbl { font-size:0.58em; color:var(--muted); letter-spacing:2px; margin-bottom:4px; text-transform:uppercase; }
+        .opt-sim-in { width:100%; background:rgba(20,0,24,0.9); border:1px solid var(--border); color:var(--text); font-family:'Courier New',monospace; font-size:0.8em; padding:5px 7px; outline:none; border-radius:2px; margin-bottom:5px; }
+        .opt-sim-in:focus { border-color:var(--pink); box-shadow:0 0 4px var(--pink-glow); }
+        .opt-sim-in::placeholder { color:var(--muted); }
+        .opt-sr { display:flex; justify-content:space-between; font-size:0.63em; padding:2px 0; border-bottom:1px solid rgba(255,68,204,0.06); }
+        .opt-sr:last-child { border-bottom:none; }
+        .opt-sk { color:var(--muted); letter-spacing:1px; }
+        .opt-sv { color:var(--text); text-align:right; }
+
         /* ── WALLET BUTTONS ───────────────────────────────────────────────── */
         .wallet-btn {
             background: rgba(8,0,12,0.95); color: var(--pink);
@@ -524,6 +551,8 @@
             </div>
         </div>
 
+        <div id="optimizer-section" style="margin-bottom:24px;"></div>
+
         <div class="req-section">
             <div class="req-header">
                 <h2>◆ Requirements Registry</h2>
@@ -561,6 +590,7 @@
     let _customShardWax   = null; // user-pinned WAX per shard (null = use live rate)
     let _allContribs  = {};  // offer_id → [{wallet, amount}] sorted by amount desc
     let _playerStats  = {};  // permstat key → value for logged-in player
+    let _offerById    = {};  // offer_id → offer row, used by optimizer
 
     const LOGO_GEMS   = 'Ale%20images/gems.png';
     const LOGO_SHARDS = 'Shards.png';
@@ -1041,6 +1071,7 @@
 
         row.innerHTML = html;
         updateCalcRateDisplay();
+        setTimeout(renderOptimizer, 0);
 
         // Start countdown timers
         offers.forEach((o, idx) => {
@@ -1169,10 +1200,137 @@
         }
         updateCalcRateDisplay();
         calcUpdate();
-        if (_offersCache.length) renderOffers(_offersCache);
+        if (_offersCache.length) { renderOffers(_offersCache); renderOptimizer(); }
         document.querySelectorAll('.calc-pack-btn').forEach(b => {
             b.classList.toggle('active', b.dataset.pack === key);
         });
+    };
+
+    // ── CONTRIBUTION OPTIMIZER ───────────────────────────────────────────────
+    function renderOptimizer() {
+        var el = document.getElementById('optimizer-section');
+        if (!el || !_offersCache.length) return;
+
+        var html = '<div class="opt-header"><h2>◈ Contribution Optimizer</h2>'
+            + '<span class="req-count">' + _offersCache.length + ' OFFER' + (_offersCache.length !== 1 ? 'S' : '') + '</span></div>';
+
+        _offersCache.forEach(function(o) {
+            var offId = String(o.offer_id != null ? o.offer_id : o.id);
+            _offerById[offId] = o;
+
+            var currentPool = offerContributed(o);
+            var rwd         = parseReward(o);
+            var rewardWax   = rewardToWax(rwd.amount, rwd.type);
+            var breakEven   = (rewardWax > 0 && GEM_TO_WAX > 0) ? rewardWax / GEM_TO_WAX : 0;
+            var headroom    = breakEven > 0 ? Math.max(0, breakEven - currentPool) : 0;
+            var fillPct     = breakEven > 0 ? Math.min(100, currentPool / breakEven * 100) : 0;
+            var currentDeal = (currentPool > 0 && rewardWax > 0) ? rewardWax / (currentPool * GEM_TO_WAX) : 0;
+
+            var me        = localStorage.getItem('naron_wallet');
+            var myContribs = _allContribs[offId] || [];
+            var myRow      = me ? myContribs.find(function(c){ return c.wallet === me; }) : null;
+            var myAmt      = myRow ? myRow.amount : 0;
+
+            var name = o.requirements || _reqMap[String(o.requirement_type||'')] || o.title || ('Offer #' + offId);
+            var dc   = currentDeal < 0.5 ? 'deal-bad' : currentDeal < 1 ? 'deal-low' : currentDeal < 2 ? 'deal-fair' : currentDeal < 5 ? 'deal-good' : 'deal-great';
+            var hc   = fillPct < 50 ? '#60e090' : fillPct < 80 ? '#ffaa00' : '#ff7744';
+
+            // Logged-in player's current position
+            var myPosHtml = '';
+            if (me && myAmt > 0 && rewardWax > 0 && currentPool > 0) {
+                var myRwdWax  = (myAmt / currentPool) * rewardWax;
+                var myCostWax = myAmt * GEM_TO_WAX;
+                var myNetWax  = myRwdWax - myCostWax;
+                var tlmPerWax = (_liveWaxUsd && _liveTlmUsd) ? _liveWaxUsd / _liveTlmUsd : 3.8;
+                var myRwdAmt  = (myAmt / currentPool) * rwd.amount;
+                var myRwdFmt  = rwd.type.includes('tlm')   ? fmtTlm(myRwdAmt) + ' TLM'
+                              : rwd.type.includes('wax')   ? fmtWax(myRwdAmt) + ' WAX'
+                              : Math.round(myRwdAmt).toLocaleString() + ' ' + rwd.type.toUpperCase();
+                myPosHtml = '<div class="opt-my-pos">'
+                    + '<div class="opt-my-pos-row"><span class="opt-ms-k">YOUR SHARE</span>'
+                    + '<span class="opt-ms-v">' + (myAmt / currentPool * 100).toFixed(1) + '%  →  ' + myRwdFmt + '</span></div>'
+                    + '<div class="opt-my-pos-row"><span class="opt-ms-k">NET P&L</span>'
+                    + '<span class="opt-ms-v opt-ms-net ' + (myNetWax >= 0 ? 'opt-profit' : 'opt-loss') + '">'
+                    + (myNetWax >= 0 ? '+' : '') + fmtTlm(myNetWax * tlmPerWax) + ' TLM'
+                    + ' (' + (myNetWax >= 0 ? '+' : '') + fmtWax(myNetWax) + ' WAX)'
+                    + '</span></div></div>';
+            }
+
+            html += '<div class="opt-row">'
+                // Left: name + deal
+                + '<div>'
+                + '<div class="opt-offer-name">' + name + '</div>'
+                + '<div class="opt-deal-line"><span class="deal-multiplier ' + dc + '" style="font-size:1.3em;">'
+                + (currentDeal > 0 ? currentDeal.toFixed(2) + 'x' : '—')
+                + '</span><span class="opt-deal-sub"> current deal</span></div>'
+                + '</div>'
+                // Middle: headroom bar + current position
+                + '<div>'
+                + '<div class="opt-hbar-track"><div class="opt-hbar-fill" style="width:' + fillPct.toFixed(1) + '%;background:' + hc + ';box-shadow:0 0 4px ' + hc + '55;"></div></div>'
+                + '<div class="opt-hbar-lbl" style="color:' + hc + ';">'
+                + (headroom > 0
+                    ? fmtBig(Math.round(headroom)) + ' gems of headroom  →  break-even at 1×'
+                    : '<span style="color:#ff7744">Pool past break-even — adding more is a net loss</span>')
+                + '</div>'
+                + myPosHtml
+                + '</div>'
+                // Right: simulate input
+                + '<div>'
+                + '<div class="opt-sim-lbl">Simulate adding</div>'
+                + '<input class="opt-sim-in" type="number" min="0" placeholder="gems to add…" id="opt-in-' + offId + '" oninput="calcOptim(\'' + offId + '\', this.value)">'
+                + '<div id="opt-sim-' + offId + '"></div>'
+                + '</div>'
+                + '</div>';
+        });
+
+        el.style.cssText = 'background:var(--panel-bg);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:24px;';
+        el.innerHTML = html;
+    }
+
+    window.calcOptim = function(offId, addStr) {
+        var el = document.getElementById('opt-sim-' + offId);
+        if (!el) return;
+        var add = parseFloat(addStr) || 0;
+        if (add <= 0) { el.innerHTML = ''; return; }
+
+        var o = _offerById[String(offId)];
+        if (!o) return;
+
+        var currentPool   = offerContributed(o);
+        var rwd           = parseReward(o);
+        var rewardWax     = rewardToWax(rwd.amount, rwd.type);
+        var me            = localStorage.getItem('naron_wallet');
+        var myContribs    = _allContribs[offId] || [];
+        var myRow         = me ? myContribs.find(function(c){ return c.wallet === me; }) : null;
+        var myAmt         = myRow ? myRow.amount : 0;
+        var tlmPerWax     = (_liveWaxUsd && _liveTlmUsd) ? _liveWaxUsd / _liveTlmUsd : 3.8;
+
+        var newPool       = currentPool + add;
+        var myNewAmt      = myAmt + add;
+        var myNewPct      = myNewAmt / newPool * 100;
+        var myNewRwdWax   = (myNewAmt / newPool) * rewardWax;
+        var myNewRwdAmt   = (myNewAmt / newPool) * rwd.amount;
+        var curRwdWax     = (currentPool > 0 && myAmt > 0) ? (myAmt / currentPool) * rewardWax : 0;
+        var addCostWax    = add * GEM_TO_WAX;
+        var marginalGain  = myNewRwdWax - curRwdWax;   // extra reward from adding
+        var marginalNet   = marginalGain - addCostWax;  // gain minus what new gems cost
+        var newDeal       = newPool > 0 ? rewardWax / (newPool * GEM_TO_WAX) : 0;
+
+        var rwdFmt = rwd.type.includes('tlm')   ? fmtTlm(myNewRwdAmt) + ' TLM'
+                   : rwd.type.includes('wax')   ? fmtWax(myNewRwdAmt) + ' WAX'
+                   : rwd.type.includes('shard') ? Math.round(myNewRwdAmt).toLocaleString() + ' SHARDS'
+                   : Math.round(myNewRwdAmt).toLocaleString() + ' ' + rwd.type.toUpperCase();
+
+        var dc = newDeal < 0.5 ? 'deal-bad' : newDeal < 1 ? 'deal-low' : newDeal < 2 ? 'deal-fair' : newDeal < 5 ? 'deal-good' : 'deal-great';
+
+        el.innerHTML =
+            '<div class="opt-sr"><span class="opt-sk">SHARE</span><span class="opt-sv">' + myNewPct.toFixed(1) + '%</span></div>'
+            + '<div class="opt-sr"><span class="opt-sk">REWARD</span><span class="opt-sv">' + rwdFmt + '</span></div>'
+            + '<div class="opt-sr"><span class="opt-sk">ADD COST</span><span class="opt-sv" style="color:var(--pink-dim);">' + fmtTlm(addCostWax * tlmPerWax) + ' TLM</span></div>'
+            + '<div class="opt-sr"><span class="opt-sk">EXTRA GAIN</span><span class="opt-sv ' + (marginalGain > 0 ? 'opt-profit' : 'opt-loss') + '">' + fmtTlm(marginalGain * tlmPerWax) + ' TLM</span></div>'
+            + '<div class="opt-sr"><span class="opt-sk">NET</span><span class="opt-sv ' + (marginalNet >= 0 ? 'opt-profit' : 'opt-loss') + '">'
+            + (marginalNet >= 0 ? '+' : '') + fmtTlm(marginalNet * tlmPerWax) + ' TLM</span></div>'
+            + '<div class="opt-sr"><span class="opt-sk">NEW DEAL</span><span class="opt-sv ' + dc + '">' + newDeal.toFixed(2) + 'x</span></div>';
     };
 
     // ── FETCH & REFRESH ───────────────────────────────────────────────────────
@@ -1276,6 +1434,7 @@
             } catch(e) { _allContribs[o.offer_id] = []; }
         }));
         renderOffers(_offersCache);
+        renderOptimizer();
     }
 
     setInterval(fetchLivePrices, 5 * 60 * 1000);
