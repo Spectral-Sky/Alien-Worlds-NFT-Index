@@ -1581,6 +1581,7 @@
             _playerPos={planet:_activePlanet,x:_sel.x,y:_sel.y};
             applyMarker();
             updatePlayerPlanetLabel();
+            setTimeout(function(){ fetchPlayerTaverns(wallet); }, 1500);
             setTimeout(dismissStrip,3000);
         }catch(e){
             status.textContent='✗ '+((e&&e.message)||'Failed').substring(0,60);
@@ -1881,6 +1882,7 @@
             else if(wax&&wax.api)await wax.api.transact({actions},{blocksBehind:3,expireSeconds:30});
             else throw new Error('No wallet session — please log in.');
             status.textContent='✓ FIGHTER HIRED';status.className='ok';
+            setTimeout(function(){ fetchPlayerTaverns(wallet); }, 1500);
             setTimeout(dismissStrip,3000);
         }catch(e){
             status.textContent='✗ '+((e&&e.message)||'Failed').substring(0,60);
