@@ -1428,9 +1428,8 @@
         var portalTcSuffix=(!atCurrentPos&&tc!==null)?' <span style="white-space:nowrap">'+(tc+35)+' '+_AP_ICON+'</span>':'';
         if(portal){
             var dest=(PLANETS[portal.to]||{name:portal.to.toUpperCase()}).name.toUpperCase();
-            info.innerHTML='<strong>PORTAL</strong><br>→ '+dest;
-            if(!atCurrentPos){tBtn.innerHTML='TRAVEL TO PORTAL'+portalTcSuffix; tBtn.style.display='';}
-            vBtn.innerHTML='VIEW '+dest; vBtn.style.display='';
+            info.innerHTML='<strong style="color:'+(PLANETS[portal.to]||{color:'#a09060'}).color+'">PORTAL → '+dest+'</strong>';
+            if(!atCurrentPos){tBtn.innerHTML='TRAVEL TO '+dest+portalTcSuffix; tBtn.style.display='';}
         } else if(isDungeon){
             info.innerHTML=isDungeonLocked
                 ?'<strong style="color:#507050;">DUNGEON</strong><br><span style="font-size:0.7em;color:#446;">✓ Won today — resets 0 UTC</span>'
@@ -1560,7 +1559,8 @@
             status.className='err';
         }
         btn.disabled=false;
-        btn.textContent=(_sel&&_sel.portal)?'TRAVEL TO PORTAL':(_sel&&(_sel.isTavern||_sel.isDungeon||_sel.isArena))?'TRAVEL >>':'CONFIRM TRAVEL';
+        if(_sel&&_sel.portal){btn.innerHTML='TRAVEL TO '+((PLANETS[_sel.portal.to]||{name:_sel.portal.to}).name.toUpperCase());}
+        else{btn.textContent=(_sel&&(_sel.isTavern||_sel.isDungeon||_sel.isArena))?'TRAVEL >>':'CONFIRM TRAVEL';}
     }
 
     async function doTravelHire(){
