@@ -803,6 +803,15 @@
     }
 
     var _playerPlayedDungeons=new Set(); // "planet.land_id" strings beaten today
+    var _playerUsedTaverns=new Set();   // "planet.land_id" hired this session
+    (function(){
+        var today=new Date().toISOString().slice(0,10);
+        try{
+            var saved=JSON.parse(localStorage.getItem('naron_used_taverns')||'{}');
+            if(saved.date===today)(saved.keys||[]).forEach(function(k){_playerUsedTaverns.add(k);});
+            else localStorage.removeItem('naron_used_taverns');
+        }catch(e){}
+    })();
     var _playerLockedArenas=new Set();   // "planet.x.y" arenas where player's fighter is defending
     var _arenaDefenderIds={};            // planet.x.y -> {fid, wallet} for all live arenas
     var _fighterCache={};               // assetId -> fighter row cache
@@ -2553,7 +2562,7 @@
             <button class="txq-mode-btn" id="txq-mode-sep" onclick="setTxqRunMode('separate')">SEPARATE</button>
         </div>
         <button class="txq-qm-btn" id="txq-qm-btn" onclick="toggleTxQueueMode()">○ QUEUE MODE</button>
-        <button class="txq-add-btn" onclick="txqAddAllTaverns()">+ ALL TAVERNS</button>
+        <button class="txq-add-btn" onclick="txqAddAllTaverns()">+ ALL PLANETS</button>
         <button class="txq-clr-btn" onclick="txqClear()">CLEAR</button>
         <span class="txq-ap-total" id="txq-ap-total">0 AP</span>
         <button class="txq-close-btn" id="txq-close-btn" onclick="closeTxQueuePanel()">▼</button>
@@ -2728,15 +2737,36 @@ function txqAddCell(x, y) {
 window.txqAddCell = txqAddCell;
 
 function txqAddAllTaverns() {
-    var locs = ALE_LOCATIONS[_activePlanet] || {};
-    var available = (locs.taverns||[]).filter(function(t){
-        return !(t.land_id && _playerUsedTaverns.has(_activePlanet+'.'+t.land_id));
+    // Gather available taverns per planet
+    var byPlanet = {};
+    Object.keys(ALE_LOCATIONS).forEach(function(planet) {
+        var available = (ALE_LOCATIONS[planet].taverns||[]).filter(function(t){
+            return !(t.land_id && _playerUsedTaverns && _playerUsedTaverns.has(planet+'.'+t.land_id));
+        });
+        if (available.length) byPlanet[planet] = available;
     });
-    if (!available.length) return;
-    available.forEach(function(tv){
-        _txQueue.push({ type:'travel+hire', x:tv.x, y:tv.y,
-            name: tv.name || ('Tavern '+tv.x+','+tv.y), land_id: tv.land_id,
-            objectives: tv.objectives || [] });
+    if (!Object.keys(byPlanet).length) return;
+
+    // Current planet first, then the rest in whatever order they come
+    var order = [_activePlanet].concat(
+        Object.keys(byPlanet).filter(function(p){ return p !== _activePlanet; })
+    ).filter(function(p){ return byPlanet[p]; });
+
+    var fromPlanet = _activePlanet;
+    order.forEach(function(planet) {
+        // If switching planet, insert the portal travel item first
+        if (planet !== fromPlanet) {
+            var portal = (ALE_PORTALS[fromPlanet]||[]).find(function(p){ return p.to === planet; });
+            if (portal) {
+                _txQueue.push({ type:'portal', x:portal.x, y:portal.y, planet:fromPlanet, to:planet });
+            }
+            fromPlanet = planet;
+        }
+        byPlanet[planet].forEach(function(tv) {
+            _txQueue.push({ type:'travel+hire', x:tv.x, y:tv.y,
+                name: tv.name || ('Tavern '+tv.x+','+tv.y),
+                land_id: tv.land_id, objectives: tv.objectives||[] });
+        });
     });
     renderTxQueue();
 }
