@@ -2736,25 +2736,29 @@ function txqAddCell(x, y) {
 }
 window.txqAddCell = txqAddCell;
 
-function txqAddAllTaverns() {
-    // Gather available taverns per planet
+async function txqAddAllTaverns() {
+    var wallet = getWallet();
+    var btn = document.querySelector('.txq-add-btn');
+    if (btn) { btn.textContent = '…'; btn.disabled = true; }
+    // Refresh from chain first — active_taverns changes after each hire
+    if (wallet) { try { await fetchPlayerTaverns(wallet); } catch(e){} }
+    if (btn) { btn.textContent = '+ ALL PLANETS'; btn.disabled = false; }
+
+    // Use chain-queried ALE_LOCATIONS as the source of truth (no session filter)
     var byPlanet = {};
     Object.keys(ALE_LOCATIONS).forEach(function(planet) {
-        var available = (ALE_LOCATIONS[planet].taverns||[]).filter(function(t){
-            return !(t.land_id && _playerUsedTaverns && _playerUsedTaverns.has(planet+'.'+t.land_id));
-        });
-        if (available.length) byPlanet[planet] = available;
+        var taverns = ALE_LOCATIONS[planet].taverns || [];
+        if (taverns.length) byPlanet[planet] = taverns;
     });
     if (!Object.keys(byPlanet).length) return;
 
-    // Current planet first, then the rest in whatever order they come
+    // Current planet first, then the rest
     var order = [_activePlanet].concat(
         Object.keys(byPlanet).filter(function(p){ return p !== _activePlanet; })
     ).filter(function(p){ return byPlanet[p]; });
 
     var fromPlanet = _activePlanet;
     order.forEach(function(planet) {
-        // If switching planet, insert the portal travel item first
         if (planet !== fromPlanet) {
             var portal = (ALE_PORTALS[fromPlanet]||[]).find(function(p){ return p.to === planet; });
             if (portal) {
