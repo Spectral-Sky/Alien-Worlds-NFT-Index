@@ -1226,6 +1226,8 @@
             }
         }catch(e){}
         _activePlanet=playerPlanet;
+        // Pre-warm caches in background so first tavern click is instant
+        loadTavernData().then(function(){ if(wallet) loadPlayerHireNFTs(wallet,[]).catch(function(){}); }).catch(function(){});
         loadPlanetMesh(playerPlanet,true);
         if(_skipReq){
             // User clicked SKIP before fetch completed — map already visible on default planet; correct it now
@@ -1707,6 +1709,10 @@
     // nfttemplates: {templateid_string → full row} — eligibility + properties for AP calc
     var _tavernTemplateMap=null;
     var _tavernTemplateMapAge=0;
+    var _playerNFTCache=null;       // raw NFT list (no mod_value), keyed by wallet
+    var _playerNFTCacheWallet='';
+    var _playerNFTCacheTime=0;
+    var _playerNFTCacheTTL=120000;  // 2 min
     var _AP_ICON='<img src="Ale%20images/energy.png" alt="" style="width:12px;height:12px;vertical-align:middle;display:inline-block;margin:0 1px;flex-shrink:0;">';
     // Pre-populated: level.worlds card images (no local folder)
     var _templateImages={
@@ -1785,59 +1791,64 @@
 
     async function loadPlayerHireNFTs(wallet, objectives){
         await loadTavernData();
-        // Extract unique schemas from eligible templates
-        var schemas={};
-        Object.values(_tavernTemplateMap).forEach(function(r){if(r.schema)schemas[r.schema]=true;});
-        var schemaList=Object.keys(schemas);
-        var results=[];
-        for(var i=0;i<schemaList.length;i++){
-            try{
-                // Fetch up to 2 pages per schema
-                for(var pg=1;pg<=2;pg++){
-                    var url='https://wax.api.atomicassets.io/atomicassets/v1/assets'
-                        +'?owner='+encodeURIComponent(wallet)
-                        +'&collection_name=alien.worlds'
-                        +'&schema_name='+encodeURIComponent(schemaList[i])
-                        +'&limit=100&page='+pg;
-                    var _ac=new AbortController();
-                    var _at=setTimeout(function(){_ac.abort();},8000);
-                    var r=await fetch(url,{signal:_ac.signal});
-                    clearTimeout(_at);
-                    var j=await r.json();
-                    if(!j.success||!j.data||!j.data.length)break;
-                    j.data.forEach(function(a){
-                        var tid=String(a.template&&a.template.template_id);
-                        var tmpl=_tavernTemplateMap[tid];
-                        if(!tmpl)return; // not in eligible list
-                        // Cache IPFS image URL for schemas without local folders
-                        if(!_templateImages[tid]){
-                            var imgHash=(a.template&&a.template.immutable_data&&a.template.immutable_data.img)||
-                                        (a.data&&a.data.img)||'';
-                            if(imgHash)_templateImages[tid]='https://atomichub-ipfs.com/ipfs/'+imgHash;
-                        }
-                        var mod=calcHireMod(tmpl,objectives);
-                        results.push({
-                            asset_id:a.asset_id,
-                            template_id:tid,
-                            name:tmpl.cardname||a.name||('NFT #'+a.asset_id),
-                            schema:tmpl.schema,
-                            rarity:tmpl.rarity||'',
-                            shine:tmpl.shine||'',
-                            mod_value:mod,
+        var now=Date.now();
+        var rawNFTs;
+        if(_playerNFTCache && _playerNFTCacheWallet===wallet && now-_playerNFTCacheTime<_playerNFTCacheTTL){
+            rawNFTs=_playerNFTCache;
+        } else {
+            // Fetch from AtomicAssets — store raw data without objectives-specific mod_value
+            var schemas={};
+            Object.values(_tavernTemplateMap).forEach(function(r){if(r.schema)schemas[r.schema]=true;});
+            var schemaList=Object.keys(schemas);
+            var fetched=[];
+            for(var i=0;i<schemaList.length;i++){
+                try{
+                    for(var pg=1;pg<=2;pg++){
+                        var url='https://wax.api.atomicassets.io/atomicassets/v1/assets'
+                            +'?owner='+encodeURIComponent(wallet)
+                            +'&collection_name=alien.worlds'
+                            +'&schema_name='+encodeURIComponent(schemaList[i])
+                            +'&limit=100&page='+pg;
+                        var _ac=new AbortController();
+                        var _at=setTimeout(function(){_ac.abort();},8000);
+                        var r=await fetch(url,{signal:_ac.signal});
+                        clearTimeout(_at);
+                        var j=await r.json();
+                        if(!j.success||!j.data||!j.data.length)break;
+                        j.data.forEach(function(a){
+                            var tid=String(a.template&&a.template.template_id);
+                            var tmpl=_tavernTemplateMap[tid];
+                            if(!tmpl)return;
+                            if(!_templateImages[tid]){
+                                var imgHash=(a.template&&a.template.immutable_data&&a.template.immutable_data.img)||
+                                            (a.data&&a.data.img)||'';
+                                if(imgHash)_templateImages[tid]='https://atomichub-ipfs.com/ipfs/'+imgHash;
+                            }
+                            fetched.push({
+                                asset_id:a.asset_id, template_id:tid,
+                                name:tmpl.cardname||a.name||('NFT #'+a.asset_id),
+                                schema:tmpl.schema, rarity:tmpl.rarity||'', shine:tmpl.shine||''
+                            });
                         });
-                    });
-                    if(j.data.length<100)break;
-                }
-            }catch(e){}
+                        if(j.data.length<100)break;
+                    }
+                }catch(e){}
+            }
+            // Dedup by template_id
+            var seen={};
+            rawNFTs=fetched.filter(function(n){
+                if(seen[n.template_id])return false;
+                seen[n.template_id]=true;
+                return true;
+            });
+            _playerNFTCache=rawNFTs;
+            _playerNFTCacheWallet=wallet;
+            _playerNFTCacheTime=Date.now();
         }
-        // Dedup by template_id — multiple assets from same template give no extra reduction
-        var seen={};
-        results=results.filter(function(n){
-            if(seen[n.template_id])return false;
-            seen[n.template_id]=true;
-            return true;
+        // Score for the requested objectives and sort
+        var results=rawNFTs.map(function(n){
+            return Object.assign({},n,{mod_value:calcHireMod(_tavernTemplateMap[n.template_id]||{},objectives)});
         });
-        // Sort highest AP reduction first
         results.sort(function(a,b){return b.mod_value-a.mod_value;});
         return results;
     }
@@ -2113,6 +2124,8 @@
         if(!wallet){if(lbl){lbl.textContent='LOG IN FIRST';lbl.style.color='#705050';}return;}
         if(btn)btn.disabled=true;
         if(lbl){lbl.textContent='…';lbl.style.color='#555';}
+        // Clear NFT cache so next hire panel shows fresh wallet contents
+        _playerNFTCache=null; _playerNFTCacheTime=0;
         try{
             var res=await fetchRows({code:'players.ale',scope:'players.ale',table:'players',lower_bound:wallet,upper_bound:wallet,limit:1,json:true});
             if(res&&res.rows&&res.rows[0]&&res.rows[0].wallet===wallet){
@@ -2121,9 +2134,22 @@
                 if(pn&&PLANETS[pn]){
                     _playerPos={planet:pn,x:row.x||1,y:row.y||1};
                     _playerAP=parseAP(row.activestats&&row.activestats.action_points);
+                    // Refresh dungeons beaten today
+                    _playerPlayedDungeons=new Set(row.played_dungeons||[]);
+                    // Refresh active taverns across all planets
+                    var newTaverns={};
+                    Object.keys(ALE_LOCATIONS).forEach(function(p){newTaverns[p]=[];});
+                    (row.active_taverns||[]).forEach(function(t){
+                        var planet=normalizePlanet(t.planet);
+                        if(!planet||!ALE_LOCATIONS[planet])return;
+                        newTaverns[planet].push({x:t.x,y:t.y,objectives:t.objectives||[],land_id:t.land_id});
+                    });
+                    Object.keys(newTaverns).forEach(function(p){ALE_LOCATIONS[p].taverns=newTaverns[p];});
                     applyMarker();
                     updatePlayerPlanetLabel();
                     updateAPDisplay();
+                    _refreshAllMaps();
+                    updateTabCounts();
                     if(pn!==_activePlanet)switchPlanet(pn);
                 }
             }
