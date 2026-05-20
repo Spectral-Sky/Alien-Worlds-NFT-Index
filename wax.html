@@ -861,7 +861,7 @@
         const tlmPerWax = (_liveWaxUsd && _liveTlmUsd) ? _liveTlmUsd / _liveWaxUsd : 0.25;
         if (type.includes('wax'))   return amount;
         if (type.includes('tlm'))   return amount * tlmPerWax;
-        if (type.includes('shard')) return (amount / SHARDS_PER_TLM) * tlmPerWax;
+        if (type.includes('shard')) return (_customShardWax !== null && _customShardWax > 0) ? amount * _customShardWax : (amount / SHARDS_PER_TLM) * tlmPerWax;
         if (type.includes('gem'))   return amount * GEM_TO_WAX;
         return 0;
     }
@@ -897,7 +897,7 @@
         const rows = [
             valRow(LOGO_WAX,    'WAX',    fmtWax(waxVal)),
             valRow(LOGO_TLM,    'TLM',    fmtTlm(waxVal * tlmPerWax)),
-            valRow(LOGO_SHARDS, 'SHARDS', fmtShards(waxVal * tlmPerWax * SHARDS_PER_TLM)),
+            valRow(LOGO_SHARDS, _customShardWax !== null ? 'SHARDS ⚙' : 'SHARDS', fmtShards(shardsFromWax(waxVal))),
             valRow(LOGO_GEMS,   'GEMS',   fmtBig(waxVal / GEM_TO_WAX)),
         ].join('');
         return `<div class="offer-values"><div class="val-section-label">REWARD ≈ VALUE</div>${rows}</div>`;
@@ -1237,20 +1237,28 @@
         if (btn) btn.classList.toggle('active', open);
     };
     window.applyCustomShard = function() {
-        const v = parseFloat(document.getElementById('custom-shard-input')?.value);
-        const hint = document.getElementById('custom-shard-hint');
+        const inp = document.getElementById('custom-shard-input');
+        const savedVal = inp ? inp.value : '';
+        const v = parseFloat(savedVal);
         if (!isNaN(v) && v > 0) {
             _customShardWax = v;
-            if (hint) {
-                const tlmPerWax = (_liveWaxUsd && _liveTlmUsd) ? _liveWaxUsd / _liveTlmUsd : 3.8;
-                hint.textContent = `≈ ${(v * tlmPerWax).toFixed(6)} TLM per shard`;
-            }
         } else {
             _customShardWax = null;
-            if (hint) hint.textContent = '';
         }
         calcUpdate();
         if (_offersCache.length) renderOffers(_offersCache);
+        // renderOffers replaces the calc DOM — restore panel open state and refocus the input
+        const newInp   = document.getElementById('custom-shard-input');
+        const newPanel = document.getElementById('calc-custom-panel');
+        const newBtn   = document.getElementById('calc-custom-btn');
+        const newHint  = document.getElementById('custom-shard-hint');
+        if (newPanel) newPanel.classList.add('open');
+        if (newBtn)   newBtn.classList.add('active');
+        if (newInp)   { newInp.value = savedVal; newInp.focus(); }
+        if (newHint && _customShardWax !== null) {
+            const tlmPerWax = (_liveWaxUsd && _liveTlmUsd) ? _liveWaxUsd / _liveTlmUsd : 3.8;
+            newHint.textContent = `≈ ${(_customShardWax * tlmPerWax).toFixed(6)} TLM per shard`;
+        }
     };
     window.clearCustomShard = function() {
         _customShardWax = null;
