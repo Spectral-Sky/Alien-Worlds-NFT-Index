@@ -320,6 +320,50 @@
         .settings-status.pending { color:#888; background:rgba(255,255,255,0.04); }
         .settings-status.success { color:#50ff80; background:rgba(80,255,80,0.06); border:1px solid rgba(80,255,80,0.25); }
         .settings-status.error   { color:#ff6060; background:rgba(255,80,80,0.06); border:1px solid rgba(255,80,80,0.25); }
+
+        /* ── FONT PICKER & MODE TOGGLE ────────────────────────────────────────── */
+        .ale-font-preview { display:block; font-size:0.8em; color:#666; margin-top:1px; }
+        .ale-mode-btn { background:transparent; border:1px solid rgba(232,160,32,0.3); color:#888; padding:8px 10px; font-size:1em; line-height:1; cursor:pointer; border-radius:6px; transition:all 0.3s; }
+        .ale-mode-btn:hover { color:var(--theme-color); border-color:var(--theme-color); }
+
+        /* ── DAY MODE ─────────────────────────────────────────────────────────── */
+        :root.day { --theme-color:#9a6800; --theme-shadow:0 0 15px rgba(154,104,0,0.35); --theme-dark:#e0eaff; --theme-hover:#ccd8f0; --theme-border:1px solid rgba(0,60,140,0.15); }
+        html.day body { background-color:#f0f4ff; background-image:radial-gradient(circle at 50% 50%,#dce8ff 0%,#f0f4ff 80%); color:#182038; }
+        html.day body::before { display:none; }
+        html.day .global-header { background:rgba(232,240,255,0.98); border-bottom-color:#9a6800; box-shadow:0 5px 20px rgba(0,60,140,0.15); }
+        html.day .nav-btn { color:#4060a0; }
+        html.day .nav-btn:hover { color:var(--theme-color); border-color:var(--theme-color); }
+        html.day .nav-btn.active { color:#fff; background:var(--theme-color); border-color:var(--theme-color); }
+        html.day .nav-dropdown-btn { color:#4060a0; }
+        html.day .nav-dropdown-btn:hover { color:var(--theme-color); }
+        html.day .nav-dropdown-menu { background:rgba(232,240,255,0.98); border-color:rgba(0,60,140,0.25); box-shadow:0 8px 24px rgba(0,60,140,0.15); }
+        html.day .nav-dropdown-item { color:#4060a0; }
+        html.day .nav-dropdown-item:hover { color:var(--theme-color); background:rgba(0,80,200,0.05); }
+        html.day .top-bar { background:#dce8ff; border-bottom-color:#9a6800; box-shadow:0 10px 20px rgba(0,60,140,0.1); }
+        html.day .tab-bar { background:rgba(232,240,255,0.97); border-bottom-color:rgba(0,60,140,0.2); }
+        html.day .tab-btn { color:#5070a0; }
+        html.day .tab-btn.active { color:#182038; border-bottom-color:#9a6800; }
+        html.day .waffle { background:var(--theme-dark); }
+        html.day .live-header { background-color:var(--theme-dark) !important; color:#9a6800 !important; border-color:#9a6800 !important; }
+        html.day .live-header:hover { background-color:#ccd8f4 !important; color:#182038 !important; }
+        html.day .waffle tr:hover td { background-color:var(--theme-hover) !important; color:#182038 !important; }
+        html.day td { color:#2a3860; }
+        html.day #preview-frame { background:var(--theme-dark); border-color:#9a6800; }
+        html.day #market-frame { background:#e8f0ff; border-color:#9a6800; }
+        html.day .intel-label { color:#5070a0; }
+        html.day #intel-header { color:#9a6800; border-color:rgba(0,60,140,0.2); }
+        html.day #searchInput, html.day #wallet-scan-input { background:#f0f4ff; color:#9a6800; border-color:rgba(154,104,0,0.4); }
+        html.day #searchInput::placeholder, html.day #wallet-scan-input::placeholder { color:#8090b0; }
+        html.day .wallet-btn { background:#d8e8f8; color:#9a6800; border-color:rgba(154,104,0,0.45); }
+        html.day .cyber-btn { background:#e8f0ff; color:#9a6800; border-color:#9a6800; }
+        html.day .cyber-btn:hover { background:#9a6800; color:#fff; }
+        html.day ::-webkit-scrollbar-track { background:#e0eaff; }
+        html.day ::-webkit-scrollbar-thumb { background:#a0b4d0; border-color:#9a6800; }
+        html.day .codex-footer { border-top-color:rgba(0,60,140,0.15); }
+        html.day .tag-common { color:#6070a0 !important; }
+        html.day .tag-abundant { color:#4a5880 !important; }
+        html.day .ale-mode-btn { color:#4060a0; border-color:rgba(0,60,140,0.3); }
+        html.day .ale-mode-btn:hover { color:var(--theme-color); border-color:var(--theme-color); }
     </style>
 </head>
 <body class="deck-open">
@@ -417,6 +461,16 @@
             <button id="wallet-connect-btn" class="wallet-btn" onclick="disconnectWallet()" style="display:none;"></button>
             <button id="wallet-btn-anchor" class="wallet-btn" onclick="loginWithAnchor()">[ &#9875; ANCHOR ]</button>
             <button id="wallet-btn-wcc" class="wallet-btn" onclick="loginWithWCC()">[ &#9729; CLOUD WALLET ]</button>
+            <div class="nav-dropdown-wrap" id="ale-font-picker">
+                <button class="nav-dropdown-btn">Aa &#9660;</button>
+                <div class="nav-dropdown-menu" style="right:0;left:auto;min-width:175px;">
+                    <a class="nav-dropdown-item font-opt active" href="#" data-font="segoe" onclick="aleSetFont('segoe');return false;">CLEAN<span class="ale-font-preview" style="font-family:'Segoe UI',sans-serif;">Segoe UI</span></a>
+                    <a class="nav-dropdown-item font-opt" href="#" data-font="calibri" onclick="aleSetFont('calibri');return false;">SOFT<span class="ale-font-preview" style="font-family:'Calibri','Trebuchet MS',sans-serif;">Calibri</span></a>
+                    <a class="nav-dropdown-item font-opt" href="#" data-font="georgia" onclick="aleSetFont('georgia');return false;">CLASSIC<span class="ale-font-preview" style="font-family:'Georgia',serif;">Georgia</span></a>
+                    <a class="nav-dropdown-item font-opt" href="#" data-font="terminal" onclick="aleSetFont('terminal');return false;">TERMINAL<span class="ale-font-preview" style="font-family:'Courier New',monospace;">Courier New</span></a>
+                </div>
+            </div>
+            <button class="ale-mode-btn" id="ale-mode-btn" onclick="aleToggleDayMode()" title="Toggle day/night mode">&#9728;</button>
         </div>
         <button id="hamburger-btn" onclick="toggleHamburger()" aria-label="Open navigation">&#9776;</button>
     </header>
@@ -1394,6 +1448,43 @@
         document.addEventListener('DOMContentLoaded', initDial);
     } else {
         initDial();
+    }
+})();
+</script>
+<script>
+(function() {
+    var ALE_FONT_MAP = {
+        segoe:    "'Segoe UI',system-ui,-apple-system,Arial,sans-serif",
+        calibri:  "'Calibri','Trebuchet MS',sans-serif",
+        georgia:  "'Georgia',serif",
+        terminal: "'Courier New',Courier,monospace",
+    };
+    window.aleSetFont = function(key) {
+        if (!ALE_FONT_MAP[key]) return;
+        document.body.style.fontFamily = ALE_FONT_MAP[key];
+        try { localStorage.setItem('naron_ale_font', key); } catch(e) {}
+        document.querySelectorAll('#ale-font-picker .font-opt').forEach(function(a) {
+            a.classList.toggle('active', a.dataset.font === key);
+        });
+    };
+    window.aleToggleDayMode = function() {
+        var isDay = document.documentElement.classList.toggle('day');
+        try { localStorage.setItem('naron_ale_day', isDay ? '1' : '0'); } catch(e) {}
+        var btn = document.getElementById('ale-mode-btn');
+        if (btn) btn.textContent = isDay ? '🌙' : '☀';
+    };
+    // Restore on load
+    var sf = localStorage.getItem('naron_ale_font');
+    if (sf && ALE_FONT_MAP[sf]) {
+        document.body.style.fontFamily = ALE_FONT_MAP[sf];
+        document.querySelectorAll('#ale-font-picker .font-opt').forEach(function(a) {
+            a.classList.toggle('active', a.dataset.font === sf);
+        });
+    }
+    if (localStorage.getItem('naron_ale_day') === '1') {
+        document.documentElement.classList.add('day');
+        var _mBtn = document.getElementById('ale-mode-btn');
+        if (_mBtn) _mBtn.textContent = '🌙';
     }
 })();
 </script>
