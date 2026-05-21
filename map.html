@@ -536,6 +536,10 @@
         </div>
         <div id="qo-list"><div class="qo-empty">Loading…</div></div>
         <div id="qo-status"></div>
+        <div id="ar-panel" style="display:none;border-top:1px solid rgba(192,144,96,0.15);margin-top:6px;padding-top:6px;">
+            <div style="font-size:0.55em;letter-spacing:2px;color:#706050;margin-bottom:6px;">AUTO-REROLL</div>
+            <div id="ar-slots"></div>
+        </div>
     </div>
 </div>
 
@@ -788,10 +792,10 @@
         return {x:cx,y:cy};
     }
 
-    function _addDungeonCoord(planet,x,y,owner,land_id) {
+    function _addDungeonCoord(planet,x,y,owner,land_id,boost) {
         if (!planet||!x||!y||!ALE_LOCATIONS[planet]) return false;
         var dup=ALE_LOCATIONS[planet].dungeons.some(function(d){return d.x===x&&d.y===y;});
-        if (!dup){ALE_LOCATIONS[planet].dungeons.push({x:x,y:y,owner:owner||null,land_id:land_id||null});return true;}
+        if (!dup){ALE_LOCATIONS[planet].dungeons.push({x:x,y:y,owner:owner||null,land_id:land_id||null,boost:boost||0});return true;}
         return false;
     }
 
@@ -799,7 +803,7 @@
         var x=row.x,y=row.y;
         if ((!x||!y)&&row.land_id){var c=decodeLandId(row.land_id);if(c){x=c.x;y=c.y;}}
         var planet=(row.planet!==undefined&&row.planet!==null)?normalizePlanet(row.planet):defaultPlanet;
-        return _addDungeonCoord(planet,x,y,row.owner||row.account||null,row.land_id||null);
+        return _addDungeonCoord(planet,x,y,row.owner||row.account||null,row.land_id||null,row.boost||row.reward_boost||0);
     }
 
     function _refreshAllMaps() {
@@ -886,7 +890,10 @@
         var planetList=['magor','naron','eyeke','kavian','neri','veles'],added=0;
         try {
             var gd=await fetchRows({code:'dungeons.ale',scope:'dungeons.ale',table:'dungeons',limit:1000,json:true});
-            if (gd&&gd.rows) gd.rows.forEach(function(r){if(_parseDungeonRow(r,null))added++;});
+            if (gd&&gd.rows) {
+                if(gd.rows.length>0) console.log('[dungeon row sample]',gd.rows[0]);
+                gd.rows.forEach(function(r){if(_parseDungeonRow(r,null))added++;});
+            }
         } catch(e){}
         for (var pi=0;pi<planetList.length;pi++){
             try {
@@ -1465,7 +1472,8 @@
             var ar=(locs.arenas||[]).some(function(a){return a.x===x&&a.y===y;});
             if(dg){
                 var dgLk=dg.land_id&&_playerPlayedDungeons.has(_activePlanet+'.'+dg.land_id);
-                lines.push('DUNGEON'+(dgLk?' · ✓ COMPLETED TODAY':''));
+                var dgBoostTip=(dg.boost||0)>0?' · ⚡ +'+dg.boost+'%':'';
+                lines.push('DUNGEON'+dgBoostTip+(dgLk?' · ✓ COMPLETED TODAY':''));
             } else if(tv){
                 lines.push('TAVERN');
             } else if(ar){
@@ -1537,9 +1545,11 @@
             info.innerHTML='<strong style="color:'+(PLANETS[portal.to]||{color:'#a09060'}).color+'">PORTAL → '+dest+'</strong>';
             if(!atCurrentPos){tBtn.innerHTML='TRAVEL TO '+dest+portalTcSuffix; tBtn.style.display='';}
         } else if(isDungeon){
+            var _dgBoost=(dungeonEntry&&dungeonEntry.boost)||0;
+            var _dgBoostHtml=_dgBoost>0?' <span style="font-size:0.65em;color:#90c090;">⚡ +'+_dgBoost+'%</span>':'';
             info.innerHTML=isDungeonLocked
-                ?'<strong style="color:#507050;">DUNGEON</strong><br><span style="font-size:0.7em;color:#446;">✓ Won today — resets 0 UTC</span>'
-                :'<strong style="color:#70a870;">DUNGEON</strong>';
+                ?'<strong style="color:#507050;">DUNGEON</strong>'+_dgBoostHtml+'<br><span style="font-size:0.7em;color:#446;">✓ Won today — resets 0 UTC</span>'
+                :'<strong style="color:#70a870;">DUNGEON</strong>'+_dgBoostHtml;
             if(!atCurrentPos){tBtn.innerHTML='TRAVEL >>'+tcSuffix; tBtn.style.display='';}
             if(!isDungeonLocked) dBtn.style.display='';
         } else if(isTavern){
@@ -1715,11 +1725,15 @@
             var locs=ALE_LOCATIONS[p]||{};
             var tv=(locs.taverns||[]).length;
             var ar=(locs.arenas||[]).length;
+            var dg=locs.dungeons||[];
+            var boostedDg=dg.filter(function(d){return (d.boost||0)>0;});
+            var availBoostedDg=boostedDg.filter(function(d){return d.land_id&&!_playerPlayedDungeons.has(p+'.'+d.land_id);});
             var parts=[];
             var tvIcon='<img src="Ale%20images/tavern.svg" style="width:10px;height:10px;vertical-align:middle;display:inline-block;opacity:0.85;filter:sepia(1) saturate(2) hue-rotate(10deg) brightness(0.85);">';
             var arIcon='<img src="Ale%20images/Arena.svg" style="width:10px;height:10px;vertical-align:middle;display:inline-block;opacity:0.85;filter:sepia(1) saturate(3) hue-rotate(300deg) brightness(0.7);">';
             if(tv>0)parts.push('<span class="tab-ct">'+tv+' '+tvIcon+'</span>');
             if(ar>0)parts.push('<span class="tab-ca">'+ar+' '+arIcon+'</span>');
+            if(boostedDg.length>0)parts.push('<span style="color:#90c090;font-size:0.75em;">⛏️ '+availBoostedDg.length+'/'+boostedDg.length+'</span>');
             el.innerHTML=parts.join(' ');
         });
     }
@@ -2262,6 +2276,7 @@
             _qLoaded=true;
             document.getElementById('qo-status').textContent='';
             renderQuestOverlay();
+            if(typeof renderArSlots==='function') renderArSlots();
         }catch(e){document.getElementById('qo-status').textContent='✗ '+((e&&e.message)||'Error');}
     }
 
@@ -2569,7 +2584,7 @@
         <span class="txq-title">⚡ ACTION QUEUE</span>
         <div class="txq-mode-wrap">
             <button class="txq-mode-btn active" id="txq-mode-stk" onclick="setTxqRunMode('stacked')">STACKED</button>
-            <button class="txq-mode-btn" id="txq-mode-sep" onclick="setTxqRunMode('separate')">SEPARATE</button>
+            <button class="txq-mode-btn" id="txq-mode-sep" onclick="setTxqRunMode('separate')">SPLIT</button>
         </div>
         <button class="txq-qm-btn" id="txq-qm-btn" onclick="toggleTxQueueMode()">○ QUEUE MODE</button>
         <button class="txq-add-btn" onclick="txqAddAllTaverns()">+ ALL PLANETS</button>
@@ -2593,7 +2608,7 @@
 
 <script>
 // ── ACTION QUEUE + KEYPAD UNLOCK ──────────────────────────────────────────────
-var SWEEP_CODE      = '62766'; // NARON
+var SWEEP_CODE      = '62766'; // NARON — unlocks queue panel AND auto-reroll
 var _tabClickCount  = 0;
 var _tabClickTimer  = null;
 var _sweepUnlocked  = false;
@@ -2603,10 +2618,12 @@ var _sweepKpBuf     = '';
 window._txQueue        = [];   // [{type,x,y,name,land_id}]
 window._txQueueMode    = false; // when true, map clicks add to queue
 window._txQPanelOpen   = false;
-var _txQueueStacked    = true;  // stacked=travel+hire in one TX; separate=one TX each
+var _txQueueStacked    = true;  // true=STACKED (travel+hire in one TX); false=SPLIT (separate TXs)
 var _txQueueRunning    = false;
 var _txQueueAbort      = false;
 var _failedPlan        = []; // plan steps that failed in last run, available for retry
+var _arRunning  = {day:false, week:false, month:false};
+var _arStop     = {day:false, week:false, month:false};
 
 // ── KEYPAD unlock trigger ────────────────────────────────────────────────────
 function onPlanetTabClick(planet) {
@@ -2625,7 +2642,6 @@ function onPlanetTabClick(planet) {
 }
 
 function openSweepConsole() {
-    // If already unlocked, skip keypad and go straight to queue panel
     if (_sweepUnlocked) { openTxQueuePanel(); return; }
     var el = document.getElementById('sweep-console');
     if (!el) return;
@@ -2696,6 +2712,22 @@ function openTxQueuePanel() {
     var panel = document.getElementById('txq-panel');
     if (panel) { panel.style.display = 'flex'; setTimeout(function(){ panel.classList.add('open'); }, 10); }
     renderTxQueue();
+    // Also reveal auto-reroll panel (both unlocked by the same code)
+    var ar = document.getElementById('ar-panel');
+    if (ar && ar.style.display === 'none') { ar.style.display = ''; renderArSlots(); }
+}
+
+function openAutoRerollPanel() {
+    if (!_sweepUnlocked) return;
+    var qo = document.getElementById('quest-overlay');
+    if (qo) qo.style.display = '';
+    var qpanel = document.getElementById('qo-panel');
+    if (qpanel) qpanel.classList.add('open');
+    var btn = document.getElementById('qo-toggle');
+    if (btn) { btn.classList.add('open'); btn.innerHTML = '&#x2B21; ACTIVE QUESTS &#9650;'; }
+    var ar = document.getElementById('ar-panel');
+    if (ar) { ar.style.display = ''; renderArSlots(); }
+    if (!_qLoaded) loadQuestOverlay();
 }
 
 function closeTxQueuePanel() {
@@ -2915,38 +2947,32 @@ async function runTxQueue() {
     var _allNFTs = [];
     try { _allNFTs = await loadPlayerHireNFTs(wallet, []); } catch(e) {}
 
-    // Build execution plan
+    // Build execution plan.
+    // Hire actions are always lazy (computed just before TX) so NFT exclusion and fresh
+    // AP cost work correctly even across multiple taverns in the same run.
+    // STACKED: travel+hire bundled in one TX (original fast mode).
+    // SPLIT: travel then hire as separate TXs (safer, avoids hire-before-travel risk).
     var plan = [];
+    var _usedHireNFTs = new Set();
     if (_txQueueStacked) {
         for (var i = 0; i < _txQueue.length; ) {
             var item = _txQueue[i];
             if (item.type === 'travel+hire') {
-                plan.push({ label: item.name || 'TRAVEL+HIRE ('+item.x+','+item.y+')', qIdx: i, tavern: item,
-                    actions: [
-                        { account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} },
-                        { account:'players.ale', name:'hire',   authorization:[{actor:wallet,permission:'active'}], data: txqBestHire(wallet, _allNFTs, item.objectives) }
-                    ]
+                plan.push({ label: item.name || 'TRAVEL+HIRE ('+item.x+','+item.y+')', qIdx: i,
+                    tavern: item, isTravelAndHire: true,
+                    objectives: item.objectives,
+                    travelData: {wallet:wallet, x:item.x, y:item.y},
+                    actions: null
                 });
                 i++;
             } else if (item.type === 'travel') {
-                var nxt = _txQueue[i+1];
-                if (nxt && nxt.type === 'hire') {
-                    plan.push({ label: 'TRAVEL+HIRE ('+item.x+','+item.y+')', qIdx: i,
-                        actions: [
-                            { account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} },
-                            { account:'players.ale', name:'hire',   authorization:[{actor:wallet,permission:'active'}], data: txqBestHire(wallet, _allNFTs, nxt.objectives) }
-                        ]
-                    });
-                    i += 2;
-                } else {
-                    plan.push({ label: 'TRAVEL ('+item.x+','+item.y+')', qIdx: i,
-                        actions: [{ account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} }]
-                    });
-                    i++;
-                }
+                plan.push({ label: 'TRAVEL ('+item.x+','+item.y+')', qIdx: i,
+                    actions: [{ account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} }]
+                });
+                i++;
             } else if (item.type === 'hire') {
                 plan.push({ label: 'HIRE', qIdx: i, tavern: item.tavern || null,
-                    actions: [{ account:'players.ale', name:'hire', authorization:[{actor:wallet,permission:'active'}], data: txqBestHire(wallet, _allNFTs, item.objectives) }]
+                    isHire: true, objectives: item.objectives, actions: null
                 });
                 i++;
             } else if (item.type === 'portal') {
@@ -2967,11 +2993,11 @@ async function runTxQueue() {
                     actions: [{ account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} }]
                 });
                 plan.push({ label: 'HIRE — '+(item.name||''), qIdx: i, tavern: item,
-                    actions: [{ account:'players.ale', name:'hire', authorization:[{actor:wallet,permission:'active'}], data: txqBestHire(wallet, _allNFTs, item.objectives) }]
+                    isHire: true, objectives: item.objectives, actions: null
                 });
             } else if (item.type === 'hire') {
-                plan.push({ label: 'HIRE', qIdx: i,
-                    actions: [{ account:'players.ale', name:'hire', authorization:[{actor:wallet,permission:'active'}], data: txqBestHire(wallet, _allNFTs, item.objectives) }]
+                plan.push({ label: 'HIRE', qIdx: i, tavern: item.tavern || null,
+                    isHire: true, objectives: item.objectives, actions: null
                 });
             }
         });
@@ -2986,6 +3012,21 @@ async function runTxQueue() {
         if (progLbl)  progLbl.textContent  = (j+1) + ' / ' + plan.length + '  ·  ' + step.label;
         if (progFill) progFill.style.width = (j / plan.length * 100).toFixed(0) + '%';
 
+        // Lazy hire: compute actions just before TX using only NFTs not yet deployed this run
+        if (step.isTravelAndHire) {
+            var _avail = _allNFTs.filter(function(n){ return !_usedHireNFTs.has(n.asset_id); });
+            var _hd = txqBestHire(wallet, _avail, step.objectives);
+            step.actions = [
+                { account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data: step.travelData },
+                { account:'players.ale', name:'hire',   authorization:[{actor:wallet,permission:'active'}], data: _hd }
+            ];
+        } else if (step.isHire) {
+            var _avail = _allNFTs.filter(function(n){ return !_usedHireNFTs.has(n.asset_id); });
+            var _hd = txqBestHire(wallet, _avail, step.objectives);
+            step.actions = [{ account:'players.ale', name:'hire',
+                authorization:[{actor:wallet,permission:'active'}], data:_hd }];
+        }
+
         try {
             if (window.walletSession) await window.walletSession.transact({actions: step.actions});
             else if (wax && wax.api)  await wax.api.transact({actions: step.actions},{blocksBehind:3,expireSeconds:30});
@@ -2994,6 +3035,13 @@ async function runTxQueue() {
             // Update player position after any travel action
             var travelAct = step.actions.find(function(a){ return a.name==='travel'; });
             if (travelAct) _playerPos = {planet:_activePlanet, x:travelAct.data.x, y:travelAct.data.y};
+
+            // Track NFTs used in this hire so subsequent hires pick different ones
+            if ((step.isHire || step.isTravelAndHire) && step.actions) {
+                step.actions.forEach(function(a){
+                    if (a.name === 'hire') (a.data.asset_ids || []).forEach(function(id){ _usedHireNFTs.add(id); });
+                });
+            }
 
             // Track used tavern
             var tav = step.tavern;
@@ -3036,7 +3084,8 @@ async function runTxQueue() {
         }
 
         if (j < plan.length - 1 && !_txQueueAbort) {
-            await new Promise(function(r){ setTimeout(r, 2500); });
+            var _stepDelay = _txQueueStacked ? 1000 : 2000;
+            await new Promise(function(r){ setTimeout(r, _stepDelay); });
         }
     }
 
@@ -3203,6 +3252,132 @@ async function txqRetryFailed() {
     updateTabCounts();
     loadPlayerHireNFTs(wallet, []).catch(function(){});
     if (progLbl) progLbl.textContent = retrySummary;
+}
+
+// ── AUTO-REROLL QUEST PANEL ───────────────────────────────────────────────────
+
+function renderArSlots() {
+    var el = document.getElementById('ar-slots');
+    if (!el) return;
+    var html = '';
+    ['day','week','month'].forEach(function(scope) {
+        var running = _arRunning[scope];
+
+        // Pull current quest data for this scope from the already-loaded quest cache
+        var q = null;
+        if (typeof _qData !== 'undefined' && _qData && _qData.quests) {
+            q = _qData.quests.find(function(x){ return x.quest_scope === scope; }) || null;
+        }
+        var questInfo = '';
+        var hasProgress = false;
+        if (q) {
+            var isShardQ = q.reward_type !== 'tlm';
+            var reward = isShardQ
+                ? (q.reward_amount/10).toFixed(1)+' SHARDS'
+                : (q.reward_amount/10000).toFixed(2)+' TLM';
+            var delta = q.task_end_value - q.task_start_value;
+            var gained = (typeof _qPerms !== 'undefined') ? Math.max(0, (_qPerms[q.task_type]||0) - q.task_start_value) : 0;
+            var pct = delta > 0 ? Math.min(100, Math.round(gained/delta*100)) : 0;
+            hasProgress = pct > 5;
+            var progressColor = pct >= 100 ? '#60e090' : hasProgress ? '#e0a030' : '#606070';
+            questInfo = '<span style="font-size:0.54em;color:'+progressColor+';margin-left:4px;">'
+                + reward + ' · ' + pct + '%'
+                + (hasProgress && !running ? ' ⚠' : '')
+                + '</span>';
+        }
+
+        html += '<div id="ar-slot-'+scope+'" style="display:flex;align-items:center;gap:4px;padding:3px 0;flex-wrap:wrap;">'
+            + '<span style="font-size:0.58em;color:#a09070;min-width:36px;">'+scope.toUpperCase()+'</span>'
+            + (running
+                ? '<button style="font-size:0.6em;padding:2px 6px;border:1px solid #c06060;color:#c06060;background:transparent;cursor:pointer;" onclick="stopAutoReroll(\''+scope+'\')">&#9632; STOP</button>'
+                : '<button style="font-size:0.6em;padding:2px 6px;border:1px solid rgba(192,144,96,0.4);color:'+(hasProgress?'#a07030':'#c09060')+';background:transparent;cursor:pointer;" onclick="startAutoReroll(\''+scope+'\')" title="'+(hasProgress?'⚠ This quest has progress — confirm before rolling':'Roll until shard quest found')+'">&#9654; START</button>')
+            + questInfo
+            + '<span id="ar-status-'+scope+'" style="font-size:0.54em;color:#606070;margin-left:2px;"></span>'
+            + '</div>';
+    });
+    el.innerHTML = html;
+}
+
+async function startAutoReroll(scope) {
+    var wallet = getWallet();
+    if (!wallet || _arRunning[scope]) return;
+    _arRunning[scope] = true;
+    _arStop[scope] = false;
+    renderArSlots();
+    updateArStatus(scope, 'Rolling…');
+
+    while (!_arStop[scope]) {
+        var q = await fetchQuestByScope(wallet, scope);
+        if (!q) { updateArStatus(scope, '✗ No quest'); break; }
+
+        // Stop condition: shard (non-TLM) quest detected
+        if (q.reward_type !== 'tlm') {
+            _arRunning[scope] = false;
+            renderArSlots();
+            showArShardFound(scope, q);
+            return;
+        }
+
+        try {
+            var sess = window.walletSession;
+            if (!sess) { updateArStatus(scope, '✗ Not logged in'); break; }
+            await sess.transact({ actions: [{
+                account: 'quests.ale', name: 'reroll',
+                authorization: [{actor: wallet, permission: 'active'}],
+                data: { wallet: wallet, scope: scope,
+                        quest_name: q.quest_name,
+                        reward_amount: q.reward_amount,
+                        task_end_value: q.task_end_value }
+            }]});
+            updateArStatus(scope, 'Rerolled…');
+        } catch(e) {
+            updateArStatus(scope, '✗ ' + ((e && e.message) || 'TX fail'));
+            break;
+        }
+
+        await new Promise(function(r){ setTimeout(r, 1000); });
+    }
+
+    _arRunning[scope] = false;
+    renderArSlots();
+    if (_arStop[scope]) updateArStatus(scope, 'Stopped.');
+}
+
+function stopAutoReroll(scope) {
+    _arStop[scope] = true;
+}
+
+function updateArStatus(scope, msg) {
+    var el = document.getElementById('ar-status-'+scope);
+    if (el) el.textContent = msg;
+}
+
+function showArShardFound(scope, q) {
+    var el = document.getElementById('ar-slot-'+scope);
+    if (!el) return;
+    var shards = (q.reward_amount / 10).toFixed(1);
+    el.innerHTML =
+        '<div style="font-size:0.56em;color:#c060e0;margin-bottom:3px;">⬡ SHARD QUEST — '+shards+' SHARDS</div>'
+        + '<button style="font-size:0.58em;padding:2px 8px;border:1px solid rgba(192,144,96,0.4);color:#c09060;background:transparent;cursor:pointer;" '
+        +   'onclick="startAutoReroll(\''+scope+'\')">&#9654; CONTINUE REROLLING</button>'
+        + '<button style="font-size:0.58em;padding:2px 8px;margin-left:4px;border:1px solid rgba(96,192,96,0.4);color:#60c090;background:transparent;cursor:pointer;" '
+        +   'onclick="acceptArQuest(\''+scope+'\')">&#10003; ACCEPT QUEST</button>';
+}
+
+function acceptArQuest(scope) {
+    _arStop[scope] = true;
+    _arRunning[scope] = false;
+    var el = document.getElementById('ar-slot-'+scope);
+    if (el) el.innerHTML = '<span style="font-size:0.56em;color:#60c090;">'+scope.toUpperCase()+' — Quest accepted.</span>';
+}
+
+async function fetchQuestByScope(wallet, scope) {
+    try {
+        var res = await fetchRows({code:'quests.ale', scope:'quests.ale', table:'activequests',
+            lower_bound:wallet, upper_bound:wallet, limit:1, json:true});
+        if (!res || !res.rows || !res.rows[0]) return null;
+        return (res.rows[0].quests || []).find(function(q){ return q.quest_scope === scope; }) || null;
+    } catch(e) { return null; }
 }
 </script>
 </body>
