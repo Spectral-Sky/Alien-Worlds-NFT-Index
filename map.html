@@ -460,6 +460,11 @@
         .txq-item-del { background:transparent; border:none; color:#332; font-size:0.9em;
             cursor:pointer; padding:0 3px; line-height:1; transition:color 0.1s; }
         .txq-item-del:hover { color:#ff6666; }
+        .txq-item-retry { background:transparent; border:1px solid rgba(255,120,80,0.35); color:#c06040;
+            font-size:0.72em; cursor:pointer; padding:1px 5px; line-height:1.3; border-radius:2px;
+            transition:all 0.15s; flex-shrink:0; }
+        .txq-item-retry:hover { color:#ff8060; border-color:rgba(255,120,80,0.6); }
+        .txq-item-retry:disabled { opacity:0.4; cursor:default; }
         .txq-footer { padding:5px 12px 8px; border-top:1px solid rgba(192,144,96,0.1); flex-shrink:0; }
         #txq-prog-wrap { margin-bottom:5px; display:none; }
         #txq-prog-bar  { height:3px; background:rgba(192,144,96,0.1); border-radius:2px; overflow:hidden; }
@@ -471,6 +476,11 @@
             font-size:0.68em; letter-spacing:2px; cursor:pointer; transition:all 0.2s; text-transform:uppercase; }
         #txq-run-btn:hover { background:rgba(192,144,96,0.2); }
         #txq-run-btn:disabled { opacity:0.35; cursor:default; }
+        #txq-retry-failed-btn { padding:6px 10px; background:rgba(255,100,80,0.08);
+            border:1px solid rgba(255,100,80,0.4); color:#ff8060; font-family:inherit;
+            font-size:0.68em; letter-spacing:1px; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+        #txq-retry-failed-btn:hover { background:rgba(255,100,80,0.16); }
+        #txq-retry-failed-btn:disabled { opacity:0.4; cursor:default; }
         #txq-mode-badge { position:fixed; top:58px; left:50%; transform:translateX(-50%);
             background:rgba(96,200,255,0.1); border:1px solid rgba(96,200,255,0.35);
             color:#60c8ff; font-size:0.58em; letter-spacing:2px; padding:3px 12px;
@@ -2575,6 +2585,7 @@
         </div>
         <div class="txq-run-wrap">
             <button id="txq-run-btn" onclick="runTxQueue()" disabled>▶ RUN QUEUE</button>
+            <button id="txq-retry-failed-btn" onclick="txqRetryFailed()" style="display:none;">&#10231; RETRY FAILED</button>
         </div>
     </div>
 </div>
@@ -2595,6 +2606,7 @@ window._txQPanelOpen   = false;
 var _txQueueStacked    = true;  // stacked=travel+hire in one TX; separate=one TX each
 var _txQueueRunning    = false;
 var _txQueueAbort      = false;
+var _failedPlan        = []; // plan steps that failed in last run, available for retry
 
 // ── KEYPAD unlock trigger ────────────────────────────────────────────────────
 function onPlanetTabClick(planet) {
@@ -2884,17 +2896,20 @@ async function runTxQueue() {
 
     _txQueueRunning = true;
     _txQueueAbort   = false;
+    _failedPlan     = []; // clear failures from previous run
 
     var runBtn   = document.getElementById('txq-run-btn');
     var closeBtn = document.getElementById('txq-close-btn');
     var progWrap = document.getElementById('txq-prog-wrap');
     var progFill = document.getElementById('txq-prog-fill');
     var progLbl  = document.getElementById('txq-prog-lbl');
+    var rfBtn    = document.getElementById('txq-retry-failed-btn');
 
     if (runBtn)   { runBtn.disabled = true; runBtn.textContent = 'RUNNING…'; }
     if (closeBtn) { closeBtn.textContent = '■ ABORT'; closeBtn.style.color = '#ff6666'; }
     if (progWrap) { progWrap.style.display = 'block'; }
     if (progLbl)  { progLbl.textContent = 'Loading NFTs…'; }
+    if (rfBtn)    { rfBtn.style.display = 'none'; }
 
     // Load player NFTs once; re-scored per tavern's objectives in txqBestHire
     var _allNFTs = [];
@@ -2998,10 +3013,24 @@ async function runTxQueue() {
             succeeded++;
         } catch(e) {
             console.error('Queue TX error (step '+j+'):', e);
+            _failedPlan.push(step);
             if (itemEl) {
                 itemEl.style.background = 'rgba(255,68,68,0.06)';
                 var lbl = itemEl.querySelector('.txq-item-label');
                 if (lbl) lbl.style.color = '#ff6688';
+                // Inject per-item retry button
+                if (!itemEl.querySelector('.txq-item-retry')) {
+                    var retryBtn = document.createElement('button');
+                    retryBtn.className = 'txq-item-retry';
+                    retryBtn.textContent = '⟳';
+                    retryBtn.title = 'Retry this step';
+                    (function(s, rb) {
+                        rb.onclick = function() { txqRetryStep(s, wallet, _allNFTs, rb); };
+                    })(step, retryBtn);
+                    var delBtn = itemEl.querySelector('.txq-item-del');
+                    if (delBtn) itemEl.insertBefore(retryBtn, delBtn);
+                    else itemEl.appendChild(retryBtn);
+                }
             }
             failed++;
         }
@@ -3012,17 +3041,168 @@ async function runTxQueue() {
     }
 
     if (progFill) progFill.style.width = '100%';
-    if (progLbl)  progLbl.textContent = _txQueueAbort
+    var _runSummary = _txQueueAbort
         ? '⚠ ABORTED  (' + succeeded + ' done)'
-        : '✓ COMPLETE  ·  ' + succeeded + ' / ' + plan.length + (failed ? '  ·  ' + failed + ' failed' : '');
+        : '✓ ' + succeeded + ' / ' + plan.length + (failed ? '  ·  ' + failed + ' FAILED' : '');
+    if (progLbl)  progLbl.textContent = _runSummary + '  ·  refreshing…';
     if (runBtn)   { runBtn.textContent = '▶ RUN QUEUE'; runBtn.disabled = false; }
     if (closeBtn) { closeBtn.textContent = '▼'; closeBtn.style.color = ''; }
+    if (rfBtn && _failedPlan.length) {
+        rfBtn.style.display = '';
+        rfBtn.textContent = '⟳ RETRY FAILED (' + _failedPlan.length + ')';
+        rfBtn.disabled = false;
+    }
 
     _txQueueRunning = false;
     applyMarker();
     updatePlayerPlanetLabel();
+
+    // Full refresh after run: clear NFT cache + re-fetch chain taverns + rebuild maps
+    _playerNFTCache = null;
+    _playerNFTCacheTime = 0;
+    try { await fetchPlayerTaverns(wallet); } catch(e) {}
     _refreshAllMaps();
-    setTimeout(function(){ fetchPlayerTaverns(wallet); }, 1200);
+    updateTabCounts();
+    loadPlayerHireNFTs(wallet, []).catch(function(){});
+    if (progLbl) progLbl.textContent = _runSummary;
+}
+
+// Retry a single failed plan step (called from per-item ⟳ button)
+async function txqRetryStep(step, wallet, allNFTs, retryBtn) {
+    if (retryBtn) { retryBtn.disabled = true; retryBtn.textContent = '…'; }
+    try {
+        if (window.walletSession) await window.walletSession.transact({actions: step.actions});
+        else if (wax && wax.api)  await wax.api.transact({actions: step.actions},{blocksBehind:3,expireSeconds:30});
+        else throw new Error('No wallet session');
+
+        var itemEl = document.getElementById('txq-item-' + step.qIdx);
+        if (itemEl) {
+            itemEl.style.background = 'rgba(96,224,144,0.06)';
+            var lbl = itemEl.querySelector('.txq-item-label');
+            if (lbl) lbl.style.color = '#60e090';
+        }
+        if (retryBtn) retryBtn.remove();
+
+        _failedPlan = _failedPlan.filter(function(s){ return s !== step; });
+        var rfBtn = document.getElementById('txq-retry-failed-btn');
+        if (rfBtn) {
+            if (!_failedPlan.length) rfBtn.style.display = 'none';
+            else rfBtn.textContent = '⟳ RETRY FAILED (' + _failedPlan.length + ')';
+        }
+
+        var travelAct = step.actions.find(function(a){ return a.name==='travel'; });
+        if (travelAct) _playerPos = {planet:_activePlanet, x:travelAct.data.x, y:travelAct.data.y};
+        if (step.tavern && step.tavern.land_id) {
+            var key = _activePlanet + '.' + step.tavern.land_id;
+            _playerUsedTaverns.add(key);
+            try {
+                var today = new Date().toISOString().slice(0,10);
+                localStorage.setItem('naron_used_taverns', JSON.stringify({date:today, keys:Array.from(_playerUsedTaverns)}));
+            } catch(e){}
+        }
+    } catch(e) {
+        console.error('Retry step failed:', e);
+        if (retryBtn) { retryBtn.disabled = false; retryBtn.textContent = '⟳'; }
+    }
+}
+
+// Retry all failed steps from the last run
+async function txqRetryFailed() {
+    if (!_failedPlan.length || _txQueueRunning) return;
+    var wallet = getWallet();
+    if (!wallet) return;
+
+    _txQueueRunning = true;
+    _txQueueAbort   = false;
+
+    var rfBtn    = document.getElementById('txq-retry-failed-btn');
+    var runBtn   = document.getElementById('txq-run-btn');
+    var closeBtn = document.getElementById('txq-close-btn');
+    var progFill = document.getElementById('txq-prog-fill');
+    var progLbl  = document.getElementById('txq-prog-lbl');
+
+    if (rfBtn)    { rfBtn.disabled = true; rfBtn.textContent = 'RETRYING…'; }
+    if (runBtn)   { runBtn.disabled = true; }
+    if (closeBtn) { closeBtn.textContent = '■ ABORT'; closeBtn.style.color = '#ff6666'; }
+    if (progLbl)  { progLbl.textContent = 'Loading NFTs for retry…'; }
+
+    var allNFTs = [];
+    try { allNFTs = await loadPlayerHireNFTs(wallet, []); } catch(e) {}
+
+    var toRetry = _failedPlan.slice();
+    _failedPlan = [];
+    var succeeded = 0, failed = 0;
+
+    for (var j = 0; j < toRetry.length; j++) {
+        if (_txQueueAbort) break;
+        var step = toRetry[j];
+        var itemEl = document.getElementById('txq-item-' + step.qIdx);
+        if (itemEl) itemEl.style.background = 'rgba(192,144,96,0.08)';
+        if (progLbl)  progLbl.textContent = 'RETRY ' + (j+1) + '/' + toRetry.length + '  ·  ' + step.label;
+        if (progFill) progFill.style.width = (j / toRetry.length * 100).toFixed(0) + '%';
+
+        try {
+            if (window.walletSession) await window.walletSession.transact({actions: step.actions});
+            else if (wax && wax.api)  await wax.api.transact({actions: step.actions},{blocksBehind:3,expireSeconds:30});
+            else throw new Error('No wallet session');
+
+            var travelAct = step.actions.find(function(a){ return a.name==='travel'; });
+            if (travelAct) _playerPos = {planet:_activePlanet, x:travelAct.data.x, y:travelAct.data.y};
+            if (step.tavern && step.tavern.land_id) {
+                var key = _activePlanet + '.' + step.tavern.land_id;
+                _playerUsedTaverns.add(key);
+                try {
+                    var today = new Date().toISOString().slice(0,10);
+                    localStorage.setItem('naron_used_taverns', JSON.stringify({date:today, keys:Array.from(_playerUsedTaverns)}));
+                } catch(e){}
+            }
+            if (itemEl) {
+                itemEl.style.background = 'rgba(96,224,144,0.06)';
+                var lbl = itemEl.querySelector('.txq-item-label');
+                if (lbl) lbl.style.color = '#60e090';
+                var rb = itemEl.querySelector('.txq-item-retry');
+                if (rb) rb.remove();
+            }
+            succeeded++;
+        } catch(e) {
+            console.error('Retry queue error:', e);
+            _failedPlan.push(step);
+            if (itemEl) {
+                itemEl.style.background = 'rgba(255,68,68,0.06)';
+                var lbl = itemEl.querySelector('.txq-item-label');
+                if (lbl) lbl.style.color = '#ff6688';
+            }
+            failed++;
+        }
+
+        if (j < toRetry.length - 1 && !_txQueueAbort) {
+            await new Promise(function(r){ setTimeout(r, 2500); });
+        }
+    }
+
+    if (progFill) progFill.style.width = '100%';
+    var retrySummary = _txQueueAbort
+        ? '⚠ RETRY ABORTED  (' + succeeded + ' done)'
+        : '⟳ RETRY: ' + succeeded + '/' + toRetry.length + (failed ? '  ·  ' + failed + ' still failed' : '  ✓ ALL CLEAR');
+    if (progLbl)  progLbl.textContent = retrySummary + '  ·  refreshing…';
+    if (runBtn)   { runBtn.disabled = false; }
+    if (closeBtn) { closeBtn.textContent = '▼'; closeBtn.style.color = ''; }
+    if (rfBtn) {
+        if (_failedPlan.length) { rfBtn.disabled = false; rfBtn.textContent = '⟳ RETRY FAILED (' + _failedPlan.length + ')'; }
+        else rfBtn.style.display = 'none';
+    }
+
+    _txQueueRunning = false;
+    applyMarker();
+    updatePlayerPlanetLabel();
+
+    _playerNFTCache = null;
+    _playerNFTCacheTime = 0;
+    try { await fetchPlayerTaverns(wallet); } catch(e) {}
+    _refreshAllMaps();
+    updateTabCounts();
+    loadPlayerHireNFTs(wallet, []).catch(function(){});
+    if (progLbl) progLbl.textContent = retrySummary;
 }
 </script>
 </body>
