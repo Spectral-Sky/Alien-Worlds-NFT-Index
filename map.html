@@ -481,6 +481,18 @@
             font-size:0.68em; letter-spacing:1px; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
         #txq-retry-failed-btn:hover { background:rgba(255,100,80,0.16); }
         #txq-retry-failed-btn:disabled { opacity:0.4; cursor:default; }
+        #txq-cost-fix { display:none; align-items:center; gap:6px; flex-wrap:wrap;
+            padding:5px 0 2px; border-top:1px solid rgba(255,80,80,0.18); margin-top:5px; }
+        #txq-cost-fix label { font-size:0.58em; color:#c07060; letter-spacing:1px; white-space:nowrap; }
+        #txq-cost-input { width:54px; background:rgba(3,6,15,0.9); border:1px solid rgba(232,160,32,0.5);
+            color:#e8d080; padding:3px 6px; font-size:0.72em; font-family:inherit; text-align:center;
+            border-radius:2px; outline:none; }
+        #txq-cost-input:focus { border-color:var(--gold); }
+        #txq-cost-apply { padding:3px 10px; background:rgba(192,144,96,0.12);
+            border:1px solid rgba(192,144,96,0.45); color:var(--gold); font-family:inherit;
+            font-size:0.62em; letter-spacing:1px; cursor:pointer; border-radius:2px;
+            transition:background 0.15s; white-space:nowrap; }
+        #txq-cost-apply:hover { background:rgba(192,144,96,0.25); }
         #txq-mode-badge { position:fixed; top:58px; left:50%; transform:translateX(-50%);
             background:rgba(96,200,255,0.1); border:1px solid rgba(96,200,255,0.35);
             color:#60c8ff; font-size:0.58em; letter-spacing:2px; padding:3px 12px;
@@ -2602,6 +2614,12 @@
             <button id="txq-run-btn" onclick="runTxQueue()" disabled>▶ RUN QUEUE</button>
             <button id="txq-retry-failed-btn" onclick="txqRetryFailed()" style="display:none;">&#10231; RETRY FAILED</button>
         </div>
+        <div id="txq-cost-fix">
+            <label>&#9888; COST MISMATCH — correct hire AP:</label>
+            <input id="txq-cost-input" type="number" min="1" max="999"
+                onkeydown="if(event.key==='Enter')txqApplyCostFix()">
+            <button id="txq-cost-apply" onclick="txqApplyCostFix()">UPDATE &amp; RETRY</button>
+        </div>
     </div>
 </div>
 <div id="txq-mode-badge">◎ QUEUE MODE — CLICK CELLS TO ADD</div>
@@ -2624,6 +2642,41 @@ var _txQueueAbort      = false;
 var _failedPlan        = []; // plan steps that failed in last run, available for retry
 var _arRunning  = {day:false, week:false, month:false};
 var _arStop     = {day:false, week:false, month:false};
+
+// Returns true if the WAX error looks like a hire cost mismatch
+function _isCostMismatchError(e) {
+    var msg = '';
+    try {
+        if (e && e.message) msg += e.message;
+        if (e && e.toString) msg += e.toString();
+        if (e && e.json) msg += JSON.stringify(e.json);
+    } catch(_) {}
+    msg = msg.toLowerCase();
+    return msg.indexOf('cost') !== -1;
+}
+
+// Show the cost-correction input in the queue footer
+function txqShowCostFix() {
+    var el  = document.getElementById('txq-cost-fix');
+    var inp = document.getElementById('txq-cost-input');
+    if (!el) return;
+    el.style.display = 'flex';
+    if (inp) { inp.value = _hireBaseCost || 100; inp.focus(); inp.select(); }
+}
+
+// Apply the user-supplied cost, update _hireBaseCost, and trigger retry of failed steps
+function txqApplyCostFix() {
+    var inp = document.getElementById('txq-cost-input');
+    var el  = document.getElementById('txq-cost-fix');
+    if (!inp) return;
+    var v = parseInt(inp.value, 10);
+    if (isNaN(v) || v < 1) { inp.focus(); inp.select(); return; }
+    _hireBaseCost = v;
+    if (el) el.style.display = 'none';
+    var progLbl = document.getElementById('txq-prog-lbl');
+    if (progLbl) progLbl.textContent = 'Hire cost set to ' + v + ' AP — retrying failed steps…';
+    txqRetryFailed();
+}
 
 // ── KEYPAD unlock trigger ────────────────────────────────────────────────────
 function onPlanetTabClick(planet) {
@@ -2942,6 +2995,8 @@ async function runTxQueue() {
     if (progWrap) { progWrap.style.display = 'block'; }
     if (progLbl)  { progLbl.textContent = 'Loading NFTs…'; }
     if (rfBtn)    { rfBtn.style.display = 'none'; }
+    var cfEl = document.getElementById('txq-cost-fix');
+    if (cfEl) cfEl.style.display = 'none';
 
     // Load player NFTs once; re-scored per tavern's objectives in txqBestHire
     var _allNFTs = [];
@@ -3081,6 +3136,12 @@ async function runTxQueue() {
                 }
             }
             failed++;
+            // Cost mismatch — stop the chain and ask the user for the correct AP cost
+            if (_isCostMismatchError(e) && (step.isHire || step.isTravelAndHire)) {
+                _txQueueAbort = true;
+                if (progLbl) progLbl.textContent = '⚠ HIRE COST MISMATCH — enter correct AP below';
+                txqShowCostFix();
+            }
         }
 
         if (j < plan.length - 1 && !_txQueueAbort) {
@@ -3119,6 +3180,20 @@ async function runTxQueue() {
 // Retry a single failed plan step (called from per-item ⟳ button)
 async function txqRetryStep(step, wallet, allNFTs, retryBtn) {
     if (retryBtn) { retryBtn.disabled = true; retryBtn.textContent = '…'; }
+    // Recompute hire action with current _hireBaseCost (handles cost mismatch correction)
+    if (step.isTravelAndHire || step.isHire) {
+        var avail = allNFTs || [];
+        var hd = txqBestHire(wallet, avail, step.objectives);
+        if (step.isTravelAndHire) {
+            step.actions = [
+                { account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data: step.travelData },
+                { account:'players.ale', name:'hire',   authorization:[{actor:wallet,permission:'active'}], data: hd }
+            ];
+        } else {
+            step.actions = [{ account:'players.ale', name:'hire',
+                authorization:[{actor:wallet,permission:'active'}], data: hd }];
+        }
+    }
     try {
         if (window.walletSession) await window.walletSession.transact({actions: step.actions});
         else if (wax && wax.api)  await wax.api.transact({actions: step.actions},{blocksBehind:3,expireSeconds:30});
