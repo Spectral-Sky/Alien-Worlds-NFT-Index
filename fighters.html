@@ -282,6 +282,13 @@
 
 <div class="controls-bar">
     <button class="ctrl-btn" id="load-btn" onclick="loadFighters()">&#8635; LOAD FIGHTERS</button>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <span style="font-size:0.62em;color:var(--muted);letter-spacing:2px;white-space:nowrap;">OTHER WALLET:</span>
+        <input id="wallet-lookup" type="text" placeholder="e.g. abc.wam" autocomplete="off"
+            style="background:rgba(3,6,15,0.9);border:1px solid rgba(232,160,32,0.2);color:var(--gold);font-family:inherit;font-size:0.76em;padding:5px 10px;outline:none;border-radius:2px;width:130px;"
+            onkeydown="if(event.key==='Enter')loadFighters()">
+        <button class="ctrl-btn" onclick="loadFighters()" style="padding:5px 10px;">&#9654;</button>
+    </div>
     <input id="fighter-search" type="text" placeholder="Filter class, element, race, marker…" oninput="renderTable()">
     <span id="count-display"></span>
 </div>
@@ -364,8 +371,10 @@ async function fetchRows(p) {
 }
 
 async function loadFighters() {
-    var wallet = getWallet();
-    if (!wallet) { showEmpty('Log in first — click an auth button in the header.'); return; }
+    var lookupInput = document.getElementById('wallet-lookup');
+    var lookupVal   = lookupInput ? lookupInput.value.trim() : '';
+    var wallet      = lookupVal || getWallet();
+    if (!wallet) { showEmpty('Log in or enter a wallet address above to load fighters.'); return; }
     var btn = document.getElementById('load-btn');
     if (btn) { btn.disabled = true; btn.textContent = 'LOADING…'; }
     showEmpty('<span class="loading-pulse">LOADING FIGHTERS…</span>');
@@ -373,7 +382,9 @@ async function loadFighters() {
     try {
         var all = [], more = true, lb = null;
         while (more) {
-            var p = {code:'fighters.ale', scope:wallet, table:'fighters', limit:100, json:true};
+            var p = {code:'fighters.ale', scope:'fighters.ale', table:'fighters',
+                     index_position:2, key_type:'name',
+                     lower_bound:wallet, upper_bound:wallet, limit:100, json:true};
             if (lb) p.lower_bound = lb;
             console.log('[fighters] fetch', JSON.stringify(p));
             var res = await fetchRows(p);
@@ -409,6 +420,11 @@ async function loadFighters() {
 
         console.log('[fighters]', _fighters.length, 'fighters for', wallet);
         document.getElementById('footer-wallet').textContent = wallet;
+        // Show whose roster this is in the subtitle
+        var sub = document.querySelector('.title-bar .sub');
+        var myWallet = getWallet();
+        var label = (myWallet && wallet === myWallet) ? wallet + ' (YOU)' : wallet;
+        if (sub) sub.textContent = label + '  ·  ' + _fighters.length + ' ACTIVE FIGHTERS  ·  SOURCE: FIGHTERS.ALE';
         renderTable();
     } catch(e) {
         console.error('[fighters] error:', e);
@@ -609,6 +625,7 @@ async function loginWithAnchor() {
         window.walletSession = res.session;
         localStorage.setItem('naron_wallet', String(res.session.actor));
         checkWalletState();
+        loadFighters();
     } catch(e) { console.warn('Anchor login failed', e); }
 }
 
@@ -617,6 +634,7 @@ async function loginWithWCC() {
         await wax.login();
         localStorage.setItem('naron_wallet', wax.userAccount);
         checkWalletState();
+        loadFighters();
     } catch(e) { console.warn('WCC login failed', e); }
 }
 
@@ -664,10 +682,7 @@ function toggleHamburger() {
     var savedFont = localStorage.getItem('naron_font');
     if (savedFont && _fontFamilies[savedFont]) ftSetFont(savedFont);
     checkWalletState();
-    // Init column toggle visual state
-    COL_DEFS.forEach(function(d) {
-        // all on by default via HTML class — nothing to override
-    });
+    if (getWallet()) loadFighters();
 })();
 </script>
 </body>
