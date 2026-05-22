@@ -2639,6 +2639,7 @@ window._txQPanelOpen   = false;
 var _txQueueStacked    = true;  // true=STACKED (travel+hire in one TX); false=SPLIT (separate TXs)
 var _txQueueRunning    = false;
 var _txQueueAbort      = false;
+var _pendingAutoRetry  = false;
 var _failedPlan        = []; // plan steps that failed in last run, available for retry
 var _arRunning  = {day:false, week:false, month:false};
 var _arStop     = {day:false, week:false, month:false};
@@ -2653,6 +2654,28 @@ function _isCostMismatchError(e) {
     } catch(_) {}
     msg = msg.toLowerCase();
     return msg.indexOf('cost') !== -1;
+}
+
+// Try to extract the required AP cost directly from the WAX contract error message
+function _extractCostFromError(e) {
+    var msg = '';
+    try {
+        if (e && e.message) msg += ' ' + e.message;
+        if (e && e.toString) msg += ' ' + e.toString();
+        if (e && e.json) msg += ' ' + JSON.stringify(e.json);
+    } catch(_) {}
+    var patterns = [
+        /expected[:\s]+(\d+)/i,
+        /required[:\s]+(\d+)/i,
+        /cost[:\s]+(\d+)/i,
+        /needs?\s+(\d+)/i,
+        /(\d+)\s*(?:ap\b|action.?points)/i
+    ];
+    for (var i = 0; i < patterns.length; i++) {
+        var m = msg.match(patterns[i]);
+        if (m) { var v = parseInt(m[1], 10); if (v > 0 && v < 10000) return v; }
+    }
+    return null;
 }
 
 // Show the cost-correction input in the queue footer
@@ -3136,11 +3159,18 @@ async function runTxQueue() {
                 }
             }
             failed++;
-            // Cost mismatch — stop the chain and ask the user for the correct AP cost
+            // Cost mismatch — try to read the correct cost from the error, then auto-retry
             if (_isCostMismatchError(e) && (step.isHire || step.isTravelAndHire)) {
                 _txQueueAbort = true;
-                if (progLbl) progLbl.textContent = '⚠ HIRE COST MISMATCH — enter correct AP below';
-                txqShowCostFix();
+                var _errCost = _extractCostFromError(e);
+                if (_errCost) {
+                    _hireBaseCost = _errCost;
+                    _pendingAutoRetry = true;
+                    if (progLbl) progLbl.textContent = '⚠ Cost corrected to ' + _errCost + ' AP — retrying…';
+                } else {
+                    if (progLbl) progLbl.textContent = '⚠ HIRE COST MISMATCH — enter correct AP below';
+                    txqShowCostFix();
+                }
             }
         }
 
@@ -3166,6 +3196,14 @@ async function runTxQueue() {
     _txQueueRunning = false;
     applyMarker();
     updatePlayerPlanetLabel();
+
+    // Auto-retry if cost was extracted from error and corrected automatically
+    if (_pendingAutoRetry && _failedPlan.length) {
+        _pendingAutoRetry = false;
+        setTimeout(function() { txqRetryFailed(); }, 400);
+        return;
+    }
+    _pendingAutoRetry = false;
 
     // Full refresh after run: clear NFT cache + re-fetch chain taverns + rebuild maps
     _playerNFTCache = null;
@@ -3264,6 +3302,20 @@ async function txqRetryFailed() {
         if (itemEl) itemEl.style.background = 'rgba(192,144,96,0.08)';
         if (progLbl)  progLbl.textContent = 'RETRY ' + (j+1) + '/' + toRetry.length + '  ·  ' + step.label;
         if (progFill) progFill.style.width = (j / toRetry.length * 100).toFixed(0) + '%';
+
+        // Recompute hire actions with current _hireBaseCost before each retry
+        if (step.isTravelAndHire || step.isHire) {
+            var hd = txqBestHire(wallet, allNFTs, step.objectives);
+            if (step.isTravelAndHire) {
+                step.actions = [
+                    { account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data: step.travelData },
+                    { account:'players.ale', name:'hire',   authorization:[{actor:wallet,permission:'active'}], data: hd }
+                ];
+            } else {
+                step.actions = [{ account:'players.ale', name:'hire',
+                    authorization:[{actor:wallet,permission:'active'}], data: hd }];
+            }
+        }
 
         try {
             if (window.walletSession) await window.walletSession.transact({actions: step.actions});
