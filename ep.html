@@ -1459,13 +1459,13 @@ window.pgSetFont=function(k){if(!_FM[k])return;document.body.style.fontFamily=_F
 window.pgToggleDay=function(){var d=document.documentElement.classList.toggle('day');try{localStorage.setItem('naron_day',d?'1':'0');}catch(e){}var b=document.getElementById('pg-mode-btn');if(b)b.textContent=d?'🌙':'☀';};
 function _inj(){
   if(document.getElementById('pg-mode-btn'))return;
-  var ws=document.querySelector('.wallet-section')||document.querySelector('.global-header');
+  var ws=document.getElementById('lang-picker')||document.querySelector('.wallet-section')||document.querySelector('.global-header');
   if(!ws)return;
   var fd=document.createElement('div');fd.className='nav-dropdown-wrap pg-font-dd';
   fd.innerHTML='<button class="nav-dropdown-btn">Aa &#9660;<\/button><div class="nav-dropdown-menu"><a class="nav-dropdown-item font-opt" href="#" data-font="segoe" onclick="pgSetFont('segoe');return false;">CLEAN<span class="font-preview" style="font-family:'Segoe UI',sans-serif;">Segoe UI<\/span><\/a><a class="nav-dropdown-item font-opt" href="#" data-font="calibri" onclick="pgSetFont('calibri');return false;">SOFT<span class="font-preview" style="font-family:'Calibri',sans-serif;">Calibri<\/span><\/a><a class="nav-dropdown-item font-opt" href="#" data-font="georgia" onclick="pgSetFont('georgia');return false;">CLASSIC<span class="font-preview" style="font-family:'Georgia',serif;">Georgia<\/span><\/a><a class="nav-dropdown-item font-opt active" href="#" data-font="terminal" onclick="pgSetFont('terminal');return false;">TERMINAL<span class="font-preview" style="font-family:'Courier New',monospace;">Courier New<\/span><\/a><\/div>';
   var mb=document.createElement('button');mb.id='pg-mode-btn';mb.className='pg-mode-btn';mb.title='Toggle day/night mode';
   var isDay=document.documentElement.classList.contains('day');mb.textContent=isDay?'🌙':'☀';
-  mb.onclick=pgToggleDay;ws.appendChild(fd);ws.appendChild(mb);
+  mb.onclick=pgToggleDay;ws.insertAdjacentElement('afterend',fd);fd.insertAdjacentElement('afterend',mb);
   var sf=localStorage.getItem('naron_font');if(sf)document.querySelectorAll('.pg-font-dd .font-opt').forEach(function(a){a.classList.toggle('active',a.dataset.font===sf);});
 }
 var sf=localStorage.getItem('naron_font');if(sf&&_FM[sf])document.body.style.fontFamily=_FM[sf];
