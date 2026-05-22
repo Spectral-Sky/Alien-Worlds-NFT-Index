@@ -375,18 +375,43 @@ async function loadFighters() {
         while (more) {
             var p = {code:'fighters.ale', scope:wallet, table:'fighters', limit:100, json:true};
             if (lb) p.lower_bound = lb;
+            console.log('[fighters] fetch', JSON.stringify(p));
             var res = await fetchRows(p);
-            if (!res || !res.rows) break;
+            console.log('[fighters] res', res ? ('rows:' + res.rows.length + ' more:' + res.more) : 'NULL — all RPCs failed');
+            if (!res || !res.rows) {
+                if (!all.length) showEmpty('All RPC endpoints failed. Check console (F12) for details.');
+                break;
+            }
             all = all.concat(res.rows);
             more = res.more;
-            if (more && res.rows.length) lb = res.next_key || null;
+            lb = (more && res.next_key) ? res.next_key : null;
             if (!lb) break;
         }
-        _fighters = all.filter(function(f){ return f.active === 1 || f.active === '1'; });
-        console.log('[fighters] loaded', _fighters.length, 'active for', wallet);
+
+        if (!all.length && !document.getElementById('table-container').textContent.includes('RPC')) {
+            showEmpty('No fighter rows returned for wallet: ' + wallet + '. Check that you are logged in with the correct account.');
+            if (btn) { btn.disabled = false; btn.textContent = '⟳ REFRESH'; }
+            return;
+        }
+
+        console.log('[fighters] total rows before filter:', all.length, '| sample active value:', all[0] && all[0].active);
+
+        // active can be 1, '1', true, or 'true' depending on RPC serialisation
+        _fighters = all.filter(function(f){
+            return f.active === 1 || f.active === '1' || f.active === true || f.active === 'true';
+        });
+
+        // Fallback: if active filter removes everything, show all rows with a note
+        if (!_fighters.length && all.length) {
+            console.warn('[fighters] active filter removed all rows — showing all (check active field value)');
+            _fighters = all;
+        }
+
+        console.log('[fighters]', _fighters.length, 'fighters for', wallet);
         document.getElementById('footer-wallet').textContent = wallet;
         renderTable();
     } catch(e) {
+        console.error('[fighters] error:', e);
         showEmpty('ERROR: ' + (e && e.message || String(e)));
     }
 
@@ -397,7 +422,7 @@ async function loadFighters() {
 var COL_DEFS = [
     { key:'lv',        label:'LV',        title:'Level',                    sortVal: function(f){ return (f.stats&&f.stats.level!=null)?Number(f.stats.level):0; } },
     { key:'marker',    label:'MARKER',     title:'Marker type',              sortVal: function(f){ return f.marker||''; } },
-    { key:'asc',       label:'ASC',        title:'Ascension count',          sortVal: function(f){ return Number(f.asc_level||f.ascension_level||f.ascensions||0); } },
+    { key:'asc',       label:'ASC',        title:'Ascension level',          sortVal: function(f){ return Number(f.ascension_level||0); } },
     { key:'hp',        label:'HP',         title:'Health (max)',              sortVal: function(f){ return (f.stats&&f.stats.health_max!=null)?Number(f.stats.health_max):0; } },
     { key:'dmg',       label:'DMG',        title:'Damage (max)',              sortVal: function(f){ return (f.stats&&f.stats.damage_max!=null)?Number(f.stats.damage_max):0; } },
     { key:'cd',        label:'CD ▲',       title:'Cooldown — lower is faster', sortVal: function(f){ return (f.stats&&f.stats.attackspeed_min!=null)?Number(f.stats.attackspeed_min):9999; } },
@@ -422,7 +447,7 @@ function cellContent(key, f) {
             return mk ? '<span class="marker-badge">' + mk.toUpperCase() + '</span>' : '<span class="zero">—</span>';
         }
         case 'asc': {
-            var av = Number(f.asc_level || f.ascension_level || f.ascensions || 0);
+            var av = Number(f.ascension_level || 0);
             return av > 0 ? '<span class="asc-val">' + '★'.repeat(Math.min(av,5)) + (av > 5 ? ' '+av : '') + '</span>'
                           : '<span class="zero">—</span>';
         }
