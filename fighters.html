@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-48CCMEYHXG"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-48CCMEYHXG');</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Fighters // Naron Codex</title>
+    <script src="waxjs.js"></script>
+    <script type="module">
+        import { SessionKit } from 'https://esm.sh/@wharfkit/session@1';
+        import { WebRenderer } from 'https://esm.sh/@wharfkit/web-renderer@1';
+        import { WalletPluginAnchor } from 'https://esm.sh/@wharfkit/wallet-plugin-anchor@1';
+        const kit = new SessionKit({
+            appName: 'naroncodex',
+            chains: [{ id: '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4', url: 'https://wax.greymass.com' }],
+            ui: new WebRenderer(),
+            walletPlugins: [new WalletPluginAnchor()],
+        });
+        window.walletKit = kit;
+        try {
+            const session = await kit.restore();
+            if (session) {
+                window.walletSession = session;
+                localStorage.setItem('naron_wallet', String(session.actor));
+                if (typeof checkWalletState === 'function') checkWalletState();
+            }
+        } catch(e) {}
+    </script>
+    <link rel="icon" type="image/png" href="NCico.png">
+    <style>
+    :root {
+        --bg:#03060f; --gold:#e8a020; --border:rgba(232,160,32,0.2);
+        --text:#c8ccd8; --muted:#50606a; --panel:rgba(5,8,20,0.7);
+        --hover:rgba(232,160,32,0.06);
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    html, body { min-height:100vh; background:var(--bg); color:var(--text); font-family:'Courier New',Courier,monospace; }
+    html { height:100%; }
+    body { display:flex; flex-direction:column; height:100%; }
+    ::-webkit-scrollbar { height:8px; width:8px; }
+    ::-webkit-scrollbar-track { background:#050510; }
+    ::-webkit-scrollbar-thumb { background:#333; border:1px solid var(--gold); }
+
+    /* HEADER */
+    .global-header { display:flex; justify-content:space-between; align-items:center; background:rgba(3,6,15,0.97); border-bottom:2px solid var(--gold); padding:0 28px; height:66px; position:sticky; top:0; z-index:200; box-shadow:0 4px 20px rgba(0,0,0,0.8); backdrop-filter:blur(8px); }
+    .logo-section { display:flex; align-items:center; gap:8px; text-decoration:none; }
+    .logo-section h1 { color:var(--gold); font-size:1.5em; letter-spacing:4px; text-transform:uppercase; text-shadow:0 0 10px rgba(232,160,32,0.5); font-weight:normal; }
+    .nav-links { display:flex; gap:6px; flex-wrap:wrap; }
+    .nav-btn { background:transparent; color:#555; border:1px solid transparent; padding:7px 13px; font-family:'Courier New',monospace; font-size:0.78em; text-decoration:none; cursor:pointer; transition:all 0.2s; text-transform:uppercase; border-radius:3px; letter-spacing:1px; }
+    .nav-btn:hover { color:var(--gold); border-color:var(--border); }
+    .nav-btn.active { color:#000; background:var(--gold); border-color:var(--gold); }
+    .nav-dropdown-wrap { position:relative; }
+    .nav-dropdown-btn { background:transparent; color:#555; border:1px solid transparent; padding:7px 13px; font-family:'Courier New',monospace; font-size:0.78em; cursor:pointer; transition:all 0.2s; text-transform:uppercase; border-radius:3px; letter-spacing:1px; }
+    .nav-dropdown-btn:hover { color:var(--gold); border-color:var(--border); }
+    .nav-dropdown-btn.active { color:#000; background:var(--gold); border-color:var(--gold); }
+    .nav-dropdown-menu { display:none; position:absolute; top:100%; left:0; background:rgba(2,6,20,0.98); border:1px solid var(--border); min-width:160px; z-index:300; padding:4px 0; }
+    .nav-dropdown-wrap:hover .nav-dropdown-menu { display:block; }
+    .nav-dropdown-item { display:block; padding:8px 14px; color:#555; text-decoration:none; font-family:'Courier New',monospace; font-size:0.78em; transition:all 0.15s; text-transform:uppercase; letter-spacing:1px; }
+    .nav-dropdown-item:hover { color:var(--gold); background:var(--hover); }
+    .nav-dropdown-item.active { color:var(--gold); font-weight:bold; }
+    #hamburger-btn { display:none; background:transparent; border:1px solid #333; color:#888; font-size:1.1em; padding:6px 10px; cursor:pointer; border-radius:3px; }
+    #nav-dropdown { display:none; flex-direction:column; background:rgba(2,6,20,0.98); border-bottom:1px solid var(--border); padding:10px 20px; gap:6px; z-index:199; }
+    #nav-dropdown.open { display:flex; }
+    @media(max-width:768px){ .nav-links{display:none;} #hamburger-btn{display:block;} }
+
+    /* WALLET */
+    .wallet-section { display:flex; gap:6px; align-items:center; }
+    .wallet-btn { background:#111; color:var(--gold); border:1px dashed var(--border); padding:7px 13px; font-family:'Courier New',monospace; font-size:0.74em; font-weight:bold; cursor:pointer; transition:all 0.2s; letter-spacing:1px; border-radius:3px; }
+    .wallet-btn:hover { background:var(--hover); border-color:var(--gold); }
+    .wallet-btn.logged-in { background:rgba(232,160,32,0.12); color:var(--gold); border:1px solid var(--gold); }
+    .font-preview { display:block; font-size:0.85em; color:var(--muted); margin-top:1px; }
+    .mode-toggle-btn { background:transparent; border:1px solid rgba(232,160,32,0.25); color:var(--muted); padding:6px 9px; font-size:1em; cursor:pointer; border-radius:2px; transition:all 0.2s; line-height:1; }
+    .mode-toggle-btn:hover { color:var(--gold); border-color:var(--gold); background:rgba(232,160,32,0.06); }
+
+    /* TITLE */
+    .title-bar { padding:16px 28px 13px; border-bottom:1px solid rgba(232,160,32,0.08); background:rgba(5,8,20,0.5); }
+    .title-bar h1 { font-size:1.2em; letter-spacing:5px; color:var(--gold); text-shadow:0 0 15px rgba(232,160,32,0.3); font-weight:normal; text-transform:uppercase; }
+    .title-bar .sub { font-size:0.62em; color:var(--muted); letter-spacing:2px; margin-top:4px; }
+
+    /* CONTROLS */
+    .controls-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:10px 28px; border-bottom:1px solid rgba(232,160,32,0.07); background:rgba(3,6,15,0.6); }
+    .ctrl-btn { background:transparent; border:1px solid rgba(232,160,32,0.35); color:var(--gold); padding:6px 14px; font-family:'Courier New',monospace; font-size:0.74em; letter-spacing:1px; cursor:pointer; border-radius:2px; transition:all 0.2s; }
+    .ctrl-btn:hover { background:rgba(232,160,32,0.08); }
+    .ctrl-btn:disabled { opacity:0.35; cursor:not-allowed; }
+    #fighter-search { background:rgba(3,6,15,0.9); border:1px solid rgba(232,160,32,0.2); color:var(--gold); font-family:'Courier New',monospace; font-size:0.76em; padding:6px 12px; outline:none; border-radius:2px; width:180px; }
+    #fighter-search::placeholder { color:#444; }
+    #fighter-search:focus { border-color:var(--gold); }
+    #count-display { font-size:0.65em; color:var(--muted); margin-left:auto; letter-spacing:1px; }
+
+    /* COLUMN TOGGLES */
+    .col-toggles { padding:8px 28px; border-bottom:1px solid rgba(232,160,32,0.06); background:rgba(3,6,15,0.4); display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+    .col-toggle-label { font-size:0.58em; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-right:4px; }
+    .col-toggle { background:transparent; border:1px solid rgba(232,160,32,0.18); color:#445; font-family:'Courier New',monospace; font-size:0.65em; letter-spacing:1px; padding:3px 9px; cursor:pointer; border-radius:2px; transition:all 0.15s; }
+    .col-toggle:hover { border-color:rgba(232,160,32,0.4); color:#778; }
+    .col-toggle.on { border-color:var(--gold); color:var(--gold); background:rgba(232,160,32,0.06); }
+    .col-toggle-blue   { border-color:rgba(60,180,255,0.4); color:#50a0e0; }
+    .col-toggle-blue.on { border-color:#60c0ff; color:#60c0ff; background:rgba(60,180,255,0.08); }
+    .col-toggle-green  { border-color:rgba(60,200,100,0.4); color:#50c070; }
+    .col-toggle-green.on { border-color:#60e090; color:#60e090; background:rgba(60,200,100,0.08); }
+    .col-toggle-red    { border-color:rgba(220,80,80,0.4); color:#d06060; }
+    .col-toggle-red.on { border-color:#e08080; color:#e08080; background:rgba(220,80,80,0.08); }
+    .col-toggle-purple { border-color:rgba(160,80,220,0.4); color:#a060d0; }
+    .col-toggle-purple.on { border-color:#c090e0; color:#c090e0; background:rgba(160,80,220,0.08); }
+    .col-toggles-sep { width:1px; height:16px; background:rgba(255,255,255,0.08); align-self:center; flex-shrink:0; }
+
+    /* TABLE */
+    .table-wrap { overflow:auto; flex:1; min-height:0; }
+    .lb-table { border-collapse:separate; border-spacing:0; font-size:0.76em; width:100%; }
+    .lb-table th { position:sticky; top:0; z-index:2; background:#090912; border-bottom:2px solid var(--gold); padding:9px 12px; text-align:right; cursor:pointer; letter-spacing:1px; text-transform:uppercase; color:#667; font-weight:normal; white-space:nowrap; user-select:none; transition:color 0.15s; }
+    .lb-table th:first-child { text-align:left; }
+    .lb-table th.left { text-align:left; }
+    .lb-table th:hover { color:var(--gold); }
+    .lb-table th.sort-asc::after  { content:' ▲'; color:var(--gold); }
+    .lb-table th.sort-desc::after { content:' ▼'; color:var(--gold); }
+    .lb-table th.sort-asc, .lb-table th.sort-desc { color:var(--gold); }
+    .lb-table td { padding:7px 12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.03); white-space:nowrap; color:#9098a8; }
+    .lb-table td.left { text-align:left; }
+    .lb-table tr:hover td { background:var(--hover); }
+    .lb-table .zero { color:#2a3040; }
+    .lb-table .deployed-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:#40c070; margin-right:4px; vertical-align:middle; }
+
+    /* XP bar in cell */
+    .xp-bar-wrap { display:inline-flex; align-items:center; gap:5px; }
+    .xp-bar-outer { width:48px; height:5px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; display:inline-block; vertical-align:middle; }
+    .xp-bar-inner { height:100%; background:var(--gold); border-radius:2px; }
+
+    /* element / class badge */
+    .el-badge { font-size:1.1em; line-height:1; }
+    .cls-badge { font-size:1.1em; line-height:1; margin-right:4px; }
+    .cls-name { font-size:0.9em; color:var(--gold); }
+
+    /* marker badge */
+    .marker-badge { font-size:0.72em; letter-spacing:1px; padding:1px 5px; border-radius:2px; color:#a09070; border:1px solid rgba(160,144,112,0.25); }
+
+    /* ASC stars */
+    .asc-val { color:#c0a040; }
+
+    /* STICKY COLUMNS: # | CLASS | EL | RACE */
+    .lb-table td:nth-child(1), .lb-table th:nth-child(1) { position:sticky; left:0;    z-index:1; background:#090912; text-align:left; color:var(--muted); font-size:0.88em; min-width:36px; width:36px; }
+    .lb-table td:nth-child(2), .lb-table th:nth-child(2) { position:sticky; left:36px; z-index:1; background:#090912; text-align:left; min-width:160px; width:160px; max-width:160px; }
+    .lb-table td:nth-child(3), .lb-table th:nth-child(3) { position:sticky; left:196px; z-index:1; background:#090912; text-align:center; min-width:46px; width:46px; }
+    .lb-table td:nth-child(4), .lb-table th:nth-child(4) { position:sticky; left:242px; z-index:1; background:#090912; text-align:left; min-width:82px; width:82px; box-shadow:2px 0 6px rgba(0,0,0,0.6); }
+    .lb-table thead th:nth-child(1), .lb-table thead th:nth-child(2),
+    .lb-table thead th:nth-child(3), .lb-table thead th:nth-child(4) { z-index:3; }
+    .lb-table tr:hover td:nth-child(1), .lb-table tr:hover td:nth-child(2),
+    .lb-table tr:hover td:nth-child(3), .lb-table tr:hover td:nth-child(4) { background:#0f1220; }
+
+    /* EMPTY / LOADING */
+    .lb-empty { padding:40px 28px; text-align:center; font-size:0.75em; color:var(--muted); letter-spacing:2px; }
+    @keyframes fade-pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+    .loading-pulse { animation:fade-pulse 1.2s infinite; }
+
+    /* FOOTER */
+    footer { border-top:1px solid rgba(232,160,32,0.07); padding:12px 28px; font-size:0.58em; color:var(--muted); letter-spacing:1.5px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+
+    /* DAY MODE */
+    :root.day { --bg:#f0f4ff; --gold:#9a6800; --border:rgba(0,60,140,0.2); --text:#182038; --muted:#3a5080; --panel:rgba(230,238,255,0.9); --hover:rgba(0,80,200,0.07); }
+    html.day, html.day body { background:var(--bg); color:var(--text); }
+    html.day .global-header { background:rgba(235,240,255,0.98); border-bottom-color:#0050cc; }
+    html.day .nav-btn { color:#4060a0; } html.day .nav-btn:hover { color:var(--gold); }
+    html.day .nav-dropdown-btn { color:#4060a0; } html.day .nav-dropdown-btn:hover { color:var(--gold); }
+    html.day .nav-dropdown-menu { background:rgba(235,240,255,0.98); border-color:rgba(0,60,140,0.2); }
+    html.day .nav-dropdown-item { color:#4060a0; } html.day .nav-dropdown-item:hover { color:var(--gold); background:var(--hover); }
+    html.day .title-bar { background:rgba(215,228,255,0.5); }
+    html.day .controls-bar { background:rgba(230,238,255,0.8); }
+    html.day .col-toggles { background:rgba(220,232,255,0.5); }
+    html.day .lb-table th { background:#d4e0f4; color:#4060a0; }
+    html.day .lb-table td { color:#2a3860; border-bottom-color:rgba(0,60,140,0.05); }
+    html.day .lb-table tr:hover td { background:var(--hover); }
+    html.day .lb-table td:nth-child(1), html.day .lb-table th:nth-child(1),
+    html.day .lb-table td:nth-child(2), html.day .lb-table th:nth-child(2),
+    html.day .lb-table td:nth-child(3), html.day .lb-table th:nth-child(3),
+    html.day .lb-table td:nth-child(4), html.day .lb-table th:nth-child(4) { background:#dce8f8; }
+    html.day .lb-table tr:hover td:nth-child(1), html.day .lb-table tr:hover td:nth-child(2),
+    html.day .lb-table tr:hover td:nth-child(3), html.day .lb-table tr:hover td:nth-child(4) { background:#ccd8f0; }
+    html.day ::-webkit-scrollbar-track { background:#dce8f8; } html.day ::-webkit-scrollbar-thumb { background:#a0b4d0; }
+    html.day #fighter-search { background:rgba(230,238,255,0.9); color:var(--gold); border-color:rgba(0,60,140,0.25); }
+    html.day .ctrl-btn { color:var(--gold); border-color:rgba(0,80,200,0.35); }
+    html.day .wallet-btn { background:#dce8f8; border-color:rgba(0,60,140,0.2); color:var(--gold); }
+    html.day .col-toggle { color:#6070a0; border-color:rgba(0,60,140,0.2); }
+    html.day .col-toggle.on { color:var(--gold); border-color:var(--gold); background:rgba(154,104,0,0.07); }
+    html.day .lb-empty { color:var(--muted); }
+    html.day .xp-bar-outer { background:rgba(0,60,140,0.1); }
+    html.day .cls-name { color:var(--gold); }
+    </style>
+</head>
+<body>
+
+<header class="global-header">
+    <div class="logo-section">
+        <a href="index.html" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
+            <img src="NCico.png" style="height:28px;border-radius:3px;" alt="">
+            <h1>NARON CODEX</h1>
+        </a>
+    </div>
+    <nav class="nav-links">
+        <a href="index.html" class="nav-btn">HUB</a>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">AW &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="crew.worlds.html" class="nav-dropdown-item">CREW</a>
+                <a href="arms.worlds.html" class="nav-dropdown-item">ARMS</a>
+                <a href="tools.worlds.html" class="nav-dropdown-item">TOOLS</a>
+                <a href="faces.worlds.html" class="nav-dropdown-item">FACES</a>
+                <a href="land.worlds.html" class="nav-dropdown-item">LAND</a>
+            </div>
+        </div>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.onerror=null;this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="pd.units.html" class="nav-dropdown-item">PD UNITS</a>
+                <a href="pd.materials.html" class="nav-dropdown-item">PD MATS</a>
+                <a href="army.html" class="nav-dropdown-item">ARMY BUILDER</a>
+            </div>
+        </div>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn active"><img src="Ale%20images/tavern.svg" style="height:13px;vertical-align:middle;margin-right:4px;opacity:0.85;">ALE &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="ale.html" class="nav-dropdown-item">&#9876; ALE STATS</a>
+                <a href="alewiki.html" class="nav-dropdown-item">&#9672; ALE WIKI</a>
+                <a href="alements.html" class="nav-dropdown-item">&#11041; STAT EXPLORER</a>
+                <a href="aleleaders.html" class="nav-dropdown-item">&#9670; LEADERBOARD</a>
+                <a href="fighters.html" class="nav-dropdown-item active">&#9876; MY FIGHTERS</a>
+            </div>
+        </div>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn">UTILITY &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="stash.html" class="nav-dropdown-item">&#11041; STASH</a>
+                <a href="outpost.html" class="nav-dropdown-item">OUTPOST</a>
+                <a href="ep.html" class="nav-dropdown-item">&#9672; ENDPOINTS</a>
+            </div>
+        </div>
+        <div class="nav-dropdown-wrap" id="lang-picker">
+            <button class="nav-btn nav-dropdown-btn" id="lang-btn">&#127760; &#9660;</button>
+            <div class="nav-dropdown-menu" style="min-width:130px;left:auto;right:0;">
+                <a class="nav-dropdown-item" href="#" onclick="setLang('fr');return false;"><img src="https://flagcdn.com/16x12/fr.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> FR</a>
+                <a class="nav-dropdown-item" href="#" onclick="setLang('de');return false;"><img src="https://flagcdn.com/16x12/de.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> DE</a>
+                <a class="nav-dropdown-item" href="#" onclick="setLang('it');return false;"><img src="https://flagcdn.com/16x12/it.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> IT</a>
+                <a class="nav-dropdown-item" href="#" onclick="setLang('tl');return false;"><img src="https://flagcdn.com/16x12/ph.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> PH</a>
+                <a class="nav-dropdown-item" href="#" onclick="setLang('id');return false;"><img src="https://flagcdn.com/16x12/id.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> ID</a>
+                <a class="nav-dropdown-item active" href="#" onclick="setLang('en');return false;"><img src="https://flagcdn.com/16x12/gb.png" width="16" height="12" style="vertical-align:middle;margin-right:6px;border-radius:1px;"> EN</a>
+            </div>
+        </div>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-dropdown-btn">Aa &#9660;</button>
+            <div class="nav-dropdown-menu" style="right:0;left:auto;min-width:170px;">
+                <a class="nav-dropdown-item font-opt" href="#" data-font="segoe"    onclick="ftSetFont(this.dataset.font);return false;">CLEAN<span class="font-preview" style="font-family:'Segoe UI',sans-serif;">Segoe UI</span></a>
+                <a class="nav-dropdown-item font-opt" href="#" data-font="calibri"  onclick="ftSetFont(this.dataset.font);return false;">SOFT<span class="font-preview" style="font-family:'Calibri',sans-serif;">Calibri</span></a>
+                <a class="nav-dropdown-item font-opt" href="#" data-font="georgia"  onclick="ftSetFont(this.dataset.font);return false;">CLASSIC<span class="font-preview" style="font-family:'Georgia',serif;">Georgia</span></a>
+                <a class="nav-dropdown-item font-opt active" href="#" data-font="terminal" onclick="ftSetFont(this.dataset.font);return false;">TERMINAL<span class="font-preview" style="font-family:'Courier New',monospace;">Courier New</span></a>
+            </div>
+        </div>
+        <button class="mode-toggle-btn" id="mode-toggle-btn" onclick="toggleDayMode()" title="Toggle day/night mode">&#9728;</button>
+    </nav>
+    <div class="wallet-section">
+        <button id="wallet-connect-btn" class="wallet-btn" onclick="disconnectWallet()" style="display:none;"></button>
+        <button id="wallet-btn-anchor" class="wallet-btn" onclick="loginWithAnchor()">[ &#9875; ANCHOR ]</button>
+        <button id="wallet-btn-wcc" class="wallet-btn" onclick="loginWithWCC()">[ &#9729; CLOUD WALLET ]</button>
+    </div>
+    <button id="hamburger-btn" onclick="toggleHamburger()" aria-label="Navigation">&#9776;</button>
+</header>
+
+<nav id="nav-dropdown">
+    <a href="index.html" class="nav-btn">HUB</a>
+    <a href="ale.html" class="nav-btn">ALE STATS</a>
+    <a href="aleleaders.html" class="nav-btn">LEADERBOARD</a>
+    <a href="fighters.html" class="nav-btn active">MY FIGHTERS</a>
+    <a href="alewiki.html" class="nav-btn">ALE WIKI</a>
+    <a href="map.html" class="nav-btn">MAP</a>
+    <a href="stash.html" class="nav-btn">STASH</a>
+    <a href="ep.html" class="nav-btn">ENDPOINTS</a>
+</nav>
+
+<div class="title-bar">
+    <h1>&#9876; MY FIGHTERS</h1>
+    <p class="sub">YOUR ACTIVE FIGHTERS &middot; SORTABLE BY ANY STAT &middot; SOURCE: FIGHTERS.ALE</p>
+</div>
+
+<div class="controls-bar">
+    <button class="ctrl-btn" id="load-btn" onclick="loadFighters()">&#8635; LOAD FIGHTERS</button>
+    <input id="fighter-search" type="text" placeholder="Filter class, element, race, marker…" oninput="renderTable()">
+    <span id="count-display"></span>
+</div>
+
+<div class="col-toggles">
+    <span class="col-toggle-label">SHOW:</span>
+    <button class="col-toggle col-toggle-blue on"   data-col="lv"     onclick="toggleCol(this)">LV</button>
+    <button class="col-toggle col-toggle-purple on" data-col="marker" onclick="toggleCol(this)">MARKER</button>
+    <button class="col-toggle col-toggle-purple on" data-col="asc"    onclick="toggleCol(this)">ASC</button>
+    <div class="col-toggles-sep"></div>
+    <button class="col-toggle col-toggle-red on"   data-col="hp"     onclick="toggleCol(this)">HP</button>
+    <button class="col-toggle col-toggle-green on" data-col="dmg"    onclick="toggleCol(this)">DMG</button>
+    <button class="col-toggle on"                  data-col="cd"     onclick="toggleCol(this)">CD</button>
+    <button class="col-toggle on"                  data-col="wu"     onclick="toggleCol(this)">WU</button>
+    <button class="col-toggle col-toggle-blue on"  data-col="tnt"    onclick="toggleCol(this)">TNT</button>
+    <div class="col-toggles-sep"></div>
+    <button class="col-toggle on" data-col="xp" onclick="toggleCol(this)">XP</button>
+    <button class="col-toggle" data-col="abilities" onclick="toggleCol(this)">ABILITIES</button>
+    <button class="col-toggle" data-col="id"       onclick="toggleCol(this)">FIGHTER ID</button>
+</div>
+
+<div class="table-wrap">
+    <div id="table-container">
+        <div class="lb-empty">Log in and click LOAD FIGHTERS to see your roster.</div>
+    </div>
+</div>
+
+<footer>
+    <span>NARON CODEX &mdash; ALIEN LEGENDS FIGHTER ROSTER</span>
+    <span id="footer-wallet"></span>
+</footer>
+
+<script>
+// ── CONSTANTS ────────────────────────────────────────────────────────────────
+var RPC = ['https://api.waxsweden.org','https://wax.eosphere.io','https://wax.eosnation.io'];
+
+var FIGHTER_CLASSES = {
+    'voidwarden':   {e:'🛡',  n:'Voidwarden'},
+    'juggernaut':   {e:'💪',  n:'Juggernaut'},
+    'lunatic':      {e:'🤪',  n:'Lunatic'},
+    'arcanist':     {e:'✨',  n:'Arcanist'},
+    'hunter':       {e:'🔫',  n:'Hunter'},
+    'explosioneer': {e:'💣',  n:'Explosioneer'},
+    'mindblade':    {e:'🧠',  n:'Mindblade'},
+    'desperado':    {e:'🃏',  n:'Desperado'},
+    'astralknight': {e:'🙏',  n:'Astral Knight'},
+    'mystic':       {e:'🧙',  n:'Mystic'},
+    'voidcaller':   {e:'🌀',  n:'Voidcaller'},
+    'tactician':    {e:'🎯',  n:'Tactician'},
+};
+
+var FIGHTER_ELEMENTS = {
+    'fire':'🔥','nature':'🌿','metal':'⚙️','air':'💨','gem':'💎','neutral':'⬜',
+};
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+var _fighters  = [];
+var _filtered  = [];
+var _sortCol   = 'lv';
+var _sortDir   = -1; // -1 = desc, 1 = asc
+var _hiddenCols = {};
+
+// ── FETCH ────────────────────────────────────────────────────────────────────
+async function fetchRows(p) {
+    for (var i = 0; i < RPC.length; i++) {
+        try {
+            var ctrl = new AbortController();
+            var tid  = setTimeout(function(){ ctrl.abort(); }, 6000);
+            var r = await fetch(RPC[i] + '/v1/chain/get_table_rows', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify(p), signal: ctrl.signal
+            });
+            clearTimeout(tid);
+            if (!r.ok) continue;
+            var j = await r.json();
+            if (j.rows !== undefined) return j;
+        } catch(e) { continue; }
+    }
+    return null;
+}
+
+async function loadFighters() {
+    var wallet = getWallet();
+    if (!wallet) { showEmpty('Log in first — click an auth button in the header.'); return; }
+    var btn = document.getElementById('load-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'LOADING…'; }
+    showEmpty('<span class="loading-pulse">LOADING FIGHTERS…</span>');
+
+    try {
+        var all = [], more = true, lb = null;
+        while (more) {
+            var p = {code:'fighters.ale', scope:wallet, table:'fighters', limit:100, json:true};
+            if (lb) p.lower_bound = lb;
+            var res = await fetchRows(p);
+            if (!res || !res.rows) break;
+            all = all.concat(res.rows);
+            more = res.more;
+            if (more && res.rows.length) lb = res.next_key || null;
+            if (!lb) break;
+        }
+        _fighters = all.filter(function(f){ return f.active === 1 || f.active === '1'; });
+        console.log('[fighters] loaded', _fighters.length, 'active for', wallet);
+        document.getElementById('footer-wallet').textContent = wallet;
+        renderTable();
+    } catch(e) {
+        showEmpty('ERROR: ' + (e && e.message || String(e)));
+    }
+
+    if (btn) { btn.disabled = false; btn.textContent = '⟳ REFRESH'; }
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+var COL_DEFS = [
+    { key:'lv',        label:'LV',        title:'Level',                    sortVal: function(f){ return (f.stats&&f.stats.level!=null)?Number(f.stats.level):0; } },
+    { key:'marker',    label:'MARKER',     title:'Marker type',              sortVal: function(f){ return f.marker||''; } },
+    { key:'asc',       label:'ASC',        title:'Ascension count',          sortVal: function(f){ return Number(f.asc_level||f.ascension_level||f.ascensions||0); } },
+    { key:'hp',        label:'HP',         title:'Health (max)',              sortVal: function(f){ return (f.stats&&f.stats.health_max!=null)?Number(f.stats.health_max):0; } },
+    { key:'dmg',       label:'DMG',        title:'Damage (max)',              sortVal: function(f){ return (f.stats&&f.stats.damage_max!=null)?Number(f.stats.damage_max):0; } },
+    { key:'cd',        label:'CD ▲',       title:'Cooldown — lower is faster', sortVal: function(f){ return (f.stats&&f.stats.attackspeed_min!=null)?Number(f.stats.attackspeed_min):9999; } },
+    { key:'wu',        label:'WU ▲',       title:'Warmup / initiative — lower is faster', sortVal: function(f){ return (f.stats&&f.stats.initiative_min!=null)?Number(f.stats.initiative_min):9999; } },
+    { key:'tnt',       label:'TNT',        title:'Taunt (max)',               sortVal: function(f){ return (f.stats&&f.stats.taunt_max!=null)?Number(f.stats.taunt_max):0; } },
+    { key:'xp',        label:'XP%',        title:'XP progress to next level', sortVal: function(f){ var s=f.stats||{}; return s.required_experience?Number(s.experience||0)/Number(s.required_experience):0; } },
+    { key:'abilities', label:'ABILITIES',  title:'Unlocked abilities',        sortVal: function(f){ return (f.stats&&f.stats.abilities)?f.stats.abilities.length:0; } },
+    { key:'id',        label:'ID',         title:'Fighter asset ID',          sortVal: function(f){ return Number(f.fighter_id||0); } },
+];
+
+function cellContent(key, f) {
+    var s = f.stats || {};
+    function rng(mn, mx) {
+        if (mn == null && mx == null) return '<span class="zero">—</span>';
+        if (mn === mx || mn == null) return mx != null ? mx : mn;
+        return mn + ' – ' + mx;
+    }
+    switch(key) {
+        case 'lv':        return s.level != null ? s.level : '<span class="zero">—</span>';
+        case 'marker': {
+            var mk = f.marker || '';
+            return mk ? '<span class="marker-badge">' + mk.toUpperCase() + '</span>' : '<span class="zero">—</span>';
+        }
+        case 'asc': {
+            var av = Number(f.asc_level || f.ascension_level || f.ascensions || 0);
+            return av > 0 ? '<span class="asc-val">' + '★'.repeat(Math.min(av,5)) + (av > 5 ? ' '+av : '') + '</span>'
+                          : '<span class="zero">—</span>';
+        }
+        case 'hp':  return rng(s.health_min,      s.health_max);
+        case 'dmg': return rng(s.damage_min,       s.damage_max);
+        case 'cd':  return rng(s.attackspeed_min,  s.attackspeed_max);
+        case 'wu':  return rng(s.initiative_min,   s.initiative_max);
+        case 'tnt': return rng(s.taunt_min,        s.taunt_max);
+        case 'xp': {
+            if (!s.required_experience) return '<span class="zero">—</span>';
+            var pct = Math.min(100, Math.round(100 * Number(s.experience || 0) / Number(s.required_experience)));
+            return '<span class="xp-bar-wrap">'
+                + '<span class="xp-bar-outer"><span class="xp-bar-inner" style="width:' + pct + '%"></span></span>'
+                + ' ' + pct + '%'
+                + '</span>';
+        }
+        case 'abilities': {
+            var abls = s.abilities || [];
+            if (!abls.length) return '<span class="zero">—</span>';
+            return abls.map(function(a){ return a.displayname || a.name || '?'; }).join(', ');
+        }
+        case 'id': return '<span style="font-size:0.85em;color:var(--muted);">' + (f.fighter_id || '—') + '</span>';
+    }
+    return '';
+}
+
+function renderTable() {
+    var q = (document.getElementById('fighter-search').value || '').toLowerCase().trim();
+    _filtered = _fighters.filter(function(f) {
+        if (!q) return true;
+        var hay = [f.classname, f.element, f.racename, f.marker]
+            .map(function(v){ return (v||'').toLowerCase(); }).join(' ');
+        return hay.indexOf(q) !== -1;
+    });
+
+    // Sort
+    var sortDef = COL_DEFS.find(function(d){ return d.key === _sortCol; });
+    if (sortDef) {
+        _filtered.sort(function(a, b) {
+            var av = sortDef.sortVal(a), bv = sortDef.sortVal(b);
+            if (av < bv) return _sortDir;
+            if (av > bv) return -_sortDir;
+            return 0;
+        });
+    }
+
+    var cd = document.getElementById('count-display');
+    if (cd) cd.textContent = _filtered.length + ' / ' + _fighters.length + ' FIGHTERS';
+
+    if (!_fighters.length) {
+        showEmpty('No fighters loaded — log in and click LOAD FIGHTERS.');
+        return;
+    }
+    if (!_filtered.length) {
+        showEmpty('No fighters match that filter.');
+        return;
+    }
+
+    var visibleCols = COL_DEFS.filter(function(d){ return !_hiddenCols[d.key]; });
+
+    var thead = '<thead><tr>'
+        + '<th onclick="sortBy(\'#\')" title="Row number">#</th>'
+        + '<th class="left" onclick="sortBy(\'class\')" title="Class">CLASS'
+            + (_sortCol==='class' ? (_sortDir===-1?' <span style="color:var(--gold)">▼</span>':' <span style="color:var(--gold)">▲</span>') : '') + '</th>'
+        + '<th onclick="sortBy(\'element\')" title="Element">EL'
+            + (_sortCol==='element' ? (_sortDir===-1?' <span style="color:var(--gold)">▼</span>':' <span style="color:var(--gold)">▲</span>') : '') + '</th>'
+        + '<th class="left" onclick="sortBy(\'race\')" title="Race">RACE'
+            + (_sortCol==='race' ? (_sortDir===-1?' <span style="color:var(--gold)">▼</span>':' <span style="color:var(--gold)">▲</span>') : '') + '</th>';
+
+    visibleCols.forEach(function(d) {
+        var sorted = _sortCol === d.key;
+        var arrow  = sorted ? (_sortDir === -1 ? ' sort-desc' : ' sort-asc') : '';
+        var left   = (d.key === 'abilities' || d.key === 'marker') ? ' left' : '';
+        thead += '<th class="' + arrow + left + '" onclick="sortBy(\'' + d.key + '\')" title="' + d.title + '">'
+               + d.label + '</th>';
+    });
+    thead += '</tr></thead>';
+
+    var tbody = '<tbody>';
+    _filtered.forEach(function(f, i) {
+        var cls  = (f.classname || '').toLowerCase().replace(/[\s_-]/g, '');
+        var ci   = FIGHTER_CLASSES[cls] || {e:'⚔️', n: f.classname || '?'};
+        var el   = (f.element || '').toLowerCase();
+        var ee   = FIGHTER_ELEMENTS[el] || '';
+        var race = (f.racename || '').toUpperCase();
+        var dep  = f.in_use === 1 || f.in_use === '1';
+
+        tbody += '<tr>'
+            + '<td>' + (i + 1) + '</td>'
+            + '<td class="left">'
+                + (dep ? '<span class="deployed-dot" title="Deployed"></span>' : '')
+                + '<span class="cls-badge">' + ci.e + '</span>'
+                + '<span class="cls-name">' + ci.n.toUpperCase() + '</span>'
+            + '</td>'
+            + '<td title="' + el + '"><span class="el-badge">' + (ee || el.slice(0,3).toUpperCase() || '—') + '</span></td>'
+            + '<td class="left" style="color:var(--muted);font-size:0.88em;">' + (race || '<span class="zero">—</span>') + '</td>';
+
+        visibleCols.forEach(function(d) {
+            var left = (d.key === 'abilities' || d.key === 'marker') ? ' class="left"' : '';
+            tbody += '<td' + left + '>' + cellContent(d.key, f) + '</td>';
+        });
+        tbody += '</tr>';
+    });
+    tbody += '</tbody>';
+
+    document.getElementById('table-container').innerHTML =
+        '<table class="lb-table">' + thead + tbody + '</table>';
+}
+
+function sortBy(col) {
+    if (_sortCol === col) { _sortDir *= -1; }
+    else { _sortCol = col; _sortDir = -1; }
+    renderTable();
+}
+
+function toggleCol(btn) {
+    var col = btn.dataset.col;
+    _hiddenCols[col] = !_hiddenCols[col];
+    btn.classList.toggle('on', !_hiddenCols[col]);
+    renderTable();
+}
+
+function showEmpty(msg) {
+    document.getElementById('table-container').innerHTML = '<div class="lb-empty">' + msg + '</div>';
+}
+
+// ── WALLET ───────────────────────────────────────────────────────────────────
+var wax = new waxjs.WaxJS({ rpcEndpoint:'https://wax.greymass.com', userAccount:'', tryAutoLogin:false });
+
+function getWallet() {
+    if (window.walletSession) return String(window.walletSession.actor);
+    if (wax && wax.userAccount) return wax.userAccount;
+    return localStorage.getItem('naron_wallet') || null;
+}
+
+function checkWalletState() {
+    var w = getWallet();
+    var cb  = document.getElementById('wallet-connect-btn');
+    var ba  = document.getElementById('wallet-btn-anchor');
+    var bw  = document.getElementById('wallet-btn-wcc');
+    if (w) {
+        if (cb) { cb.style.display=''; cb.textContent='[ ✓ ' + w + ' ]'; cb.classList.add('logged-in'); }
+        if (ba) ba.style.display='none';
+        if (bw) bw.style.display='none';
+        document.getElementById('footer-wallet').textContent = w;
+    } else {
+        if (cb) cb.style.display='none';
+        if (ba) ba.style.display='';
+        if (bw) bw.style.display='';
+    }
+}
+
+async function loginWithAnchor() {
+    try {
+        var res = await window.walletKit.login({ walletPlugin: { id:'wallet-plugin-anchor' } });
+        window.walletSession = res.session;
+        localStorage.setItem('naron_wallet', String(res.session.actor));
+        checkWalletState();
+    } catch(e) { console.warn('Anchor login failed', e); }
+}
+
+async function loginWithWCC() {
+    try {
+        await wax.login();
+        localStorage.setItem('naron_wallet', wax.userAccount);
+        checkWalletState();
+    } catch(e) { console.warn('WCC login failed', e); }
+}
+
+function disconnectWallet() {
+    window.walletSession = null;
+    localStorage.removeItem('naron_wallet');
+    if (wax) { try { wax.userAccount = null; } catch(e){} }
+    checkWalletState();
+}
+
+// ── DAY MODE + FONT ──────────────────────────────────────────────────────────
+function toggleDayMode() {
+    var on = document.documentElement.classList.toggle('day');
+    localStorage.setItem('naron_day', on ? '1' : '');
+    var btn = document.getElementById('mode-toggle-btn');
+    if (btn) btn.title = on ? 'Switch to night mode' : 'Switch to day mode';
+}
+
+var _fontFamilies = {
+    terminal : "'Courier New',Courier,monospace",
+    segoe    : "'Segoe UI','Helvetica Neue',Arial,sans-serif",
+    calibri  : "'Calibri','Trebuchet MS',Arial,sans-serif",
+    georgia  : "'Georgia','Times New Roman',serif",
+};
+
+function ftSetFont(name) {
+    document.documentElement.style.fontFamily = _fontFamilies[name] || _fontFamilies.terminal;
+    localStorage.setItem('naron_font', name);
+    document.querySelectorAll('.font-opt').forEach(function(a) {
+        a.classList.toggle('active', a.dataset.font === name);
+    });
+}
+
+// ── LANG STUB ────────────────────────────────────────────────────────────────
+function setLang(l) { /* placeholder */ }
+
+// ── HAMBURGER ────────────────────────────────────────────────────────────────
+function toggleHamburger() {
+    document.getElementById('nav-dropdown').classList.toggle('open');
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+(function init() {
+    if (localStorage.getItem('naron_day') === '1') document.documentElement.classList.add('day');
+    var savedFont = localStorage.getItem('naron_font');
+    if (savedFont && _fontFamilies[savedFont]) ftSetFont(savedFont);
+    checkWalletState();
+    // Init column toggle visual state
+    COL_DEFS.forEach(function(d) {
+        // all on by default via HTML class — nothing to override
+    });
+})();
+</script>
+</body>
+</html>
