@@ -121,9 +121,9 @@
     .lb-table .deployed-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:#40c070; margin-right:4px; vertical-align:middle; }
 
     /* XP bar in cell */
-    .xp-bar-wrap { display:inline-flex; align-items:center; gap:5px; }
-    .xp-bar-outer { width:48px; height:5px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; display:inline-block; vertical-align:middle; }
-    .xp-bar-inner { height:100%; background:var(--gold); border-radius:2px; }
+    .xp-bar-outer { position:relative; width:130px; height:17px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; display:inline-block; vertical-align:middle; border:1px solid rgba(232,160,32,0.15); }
+    .xp-bar-inner { position:absolute; left:0; top:0; height:100%; background:rgba(232,160,32,0.28); border-radius:2px; }
+    .xp-bar-text  { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:0.7em; color:rgba(220,200,160,0.9); letter-spacing:0.3px; white-space:nowrap; z-index:1; }
 
     /* element / class badge */
     .el-badge { font-size:1.1em; line-height:1; }
@@ -181,7 +181,9 @@
     html.day .col-toggle { color:#6070a0; border-color:rgba(0,60,140,0.2); }
     html.day .col-toggle.on { color:var(--gold); border-color:var(--gold); background:rgba(154,104,0,0.07); }
     html.day .lb-empty { color:var(--muted); }
-    html.day .xp-bar-outer { background:rgba(0,60,140,0.1); }
+    html.day .xp-bar-outer { background:rgba(0,60,140,0.08); border-color:rgba(0,80,200,0.2); }
+    html.day .xp-bar-inner { background:rgba(154,104,0,0.22); }
+    html.day .xp-bar-text  { color:rgba(60,80,140,0.9); }
     html.day .cls-name { color:var(--gold); }
     </style>
 </head>
@@ -431,10 +433,13 @@ function cellContent(key, f) {
         case 'tnt': return rng(s.taunt_min,        s.taunt_max);
         case 'xp': {
             if (!s.required_experience) return '<span class="zero">—</span>';
-            var pct = Math.min(100, Math.round(100 * Number(s.experience || 0) / Number(s.required_experience)));
-            return '<span class="xp-bar-wrap">'
-                + '<span class="xp-bar-outer"><span class="xp-bar-inner" style="width:' + pct + '%"></span></span>'
-                + ' ' + pct + '%'
+            var cur = Number(s.experience || 0);
+            var req = Number(s.required_experience);
+            var pct = Math.min(100, Math.round(cur / req * 100));
+            var fmt = function(n){ return n.toLocaleString(); };
+            return '<span class="xp-bar-outer">'
+                + '<span class="xp-bar-inner" style="width:' + pct + '%"></span>'
+                + '<span class="xp-bar-text">' + fmt(cur) + ' / ' + fmt(req) + '</span>'
                 + '</span>';
         }
         case 'abilities': {
