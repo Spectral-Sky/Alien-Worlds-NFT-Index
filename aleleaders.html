@@ -1525,7 +1525,7 @@
     window.lbSetFont = function(key) {
         if (!LB_FONT_MAP[key]) return;
         document.body.style.fontFamily = LB_FONT_MAP[key];
-        try { localStorage.setItem('naron_lb_font', key); } catch(e) {}
+        try { localStorage.setItem('naron_font', key); } catch(e) {}
         document.querySelectorAll('#lb-font-picker .font-opt').forEach(function(a) {
             a.classList.toggle('active', a.dataset.font === key);
         });
@@ -1534,7 +1534,7 @@
     // ── DAY MODE ──────────────────────────────────────────────────────────────
     window.toggleDayMode = function() {
         var isDay = document.documentElement.classList.toggle('day');
-        try { localStorage.setItem('naron_lb_day', isDay ? '1' : '0'); } catch(e) {}
+        try { localStorage.setItem('naron_day', isDay ? '1' : '0'); } catch(e) {}
         var btn = document.getElementById('mode-toggle-btn');
         if (btn) btn.textContent = isDay ? '🌙' : '☀';
     };
@@ -1547,7 +1547,7 @@
     setInterval(fetchLbPrices, 5 * 60 * 1000);
     // Restore font preference
     (function() {
-        var sf = localStorage.getItem('naron_lb_font');
+        var sf = localStorage.getItem('naron_font');
         if (sf && LB_FONT_MAP[sf]) {
             document.body.style.fontFamily = LB_FONT_MAP[sf];
             document.querySelectorAll('#lb-font-picker .font-opt').forEach(function(a) {
@@ -1556,7 +1556,7 @@
         }
     })();
     // Restore day mode preference
-    if (localStorage.getItem('naron_lb_day') === '1') {
+    if (localStorage.getItem('naron_day') === '1') {
         document.documentElement.classList.add('day');
         var _modeBtn = document.getElementById('mode-toggle-btn');
         if (_modeBtn) _modeBtn.textContent = '🌙';

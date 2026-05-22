@@ -2172,5 +2172,57 @@ function spawnStar() {
     })();
 </script>
 <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<!-- __ SHARED DAY MODE + FONT (injected) __ -->
+<style id="pg-theme-css">
+:root.day{--pg-bg:#f0f4ff;--pg-gold:#9a6800;--pg-text:#182038;--pg-muted:#3a5080;}
+html.day,html.day body{background:#f0f4ff!important;color:#182038!important;}
+html.day .global-header{background:rgba(232,240,255,0.98)!important;border-bottom-color:#9a6800!important;box-shadow:0 2px 12px rgba(0,60,140,0.12)!important;}
+html.day .nav-btn{color:#4060a0!important;}
+html.day .nav-btn:hover{color:#9a6800!important;}
+html.day .nav-btn.active{color:#fff!important;background:#9a6800!important;border-color:#9a6800!important;}
+html.day .nav-dropdown-btn{color:#4060a0!important;}
+html.day .nav-dropdown-menu{background:rgba(232,240,255,0.98)!important;border-color:rgba(0,60,140,0.25)!important;box-shadow:0 8px 24px rgba(0,60,140,0.15)!important;}
+html.day .nav-dropdown-item{color:#4060a0!important;}
+html.day .nav-dropdown-item:hover{color:#9a6800!important;background:rgba(0,80,200,0.05)!important;}
+html.day .wallet-btn{background:#dce8f8!important;border-color:rgba(0,60,140,0.2)!important;color:#9a6800!important;}
+html.day ::-webkit-scrollbar-track{background:#dce8f8;}
+html.day ::-webkit-scrollbar-thumb{background:#a0b4d0;}
+html.day table td,html.day table th{color:#182038!important;}
+html.day table th{background:#dce8f0!important;}
+html.day input,html.day select,html.day textarea{background:#f0f4ff!important;color:#182038!important;border-color:rgba(0,60,140,0.3)!important;}
+.pg-mode-btn{background:transparent;border:1px solid rgba(232,160,32,0.25);color:#888;padding:6px 9px;font-size:1em;cursor:pointer;border-radius:2px;transition:all 0.2s;line-height:1;margin-left:4px;}
+.pg-mode-btn:hover{color:#c89020;border-color:rgba(232,160,32,0.6);background:rgba(232,160,32,0.06);}
+html.day .pg-mode-btn{color:#4060a0;border-color:rgba(0,60,140,0.3);}
+html.day .pg-mode-btn:hover{color:#9a6800;border-color:#9a6800;}
+.pg-font-dd .nav-dropdown-btn{background:transparent;border:1px solid rgba(232,160,32,0.35);color:#888;padding:6px 10px;font-family:'Courier New',monospace;font-size:0.74em;cursor:pointer;border-radius:2px;transition:all 0.2s;letter-spacing:1px;margin-left:4px;}
+.pg-font-dd .nav-dropdown-btn:hover{color:#c89020;border-color:rgba(232,160,32,0.7);background:rgba(232,160,32,0.06);}
+html.day .pg-font-dd .nav-dropdown-btn{color:#4060a0;border-color:rgba(0,60,140,0.3);}
+html.day .pg-font-dd .nav-dropdown-btn:hover{color:#9a6800;border-color:#9a6800;}
+.pg-font-dd .nav-dropdown-menu{right:0;left:auto!important;min-width:175px;}
+.font-preview{display:block;font-size:0.85em;color:#666;margin-top:1px;}
+html.day .font-preview{color:#3a5080;}
+</style>
+<script id="pg-theme-js">
+(function(){
+var _FM={'segoe':"'Segoe UI','Helvetica Neue',Arial,sans-serif",'calibri':"'Calibri','Trebuchet MS',sans-serif",'georgia':"'Georgia',serif",'terminal':"'Courier New',Courier,monospace"};
+window.pgSetFont=function(k){if(!_FM[k])return;document.body.style.fontFamily=_FM[k];try{localStorage.setItem('naron_font',k);}catch(e){}document.querySelectorAll('.pg-font-dd .font-opt').forEach(function(a){a.classList.toggle('active',a.dataset.font===k);});};
+window.pgToggleDay=function(){var d=document.documentElement.classList.toggle('day');try{localStorage.setItem('naron_day',d?'1':'0');}catch(e){}var b=document.getElementById('pg-mode-btn');if(b)b.textContent=d?'🌙':'☀';};
+function _inj(){
+  if(document.getElementById('pg-mode-btn'))return;
+  var ws=document.querySelector('.wallet-section')||document.querySelector('.global-header');
+  if(!ws)return;
+  var fd=document.createElement('div');fd.className='nav-dropdown-wrap pg-font-dd';
+  fd.innerHTML='<button class="nav-dropdown-btn">Aa &#9660;<\/button><div class="nav-dropdown-menu"><a class="nav-dropdown-item font-opt" href="#" data-font="segoe" onclick="pgSetFont('segoe');return false;">CLEAN<span class="font-preview" style="font-family:'Segoe UI',sans-serif;">Segoe UI<\/span><\/a><a class="nav-dropdown-item font-opt" href="#" data-font="calibri" onclick="pgSetFont('calibri');return false;">SOFT<span class="font-preview" style="font-family:'Calibri',sans-serif;">Calibri<\/span><\/a><a class="nav-dropdown-item font-opt" href="#" data-font="georgia" onclick="pgSetFont('georgia');return false;">CLASSIC<span class="font-preview" style="font-family:'Georgia',serif;">Georgia<\/span><\/a><a class="nav-dropdown-item font-opt active" href="#" data-font="terminal" onclick="pgSetFont('terminal');return false;">TERMINAL<span class="font-preview" style="font-family:'Courier New',monospace;">Courier New<\/span><\/a><\/div>';
+  var mb=document.createElement('button');mb.id='pg-mode-btn';mb.className='pg-mode-btn';mb.title='Toggle day/night mode';
+  var isDay=document.documentElement.classList.contains('day');mb.textContent=isDay?'🌙':'☀';
+  mb.onclick=pgToggleDay;ws.appendChild(fd);ws.appendChild(mb);
+  var sf=localStorage.getItem('naron_font');if(sf)document.querySelectorAll('.pg-font-dd .font-opt').forEach(function(a){a.classList.toggle('active',a.dataset.font===sf);});
+}
+var sf=localStorage.getItem('naron_font');if(sf&&_FM[sf])document.body.style.fontFamily=_FM[sf];
+if(localStorage.getItem('naron_day')==='1')document.documentElement.classList.add('day');
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',_inj);else _inj();
+})();
+</script>
 </body>
 </html>

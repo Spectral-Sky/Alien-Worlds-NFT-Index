@@ -1462,26 +1462,26 @@
     window.aleSetFont = function(key) {
         if (!ALE_FONT_MAP[key]) return;
         document.body.style.fontFamily = ALE_FONT_MAP[key];
-        try { localStorage.setItem('naron_ale_font', key); } catch(e) {}
+        try { localStorage.setItem('naron_font', key); } catch(e) {}
         document.querySelectorAll('#ale-font-picker .font-opt').forEach(function(a) {
             a.classList.toggle('active', a.dataset.font === key);
         });
     };
     window.aleToggleDayMode = function() {
         var isDay = document.documentElement.classList.toggle('day');
-        try { localStorage.setItem('naron_ale_day', isDay ? '1' : '0'); } catch(e) {}
+        try { localStorage.setItem('naron_day', isDay ? '1' : '0'); } catch(e) {}
         var btn = document.getElementById('ale-mode-btn');
         if (btn) btn.textContent = isDay ? '🌙' : '☀';
     };
     // Restore on load
-    var sf = localStorage.getItem('naron_ale_font');
+    var sf = localStorage.getItem('naron_font');
     if (sf && ALE_FONT_MAP[sf]) {
         document.body.style.fontFamily = ALE_FONT_MAP[sf];
         document.querySelectorAll('#ale-font-picker .font-opt').forEach(function(a) {
             a.classList.toggle('active', a.dataset.font === sf);
         });
     }
-    if (localStorage.getItem('naron_ale_day') === '1') {
+    if (localStorage.getItem('naron_day') === '1') {
         document.documentElement.classList.add('day');
         var _mBtn = document.getElementById('ale-mode-btn');
         if (_mBtn) _mBtn.textContent = '🌙';

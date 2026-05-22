@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>⬡ Elemental Interactions — Alien Legends</title>
+<template id="__bundler_thumbnail" data-bg-color="#03060f">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(600 400)">
+      <polygon points="0,-220 191,-110 191,110 0,220 -191,110 -191,-110"
+               fill="none" stroke="#e8a020" stroke-width="3" opacity="0.5"/>
+      <circle cx="0"    cy="-220" r="44" fill="#ef6a28"/>
+      <circle cx="191"  cy="-110" r="44" fill="#8a5a3a"/>
+      <circle cx="191"  cy="110"  r="44" fill="#c060d0"/>
+      <circle cx="0"    cy="220"  r="44" fill="#80c0e0"/>
+      <circle cx="-191" cy="110"  r="44" fill="#40a050"/>
+      <circle cx="-191" cy="-110" r="44" fill="#1e3a8a"/>
+      <text y="310" text-anchor="middle" fill="#e8a020"
+            font-family="Courier New, monospace" font-size="28" letter-spacing="8">
+        ⬡ ELEMENTAL INTERACTIONS
+      </text>
+    </g>
+  </svg>
+</template>
+<style>
+  :root {
+    --bg: #03060f;
+    --gold: #e8a020;
+    --gold-dim: #8a6014;
+    --muted: #6a7080;
+    --text: #d8dce6;
+    --weak-color: #444558;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', Courier, monospace;
+  }
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px 16px;
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(232,160,32,0.04), transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(64,96,192,0.05), transparent 50%),
+      var(--bg);
+  }
+  header {
+    width: 100%;
+    max-width: 1100px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(232,160,32,0.25);
+    padding-bottom: 10px;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+  }
+  h1 {
+    font-size: 18px;
+    letter-spacing: 4px;
+    color: var(--gold);
+    font-weight: normal;
+    text-transform: uppercase;
+    font-family: 'Courier New', monospace;
+  }
+  h1 .hex {
+    color: var(--gold);
+    margin-right: 8px;
+    text-shadow: 0 0 12px rgba(232,160,32,0.6);
+  }
+  .meta {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .meta .dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #70e090;
+    margin-right: 6px;
+    vertical-align: middle;
+    box-shadow: 0 0 8px #70e090;
+    animation: blink 2s infinite;
+  }
+  @keyframes blink { 50% { opacity: 0.35; } }
+
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 1100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 8px 0;
+  }
+
+  .stage {
+    position: relative;
+    width: min(680px, 82vmin, calc(100vh - 220px));
+    height: min(680px, 82vmin, calc(100vh - 220px));
+    aspect-ratio: 1 / 1;
+  }
+
+  .stage svg.arrows {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .orb {
+    position: absolute;
+    width: 77px;
+    height: 77px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: transform 0.3s ease;
+    cursor: default;
+    z-index: 2;
+  }
+  .orb:hover { transform: translate(-50%, -50%) scale(1.07); }
+  .orb .disc {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    overflow: visible;
+  }
+  .orb .glyph {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 54%;
+    height: 54%;
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+    pointer-events: none;
+  }
+  .orb .label {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--text);
+    white-space: nowrap;
+    text-align: center;
+  }
+  .orb .label .sub {
+    display: block;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    margin-top: 2px;
+  }
+
+  /* Arrow tier visibility */
+  .arc, .arc-label-group {
+    transition: opacity 0.2s;
+  }
+  .stage[data-tier-primary="off"]   .arc.tier-primary,
+  .stage[data-tier-primary="off"]   .arc-label-group.tier-primary { display: none; }
+  .stage[data-tier-secondary="off"] .arc.tier-secondary,
+  .stage[data-tier-secondary="off"] .arc-label-group.tier-secondary { display: none; }
+  .stage[data-tier-weak="off"]      .arc.tier-weak,
+  .stage[data-tier-weak="off"]      .arc-label-group.tier-weak { display: none; }
+  .stage[data-tier-neutral="off"]   .arc.tier-neutral,
+  .stage[data-tier-neutral="off"]   .arc-label-group.tier-neutral { display: none; }
+
+  /* Hover dim */
+  .stage[data-focus] .arc,
+  .stage[data-focus] .arc-label-group { opacity: 0.15; }
+  .stage[data-focus] .arc.involved,
+  .stage[data-focus] .arc-label-group.involved { opacity: 1; }
+
+  .arc {
+    fill: none;
+    cursor: pointer;
+  }
+  .arc.tier-primary { stroke-width: 4.5; opacity: 0.98; }
+  .arc.tier-secondary { stroke-width: 2.8; opacity: 0.8; }
+  .arc.tier-weak { stroke-width: 2.2; opacity: 0.9; stroke-dasharray: 6 5; }
+  .arc.tier-neutral { stroke-width: 2.4; opacity: 0.8; stroke-dasharray: 2 5; }
+  .arc:hover { stroke-width: 5.5 !important; opacity: 1 !important; }
+
+  .arc-label-bg {
+    fill: rgba(0,0,0,0.75);
+    stroke: rgba(232,160,32,0.15);
+    stroke-width: 1;
+  }
+  .arc-label-text {
+    fill: var(--text);
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(8, 12, 22, 0.95);
+    border: 1px solid rgba(232,160,32,0.4);
+    color: var(--text);
+    padding: 6px 10px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    z-index: 10;
+    opacity: 0;
+    transform: translate(-50%, -140%);
+    transition: opacity 0.12s;
+  }
+  .tooltip.show { opacity: 1; }
+  .tooltip .vs { color: var(--muted); margin: 0 6px; }
+  .tooltip .mult { color: var(--gold); margin-left: 6px; }
+
+  /* Toggle buttons */
+  .toggles {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .toggle {
+    background: transparent;
+    border: 1px solid rgba(232,160,32,0.25);
+    color: var(--muted);
+    padding: 8px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .toggle:hover { border-color: var(--gold); color: var(--text); }
+  .toggle .swatch {
+    width: 20px;
+    height: 0;
+    flex-shrink: 0;
+  }
+  .toggle .swatch.solid-thick { border-top: 3px solid var(--gold); }
+  .toggle .swatch.solid-thin  { border-top: 1.5px solid var(--gold); opacity: 0.6; }
+  .toggle .swatch.dashed      { border-top: 1px dashed var(--weak-color); }
+  .toggle .swatch.neutral     { border-top: 2px dotted #e8d090; }
+  .toggle.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(232,160,32,0.06);
+  }
+  .toggle.active .swatch.solid-thick,
+  .toggle.active .swatch.solid-thin { border-top-color: var(--gold); }
+
+  footer {
+    width: 100%;
+    max-width: 1100px;
+    padding-top: 12px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="hex">⬡</span> Elemental Interactions</h1>
+  <div class="meta"><span class="dot"></span>FIGHTERS.ALE · NFTELEMENT · 6 ELEMENTS</div>
+</header>
+
+<main>
+  <div class="stage" id="stage"
+       data-tier-primary="on"
+       data-tier-secondary="on"
+       data-tier-weak="off"
+       data-tier-neutral="on">
+    <svg class="arrows" viewBox="0 0 720 720" preserveAspectRatio="xMidYMid meet">
+      <defs id="defs"></defs>
+      <g id="arrowLayer"></g>
+      <g id="labelLayer"></g>
+    </svg>
+    <div id="orbs"></div>
+  </div>
+
+  <div class="toggles">
+    <button class="toggle active" data-tier="primary">
+      <span class="swatch solid-thick"></span>PRIMARY · 200
+    </button>
+    <button class="toggle active" data-tier="secondary">
+      <span class="swatch solid-thin"></span>SECONDARY · 100
+    </button>
+    <button class="toggle" data-tier="weak">
+      <span class="swatch dashed"></span>WEAK · 50
+    </button>
+    <button class="toggle active" data-tier="neutral">
+      <span class="swatch neutral"></span>NEUTRAL · 100
+    </button>
+  </div>
+</main>
+
+<footer>
+  <div>CYCLE · FIRE → NATURE → AIR → GEM → METAL → FIRE</div>
+  <div>NEUTRAL · NO INTERACTIONS</div>
+</footer>
+
+<div class="tooltip" id="tooltip">
+  <span id="tt-a"></span><span class="vs">→</span><span id="tt-b"></span><span class="mult" id="tt-m"></span>
+</div>
+
+<script>
+(() => {
+  // --- Palette ---
+  const PALETTE = {
+    fire:    '#ef6a28',   // orangey fire
+    nature:  '#40a050',
+    air:     '#80c0e0',
+    gem:     '#c060d0',
+    metal:   '#8a5a3a',   // rusty brown
+    neutral: '#1e3a8a',   // dark blue
+  };
+
+  // --- Elements (5 around pentagon, neutral at center) ---
+  const ELEMENTS = [
+    { key: 'fire',    name: 'Fire',    id: 0 },
+    { key: 'metal',   name: 'Metal',   id: 1 },
+    { key: 'gem',     name: 'Gem',     id: 2 },
+    { key: 'air',     name: 'Air',     id: 3 },
+    { key: 'nature',  name: 'Nature',  id: 4 },
+    { key: 'neutral', name: 'Neutral', id: 5 },
+  ].map(e => ({ ...e, color: PALETTE[e.key] }));
+
+  // --- Hardcoded relations ---
+  // Pentagon cycle: Fire → Nature → Air → Gem → Metal → Fire
+  // Neutral: bidirectional to every other element at 100
+  const CYCLE = ['fire', 'nature', 'air', 'gem', 'metal'];
+  const RELATIONS = [];
+  for (let i = 0; i < CYCLE.length; i++) {
+    const from = CYCLE[i];
+    const next1 = CYCLE[(i + 1) % CYCLE.length];
+    const next2 = CYCLE[(i + 2) % CYCLE.length];
+    RELATIONS.push({ from, to: next1, tier: 'primary',   multiplier: 200 });
+    RELATIONS.push({ from, to: next2, tier: 'secondary', multiplier: 100 });
+    RELATIONS.push({ from: next2, to: from, tier: 'weak', multiplier: 50 });
+  }
+  // Neutral: bidirectional arrows at 100 to each of the 5 elements
+  CYCLE.forEach(k => {
+    RELATIONS.push({ from: 'neutral', to: k, tier: 'neutral', multiplier: 100, bidirectional: true });
+  });
+
+  // --- Pentagon + center geometry ---
+  const CX = 360, CY = 360, R = 250;
+  function layoutPositions() {
+    // CYCLE gets 5 pentagon vertices (top, then clockwise), neutral at center
+    const positions = {};
+    CYCLE.forEach((k, i) => {
+      const angle = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+      positions[k] = {
+        x: CX + R * Math.cos(angle),
+        y: CY + R * Math.sin(angle),
+      };
+    });
+    positions['neutral'] = { x: CX, y: CY };
+    return positions;
+  }
+
+  // --- Render orbs ---
+  function renderOrbs() {
+    const orbsHost = document.getElementById('orbs');
+    orbsHost.innerHTML = '';
+    const positions = layoutPositions();
+
+    ELEMENTS.forEach((el, i) => {
+      const pos = positions[el.key];
+      const px = (pos.x / 720) * 100;
+      const py = (pos.y / 720) * 100;
+
+      const orb = document.createElement('div');
+      orb.className = 'orb';
+      orb.style.left = px + '%';
+      orb.style.top = py + '%';
+      orb.dataset.key = el.key;
+
+      const color = el.color;
+      const disc = document.createElement('div');
+      disc.className = 'disc';
+      disc.style.background = `radial-gradient(circle at 32% 28%, rgba(255,255,255,0.8) 0%, ${color} 42%, ${darken(color, 0.55)} 100%)`;
+      disc.style.boxShadow = `
+        0 0 22px ${hexA(color, 0.55)},
+        0 0 44px ${hexA(color, 0.3)},
+        inset 0 0 20px ${hexA(darken(color, 0.45), 0.6)}
+      `;
+      disc.style.border = `1px solid ${hexA(color, 0.6)}`;
+
+      const glyph = makeGlyph(el.key, color);
+      if (glyph) disc.appendChild(glyph);
+
+      const label = document.createElement('div');
+      label.className = 'label';
+      label.innerHTML = `${el.name.toUpperCase()}`;
+
+      orb.appendChild(disc);
+      orb.appendChild(label);
+
+      // Hover focus
+      orb.addEventListener('mouseenter', () => setFocus(el.key));
+      orb.addEventListener('mouseleave', () => setFocus(null));
+
+      orbsHost.appendChild(orb);
+      el._pos = pos;
+    });
+  }
+
+  // --- Arrows ---
+  function renderArrows() {
+    const defs = document.getElementById('defs');
+    const arrowLayer = document.getElementById('arrowLayer');
+    const labelLayer = document.getElementById('labelLayer');
+    defs.innerHTML = '';
+    arrowLayer.innerHTML = '';
+    labelLayer.innerHTML = '';
+
+    // Markers — one per color per tier, plus muted for weak
+    const markerDefs = new Set();
+    ELEMENTS.forEach(e => {
+      defs.insertAdjacentHTML('beforeend', marker('m-pri-' + safeId(e.color), e.color, 7));
+      defs.insertAdjacentHTML('beforeend', marker('m-sec-' + safeId(e.color), e.color, 6, 0.7));
+    });
+    defs.insertAdjacentHTML('beforeend', marker('m-weak-' + safeId('#7a7e92'), 'x', 6, 0.9, '#7a7e92'));
+    defs.insertAdjacentHTML('beforeend', marker('m-neutral', 'x', 6, 0.9, '#e8d090'));
+    // Per-color muted weak markers so weak arrow heads match their attacker color (dimmed)
+    ELEMENTS.forEach(e => {
+      const muted = mixColor(e.color, '#7a7e92', 0.55);
+      defs.insertAdjacentHTML('beforeend', marker('m-weak-' + safeId(e.color), 'x', 6, 0.85, muted));
+    });
+
+    const byKey = Object.fromEntries(ELEMENTS.map(e => [e.key, e]));
+
+    RELATIONS.forEach(rel => {
+      const a = byKey[rel.from];
+      const b = byKey[rel.to];
+      if (!a || !b) return;
+
+      const { pathD, labelPos } = arcPath(a._pos, b._pos, rel.tier);
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('class', `arc tier-${rel.tier}`);
+      path.setAttribute('d', pathD);
+      path.dataset.from = rel.from;
+      path.dataset.to = rel.to;
+
+      if (rel.tier === 'primary') {
+        path.setAttribute('stroke', a.color);
+        path.setAttribute('marker-end', `url(#m-pri-${safeId(a.color)})`);
+        path.style.filter = `drop-shadow(0 0 5px ${hexA(a.color, 0.6)})`;
+      } else if (rel.tier === 'secondary') {
+        path.setAttribute('stroke', a.color);
+        path.setAttribute('marker-end', `url(#m-sec-${safeId(a.color)})`);
+      } else if (rel.tier === 'weak') {
+        const mutedStroke = mixColor(a.color, '#7a7e92', 0.55);
+        path.setAttribute('stroke', mutedStroke);
+        path.setAttribute('marker-end', `url(#m-weak-${safeId(a.color)})`);
+      } else if (rel.tier === 'neutral') {
+        path.setAttribute('stroke', '#e8d090');
+        path.setAttribute('marker-end', 'url(#m-neutral)');
+        if (rel.bidirectional) path.setAttribute('marker-start', 'url(#m-neutral)');
+        path.style.filter = 'drop-shadow(0 0 3px rgba(232,208,144,0.35))';
+      }
+
+      path.addEventListener('mousemove', (e) => showTip(e, a, b, rel));
+      path.addEventListener('mouseleave', hideTip);
+      arrowLayer.appendChild(path);
+
+      // Label pill
+      const labelText = String(rel.multiplier);
+      const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      group.setAttribute('class', `arc-label-group tier-${rel.tier}`);
+      group.dataset.from = rel.from;
+      group.dataset.to = rel.to;
+      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      const textW = labelText.length * 10 + 14;
+      bg.setAttribute('x', labelPos.x - textW / 2);
+      bg.setAttribute('y', labelPos.y - 12);
+      bg.setAttribute('width', textW);
+      bg.setAttribute('height', 24);
+      bg.setAttribute('rx', 12);
+      bg.setAttribute('class', 'arc-label-bg');
+      const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      txt.setAttribute('class', 'arc-label-text');
+      txt.setAttribute('x', labelPos.x);
+      txt.setAttribute('y', labelPos.y + 1);
+      const labelColor = rel.tier === 'weak' ? mixColor(a.color, '#b0b4c0', 0.4) : (rel.tier === 'neutral' ? '#e8d090' : a.color);
+      txt.setAttribute('fill', labelColor);
+      txt.textContent = labelText;
+      group.appendChild(bg);
+      group.appendChild(txt);
+      labelLayer.appendChild(group);
+    });
+  }
+
+  function setFocus(key) {
+    const stage = document.getElementById('stage');
+    if (!key) {
+      stage.removeAttribute('data-focus');
+      document.querySelectorAll('.arc, .arc-label-group').forEach(el => el.classList.remove('involved'));
+      return;
+    }
+    stage.setAttribute('data-focus', key);
+    document.querySelectorAll('.arc, .arc-label-group').forEach(el => {
+      const involved = el.dataset.from === key || el.dataset.to === key;
+      el.classList.toggle('involved', involved);
+    });
+  }
+
+  function marker(id, color, size, opacity = 1, literalColor = null) {
+    const fill = literalColor || color;
+    return `
+      <marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5"
+              markerWidth="${size}" markerHeight="${size}" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="${fill}" opacity="${opacity}"/>
+      </marker>`;
+  }
+
+  function arcPath(a, b, tier) {
+    const ORB_R = 40;
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len = Math.hypot(dx, dy);
+    const ux = dx / len, uy = dy / len;
+    const sx = a.x + ux * ORB_R, sy = a.y + uy * ORB_R;
+    const ex = b.x - ux * ORB_R, ey = b.y - uy * ORB_R;
+
+    const mx = (sx + ex) / 2, my = (sy + ey) / 2;
+    const px = -uy, py = ux;
+    const toCenterX = CX - mx, toCenterY = CY - my;
+    // For primary (pentagon edges) we want gentle outward arcs
+    // For secondary/weak (diagonals) we want them offset so reverse pairs don't overlap
+    let sideSign;
+    if (tier === 'weak') {
+      sideSign = (px * toCenterX + py * toCenterY) > 0 ? 1 : -1; // inward for weak
+    } else {
+      sideSign = (px * toCenterX + py * toCenterY) > 0 ? -1 : 1; // outward
+    }
+    const offsetBase = tier === 'primary' ? 36
+                       : tier === 'secondary' ? 50
+                       : tier === 'neutral' ? 0
+                       : 40;
+    const offset = Math.min(offsetBase, len * 0.22);
+    const cx = mx + px * offset * sideSign;
+    const cy = my + py * offset * sideSign;
+
+    // Label at curve midpoint (approx at t=0.5 of quadratic bezier).
+    // For neutral (center → outer), push 70% toward the outer orb so labels don't collide with secondary labels.
+    const t = tier === 'neutral' ? 0.7 : 0.5;
+    const bx = (1 - t) * (1 - t) * sx + 2 * (1 - t) * t * cx + t * t * ex;
+    const by = (1 - t) * (1 - t) * sy + 2 * (1 - t) * t * cy + t * t * ey;
+
+    return {
+      pathD: `M ${sx.toFixed(1)} ${sy.toFixed(1)} Q ${cx.toFixed(1)} ${cy.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`,
+      labelPos: { x: bx, y: by }
+    };
+  }
+
+  // --- Tooltip ---
+  const tip = document.getElementById('tooltip');
+  const ttA = document.getElementById('tt-a');
+  const ttB = document.getElementById('tt-b');
+  const ttM = document.getElementById('tt-m');
+  function showTip(e, a, b, rel) {
+    ttA.textContent = a.name.toUpperCase();
+    ttA.style.color = a.color;
+    ttB.textContent = b.name.toUpperCase();
+    ttB.style.color = b.color;
+    ttM.textContent = String(rel.multiplier);
+    ttM.style.color = rel.tier === 'weak' ? '#8a8fa0' : 'var(--gold)';
+    tip.style.left = e.clientX + 'px';
+    tip.style.top = e.clientY - 12 + 'px';
+    tip.classList.add('show');
+  }
+  function hideTip() { tip.classList.remove('show'); }
+
+  // --- Glyphs (centered in viewBox 0..64) ---
+  function makeGlyph(key, color) {
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('class', 'glyph');
+    svg.setAttribute('viewBox', '0 0 64 64');
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+    const light = '#ffffff';
+    const accent = lighten(color, 0.45);
+    const dark = darken(color, 0.55);
+
+    const add = (tag, attrs) => {
+      const n = document.createElementNS(svgNS, tag);
+      for (const k in attrs) n.setAttribute(k, attrs[k]);
+      svg.appendChild(n);
+      return n;
+    };
+
+    switch (key) {
+      case 'gem': {
+        // Diamond-cut gem centered at 32,32. Span: y=10..54, x=12..52
+        add('polygon', { points: '12,28 32,10 52,28 32,54', fill: accent, stroke: light, 'stroke-width': '1.5', 'stroke-linejoin': 'round' });
+        add('polygon', { points: '12,28 52,28 32,54', fill: color, stroke: light, 'stroke-width': '1.5', 'stroke-linejoin': 'round' });
+        add('line', { x1: '22', y1: '28', x2: '32', y2: '54', stroke: light, 'stroke-width': '1.2', opacity: '0.85' });
+        add('line', { x1: '42', y1: '28', x2: '32', y2: '54', stroke: light, 'stroke-width': '1.2', opacity: '0.85' });
+        add('line', { x1: '22', y1: '28', x2: '32', y2: '10', stroke: light, 'stroke-width': '1', opacity: '0.7' });
+        add('line', { x1: '42', y1: '28', x2: '32', y2: '10', stroke: light, 'stroke-width': '1', opacity: '0.7' });
+        add('polygon', { points: '22,28 32,10 32,20', fill: light, opacity: '0.35' });
+        break;
+      }
+      case 'nature': {
+        // Leaf centered. Bounds roughly 12..52 x, 10..54 y
+        add('path', {
+          d: 'M 14 50 C 12 26 24 12 50 10 C 52 36 38 52 14 50 Z',
+          fill: accent, stroke: dark, 'stroke-width': '1.5', 'stroke-linejoin': 'round'
+        });
+        add('path', { d: 'M 16 48 Q 30 32 48 12', fill: 'none', stroke: dark, 'stroke-width': '1.4', 'stroke-linecap': 'round' });
+        add('path', { d: 'M 24 42 Q 30 36 38 34', fill: 'none', stroke: dark, 'stroke-width': '1', opacity: '0.7', 'stroke-linecap': 'round' });
+        add('path', { d: 'M 28 32 Q 34 28 42 24', fill: 'none', stroke: dark, 'stroke-width': '1', opacity: '0.7', 'stroke-linecap': 'round' });
+        add('path', { d: 'M 20 40 Q 28 24 42 16', fill: 'none', stroke: light, 'stroke-width': '1', opacity: '0.4' });
+        break;
+      }
+      case 'metal': {
+        // Six-cog gear centered at 32,32
+        const cx = 32, cy = 32;
+        const teeth = 6;
+        const rOuter = 26, rInner = 19, toothW = 0.24;
+        let d = '';
+        for (let i = 0; i < teeth; i++) {
+          const a0 = (i * 2 * Math.PI) / teeth - toothW;
+          const a1 = (i * 2 * Math.PI) / teeth + toothW;
+          const a2 = ((i + 1) * 2 * Math.PI) / teeth - toothW;
+          const p = (r, a) => `${(cx + r * Math.cos(a)).toFixed(2)},${(cy + r * Math.sin(a)).toFixed(2)}`;
+          d += (i === 0 ? 'M ' : 'L ') + p(rInner, a0) + ' ';
+          d += 'L ' + p(rOuter, a0) + ' ';
+          d += 'L ' + p(rOuter, a1) + ' ';
+          d += 'L ' + p(rInner, a1) + ' ';
+          d += 'L ' + p(rInner, a2) + ' ';
+        }
+        d += 'Z';
+        add('path', { d, fill: color, stroke: light, 'stroke-width': '1.5', 'stroke-linejoin': 'round' });
+        add('circle', { cx: '32', cy: '32', r: '8', fill: dark, stroke: light, 'stroke-width': '1.5' });
+        add('circle', { cx: '32', cy: '32', r: '21', fill: 'none', stroke: light, 'stroke-width': '0.8', opacity: '0.35' });
+        break;
+      }
+      case 'neutral': {
+        // Dot with ring around it; one dot at top-left creating a break
+        // Ring: centered at 32,32 radius 18, but broken near top-left
+        // Draw ring as an arc from ~145° around to ~100° (clockwise), leaving a gap near 115°
+        const cx = 32, cy = 32, rr = 18;
+        const startDeg = 135, endDeg = 105; // gap between endDeg and startDeg (around 120°, top-left)
+        const toXY = (deg) => {
+          const rad = deg * Math.PI / 180;
+          return { x: cx + rr * Math.cos(rad), y: cy + rr * Math.sin(rad) };
+        };
+        const s = toXY(startDeg);
+        const e = toXY(endDeg);
+        // large-arc=1 to go the long way around
+        const d = `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${rr} ${rr} 0 1 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
+        add('path', { d, fill: 'none', stroke: lighten(color, 0.3), 'stroke-width': '2.4', 'stroke-linecap': 'round' });
+        // central dot
+        add('circle', { cx: '32', cy: '32', r: '5.5', fill: lighten(color, 0.3), stroke: light, 'stroke-width': '1' });
+        // top-left accent dot (the break marker)
+        add('circle', { cx: '18', cy: '18', r: '3.4', fill: lighten(color, 0.3), stroke: light, 'stroke-width': '1' });
+        break;
+      }
+      case 'fire': {
+        // Flame centered. Bounds roughly 18..48 x, 8..56 y
+        add('path', {
+          d: 'M 32 56 C 18 52 14 40 20 30 C 22 34 24 34 26 32 C 24 22 30 14 34 8 C 34 18 44 22 46 34 C 50 40 48 52 32 56 Z',
+          fill: color, stroke: light, 'stroke-width': '1.5', 'stroke-linejoin': 'round'
+        });
+        add('path', {
+          d: 'M 32 50 C 26 48 24 40 28 34 C 30 38 32 36 32 32 C 34 38 38 40 38 44 C 40 48 38 50 32 50 Z',
+          fill: accent, opacity: '0.85'
+        });
+        add('path', {
+          d: 'M 32 46 C 29 44 29 40 31 38 C 33 40 35 42 34 44 C 34 46 33 47 32 46 Z',
+          fill: light, opacity: '0.8'
+        });
+        break;
+      }
+      case 'air': {
+        // Cute anime wing centered. Bounds ~10..54, 14..50
+        add('path', {
+          d: 'M 10 42 Q 18 20 52 16 Q 46 24 32 28 Q 46 28 54 24 Q 46 34 28 36 Q 44 36 52 34 Q 40 46 22 44 Q 32 44 38 42 Q 24 48 10 42 Z',
+          fill: accent, stroke: darken(color, 0.35), 'stroke-width': '1.3', 'stroke-linejoin': 'round'
+        });
+        add('path', { d: 'M 14 40 Q 24 30 44 24', fill: 'none', stroke: darken(color, 0.4), 'stroke-width': '0.9', opacity: '0.7' });
+        add('path', { d: 'M 16 42 Q 26 36 46 32', fill: 'none', stroke: darken(color, 0.4), 'stroke-width': '0.9', opacity: '0.7' });
+        add('path', { d: 'M 14 38 Q 22 24 46 18', fill: 'none', stroke: light, 'stroke-width': '0.9', opacity: '0.6' });
+        break;
+      }
+    }
+    return svg;
+  }
+
+  // --- Utilities ---
+  function safeId(c) { return c.replace('#', ''); }
+  function hexA(hex, a) {
+    const h = hex.replace('#','');
+    const r = parseInt(h.substr(0,2),16);
+    const g = parseInt(h.substr(2,2),16);
+    const b = parseInt(h.substr(4,2),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+  function darken(hex, amt) {
+    const h = hex.replace('#','');
+    let r = parseInt(h.substr(0,2),16);
+    let g = parseInt(h.substr(2,2),16);
+    let b = parseInt(h.substr(4,2),16);
+    r = Math.max(0, Math.floor(r * (1 - amt)));
+    g = Math.max(0, Math.floor(g * (1 - amt)));
+    b = Math.max(0, Math.floor(b * (1 - amt)));
+    return `#${[r,g,b].map(v => v.toString(16).padStart(2,'0')).join('')}`;
+  }
+  function lighten(hex, amt) {
+    const h = hex.replace('#','');
+    let r = parseInt(h.substr(0,2),16);
+    let g = parseInt(h.substr(2,2),16);
+    let b = parseInt(h.substr(4,2),16);
+    r = Math.min(255, Math.floor(r + (255 - r) * amt));
+    g = Math.min(255, Math.floor(g + (255 - g) * amt));
+    b = Math.min(255, Math.floor(b + (255 - b) * amt));
+    return `#${[r,g,b].map(v => v.toString(16).padStart(2,'0')).join('')}`;
+  }
+  function mixColor(a, b, t) {
+    const pa = a.replace('#',''), pb = b.replace('#','');
+    const ar = parseInt(pa.substr(0,2),16), ag = parseInt(pa.substr(2,2),16), ab = parseInt(pa.substr(4,2),16);
+    const br = parseInt(pb.substr(0,2),16), bg_ = parseInt(pb.substr(2,2),16), bb = parseInt(pb.substr(4,2),16);
+    const r = Math.round(ar * (1 - t) + br * t);
+    const g = Math.round(ag * (1 - t) + bg_ * t);
+    const bl = Math.round(ab * (1 - t) + bb * t);
+    return `#${[r,g,bl].map(v => v.toString(16).padStart(2,'0')).join('')}`;
+  }
+  function formatMult(m) {
+    const n = Number(m);
+    if (!isFinite(n)) return String(m);
+    return n.toFixed(n % 1 === 0 ? 0 : 2).replace(/\.?0+$/, '');
+  }
+
+  // --- Toggle wiring ---
+  document.querySelectorAll('.toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tier = btn.dataset.tier;
+      const stage = document.getElementById('stage');
+      const attr = 'data-tier-' + tier;
+      const isOn = stage.getAttribute(attr) === 'on';
+      stage.setAttribute(attr, isOn ? 'off' : 'on');
+      btn.classList.toggle('active', !isOn);
+    });
+  });
+
+  // --- Boot ---
+  renderOrbs();
+  renderArrows();
+})();
+</script>
+</body>
+</html>
