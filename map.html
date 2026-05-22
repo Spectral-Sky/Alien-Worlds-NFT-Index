@@ -2296,7 +2296,7 @@
         var list=document.getElementById('qo-list');
         if(!list) return;
         if(!_qData||!_qData.quests||!_qData.quests.length){list.innerHTML='<div class="qo-empty">No active quests.</div>';return;}
-        var scoped=_qData.quests.filter(function(q){return q.quest_scope===_qScope;});
+        var scoped=_qData.quests.filter(function(q){return (q.scope||q.quest_scope)===_qScope;});
         if(!scoped.length){list.innerHTML='<div class="qo-empty">No '+_qScope+' quests.</div>';return;}
         var html='';
         scoped.forEach(function(q){
@@ -3341,7 +3341,7 @@ function renderArSlots() {
         // Pull current quest data for this scope from the already-loaded quest cache
         var q = null;
         if (typeof _qData !== 'undefined' && _qData && _qData.quests) {
-            q = _qData.quests.find(function(x){ return x.quest_scope === scope; }) || null;
+            q = _qData.quests.find(function(x){ return (x.scope||x.quest_scope) === scope; }) || null;
         }
         var questInfo = '';
         var hasProgress = false;
@@ -3382,11 +3382,15 @@ async function startAutoReroll(scope) {
     updateArStatus(scope, 'Rolling…');
 
     while (!_arStop[scope]) {
-        var q = await fetchQuestByScope(wallet, scope);
-        if (!q) { updateArStatus(scope, '✗ No quest'); break; }
+        var q = null;
+        try { q = await fetchQuestByScope(wallet, scope); } catch(fe) {
+            updateArStatus(scope, '✗ Fetch error: ' + ((fe && fe.message) || String(fe)));
+            break;
+        }
+        if (!q) { updateArStatus(scope, '✗ No quest found for ' + scope); break; }
 
-        // Stop condition: shard (non-TLM) quest detected
-        if (q.reward_type !== 'tlm') {
+        // Stop condition: explicitly a non-TLM reward type (shard quest)
+        if (q.reward_type && q.reward_type !== 'tlm') {
             _arRunning[scope] = false;
             renderArSlots();
             showArShardFound(scope, q);
@@ -3399,7 +3403,7 @@ async function startAutoReroll(scope) {
             await sess.transact({ actions: [{
                 account: 'quests.ale', name: 'reroll',
                 authorization: [{actor: wallet, permission: 'active'}],
-                data: { wallet: wallet, scope: scope,
+                data: { wallet: wallet, scope: (q.scope || q.quest_scope || scope),
                         quest_name: q.quest_name,
                         reward_amount: q.reward_amount,
                         task_end_value: q.task_end_value }
@@ -3447,12 +3451,11 @@ function acceptArQuest(scope) {
 }
 
 async function fetchQuestByScope(wallet, scope) {
-    try {
-        var res = await fetchRows({code:'quests.ale', scope:'quests.ale', table:'activequests',
-            lower_bound:wallet, upper_bound:wallet, limit:1, json:true});
-        if (!res || !res.rows || !res.rows[0]) return null;
-        return (res.rows[0].quests || []).find(function(q){ return q.quest_scope === scope; }) || null;
-    } catch(e) { return null; }
+    var res = await fetchRows({code:'quests.ale', scope:'quests.ale', table:'activequests',
+        lower_bound:wallet, upper_bound:wallet, limit:1, json:true});
+    if (!res || !res.rows || !res.rows[0]) return null;
+    var quests = res.rows[0].quests || [];
+    return quests.find(function(q){ return (q.scope || q.quest_scope) === scope; }) || null;
 }
 </script>
 </body>
