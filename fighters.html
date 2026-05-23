@@ -122,8 +122,14 @@
 
     /* XP bar in cell */
     .xp-bar-outer { position:relative; width:130px; height:17px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; display:inline-block; vertical-align:middle; border:1px solid rgba(232,160,32,0.15); }
+    .xp-bar-outer.xp-max  { border-color:rgba(220,60,60,0.3); }
+    .xp-bar-outer.xp-ready { border-color:rgba(60,200,100,0.3); }
     .xp-bar-inner { position:absolute; left:0; top:0; height:100%; background:rgba(232,160,32,0.28); border-radius:2px; }
+    .xp-bar-outer.xp-max   .xp-bar-inner  { background:rgba(220,60,60,0.35); }
+    .xp-bar-outer.xp-ready .xp-bar-inner  { background:rgba(60,200,100,0.35); }
     .xp-bar-text  { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:0.7em; color:rgba(220,200,160,0.9); letter-spacing:0.3px; white-space:nowrap; z-index:1; }
+    .xp-bar-outer.xp-max   .xp-bar-text   { color:rgba(255,120,120,0.9); }
+    .xp-bar-outer.xp-ready .xp-bar-text   { color:rgba(100,230,140,0.9); }
 
     /* element / class badge */
     .el-badge { font-size:1.1em; line-height:1; }
@@ -136,15 +142,33 @@
     /* ASC stars */
     .asc-val { color:#c0a040; }
 
+    /* arena defender row */
+    .lb-table tr.arena-row td { background:rgba(255,110,0,0.05) !important; }
+    .lb-table tr.arena-row td:nth-child(1) { border-left:2px solid rgba(255,140,0,0.55); }
+
+    /* selected row */
+    .lb-table tr.sel-row td { background:rgba(80,120,220,0.09) !important; }
+    .lb-table tr.sel-row td:nth-child(1) { border-left:2px solid rgba(100,140,240,0.5); }
+    .fighter-ck { cursor:pointer; accent-color:var(--gold); width:13px; height:13px; vertical-align:middle; margin-right:3px; }
+
     /* STICKY COLUMNS: # | CLASS | EL | RACE */
-    .lb-table td:nth-child(1), .lb-table th:nth-child(1) { position:sticky; left:0;    z-index:1; background:#090912; text-align:left; color:var(--muted); font-size:0.88em; min-width:36px; width:36px; }
-    .lb-table td:nth-child(2), .lb-table th:nth-child(2) { position:sticky; left:36px; z-index:1; background:#090912; text-align:left; min-width:160px; width:160px; max-width:160px; }
-    .lb-table td:nth-child(3), .lb-table th:nth-child(3) { position:sticky; left:196px; z-index:1; background:#090912; text-align:center; min-width:46px; width:46px; }
-    .lb-table td:nth-child(4), .lb-table th:nth-child(4) { position:sticky; left:242px; z-index:1; background:#090912; text-align:left; min-width:82px; width:82px; box-shadow:2px 0 6px rgba(0,0,0,0.6); }
+    .lb-table td:nth-child(1), .lb-table th:nth-child(1) { position:sticky; left:0;    z-index:1; background:#090912; text-align:left; color:var(--muted); font-size:0.88em; min-width:52px; width:52px; cursor:pointer; user-select:none; }
+    .lb-table td:nth-child(2), .lb-table th:nth-child(2) { position:sticky; left:52px; z-index:1; background:#090912; text-align:left; min-width:160px; width:160px; max-width:160px; }
+    .lb-table td:nth-child(3), .lb-table th:nth-child(3) { position:sticky; left:212px; z-index:1; background:#090912; text-align:center; min-width:46px; width:46px; }
+    .lb-table td:nth-child(4), .lb-table th:nth-child(4) { position:sticky; left:258px; z-index:1; background:#090912; text-align:left; min-width:82px; width:82px; box-shadow:2px 0 6px rgba(0,0,0,0.6); }
     .lb-table thead th:nth-child(1), .lb-table thead th:nth-child(2),
     .lb-table thead th:nth-child(3), .lb-table thead th:nth-child(4) { z-index:3; }
     .lb-table tr:hover td:nth-child(1), .lb-table tr:hover td:nth-child(2),
     .lb-table tr:hover td:nth-child(3), .lb-table tr:hover td:nth-child(4) { background:#0f1220; }
+
+    /* bulk action bar */
+    #bulk-bar { display:none; align-items:center; gap:8px; flex-wrap:wrap; padding:7px 28px; border-bottom:1px solid rgba(232,160,32,0.07); background:rgba(20,30,60,0.6); font-size:0.72em; }
+    #bulk-bar .bulk-lbl { color:var(--gold); letter-spacing:1px; }
+    .marker-drop { position:relative; display:inline-block; }
+    .marker-drop-menu { display:none; position:absolute; top:100%; left:0; background:rgba(2,6,20,0.98); border:1px solid var(--border); min-width:130px; z-index:300; padding:4px 0; }
+    .marker-drop:hover .marker-drop-menu { display:block; }
+    .marker-drop-item { display:block; padding:6px 12px; color:#999; font-family:'Courier New',monospace; font-size:0.9em; letter-spacing:1px; cursor:pointer; white-space:nowrap; }
+    .marker-drop-item:hover { color:var(--gold); background:var(--hover); }
 
     /* EMPTY / LOADING */
     .lb-empty { padding:40px 28px; text-align:center; font-size:0.75em; color:var(--muted); letter-spacing:2px; }
@@ -174,6 +198,10 @@
     html.day .lb-table td:nth-child(4), html.day .lb-table th:nth-child(4) { background:#dce8f8; }
     html.day .lb-table tr:hover td:nth-child(1), html.day .lb-table tr:hover td:nth-child(2),
     html.day .lb-table tr:hover td:nth-child(3), html.day .lb-table tr:hover td:nth-child(4) { background:#ccd8f0; }
+    html.day #bulk-bar { background:rgba(210,225,255,0.7); }
+    html.day .marker-drop-menu { background:rgba(235,240,255,0.98); }
+    html.day .marker-drop-item { color:#4060a0; }
+    html.day .marker-drop-item:hover { color:var(--gold); }
     html.day ::-webkit-scrollbar-track { background:#dce8f8; } html.day ::-webkit-scrollbar-thumb { background:#a0b4d0; }
     html.day #fighter-search { background:rgba(230,238,255,0.9); color:var(--gold); border-color:rgba(0,60,140,0.25); }
     html.day .ctrl-btn { color:var(--gold); border-color:rgba(0,80,200,0.35); }
@@ -282,6 +310,7 @@
 
 <div class="controls-bar">
     <button class="ctrl-btn" id="load-btn" onclick="loadFighters()">&#8635; LOAD FIGHTERS</button>
+    <button class="ctrl-btn" id="level-all-btn" onclick="levelAll()" disabled title="Level up all fighters with enough XP">&#8679; LEVEL ALL</button>
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
         <span style="font-size:0.62em;color:var(--muted);letter-spacing:2px;white-space:nowrap;">OTHER WALLET:</span>
         <input id="wallet-lookup" type="text" placeholder="e.g. abc.wam" autocomplete="off"
@@ -291,6 +320,22 @@
     </div>
     <input id="fighter-search" type="text" placeholder="Filter class, element, race, marker…" oninput="renderTable()">
     <span id="count-display"></span>
+</div>
+
+<div id="bulk-bar">
+    <span class="bulk-lbl" id="bulk-count">0 SELECTED</span>
+    <button class="ctrl-btn" onclick="sellSelected()" style="font-size:0.82em;padding:4px 10px;border-color:rgba(220,80,80,0.4);color:#d06060;">&#128465; SELL</button>
+    <div class="marker-drop">
+        <button class="ctrl-btn" style="font-size:0.82em;padding:4px 10px;">&#9872; MARK &#9660;</button>
+        <div class="marker-drop-menu">
+            <span class="marker-drop-item" onclick="markSelected('initiative')">INITIATIVE</span>
+            <span class="marker-drop-item" onclick="markSelected('defender')">DEFENDER</span>
+            <span class="marker-drop-item" onclick="markSelected('attacker')">ATTACKER</span>
+            <span class="marker-drop-item" onclick="markSelected('support')">SUPPORT</span>
+            <span class="marker-drop-item" onclick="markSelected('')">— CLEAR MARKER</span>
+        </div>
+    </div>
+    <button class="ctrl-btn" onclick="clearSelection()" style="font-size:0.82em;padding:4px 10px;color:var(--muted);">&#10005; CLEAR</button>
 </div>
 
 <div class="col-toggles">
@@ -305,9 +350,10 @@
     <button class="col-toggle on"                  data-col="wu"     onclick="toggleCol(this)">WU</button>
     <button class="col-toggle col-toggle-blue on"  data-col="tnt"    onclick="toggleCol(this)">TNT</button>
     <div class="col-toggles-sep"></div>
-    <button class="col-toggle on" data-col="xp" onclick="toggleCol(this)">XP</button>
+    <button class="col-toggle on" data-col="xp"  onclick="toggleCol(this)">XP</button>
+    <button class="col-toggle on" data-col="age" onclick="toggleCol(this)">AGE</button>
     <button class="col-toggle" data-col="abilities" onclick="toggleCol(this)">ABILITIES</button>
-    <button class="col-toggle" data-col="id"       onclick="toggleCol(this)">FIGHTER ID</button>
+    <button class="col-toggle" data-col="id"        onclick="toggleCol(this)">FIGHTER ID</button>
 </div>
 
 <div class="table-wrap">
@@ -323,7 +369,15 @@
 
 <script>
 // ── CONSTANTS ────────────────────────────────────────────────────────────────
-var RPC = ['https://api.waxsweden.org','https://wax.eosphere.io','https://wax.eosnation.io'];
+var RPC = [
+    'https://wax.greymass.com',
+    'https://api.waxsweden.org',
+    'https://wax.eosphere.io',
+    'https://wax.eosnation.io',
+    'https://wax.pink.gg',
+    'https://api.wax.liquidstudios.io',
+    'https://wax.cryptolions.io',
+];
 
 var FIGHTER_CLASSES = {
     'voidwarden':   {e:'🛡',  n:'Voidwarden'},
@@ -345,11 +399,12 @@ var FIGHTER_ELEMENTS = {
 };
 
 // ── STATE ────────────────────────────────────────────────────────────────────
-var _fighters  = [];
-var _filtered  = [];
-var _sortCol   = 'lv';
-var _sortDir   = -1; // -1 = desc, 1 = asc
+var _fighters   = [];
+var _filtered   = [];
+var _sortCol    = 'lv';
+var _sortDir    = -1;
 var _hiddenCols = {};
+var _selected   = new Set();
 
 // ── FETCH ────────────────────────────────────────────────────────────────────
 async function fetchRows(p) {
@@ -384,8 +439,8 @@ async function loadFighters() {
         while (more) {
             var p = {code:'fighters.ale', scope:'fighters.ale', table:'fighters',
                      index_position:2, key_type:'name',
-                     lower_bound:wallet, upper_bound:wallet, limit:100, json:true};
-            if (lb) p.lower_bound = lb;
+                     lower_bound:wallet, upper_bound:wallet, limit:500, json:true};
+            if (lb) { p.lower_bound = lb; p.upper_bound = wallet; }
             console.log('[fighters] fetch', JSON.stringify(p));
             var res = await fetchRows(p);
             console.log('[fighters] res', res ? ('rows:' + res.rows.length + ' more:' + res.more) : 'NULL — all RPCs failed');
@@ -436,26 +491,43 @@ async function loadFighters() {
 
 // ── RENDER ───────────────────────────────────────────────────────────────────
 var COL_DEFS = [
-    { key:'lv',        label:'LV',        title:'Level',                    sortVal: function(f){ return (f.stats&&f.stats.level!=null)?Number(f.stats.level):0; } },
-    { key:'marker',    label:'MARKER',     title:'Marker type',              sortVal: function(f){ return f.marker||''; } },
-    { key:'asc',       label:'ASC',        title:'Ascension level',          sortVal: function(f){ return Number(f.ascension_level||0); } },
-    { key:'hp',        label:'HP',         title:'Health (max)',              sortVal: function(f){ return (f.stats&&f.stats.health_max!=null)?Number(f.stats.health_max):0; } },
-    { key:'dmg',       label:'DMG',        title:'Damage (max)',              sortVal: function(f){ return (f.stats&&f.stats.damage_max!=null)?Number(f.stats.damage_max):0; } },
-    { key:'cd',        label:'CD ▲',       title:'Cooldown — lower is faster', sortVal: function(f){ return (f.stats&&f.stats.attackspeed_min!=null)?Number(f.stats.attackspeed_min):9999; } },
-    { key:'wu',        label:'WU ▲',       title:'Warmup / initiative — lower is faster', sortVal: function(f){ return (f.stats&&f.stats.initiative_min!=null)?Number(f.stats.initiative_min):9999; } },
-    { key:'tnt',       label:'TNT',        title:'Taunt (max)',               sortVal: function(f){ return (f.stats&&f.stats.taunt_max!=null)?Number(f.stats.taunt_max):0; } },
-    { key:'xp',        label:'XP%',        title:'XP progress to next level', sortVal: function(f){ var s=f.stats||{}; return s.required_experience?Number(s.experience||0)/Number(s.required_experience):0; } },
-    { key:'abilities', label:'ABILITIES',  title:'Unlocked abilities',        sortVal: function(f){ return (f.stats&&f.stats.abilities)?f.stats.abilities.length:0; } },
-    { key:'id',        label:'ID',         title:'Fighter asset ID',          sortVal: function(f){ return Number(f.fighter_id||0); } },
+    { key:'lv',        label:'LV',        title:'Level',                       sortVal: function(f){ return (f.stats&&f.stats.level!=null)?Number(f.stats.level):0; } },
+    { key:'marker',    label:'MARKER',     title:'Marker type',                 sortVal: function(f){ return f.marker||''; } },
+    { key:'asc',       label:'ASC',        title:'Ascension level',             sortVal: function(f){ return Number(f.ascension_level||0); } },
+    { key:'hp',        label:'HP',         title:'Health — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.health_min||0)+Number(s.health_max||0))/2); } },
+    { key:'dmg',       label:'DMG',        title:'Damage — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.damage_min||0)+Number(s.damage_max||0))/2); } },
+    { key:'cd',        label:'CD ▲',       title:'Cooldown — mean, lower is faster', sortVal: function(f){ return (f.stats&&f.stats.attackspeed_min!=null)?Number(f.stats.attackspeed_min):9999; } },
+    { key:'wu',        label:'WU ▲',       title:'Wind Up — mean, lower is faster',  sortVal: function(f){ return (f.stats&&f.stats.initiative_min!=null)?Number(f.stats.initiative_min):9999; } },
+    { key:'tnt',       label:'TNT',        title:'Taunt — mean (±half-range)',  sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.taunt_min||0)+Number(s.taunt_max||0))/2); } },
+    { key:'xp',        label:'XP',         title:'XP progress to next level',   sortVal: function(f){ var s=f.stats||{}; return s.required_experience?Number(s.experience||0)/Number(s.required_experience):0; } },
+    { key:'age',       label:'AGE',        title:'Days since creation',         sortVal: function(f){ return fighterAgeDays(f)||0; } },
+    { key:'abilities', label:'ABILITIES',  title:'Unlocked abilities',          sortVal: function(f){ return (f.stats&&f.stats.abilities)?f.stats.abilities.length:0; } },
+    { key:'id',        label:'ID',         title:'Fighter asset ID',            sortVal: function(f){ return Number(f.fighter_id||0); } },
 ];
+
+function fighterAgeDays(f) {
+    var cd = f.creation_date;
+    if (!cd) return null;
+    var ts = typeof cd === 'number'
+        ? cd * 1000
+        : new Date(String(cd).replace(' ','T') + (String(cd).includes('Z') ? '' : 'Z')).getTime();
+    if (!ts || isNaN(ts)) return null;
+    return Math.floor((Date.now() - ts) / 86400000);
+}
+
+function meanRange(mn, mx) {
+    if (mn == null && mx == null) return '<span class="zero">—</span>';
+    mn = Number(mn); mx = Number(mx);
+    if (isNaN(mn) || isNaN(mx)) return '<span class="zero">—</span>';
+    var mean = Math.ceil((mn + mx) / 2);
+    var half = Math.ceil((mx - mn) / 2);
+    return half > 0
+        ? mean + '<span style="font-size:0.8em;color:var(--muted);"> (±' + half + ')</span>'
+        : String(mean);
+}
 
 function cellContent(key, f) {
     var s = f.stats || {};
-    function rng(mn, mx) {
-        if (mn == null && mx == null) return '<span class="zero">—</span>';
-        if (mn === mx || mn == null) return mx != null ? mx : mn;
-        return mn + ' – ' + mx;
-    }
     switch(key) {
         case 'lv':        return s.level != null ? s.level : '<span class="zero">—</span>';
         case 'marker': {
@@ -467,21 +539,29 @@ function cellContent(key, f) {
             return av > 0 ? '<span class="asc-val">' + '★'.repeat(Math.min(av,5)) + (av > 5 ? ' '+av : '') + '</span>'
                           : '<span class="zero">—</span>';
         }
-        case 'hp':  return rng(s.health_min,      s.health_max);
-        case 'dmg': return rng(s.damage_min,       s.damage_max);
-        case 'cd':  return rng(s.attackspeed_min,  s.attackspeed_max);
-        case 'wu':  return rng(s.initiative_min,   s.initiative_max);
-        case 'tnt': return rng(s.taunt_min,        s.taunt_max);
+        case 'hp':  return meanRange(s.health_min,     s.health_max);
+        case 'dmg': return meanRange(s.damage_min,      s.damage_max);
+        case 'cd':  return meanRange(s.attackspeed_min, s.attackspeed_max);
+        case 'wu':  return meanRange(s.initiative_min,  s.initiative_max);
+        case 'tnt': return meanRange(s.taunt_min,       s.taunt_max);
         case 'xp': {
             if (!s.required_experience) return '<span class="zero">—</span>';
             var cur = Number(s.experience || 0);
             var req = Number(s.required_experience);
+            var lv  = Number(s.level || 0);
             var pct = Math.min(100, Math.round(cur / req * 100));
             var fmt = function(n){ return n.toLocaleString(); };
-            return '<span class="xp-bar-outer">'
+            var cls = lv >= 10 ? 'xp-max' : (cur >= req ? 'xp-ready' : '');
+            return '<span class="xp-bar-outer ' + cls + '">'
                 + '<span class="xp-bar-inner" style="width:' + pct + '%"></span>'
-                + '<span class="xp-bar-text">' + fmt(cur) + ' / ' + fmt(req) + '</span>'
+                + '<span class="xp-bar-text">' + (lv >= 10 ? 'MAX LEVEL' : fmt(cur) + ' / ' + fmt(req)) + '</span>'
                 + '</span>';
+        }
+        case 'age': {
+            var days = fighterAgeDays(f);
+            if (days === null) return '<span class="zero">—</span>';
+            var col = days > 180 ? 'color:#c08060' : days > 60 ? 'color:var(--muted)' : 'color:#6090a0';
+            return '<span style="' + col + ';font-size:0.9em;">' + days + 'd</span>';
         }
         case 'abilities': {
             var abls = s.abilities || [];
@@ -516,6 +596,14 @@ function renderTable() {
     var cd = document.getElementById('count-display');
     if (cd) cd.textContent = _filtered.length + ' / ' + _fighters.length + ' FIGHTERS';
 
+    // Update Level All button
+    var levellable = _fighters.filter(function(f){
+        var s = f.stats || {};
+        return Number(s.level||0) < 10 && Number(s.experience||0) >= Number(s.required_experience||Infinity);
+    });
+    var laBtn = document.getElementById('level-all-btn');
+    if (laBtn) { laBtn.disabled = levellable.length === 0; laBtn.title = levellable.length + ' fighter(s) ready to level up'; }
+
     if (!_fighters.length) {
         showEmpty('No fighters loaded — log in and click LOAD FIGHTERS.');
         return;
@@ -526,9 +614,13 @@ function renderTable() {
     }
 
     var visibleCols = COL_DEFS.filter(function(d){ return !_hiddenCols[d.key]; });
+    var allFilteredSelected = _filtered.length > 0 && _filtered.every(function(f){ return _selected.has(String(f.fighter_id)); });
 
     var thead = '<thead><tr>'
-        + '<th onclick="sortBy(\'#\')" title="Row number">#</th>'
+        + '<th onclick="selectAllFiltered()" title="Select / deselect all visible" style="cursor:pointer;">'
+            + '<input type="checkbox" class="fighter-ck" ' + (allFilteredSelected ? 'checked' : '') + ' onclick="event.stopPropagation();selectAllFiltered()" style="pointer-events:none;">'
+            + '<span style="font-size:0.78em;margin-left:1px;">#</span>'
+        + '</th>'
         + '<th class="left" onclick="sortBy(\'class\')" title="Class">CLASS'
             + (_sortCol==='class' ? (_sortDir===-1?' <span style="color:var(--gold)">▼</span>':' <span style="color:var(--gold)">▲</span>') : '') + '</th>'
         + '<th onclick="sortBy(\'element\')" title="Element">EL'
@@ -547,17 +639,23 @@ function renderTable() {
 
     var tbody = '<tbody>';
     _filtered.forEach(function(f, i) {
-        var cls  = (f.classname || '').toLowerCase().replace(/[\s_-]/g, '');
-        var ci   = FIGHTER_CLASSES[cls] || {e:'⚔️', n: f.classname || '?'};
-        var el   = (f.element || '').toLowerCase();
-        var ee   = FIGHTER_ELEMENTS[el] || '';
-        var race = (f.racename || '').toUpperCase();
-        var dep  = f.in_use === 1 || f.in_use === '1';
+        var cls    = (f.classname || '').toLowerCase().replace(/[\s_-]/g, '');
+        var ci     = FIGHTER_CLASSES[cls] || {e:'⚔️', n: f.classname || '?'};
+        var el     = (f.element || '').toLowerCase();
+        var ee     = FIGHTER_ELEMENTS[el] || '';
+        var race   = (f.racename || '').toUpperCase();
+        var inUse  = f.in_use === 1 || f.in_use === '1' || f.in_use === true || f.in_use === 'true';
+        var fid    = String(f.fighter_id);
+        var isSel  = _selected.has(fid);
+        var trCls  = (inUse ? ' arena-row' : '') + (isSel ? ' sel-row' : '');
 
-        tbody += '<tr>'
-            + '<td>' + (i + 1) + '</td>'
+        tbody += '<tr class="' + trCls.trim() + '">'
+            + '<td onclick="toggleSelect(\'' + fid + '\')">'
+                + '<input type="checkbox" class="fighter-ck" ' + (isSel ? 'checked' : '') + ' onclick="event.stopPropagation();toggleSelect(\'' + fid + '\')">'
+                + '<span style="font-size:0.78em;">' + (i + 1) + '</span>'
+            + '</td>'
             + '<td class="left">'
-                + (dep ? '<span class="deployed-dot" title="Deployed"></span>' : '')
+                + (inUse ? '<span class="deployed-dot" title="In use / arena defender"></span>' : '')
                 + '<span class="cls-badge">' + ci.e + '</span>'
                 + '<span class="cls-name">' + ci.n.toUpperCase() + '</span>'
             + '</td>'
@@ -591,6 +689,113 @@ function toggleCol(btn) {
 
 function showEmpty(msg) {
     document.getElementById('table-container').innerHTML = '<div class="lb-empty">' + msg + '</div>';
+}
+
+// ── SELECTION ────────────────────────────────────────────────────────────────
+function toggleSelect(fid) {
+    fid = String(fid);
+    if (_selected.has(fid)) _selected.delete(fid); else _selected.add(fid);
+    renderTable();
+    renderBulkBar();
+}
+
+function selectAllFiltered() {
+    var allSel = _filtered.every(function(f){ return _selected.has(String(f.fighter_id)); });
+    _filtered.forEach(function(f){
+        if (allSel) _selected.delete(String(f.fighter_id));
+        else _selected.add(String(f.fighter_id));
+    });
+    renderTable();
+    renderBulkBar();
+}
+
+function clearSelection() {
+    _selected.clear();
+    renderTable();
+    renderBulkBar();
+}
+
+function renderBulkBar() {
+    var bar = document.getElementById('bulk-bar');
+    var lbl = document.getElementById('bulk-count');
+    if (!bar) return;
+    var n = _selected.size;
+    if (n === 0) { bar.style.display = 'none'; return; }
+    bar.style.display = 'flex';
+    if (lbl) lbl.textContent = n + ' SELECTED';
+}
+
+// ── BULK ACTIONS ─────────────────────────────────────────────────────────────
+async function sellSelected() {
+    var wallet = getWallet();
+    if (!wallet) { alert('Not logged in.'); return; }
+    var ids = Array.from(_selected);
+    if (!ids.length) return;
+    if (!confirm('Sell ' + ids.length + ' fighter(s)? This cannot be undone.')) return;
+    try {
+        var sess = window.walletSession;
+        if (!sess) { alert('No active wallet session.'); return; }
+        await sess.transact({ actions: [{
+            account: 'fighters.ale', name: 'sellfighter',
+            authorization: [{ actor: wallet, permission: 'active' }],
+            data: { fighter_ids: ids.map(Number), wallet: wallet }
+        }]});
+        alert('Sell TX sent! Reload fighters to refresh.');
+        clearSelection();
+    } catch(e) {
+        alert('TX failed: ' + ((e && e.message) || String(e)));
+    }
+}
+
+async function markSelected(markerType) {
+    var wallet = getWallet();
+    if (!wallet) { alert('Not logged in.'); return; }
+    var ids = Array.from(_selected);
+    if (!ids.length) return;
+    var label = markerType ? ('Mark ' + ids.length + ' fighter(s) as "' + markerType + '"?') : ('Clear marker on ' + ids.length + ' fighter(s)?');
+    if (!confirm(label)) return;
+    try {
+        var sess = window.walletSession;
+        if (!sess) { alert('No active wallet session.'); return; }
+        var actions = ids.map(function(fid) {
+            return {
+                account: 'fighters.ale', name: 'setmarker',
+                authorization: [{ actor: wallet, permission: 'active' }],
+                data: { fighter_id: Number(fid), marker: markerType, wallet: wallet }
+            };
+        });
+        await sess.transact({ actions: actions });
+        alert('Mark TX sent! Reload fighters to refresh.');
+        clearSelection();
+    } catch(e) {
+        alert('TX failed: ' + ((e && e.message) || String(e)));
+    }
+}
+
+async function levelAll() {
+    var wallet = getWallet();
+    if (!wallet) { alert('Not logged in.'); return; }
+    var levellable = _fighters.filter(function(f){
+        var s = f.stats || {};
+        return Number(s.level||0) < 10 && Number(s.experience||0) >= Number(s.required_experience||Infinity);
+    });
+    if (!levellable.length) return;
+    if (!confirm('Level up ' + levellable.length + ' fighter(s)?')) return;
+    try {
+        var sess = window.walletSession;
+        if (!sess) { alert('No active wallet session.'); return; }
+        var actions = levellable.map(function(f) {
+            return {
+                account: 'fighters.ale', name: 'levelup',
+                authorization: [{ actor: wallet, permission: 'active' }],
+                data: { fighter_id: Number(f.fighter_id), wallet: wallet }
+            };
+        });
+        await sess.transact({ actions: actions });
+        alert('Level up TX sent! Reload fighters to refresh.');
+    } catch(e) {
+        alert('TX failed: ' + ((e && e.message) || String(e)));
+    }
 }
 
 // ── WALLET ───────────────────────────────────────────────────────────────────
