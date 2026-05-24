@@ -2665,9 +2665,12 @@ function _extractCostFromError(e) {
         if (e && e.json) msg += ' ' + JSON.stringify(e.json);
     } catch(_) {}
     var patterns = [
+        /required\s+points\s+(\d+)/i,
         /expected[:\s]+(\d+)/i,
         /required[:\s]+(\d+)/i,
+        /required\s+\w+\s+(\d+)/i,
         /cost[:\s]+(\d+)/i,
+        /points[:\s]+(\d+)/i,
         /needs?\s+(\d+)/i,
         /(\d+)\s*(?:ap\b|action.?points)/i
     ];
@@ -3021,12 +3024,20 @@ async function runTxQueue() {
     var cfEl = document.getElementById('txq-cost-fix');
     if (cfEl) cfEl.style.display = 'none';
 
+    // Fetch the real base hire AP cost from the contract config (default 100 is wrong for most players)
+    try {
+        var _cfgRes = await fetchRows({code:'tavern.ale', scope:'tavern.ale', table:'config', limit:1, json:true});
+        if (_cfgRes && _cfgRes.rows && _cfgRes.rows[0] && _cfgRes.rows[0].cost_hire_ap) {
+            _hireBaseCost = Number(_cfgRes.rows[0].cost_hire_ap);
+        }
+    } catch(e) {}
+    if (progLbl) progLbl.textContent = 'Loading NFTs… (base hire cost: ' + _hireBaseCost + ' AP)';
+
     // Load player NFTs once; re-scored per tavern's objectives in txqBestHire
     var _allNFTs = [];
     try { _allNFTs = await loadPlayerHireNFTs(wallet, []); } catch(e) {}
 
     // Build execution plan.
-    // Hire actions are always lazy (computed just before TX) so NFT exclusion and fresh
     // AP cost work correctly even across multiple taverns in the same run.
     // STACKED: travel+hire bundled in one TX (original fast mode).
     // SPLIT: travel then hire as separate TXs (safer, avoids hire-before-travel risk).
@@ -3159,14 +3170,24 @@ async function runTxQueue() {
                 }
             }
             failed++;
-            // Cost mismatch — try to read the correct cost from the error, then auto-retry
+            // Cost mismatch — the error gives the FINAL expected cost; derive the base by adding back the NFT reduction
             if (_isCostMismatchError(e) && (step.isHire || step.isTravelAndHire)) {
                 _txQueueAbort = true;
                 var _errCost = _extractCostFromError(e);
                 if (_errCost) {
-                    _hireBaseCost = _errCost;
+                    // _errCost is the post-reduction total; recover base = errCost + reduction used in this step
+                    var _stepReduction = 0;
+                    if (step.actions) {
+                        step.actions.forEach(function(a) {
+                            if (a.name === 'hire' && a.data) {
+                                var _sent = a.data.cost_action_points || 0;
+                                _stepReduction = (_hireBaseCost || 100) - _sent;
+                            }
+                        });
+                    }
+                    _hireBaseCost = _errCost + _stepReduction;
                     _pendingAutoRetry = true;
-                    if (progLbl) progLbl.textContent = '⚠ Cost corrected to ' + _errCost + ' AP — retrying…';
+                    if (progLbl) progLbl.textContent = '⚠ Base cost corrected to ' + _hireBaseCost + ' AP (final: ' + _errCost + ') — retrying…';
                 } else {
                     if (progLbl) progLbl.textContent = '⚠ HIRE COST MISMATCH — enter correct AP below';
                     txqShowCostFix();
@@ -3551,7 +3572,7 @@ function _inj(){
   var ws=document.getElementById('lang-picker')||document.querySelector('.wallet-section')||document.querySelector('.global-header');
   if(!ws)return;
   var fd=document.createElement('div');fd.className='nav-dropdown-wrap pg-font-dd';
-  fd.innerHTML='<button class="nav-dropdown-btn">Aa &#9660;<\/button><div class="nav-dropdown-menu"><a class="nav-dropdown-item font-opt" href="#" data-font="segoe" onclick="pgSetFont(this.dataset.font);return false;">CLEAN<span class="font-preview" style="font-family:'Segoe UI',sans-serif;">Segoe UI<\/span><\/a><a class="nav-dropdown-item font-opt" href="#" data-font="calibri" onclick="pgSetFont(this.dataset.font);return false;">SOFT<span class="font-preview" style="font-family:'Calibri',sans-serif;">Calibri<\/span><\/a><a class="nav-dropdown-item font-opt" href="#" data-font="georgia" onclick="pgSetFont(this.dataset.font);return false;">CLASSIC<span class="font-preview" style="font-family:'Georgia',serif;">Georgia<\/span><\/a><a class="nav-dropdown-item font-opt active" href="#" data-font="terminal" onclick="pgSetFont(this.dataset.font);return false;">TERMINAL<span class="font-preview" style="font-family:'Courier New',monospace;">Courier New<\/span><\/a><\/div>';
+  fd.innerHTML='<button class="nav-dropdown-btn">Aa &#9660;<\/button><div class="nav-dropdown-menu"><a class="nav-dropdown-item font-opt" href="#" data-font="segoe" onclick="pgSetFont(this.dataset.font);return false;">CLEAN<span class="font-preview" style="font-family:&apos;Segoe UI&apos;,sans-serif;">Segoe UI<\/span><\/a><a class="nav-dropdown-item font-opt" href="#" data-font="calibri" onclick="pgSetFont(this.dataset.font);return false;">SOFT<span class="font-preview" style="font-family:&apos;Calibri&apos;,sans-serif;">Calibri<\/span><\/a><a class="nav-dropdown-item font-opt" href="#" data-font="georgia" onclick="pgSetFont(this.dataset.font);return false;">CLASSIC<span class="font-preview" style="font-family:&apos;Georgia&apos;,serif;">Georgia<\/span><\/a><a class="nav-dropdown-item font-opt active" href="#" data-font="terminal" onclick="pgSetFont(this.dataset.font);return false;">TERMINAL<span class="font-preview" style="font-family:&apos;Courier New&apos;,monospace;">Courier New<\/span><\/a><\/div>';
   var mb=document.createElement('button');mb.id='pg-mode-btn';mb.className='pg-mode-btn';mb.title='Toggle day/night mode';
   var isDay=document.documentElement.classList.contains('day');mb.textContent=isDay?'🌙':'☀';
   mb.onclick=pgToggleDay;ws.insertAdjacentElement('afterend',fd);fd.insertAdjacentElement('afterend',mb);
