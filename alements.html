@@ -133,6 +133,14 @@ select:hover, select:focus { border-color: var(--gold); outline: none; }
 .res-bar { position: absolute; left: 50%; transform: translateX(-50%); width: 9px; border-radius: 4px; opacity: 0.72; transition: bottom 0.4s cubic-bezier(.4,0,.2,1), height 0.4s cubic-bezier(.4,0,.2,1); }
 .res-vals { font-size: 0.58em; color: var(--muted); text-align: center; line-height: 1.6; }
 
+/* TABS */
+.tab-bar { display:flex; gap:0; border-bottom:1px solid rgba(232,160,32,0.15); background:rgba(5,8,20,0.5); padding:0 20px; }
+.tab-btn { background:transparent; color:#506070; border:none; border-bottom:2px solid transparent; padding:10px 18px; font-family:'Courier New',monospace; font-size:0.68em; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all 0.2s; }
+.tab-btn:hover { color:#a08060; }
+.tab-btn.active { color:#e8a020; border-bottom-color:#e8a020; }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+
 /* FOOTER */
 footer { border-top: 1px solid rgba(232,160,32,0.07); padding: 12px 28px; font-size: 0.58em; color: var(--muted); letter-spacing: 1.5px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 </style>
@@ -228,7 +236,18 @@ footer { border-top: 1px solid rgba(232,160,32,0.07); padding: 12px 28px; font-s
     &#9888; This page is currently experimental and values may be incorrect.
 </div>
 
+<div class="tab-bar">
+    <button id="tab-btn-stats" class="tab-btn" onclick="onStatsTabClick()" style="opacity:0.55;color:#8090b0;">&#128274; LIVE STATS</button>
+    <button id="tab-btn-explorer" class="tab-btn active" onclick="showTab('explorer')">STAT EXPLORER</button>
+</div>
+
 <div class="main">
+    <div id="tab-stats" class="tab-content">
+        <div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.5);margin-bottom:20px;">&#9672; USAGE STATISTICS</div>
+        <div id="stats-arena"></div>
+        <div id="stats-dungeon"></div>
+    </div>
+    <div id="tab-explorer" class="tab-content active">
     <div class="selector-row">
         <div class="selector-group">
             <span class="selector-label">CLASS</span>
@@ -254,6 +273,7 @@ footer { border-top: 1px solid rgba(232,160,32,0.07); padding: 12px 28px; font-s
 
     <div class="section-hdr">ELEMENTAL RESISTANCES</div>
     <div class="res-grid" id="res-grid"></div>
+    </div>
 </div>
 
 <footer>
@@ -281,6 +301,27 @@ function updateWalletUI(account) {
     else { if (bc) { bc.style.display = 'none'; bc.classList.remove('logged-in'); } if (ba) ba.style.display = ''; if (bw) bw.style.display = ''; }
 }
 function toggleHamburger() { var dd = document.getElementById('nav-dropdown'); if (dd) dd.classList.toggle('open'); }
+
+// ── TAB SYSTEM ────────────────────────────────────────────────
+var _statsUnlocked = (localStorage.getItem('naron_stats_unlocked') === '1');
+
+function showTab(name) {
+    document.querySelectorAll('.tab-content').forEach(function(el){ el.classList.remove('active'); });
+    document.querySelectorAll('.tab-btn').forEach(function(el){ el.classList.remove('active'); });
+    var tabEl = document.getElementById('tab-' + name);
+    if (tabEl) tabEl.classList.add('active');
+    var btn = document.getElementById('tab-btn-' + name);
+    if (btn) btn.classList.add('active');
+}
+function revealStatsTab() {
+    var btn = document.getElementById('tab-btn-stats');
+    if (btn) { btn.style.opacity = '1'; btn.style.color = ''; btn.textContent = 'LIVE STATS'; }
+}
+window.onStatsTabClick = function() {
+    if (_statsUnlocked) { showTab('stats'); loadStatsIfNeeded(); }
+    else openStatsConsole();
+};
+
 document.addEventListener('click', function(e) {
     var dd = document.getElementById('nav-dropdown'), btn = document.getElementById('hamburger-btn');
     if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) dd.classList.remove('open');
@@ -486,6 +527,8 @@ document.addEventListener('DOMContentLoaded', function() {
     buildStatPanel();
     buildResGrid();
     onClassChange();
+    if (_statsUnlocked) { revealStatsTab(); showTab('stats'); loadStatsIfNeeded(); }
+    else showTab('explorer');
 });
 </script>
 <div id="google_translate_element" style="display:none;"></div>
@@ -518,6 +561,306 @@ document.addEventListener('DOMContentLoaded', function() {
     })();
 </script>
 <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<!-- ── STATS CONSOLE ─────────────────────────────────────────────────────── -->
+<div id="stats-console" style="position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.78);backdrop-filter:blur(3px);">
+    <div id="stats-inner" style="background:rgba(3,6,15,0.98);border:1px solid rgba(232,160,32,0.45);border-radius:4px;padding:16px 18px;width:290px;max-width:92vw;box-shadow:0 0 30px rgba(232,160,32,0.12);"></div>
+</div>
+<script>
+// ── USAGE STATS KEYPAD + DATA PIPELINE ───────────────────────────────────────
+var STATS_CODES  = new Set(['74233','73784']);
+var _statsKpBuf  = '';
+var _statsFetched = false;
+
+function openStatsConsole() {
+    var el = document.getElementById('stats-console');
+    if (!el) return;
+    el.style.display = 'flex';
+    renderStatsLogin();
+}
+function closeStatsConsole() {
+    var el = document.getElementById('stats-console');
+    if (el) el.style.display = 'none';
+}
+function renderStatsLogin() {
+    _statsKpBuf = '';
+    document.getElementById('stats-inner').innerHTML =
+        '<div style="font-size:0.68em;letter-spacing:3px;color:#e8a020;text-transform:uppercase;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(232,160,32,0.2);">&#9670; USAGE STATS ACCESS</div>' +
+        '<div id="st-kp-display" style="background:#030608;border:1px solid rgba(232,160,32,0.2);padding:6px 10px;text-align:center;letter-spacing:8px;color:#e8a020;font-size:1.05em;min-height:30px;margin-bottom:8px;border-radius:2px;">_</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:4px;">' +
+        [1,2,3,4,5,6,7,8,9].map(function(n){
+            return '<button style="background:rgba(12,8,3,0.9);border:1px solid rgba(232,160,32,0.15);color:#c0b090;padding:7px 4px;cursor:pointer;border-radius:2px;font-family:inherit;font-size:0.82em;" onclick="statsKp(\''+n+'\')">'+n+'</button>';
+        }).join('') +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;">' +
+        '<button style="background:rgba(12,8,3,0.9);border:1px solid rgba(232,160,32,0.15);color:#c0b090;padding:7px 4px;cursor:pointer;border-radius:2px;font-family:inherit;font-size:0.82em;" onclick="statsKpClear()">CLR</button>' +
+        '<button style="background:rgba(12,8,3,0.9);border:1px solid rgba(232,160,32,0.15);color:#c0b090;padding:7px 4px;cursor:pointer;border-radius:2px;font-family:inherit;font-size:0.82em;" onclick="statsKp(\'0\')">0</button>' +
+        '<button style="background:rgba(12,8,3,0.9);border:1px solid rgba(232,160,32,0.15);color:#c0b090;padding:7px 4px;cursor:pointer;border-radius:2px;font-family:inherit;font-size:0.82em;" onclick="statsKpEnter()">OK</button>' +
+        '</div>' +
+        '<div id="st-kp-status" style="font-size:0.6em;text-align:center;margin-top:6px;color:#e8a020;min-height:1em;letter-spacing:1px;"></div>' +
+        '<button onclick="closeStatsConsole()" style="width:100%;margin-top:5px;padding:5px;background:transparent;border:1px solid rgba(255,255,255,0.07);color:#444;font-family:inherit;font-size:0.6em;letter-spacing:1px;cursor:pointer;border-radius:2px;">CANCEL</button>';
+}
+function statsKp(d) {
+    if (_statsKpBuf.length < 8) {
+        _statsKpBuf += d;
+        var el = document.getElementById('st-kp-display');
+        if (el) el.textContent = '●'.repeat(_statsKpBuf.length);
+    }
+}
+function statsKpClear() {
+    _statsKpBuf = '';
+    var el = document.getElementById('st-kp-display');
+    if (el) el.textContent = '_';
+}
+function statsKpEnter() {
+    if (STATS_CODES.has(_statsKpBuf)) {
+        _statsUnlocked = true;
+        try { localStorage.setItem('naron_stats_unlocked', '1'); } catch(e) {}
+        var s = document.getElementById('st-kp-status');
+        if (s) { s.textContent = '✓ UNLOCKED'; s.style.color = '#60e090'; }
+        setTimeout(function() {
+            closeStatsConsole();
+            revealStatsTab();
+            showTab('stats');
+            loadStatsIfNeeded();
+        }, 500);
+    } else {
+        var s = document.getElementById('st-kp-status');
+        if (s) { s.textContent = '✗ ACCESS DENIED'; s.style.color = '#ff4466'; }
+        setTimeout(function(){
+            _statsKpBuf = '';
+            var d = document.getElementById('st-kp-display');
+            if (d) d.textContent = '_';
+            var st = document.getElementById('st-kp-status');
+            if (st) st.textContent = '';
+        }, 1200);
+    }
+}
+
+// ── STATS DATA PIPELINE ──────────────────────────────────────────────────────
+var _statsCache     = null;
+var _activeDungDiff = null;
+var _statsGSheetURL = localStorage.getItem('naron_stats_sheet_url') || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-hAPQk2ovvVSlVWR4UWEm91bF9yWem-bkSfteZyKmX8eO-cvUPJmJfeeJbpstKoOK6UWbURvphKq6/pub?gid=1759885564&single=true&output=csv';
+var STATS_HYPERION  = 'https://wax.eosrio.io';
+var STATS_NODE      = 'https://wax.greymass.com';
+
+function loadStatsIfNeeded() {
+    if (_statsFetched) return;
+    _statsFetched = true;
+    _showStatsHome();
+}
+function _showStatsHome() {
+    var arenaEl = document.getElementById('stats-arena');
+    var dungEl  = document.getElementById('stats-dungeon');
+    if (dungEl) dungEl.innerHTML = '';
+    if (!arenaEl) return;
+    arenaEl.innerHTML =
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">' +
+            '<button onclick="runRecentScan()" style="background:transparent;border:1px solid rgba(232,160,32,0.35);color:#c09060;font-family:\'Courier New\',monospace;font-size:0.72em;letter-spacing:1px;padding:7px 18px;cursor:pointer;">&#9654; RECENT SCAN<span style="font-size:0.78em;opacity:0.5;margin-left:6px;">live \xb7 last few hrs</span></button>' +
+            '<button onclick="runHistoricalScan()" style="background:transparent;border:1px solid rgba(120,140,220,0.35);color:#8090c0;font-family:\'Courier New\',monospace;font-size:0.72em;letter-spacing:1px;padding:7px 18px;cursor:pointer;">&#9672; HISTORICAL<span style="font-size:0.78em;opacity:0.5;margin-left:6px;">Google Sheet</span></button>' +
+            '<button onclick="_showStatsSetup()" style="background:transparent;border:1px solid rgba(255,255,255,0.08);color:#506070;font-family:\'Courier New\',monospace;font-size:0.65em;padding:7px 12px;cursor:pointer;letter-spacing:1px;">&#9881; SETUP</button>' +
+        '</div>' +
+        '<div id="stats-msg" style="font-size:0.63em;color:#505060;letter-spacing:1px;min-height:1.2em;"></div>' +
+        '<div id="stats-results"></div>';
+}
+function _setStatsMsg(msg) {
+    var el = document.getElementById('stats-msg');
+    if (el) el.textContent = msg;
+}
+function _showStatsSetup() {
+    var el = document.getElementById('stats-results');
+    if (!el) return;
+    el.innerHTML =
+        '<div style="margin-top:10px;max-width:560px;">' +
+            '<div style="font-size:0.58em;letter-spacing:2px;color:#708090;margin-bottom:8px;">GOOGLE SHEET CSV URL</div>' +
+            '<input id="st-sheet-input" type="text" value="' + (_statsGSheetURL||'') + '" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv" style="width:100%;background:#0a0c18;color:#c0c8e0;border:1px solid rgba(232,160,32,0.2);padding:7px 10px;font-family:\'Courier New\',monospace;font-size:0.68em;box-sizing:border-box;outline:none;">' +
+            '<button onclick="_saveStatsSheet()" style="margin-top:6px;background:transparent;border:1px solid rgba(232,160,32,0.3);color:#c09060;font-family:\'Courier New\',monospace;font-size:0.67em;padding:5px 14px;cursor:pointer;letter-spacing:1px;">SAVE</button>' +
+            '<div style="font-size:0.56em;color:#404858;margin-top:10px;line-height:1.8;">' +
+                'Requires the Google Apps Script poller running on a time trigger.<br>' +
+                'In Google Sheets → File → Share → Publish to web → Sheet "fights" → CSV → Copy link.' +
+            '</div>' +
+        '</div>';
+}
+function _saveStatsSheet() {
+    var inp = document.getElementById('st-sheet-input');
+    if (!inp) return;
+    _statsGSheetURL = inp.value.trim();
+    try { localStorage.setItem('naron_stats_sheet_url', _statsGSheetURL); } catch(e) {}
+    _setStatsMsg('Sheet URL saved.');
+    var el = document.getElementById('stats-results');
+    if (el) el.innerHTML = '';
+}
+window.runRecentScan = async function() {
+    _setStatsMsg('SCANNING battle.ale::fights…');
+    document.getElementById('stats-results') && (document.getElementById('stats-results').innerHTML = '');
+    try {
+        var results = await Promise.allSettled([_scanFightsTable(), _buildEnrichMap()]);
+        var fights    = results[0].status === 'fulfilled' ? results[0].value : [];
+        var enrichMap = results[1].status === 'fulfilled' ? results[1].value : {};
+        _setStatsMsg('PROCESSING ' + fights.length + ' FIGHTS…');
+        var agg = _aggregateFights(fights, enrichMap);
+        _statsCache = agg;
+        var skipNote = agg.total.skipped ? ' \xb7 ' + agg.total.skipped + ' unmatched skipped' : '';
+        _setStatsMsg(fights.length + ' fights scanned \xb7 ' + agg.total.arena + ' arena \xb7 ' + agg.total.dungeon + ' dungeon' + skipNote);
+        _renderStats(agg);
+    } catch(e) {
+        _setStatsMsg('✗ ' + (e && e.message ? e.message.slice(0,80) : String(e)));
+    }
+};
+window.runHistoricalScan = async function() {
+    if (!_statsGSheetURL) { _showStatsSetup(); return; }
+    _setStatsMsg('FETCHING SHEET DATA…');
+    document.getElementById('stats-results') && (document.getElementById('stats-results').innerHTML = '');
+    try {
+        var res = await fetch(_statsGSheetURL);
+        var csv = await res.text();
+        var agg = _parseSheetCSV(csv);
+        _statsCache = agg;
+        _setStatsMsg(agg.count + ' rows \xb7 ' + agg.total.arena + ' arena \xb7 ' + agg.total.dungeon + ' dungeon');
+        _renderStats(agg);
+    } catch(e) {
+        _setStatsMsg('✗ Sheet error: ' + (e && e.message ? e.message.slice(0,80) : String(e)));
+    }
+};
+async function _scanFightsTable() {
+    var rows = [], lb = '', LIMIT = 500;
+    while (true) {
+        var body = {code:'battle.ale', scope:'battle.ale', table:'fights', limit:LIMIT, json:true};
+        if (lb) body.lower_bound = lb;
+        var res  = await fetch(STATS_NODE + '/v1/chain/get_table_rows', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+        var data = await res.json();
+        (data.rows || []).forEach(function(r){ rows.push(r); });
+        if (data.more && (data.rows||[]).length === LIMIT) lb = data.next_key;
+        else break;
+    }
+    return rows;
+}
+async function _buildEnrichMap() {
+    var map = {}, H = STATS_HYPERION;
+    var rs  = await Promise.allSettled([
+        fetch(H + '/v2/history/get_actions?account=arena.ale&filter=arena.ale%3Aplayarena&limit=1000&sort=desc').then(function(r){return r.json();}),
+        fetch(H + '/v2/history/get_actions?account=dungeons.ale&filter=dungeons.ale%3Aplaydungeon&limit=1000&sort=desc').then(function(r){return r.json();})
+    ]);
+    if (rs[0].status === 'fulfilled') {
+        ((rs[0].value && rs[0].value.actions) || []).forEach(function(a) {
+            var d = a.act && a.act.data;
+            if (d && d.history_id) map[d.history_id] = {fight_type:'arena', difficulty:0, crew:String(d.crew_asset_id||''), weapon:String(d.weapon_asset_id||'')};
+        });
+    }
+    if (rs[1].status === 'fulfilled') {
+        ((rs[1].value && rs[1].value.actions) || []).forEach(function(a) {
+            var d = a.act && a.act.data;
+            if (d && d.history_id) map[d.history_id] = {fight_type:'dungeon', difficulty:Number(d.difficulty||0), crew:String(d.crew_asset_id||''), weapon:String(d.weapon_asset_id||'')};
+        });
+    }
+    return map;
+}
+function _aggregateFights(fights, enrichMap) {
+    var arena = {}, dungeon = {}, total = {arena:0, dungeon:0, skipped:0};
+    fights.forEach(function(row) {
+        var winner = (row.log === 'Team 1 wins') ? 1 : 2;
+        var t1 = (row.team1_fighters || []).filter(function(f){ return f.classname && f.classname.trim(); });
+        var t2 = (row.team2_fighters || []).filter(function(f){ return f.classname && f.classname.trim(); });
+        var en = enrichMap[row.history_id];
+        if (!en) { total.skipped++; return; }
+        var ft = en.fight_type, diff = en.difficulty || 0;
+        if (ft === 'arena') {
+            total.arena++;
+            t1.forEach(function(f){ _tally(arena, f.classname, winner === 1); });
+            t2.forEach(function(f){ _tally(arena, f.classname, winner === 2); });
+        } else {
+            total.dungeon++;
+            if (!dungeon[diff]) dungeon[diff] = {};
+            t1.forEach(function(f){ _tally(dungeon[diff], f.classname, winner === 1); });
+        }
+    });
+    return {arena:arena, dungeon:dungeon, total:total, count:fights.length};
+}
+function _tally(map, cls, won) {
+    if (!map[cls]) map[cls] = {wins:0, played:0};
+    map[cls].played++;
+    if (won) map[cls].wins++;
+}
+function _parseSheetCSV(csv) {
+    var lines = csv.replace(/\r/g,'').split('\n');
+    var hdr   = (lines[0]||'').split(',').map(function(h){return h.replace(/"/g,'').trim().toLowerCase();});
+    var get   = function(cols, name){ var i=hdr.indexOf(name); return i>=0?(cols[i]||'').replace(/"/g,'').trim():''; };
+    var arena = {}, dungeon = {}, total = {arena:0, dungeon:0};
+    for (var i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        var cols   = lines[i].split(',');
+        var ft     = get(cols,'fight_type');
+        var diff   = Number(get(cols,'dungeon_difficulty')||get(cols,'difficulty')||0);
+        var winner = Number(get(cols,'winner')||1);
+        var t1c    = (get(cols,'team1_classes')||'').split('|').filter(Boolean);
+        var t2c    = (get(cols,'team2_classes')||'').split('|').filter(Boolean);
+        if (ft === 'arena') {
+            total.arena++;
+            t1c.forEach(function(c){ _tally(arena, c, winner===1); });
+            t2c.forEach(function(c){ _tally(arena, c, winner===2); });
+        } else if (ft === 'dungeon') {
+            total.dungeon++;
+            if (!dungeon[diff]) dungeon[diff] = {};
+            t1c.forEach(function(c){ _tally(dungeon[diff], c, winner===1); });
+        }
+    }
+    return {arena:arena, dungeon:dungeon, total:total, count:lines.length-1};
+}
+function _renderStats(agg) {
+    var el = document.getElementById('stats-results');
+    if (!el) return;
+    var diffs = Object.keys(agg.dungeon || {}).map(Number).sort(function(a,b){return a-b;});
+    var html = _barSection('ARENA', agg.arena);
+    if (diffs.length > 0) {
+        html += '<div style="margin-top:32px;">';
+        html += '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">&#9672; DUNGEON</div>';
+        html += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">';
+        diffs.forEach(function(d) {
+            html += '<button id="ddb-'+d+'" onclick="selectDungDiff('+d+')" style="background:transparent;border:1px solid rgba(232,160,32,0.2);color:#808070;font-family:\'Courier New\',monospace;font-size:0.63em;padding:4px 10px;cursor:pointer;letter-spacing:1px;">LVL '+d+'</button>';
+        });
+        html += '</div><div id="dung-bars"></div></div>';
+    }
+    el.innerHTML = html;
+    if (diffs.length > 0) {
+        _activeDungDiff = diffs.includes(_activeDungDiff) ? _activeDungDiff : diffs[0];
+        selectDungDiff(_activeDungDiff);
+    }
+}
+window.selectDungDiff = function(diff) {
+    _activeDungDiff = diff;
+    document.querySelectorAll('[id^="ddb-"]').forEach(function(b) {
+        var d = Number(b.id.replace('ddb-',''));
+        b.style.borderColor = d===diff ? 'rgba(232,160,32,0.6)' : 'rgba(232,160,32,0.2)';
+        b.style.color = d===diff ? '#e8a020' : '#808070';
+    });
+    var el = document.getElementById('dung-bars');
+    if (!el) return;
+    var data = _statsCache && _statsCache.dungeon && _statsCache.dungeon[diff];
+    el.innerHTML = data ? _buildBars(data) : '<div style="font-size:0.6em;color:#404050;">No data for level '+diff+'</div>';
+};
+function _barSection(title, data) {
+    var inner = data && Object.keys(data).length ? _buildBars(data) : '<div style="font-size:0.6em;color:#404050;padding:8px 0;">No data</div>';
+    return '<div style="margin-bottom:4px;"><div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">&#9672; '+title+'</div>'+inner+'</div>';
+}
+function _buildBars(classStats) {
+    var entries = Object.keys(classStats).map(function(c) {
+        var s = classStats[c];
+        return {cls:c, wins:s.wins, played:s.played, pct: s.played>0 ? s.wins/s.played : 0};
+    }).sort(function(a,b){ return b.pct-a.pct; });
+    var html = '<div style="max-width:520px;">';
+    entries.forEach(function(e) {
+        var pct = Math.round(e.pct*100);
+        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+            '<span style="font-size:0.58em;letter-spacing:1px;color:#a09070;min-width:96px;text-transform:uppercase;">'+e.cls+'</span>' +
+            '<div style="flex:1;background:rgba(255,255,255,0.04);border-radius:2px;height:11px;overflow:hidden;">' +
+                '<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,rgba(232,160,32,0.75),rgba(200,90,20,0.5));border-radius:2px;transition:width 0.4s;"></div>' +
+            '</div>' +
+            '<span style="font-size:0.56em;color:#707060;min-width:82px;text-align:right;">'+pct+'% ('+e.wins+'/'+e.played+')</span>' +
+        '</div>';
+    });
+    return html + '</div>';
+}
+</script>
 
 <!-- __ SHARED DAY MODE + FONT (injected) __ -->
 <style id="pg-theme-css">
