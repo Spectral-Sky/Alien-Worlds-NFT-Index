@@ -2848,7 +2848,8 @@ function txqAddCell(x, y) {
     var isPortal = portals.some(function(p){ return p.x===x && p.y===y; });
     var tavern   = (locs.taverns||[]).find(function(t){ return t.x===x && t.y===y; });
     if (isPortal) {
-        _txQueue.push({ type:'portal', x:x, y:y, planet:_activePlanet });
+        var _portalDef = portals.find(function(p){ return p.x===x && p.y===y; });
+        _txQueue.push({ type:'portal', x:x, y:y, planet:_activePlanet, to: _portalDef && _portalDef.to });
     } else if (tavern) {
         _txQueue.push({ type:'travel+hire', x:x, y:y,
             name: tavern.name || ('Tavern '+x+','+y), land_id: tavern.land_id,
@@ -2958,9 +2959,11 @@ function renderTxQueue() {
                 simX = item.x; simY = item.y;
             }
             if (item.type==='travel+hire'||item.type==='hire') ap += _hireBaseCost||100;
+            var _pFrom = item.planet && PLANETS[item.planet] ? PLANETS[item.planet].name.toUpperCase() : (item.planet||'').toUpperCase();
+            var _pTo   = item.to    && PLANETS[item.to]    ? PLANETS[item.to].name.toUpperCase()    : (item.to||'?').toUpperCase();
             var label = item.type==='travel'      ? 'TRAVEL  ('+item.x+', '+item.y+')'
                       : item.type==='hire'        ? 'HIRE'
-                      : item.type==='portal'      ? 'PORTAL  ('+item.x+', '+item.y+')'
+                      : item.type==='portal'      ? 'PORTAL  '+_pFrom+' → '+_pTo
                       : (item.name || 'TRAVEL + HIRE  ('+item.x+', '+item.y+')');
             return '<div class="txq-item" id="txq-item-'+i+'">'
                 + '<span class="txq-item-icon">' + (icons[item.type]||'→') + '</span>'
