@@ -487,14 +487,14 @@ async function loadFighters() {
 
 // ── RENDER ───────────────────────────────────────────────────────────────────
 var COL_DEFS = [
-    { key:'lv',        label:'LV',        title:'Level',                       sortVal: function(f){ return (f.stats&&f.stats.level!=null)?Number(f.stats.level):0; } },
+    { key:'lv',        label:'LVL',        title:'Level',                       sortVal: function(f){ return (f.stats&&f.stats.level!=null)?Number(f.stats.level):0; } },
     { key:'marker',    label:'MARKER',     title:'Marker type',                 sortVal: function(f){ return f.marker||''; } },
-    { key:'asc',       label:'ASC',        title:'Ascension level',             sortVal: function(f){ return Number(f.ascension_level||0); } },
-    { key:'hp',        label:'HP',         title:'Health — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.health_min||0)+Number(s.health_max||0))/2); } },
-    { key:'dmg',       label:'DMG',        title:'Damage — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.damage_min||0)+Number(s.damage_max||0))/2); } },
-    { key:'cd',        label:'CD ▲',       title:'Cooldown — mean, lower is faster', sortVal: function(f){ return (f.stats&&f.stats.attackspeed_min!=null)?Number(f.stats.attackspeed_min):9999; } },
-    { key:'wu',        label:'WU ▲',       title:'Wind Up — mean, lower is faster',  sortVal: function(f){ return (f.stats&&f.stats.initiative_min!=null)?Number(f.stats.initiative_min):9999; } },
-    { key:'tnt',       label:'TNT',        title:'Taunt — mean (±half-range)',  sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.taunt_min||0)+Number(s.taunt_max||0))/2); } },
+    { key:'asc',       label:'ASCENSION',  title:'Ascension level',             sortVal: function(f){ return Number(f.ascension_level||0); } },
+    { key:'hp',        label:'HEALTH',     title:'Health — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.health_min||0)+Number(s.health_max||0))/2); } },
+    { key:'dmg',       label:'DAMAGE',     title:'Damage — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.damage_min||0)+Number(s.damage_max||0))/2); } },
+    { key:'cd',        label:'COOLDOWN ▲', title:'Cooldown — mean, lower is faster', defaultDir:1, sortVal: function(f){ return (f.stats&&f.stats.attackspeed_min!=null)?Number(f.stats.attackspeed_min):9999; } },
+    { key:'wu',        label:'WINDUP ▲',   title:'Wind Up — mean, lower is faster',  defaultDir:1, sortVal: function(f){ return (f.stats&&f.stats.initiative_min!=null)?Number(f.stats.initiative_min):9999; } },
+    { key:'tnt',       label:'TAUNT',      title:'Taunt — mean (±half-range)',  sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.taunt_min||0)+Number(s.taunt_max||0))/2); } },
     { key:'xp',        label:'XP',         title:'XP progress to next level',   sortVal: function(f){ var s=f.stats||{}; return s.required_experience?Number(s.experience||0)/Number(s.required_experience):0; } },
     { key:'age',       label:'AGE',        title:'Days since creation',         sortVal: function(f){ return fighterAgeDays(f)||0; } },
     { key:'abilities', label:'ABILITIES',  title:'Unlocked abilities',          sortVal: function(f){ return (f.stats&&f.stats.abilities)?f.stats.abilities.length:0; } },
@@ -674,7 +674,11 @@ function renderTable() {
 
 function sortBy(col) {
     if (_sortCol === col) { _sortDir *= -1; }
-    else { _sortCol = col; _sortDir = -1; }
+    else {
+        _sortCol = col;
+        var _def = COL_DEFS.find(function(d){ return d.key === col; });
+        _sortDir = (_def && _def.defaultDir) ? _def.defaultDir : -1;
+    }
     renderTable();
 }
 
