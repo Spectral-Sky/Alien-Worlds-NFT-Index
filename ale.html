@@ -1851,13 +1851,13 @@ function _renderStats(agg) {
     if (Object.keys(agg.crewNFTs || {}).length) {
         html += '<div style="margin-top:36px;">';
         html += '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ TOP CREW NFTs — BY USAGE</div>';
-        html += _buildNftBars(agg.crewNFTs, 20);
+        html += _buildNftBars(agg.crewNFTs, 20, 'crew.worlds');
         html += '</div>';
     }
     if (Object.keys(agg.weaponNFTs || {}).length) {
         html += '<div style="margin-top:28px;">';
         html += '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ TOP ARMS NFTs — BY USAGE</div>';
-        html += _buildNftBars(agg.weaponNFTs, 20);
+        html += _buildNftBars(agg.weaponNFTs, 20, 'arms.worlds');
         html += '</div>';
     }
     el.innerHTML = html;
@@ -1930,7 +1930,7 @@ function _buildUsageBars(classStats) {
     });
     return html + '</div>';
 }
-function _buildNftBars(nftStats, topN) {
+function _buildNftBars(nftStats, topN, folder) {
     var entries = Object.keys(nftStats).map(function(id) {
         var s = nftStats[id];
         return {id:id, wins:s.wins, played:s.played, pct: s.played>0 ? s.wins/s.played : 0};
@@ -1947,7 +1947,7 @@ function _buildNftBars(nftStats, topN) {
                 '<div style="height:100%;width:' + barPct + '%;background:linear-gradient(90deg,rgba(232,160,32,0.3),rgba(200,90,20,0.15));border-radius:10px;transition:width 0.4s;"></div>' +
                 '<span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:0.5em;color:#909080;white-space:nowrap;letter-spacing:0.5px;">' + winPct + '% win &middot; ' + e.played + ' fights</span>' +
             '</div>' +
-            '<img class="nft-thumb-lazy" data-id="' + e.id + '" src="" alt="" width="30" height="30" ' +
+            '<img class="nft-thumb-lazy" data-id="' + e.id + '" data-folder="' + (folder||'') + '" src="" alt="" width="30" height="30" ' +
                 'style="border-radius:5px;background:rgba(255,255,255,0.04);object-fit:contain;flex-shrink:0;opacity:0;transition:opacity 0.35s;">' +
         '</div>';
     });
@@ -1958,22 +1958,25 @@ async function _injectNftImages() {
     if (!thumbs.length) return;
     var ids = [];
     thumbs.forEach(function(img) { if (img.dataset.id) ids.push(img.dataset.id); });
-    var imgMap = {};
+    var tplMap = {};
     for (var i = 0; i < ids.length; i += 100) {
         try {
             var batch = ids.slice(i, i + 100);
             var res  = await fetch('https://wax.api.atomicassets.io/atomicassets/v1/assets?ids=' + batch.join(',') + '&limit=100');
             var data = await res.json();
             (data.data || []).forEach(function(a) {
-                var hash = (a.template && a.template.immutable_data && a.template.immutable_data.img)
-                           || (a.immutable_data && a.immutable_data.img);
-                if (hash) imgMap[String(a.asset_id)] = 'https://atomichub-ipfs.com/ipfs/' + hash;
+                if (a.template && a.template.template_id)
+                    tplMap[String(a.asset_id)] = String(a.template.template_id);
             });
         } catch(e) {}
     }
     thumbs.forEach(function(img) {
-        var url = imgMap[img.dataset.id];
-        if (url) { img.src = url; img.style.opacity = '1'; }
+        var tpl = tplMap[img.dataset.id];
+        var folder = img.dataset.folder;
+        if (tpl && folder) {
+            img.src = folder + '/' + tpl + '.webp';
+            img.style.opacity = '1';
+        }
     });
 }
 
