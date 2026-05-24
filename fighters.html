@@ -390,9 +390,9 @@ var FIGHTER_CLASSES = {
     'tactician':    {e:'🎯',  n:'Tactician'},
 };
 
-var FIGHTER_ELEMENTS = {
-    'fire':'🔥','nature':'🌿','metal':'⚙️','air':'💨','gem':'💎','neutral':'🌌',
-};
+function _elImg(name) {
+    return '<img src="https://alienlegends.io/assets/markers/'+name+'.svg" alt="'+name+'" width="16" height="16" style="vertical-align:middle;opacity:0.9;" onerror="this.style.display=\'none\'">';
+}
 
 // ── STATE ────────────────────────────────────────────────────────────────────
 var _fighters   = [];
@@ -488,7 +488,7 @@ async function loadFighters() {
 // ── RENDER ───────────────────────────────────────────────────────────────────
 var COL_DEFS = [
     { key:'lv',        label:'LVL',        title:'Level',                       sortVal: function(f){ return (f.stats&&f.stats.level!=null)?Number(f.stats.level):0; } },
-    { key:'marker',    label:'MARKER',     title:'Marker type',                 sortVal: function(f){ return f.marker||''; } },
+    { key:'marker',    label:'MARK',       title:'Marker type',                 sortVal: function(f){ return f.marker||''; } },
     { key:'asc',       label:'ASCENSION',  title:'Ascension level',             sortVal: function(f){ return Number(f.ascension_level||0); } },
     { key:'hp',        label:'HEALTH',     title:'Health — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.health_min||0)+Number(s.health_max||0))/2); } },
     { key:'dmg',       label:'DAMAGE',     title:'Damage — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.damage_min||0)+Number(s.damage_max||0))/2); } },
@@ -529,8 +529,7 @@ function cellContent(key, f) {
         case 'marker': {
             var mk = f.marker || '';
             if (!mk) return '<span class="zero">—</span>';
-            var _mimg = '<img src="https://alienlegends.io/assets/markers/'+mk+'.svg" alt="" onerror="this.style.display=\'none\'">';
-            return '<span class="marker-badge">'+_mimg+mk.toUpperCase()+'</span>';
+            return '<span class="marker-badge" title="'+mk+'"><img src="https://alienlegends.io/assets/markers/'+mk+'.svg" alt="'+mk+'" width="18" height="18" style="opacity:0.9;" onerror="this.style.display=\'none\'"></span>';
         }
         case 'asc': {
             var av = Number(f.ascension_level || 0);
@@ -640,7 +639,6 @@ function renderTable() {
         var cls    = (f.classname || '').toLowerCase().replace(/[\s_-]/g, '');
         var ci     = FIGHTER_CLASSES[cls] || {e:'⚔️', n: f.classname || '?'};
         var el     = (f.element || '').toLowerCase();
-        var ee     = FIGHTER_ELEMENTS[el] || '';
         var race   = (f.racename || '').toUpperCase();
         var inUse  = f.in_use === 1 || f.in_use === '1' || f.in_use === true || f.in_use === 'true';
         var fid    = String(f.fighter_id);
@@ -657,7 +655,7 @@ function renderTable() {
                 + '<span class="cls-badge">' + ci.e + '</span>'
                 + '<span class="cls-name">' + ci.n.toUpperCase() + '</span>'
             + '</td>'
-            + '<td title="' + el + '"><span class="el-badge">' + (ee || el.slice(0,3).toUpperCase() || '—') + '</span></td>'
+            + '<td title="' + el + '"><span class="el-badge">' + (el ? _elImg(el) : '<span class="zero">—</span>') + '</span></td>'
             + '<td class="left" style="color:var(--muted);font-size:0.88em;">' + (race || '<span class="zero">—</span>') + '</td>';
 
         visibleCols.forEach(function(d) {
