@@ -1841,7 +1841,7 @@ function _renderStats(agg) {
     var html = _barSection('ARENA — CLASS WIN RATES', agg.arena);
     if (diffs.length > 0) {
         html += '<div style="margin-top:32px;">';
-        html += '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ DUNGEON — CLASS WIN RATES</div>';
+        html += '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ DUNGEON — CLASS USAGE</div>';
         html += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">';
         diffs.forEach(function(d) {
             html += '<button id="ddb-'+d+'" onclick="selectDungDiff('+d+')" style="background:transparent;border:1px solid rgba(232,160,32,0.2);color:#808070;font-family:\'Courier New\',monospace;font-size:0.63em;padding:4px 10px;cursor:pointer;letter-spacing:1px;">LVL '+d+'</button>';
@@ -1880,7 +1880,7 @@ window.selectDungDiff = function(diff) {
     var el = document.getElementById('dung-bars');
     if (!el) return;
     var data = _statsCache && _statsCache.dungeon && _statsCache.dungeon[diff];
-    el.innerHTML = data ? _buildBars(data) : '<div style="font-size:0.6em;color:#404050;">No data for level '+diff+'</div>';
+    el.innerHTML = data ? _buildUsageBars(data) : '<div style="font-size:0.6em;color:#404050;">No data for level '+diff+'</div>';
 };
 
 function _barSection(title, data) {
@@ -1904,6 +1904,28 @@ function _buildBars(classStats) {
                 '<div style="height:100%;width:' + pct + '%;background:' + meta.c + ';border-radius:10px;transition:width 0.4s;"></div>' +
             '</div>' +
             '<span style="font-size:0.54em;color:#707060;min-width:86px;text-align:right;">' + pct + '% (' + e.wins + '/' + e.played + ')</span>' +
+        '</div>';
+    });
+    return html + '</div>';
+}
+function _buildUsageBars(classStats) {
+    var entries = Object.keys(classStats).map(function(c) {
+        var s = classStats[c];
+        return {cls:c, played:s.played};
+    }).sort(function(a,b){ return b.played - a.played; });
+    if (!entries.length) return '<div style="font-size:0.6em;color:#404050;padding:8px 0;">No data</div>';
+    var maxPlayed = entries[0].played;
+    var html = '<div style="max-width:560px;">';
+    entries.forEach(function(e) {
+        var barPct = Math.round((e.played / maxPlayed) * 100);
+        var meta = CLASS_META[e.cls.toLowerCase()] || {e:'◆', c:'rgba(232,160,32,0.75)'};
+        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">' +
+            '<span style="font-size:1em;min-width:22px;text-align:center;line-height:1;">' + meta.e + '</span>' +
+            '<span style="font-size:0.56em;letter-spacing:1px;color:#b0a080;min-width:90px;text-transform:uppercase;">' + e.cls + '</span>' +
+            '<div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;height:13px;overflow:hidden;">' +
+                '<div style="height:100%;width:' + barPct + '%;background:' + meta.c + ';border-radius:10px;transition:width 0.4s;"></div>' +
+            '</div>' +
+            '<span style="font-size:0.54em;color:#707060;min-width:86px;text-align:right;">' + e.played + ' uses</span>' +
         '</div>';
     });
     return html + '</div>';
