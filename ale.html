@@ -1943,7 +1943,8 @@ async function _injectNftImages() {
             var res  = await fetch('https://wax.api.atomicassets.io/atomicassets/v1/assets?ids=' + batch.join(',') + '&limit=100');
             var data = await res.json();
             (data.data || []).forEach(function(a) {
-                var hash = a.immutable_data && a.immutable_data.img;
+                var hash = (a.template && a.template.immutable_data && a.template.immutable_data.img)
+                           || (a.immutable_data && a.immutable_data.img);
                 if (hash) imgMap[String(a.asset_id)] = 'https://atomichub-ipfs.com/ipfs/' + hash;
             });
         } catch(e) {}
