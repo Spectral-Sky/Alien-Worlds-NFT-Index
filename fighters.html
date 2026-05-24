@@ -165,10 +165,12 @@
     #bulk-bar { display:none; align-items:center; gap:8px; flex-wrap:wrap; padding:7px 28px; border-bottom:1px solid rgba(232,160,32,0.07); background:rgba(20,30,60,0.6); font-size:0.72em; }
     #bulk-bar .bulk-lbl { color:var(--gold); letter-spacing:1px; }
     .marker-drop { position:relative; display:inline-block; }
-    .marker-drop-menu { display:none; position:absolute; top:100%; left:0; background:rgba(2,6,20,0.98); border:1px solid var(--border); min-width:130px; z-index:300; padding:4px 0; }
+    .marker-drop-menu { display:none; position:absolute; top:100%; left:0; background:rgba(2,6,20,0.98); border:1px solid var(--border); min-width:160px; z-index:300; padding:4px 0; max-height:340px; overflow-y:auto; }
     .marker-drop:hover .marker-drop-menu { display:block; }
-    .marker-drop-item { display:block; padding:6px 12px; color:#999; font-family:'Courier New',monospace; font-size:0.9em; letter-spacing:1px; cursor:pointer; white-space:nowrap; }
+    .marker-drop-item { display:flex; align-items:center; gap:7px; padding:5px 12px; color:#999; font-family:'Courier New',monospace; font-size:0.78em; letter-spacing:1px; cursor:pointer; white-space:nowrap; }
     .marker-drop-item:hover { color:var(--gold); background:var(--hover); }
+    .marker-drop-item img { width:14px; height:14px; object-fit:contain; opacity:0.8; flex-shrink:0; }
+    .marker-badge img { width:13px; height:13px; object-fit:contain; vertical-align:middle; margin-right:3px; opacity:0.85; }
 
     /* EMPTY / LOADING */
     .lb-empty { padding:40px 28px; text-align:center; font-size:0.75em; color:var(--muted); letter-spacing:2px; }
@@ -327,14 +329,7 @@
     <button class="ctrl-btn" onclick="sellSelected()" style="font-size:0.82em;padding:4px 10px;border-color:rgba(220,80,80,0.4);color:#d06060;">&#128465; SELL</button>
     <div class="marker-drop">
         <button class="ctrl-btn" style="font-size:0.82em;padding:4px 10px;">&#9872; MARK &#9660;</button>
-        <div class="marker-drop-menu">
-            <span class="marker-drop-item" onclick="markSelected('initiative')">INITIATIVE</span>
-            <span class="marker-drop-item" onclick="markSelected('taunt')">TAUNT</span>
-            <span class="marker-drop-item" onclick="markSelected('target')">TARGET</span>
-            <span class="marker-drop-item" onclick="markSelected('gold-up')">GOLD-UP</span>
-            <span class="marker-drop-item" onclick="markSelected('green-double-up')">GREEN-DOUBLE-UP</span>
-            <span class="marker-drop-item" onclick="markSelected('')">— CLEAR MARKER</span>
-        </div>
+        <div class="marker-drop-menu" id="marker-drop-menu"></div>
     </div>
     <button class="ctrl-btn" onclick="clearSelection()" style="font-size:0.82em;padding:4px 10px;color:var(--muted);">&#10005; CLEAR</button>
 </div>
@@ -533,7 +528,9 @@ function cellContent(key, f) {
         case 'lv':        return s.level != null ? s.level : '<span class="zero">—</span>';
         case 'marker': {
             var mk = f.marker || '';
-            return mk ? '<span class="marker-badge">' + mk.toUpperCase() + '</span>' : '<span class="zero">—</span>';
+            if (!mk) return '<span class="zero">—</span>';
+            var _mimg = '<img src="https://alienlegends.io/assets/markers/'+mk+'.svg" alt="" onerror="this.style.display=\'none\'">';
+            return '<span class="marker-badge">'+_mimg+mk.toUpperCase()+'</span>';
         }
         case 'asc': {
             var av = Number(f.ascension_level || 0);
@@ -691,6 +688,28 @@ function toggleCol(btn) {
 function showEmpty(msg) {
     document.getElementById('table-container').innerHTML = '<div class="lb-empty">' + msg + '</div>';
 }
+
+// ── MARKERS ──────────────────────────────────────────────────────────────────
+var MARKER_NAMES = [
+    'damage','health','attackspeed','initiative','taunt','target',
+    'red-duble-down','red-down','middle','green-up','green-duble-up','gold-up',
+    'white','black','blue','yellow','red',
+    'credits','gems','energy','dungeons','arena','tavern',
+    'fire','nature','gem','metal','neutral','air',
+];
+
+(function buildMarkerDropdown() {
+    var el = document.getElementById('marker-drop-menu');
+    if (!el) return;
+    var html = '<span class="marker-drop-item" onclick="markSelected(\'\')"><span style="font-size:0.9em;color:var(--muted);">✕</span> CLEAR MARKER</span>';
+    MARKER_NAMES.forEach(function(m) {
+        html += '<span class="marker-drop-item" onclick="markSelected(\''+m+'\')">'
+            + '<img src="https://alienlegends.io/assets/markers/'+m+'.svg" alt="" width="14" height="14" style="opacity:0.85;" onerror="this.style.display=\'none\'">'
+            + m.toUpperCase()
+            + '</span>';
+    });
+    el.innerHTML = html;
+})();
 
 // ── SELECTION ────────────────────────────────────────────────────────────────
 function toggleSelect(fid) {
