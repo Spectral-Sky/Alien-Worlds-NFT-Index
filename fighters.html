@@ -391,7 +391,7 @@ var FIGHTER_CLASSES = {
 };
 
 var FIGHTER_ELEMENTS = {
-    'fire':'🔥','nature':'🌿','metal':'⚙️','air':'💨','gem':'💎','neutral':'⬜',
+    'fire':'🔥','nature':'🌿','metal':'⚙️','air':'💨','gem':'💎','neutral':'🌌',
 };
 
 // ── STATE ────────────────────────────────────────────────────────────────────
@@ -621,7 +621,7 @@ function renderTable() {
         + '</th>'
         + '<th class="left" onclick="sortBy(\'class\')" title="Class">CLASS'
             + (_sortCol==='class' ? (_sortDir===-1?' <span style="color:var(--gold)">▼</span>':' <span style="color:var(--gold)">▲</span>') : '') + '</th>'
-        + '<th onclick="sortBy(\'element\')" title="Element">EL'
+        + '<th onclick="sortBy(\'element\')" title="Element">ELEMENT'
             + (_sortCol==='element' ? (_sortDir===-1?' <span style="color:var(--gold)">▼</span>':' <span style="color:var(--gold)">▲</span>') : '') + '</th>'
         + '<th class="left" onclick="sortBy(\'race\')" title="Race">RACE'
             + (_sortCol==='race' ? (_sortDir===-1?' <span style="color:var(--gold)">▼</span>':' <span style="color:var(--gold)">▲</span>') : '') + '</th>';
