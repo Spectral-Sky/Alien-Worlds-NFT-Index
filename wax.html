@@ -996,8 +996,8 @@
 
         const { amount: rwdAmt, type: rwdType } = offer ? parseReward(offer) : { amount: 0, type: '' };
         let rwdFmt, rwdLabel, rwdLogo;
-        if (rwdType.includes('wax'))        { rwdFmt = n => n.toLocaleString(undefined,{minimumFractionDigits:4,maximumFractionDigits:4}); rwdLabel = 'WAX';    rwdLogo = LOGO_WAX; }
-        else if (rwdType.includes('tlm'))   { rwdFmt = n => n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); rwdLabel = 'TLM';    rwdLogo = LOGO_TLM; }
+        if (rwdType.includes('wax'))        { rwdFmt = n => n.toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1}); rwdLabel = 'WAX';    rwdLogo = LOGO_WAX; }
+        else if (rwdType.includes('tlm'))   { rwdFmt = n => n.toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1}); rwdLabel = 'TLM';    rwdLogo = LOGO_TLM; }
         else if (rwdType.includes('shard')) { rwdFmt = n => Math.round(n).toLocaleString();                                                  rwdLabel = 'SHARDS'; rwdLogo = LOGO_SHARDS; }
         else if (rwdType.includes('gem'))   { rwdFmt = n => Math.round(n).toLocaleString();                                                  rwdLabel = 'GEMS';   rwdLogo = LOGO_GEMS; }
         else                                { rwdFmt = n => Math.round(n).toLocaleString();                                                  rwdLabel = rwdType.toUpperCase() || '?'; rwdLogo = ''; }
