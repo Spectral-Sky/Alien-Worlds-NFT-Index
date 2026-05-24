@@ -574,6 +574,7 @@
             </div>
 </nav>
     <div class="wallet-section">
+        <button onclick="toggleTipPop(this)" class="tip-btn-sm">&#9829; TIP</button>
         <button id="wallet-connect-btn" class="wallet-btn" onclick="disconnectWallet()" style="display:none;"></button>
         <button id="wallet-btn-anchor" class="wallet-btn" onclick="loginWithAnchor()">[ &#9875; ANCHOR ]</button>
         <button id="wallet-btn-wcc" class="wallet-btn" onclick="loginWithWCC()">[ &#9729; CLOUD WALLET ]</button>
@@ -2050,6 +2051,31 @@ var sf=localStorage.getItem('naron_font');if(sf&&_FM[sf])document.body.style.fon
 if(localStorage.getItem('naron_day')==='1')document.documentElement.classList.add('day');
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',_inj);else _inj();
 })();
+</script>
+<!-- ── TIP ──────────────────────────────────────────────────────────────── -->
+<style>#tip-pop{position:fixed;display:none;flex-direction:column;gap:10px;z-index:9999;background:rgba(4,8,20,0.97);border:1px solid rgba(232,160,32,0.35);padding:14px 18px;min-width:210px;box-shadow:0 6px 24px rgba(0,0,0,0.9);}.tip-btn-sm{background:transparent;border:1px solid rgba(232,160,32,0.25);color:#a07840;font-family:'Courier New',monospace;font-size:0.7em;letter-spacing:1px;padding:5px 10px;cursor:pointer;transition:all 0.2s;}.tip-btn-sm:hover{color:#c09060;border-color:rgba(232,160,32,0.5);}</style>
+<div id="tip-pop">
+    <button onclick="toggleTipPop()" style="position:absolute;top:5px;right:8px;background:transparent;border:none;color:rgba(255,255,255,0.3);cursor:pointer;font-size:1.1em;padding:2px 5px;line-height:1;">✕</button>
+    <div style="font-size:0.58em;letter-spacing:2px;color:rgba(232,160,32,0.5);">&#9829; SUPPORT NARON CODEX</div>
+    <div style="display:flex;gap:7px;align-items:center;">
+        <select id="tip-amt" style="background:#0a0e1c;color:#c09060;border:1px solid rgba(232,160,32,0.3);padding:5px 8px;font-family:'Courier New',monospace;font-size:0.78em;cursor:pointer;outline:none;letter-spacing:1px;">
+            <option value="1">1 WAX</option><option value="5">5 WAX</option><option value="10" selected>10 WAX</option><option value="50">50 WAX</option><option value="100">100 WAX</option><option value="500">500 WAX</option><option value="1000">1000 WAX</option>
+        </select>
+        <button onclick="sendWaxTip('tip-amt','tip-fb')" style="background:transparent;border:1px solid rgba(232,160,32,0.4);color:#c09060;font-family:'Courier New',monospace;font-size:0.78em;padding:5px 12px;cursor:pointer;letter-spacing:1px;white-space:nowrap;">SEND &#9829;</button>
+    </div>
+    <div id="tip-fb" style="font-size:0.65em;min-height:14px;letter-spacing:1px;"></div>
+</div>
+<div id="tip-footer" style="border-top:1px solid rgba(232,160,32,0.1);padding:14px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:rgba(8,10,18,0.6);">
+    <span style="font-size:0.6em;letter-spacing:2px;color:rgba(232,160,32,0.4);white-space:nowrap;">&#9829; SUPPORT NARON CODEX</span>
+    <select id="tip-amt-b" style="background:#0a0e1c;color:#c09060;border:1px solid rgba(232,160,32,0.3);padding:5px 10px;font-family:'Courier New',monospace;font-size:0.75em;cursor:pointer;outline:none;letter-spacing:1px;">
+        <option value="1">1 WAX</option><option value="5">5 WAX</option><option value="10" selected>10 WAX</option><option value="50">50 WAX</option><option value="100">100 WAX</option><option value="500">500 WAX</option><option value="1000">1000 WAX</option>
+    </select>
+    <button onclick="sendWaxTip('tip-amt-b','tip-fb-b')" style="background:transparent;border:1px solid rgba(232,160,32,0.35);color:#c09060;font-family:'Courier New',monospace;font-size:0.75em;padding:5px 14px;cursor:pointer;letter-spacing:1px;transition:all 0.2s;">[ SEND TIP &#9829; ]</button>
+    <span id="tip-fb-b" style="font-size:0.68em;letter-spacing:1px;min-height:1em;"></span>
+</div>
+<script>
+function toggleTipPop(btn){var p=document.getElementById('tip-pop');if(!p)return;if(p.style.display==='flex'){p.style.display='none';return;}if(btn){var r=btn.getBoundingClientRect();p.style.top=(r.bottom+6)+'px';p.style.right=(window.innerWidth-r.right)+'px';p.style.left='';}p.style.display='flex';}
+async function sendWaxTip(selId,fbId){var w=window.walletSession?String(window.walletSession.actor):null;if(!w){alert('Please connect your wallet first.');return;}var amt=Number(document.getElementById(selId).value);var qty=amt.toFixed(8)+' WAX';var fb=document.getElementById(fbId);if(fb){fb.textContent='Sending…';fb.style.color='#a09060';}try{await window.walletSession.transact({actions:[{account:'eosio.token',name:'transfer',authorization:[{actor:w,permission:'active'}],data:{from:w,to:'1x1ci.wam',quantity:qty,memo:'Naron Codex Tip'}}]});if(fb){fb.textContent='♥ Sent! Thank you!';fb.style.color='#60e090';}setTimeout(function(){var e=document.getElementById(fbId);if(e)e.textContent='';},4000);}catch(e){if(fb){fb.textContent='✗ '+(e&&e.message?e.message.slice(0,50):'Error');fb.style.color='#e06060';}}}
 </script>
 </body>
 </html>
