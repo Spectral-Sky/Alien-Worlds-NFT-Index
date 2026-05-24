@@ -3171,6 +3171,40 @@ async function runTxQueue() {
                 }
             }
             failed++;
+
+            // "needs to be on land" — stacked travel+hire TX rejected because hire saw pre-travel position.
+            // Auto-split: send travel alone, wait, then send hire alone, and count as recovered.
+            var _landErr = step.isTravelAndHire && /land.*tavern|tavern.*land|on land/i.test((e && e.message) || String(e));
+            if (_landErr) {
+                console.warn('[TXQ] land error on stacked step — splitting into travel+hire');
+                if (progLbl) progLbl.textContent = '⚠ Splitting travel+hire — retrying as two TXs…';
+                try {
+                    var _travelAct = step.actions.find(function(a){ return a.name === 'travel'; });
+                    var _hireAct   = step.actions.find(function(a){ return a.name === 'hire'; });
+                    if (_travelAct && _hireAct && window.walletSession) {
+                        await window.walletSession.transact({actions:[_travelAct]});
+                        _playerPos = {planet:_activePlanet, x:_travelAct.data.x, y:_travelAct.data.y};
+                        await new Promise(function(r){ setTimeout(r, 1800); });
+                        await window.walletSession.transact({actions:[_hireAct]});
+                        // Recovered — undo the failure tracking
+                        _failedPlan.pop();
+                        failed--;
+                        succeeded++;
+                        if (itemEl) {
+                            itemEl.style.background = 'rgba(96,224,144,0.06)';
+                            var _rl = itemEl.querySelector('.txq-item-label');
+                            if (_rl) _rl.style.color = '#60e090';
+                            var _rb = itemEl.querySelector('.txq-item-retry');
+                            if (_rb) _rb.remove();
+                        }
+                        console.log('[TXQ] split retry succeeded');
+                    }
+                } catch(se) {
+                    console.error('[TXQ] split retry also failed:', se);
+                    if (progLbl) progLbl.textContent = '⚠ Split retry failed — ' + ((se && se.message) || String(se));
+                }
+            }
+
             // Cost mismatch — the error gives the FINAL expected cost; derive the base by adding back the NFT reduction
             if (_isCostMismatchError(e) && (step.isHire || step.isTravelAndHire)) {
                 _txQueueAbort = true;
