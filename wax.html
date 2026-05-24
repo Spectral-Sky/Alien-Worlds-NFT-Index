@@ -645,6 +645,7 @@
     let _reqMap      = {};   // requirement_type → display name
     let _offersCache      = [];   // last fetched offers, used for contribution re-render
     let _customShardWax   = null; // user-pinned WAX per shard (null = use live rate)
+    let _lastShardAvgWax  = null; // last computed valuator average, for the "USE VALUATOR AVG" button
     let _allContribs  = {};  // offer_id → [{wallet, amount}] sorted by amount desc
     let _playerStats  = {};  // permstat key → value for logged-in player
     let _offerById    = {};  // offer_id → offer row, used by optimizer
@@ -1135,8 +1136,9 @@
             <button class="calc-custom-btn" id="calc-custom-btn" onclick="toggleCustomShard()">⚙ CUSTOM SHARD PRICE</button>
             <div class="calc-custom-panel" id="calc-custom-panel">
                 <label>WAX per 1 SHARD</label>
-                <input id="custom-shard-input" type="number" min="0" step="0.0001" placeholder="e.g. 0.0030" oninput="applyCustomShard()">
+                <input id="custom-shard-input" type="number" min="0" step="any" placeholder="e.g. 0.0260" oninput="applyCustomShard()">
                 <div class="calc-custom-hint" id="custom-shard-hint"></div>
+                <button class="sv-apply-btn" id="calc-use-sv-btn" style="font-size:0.62em;margin-top:4px;width:100%;" onclick="useShardValuatorAvg()">◈ USE VALUATOR AVG</button>
                 <button class="calc-custom-clear" onclick="clearCustomShard()">✕ RESET TO LIVE RATE</button>
             </div>
             <div class="calc-note">
@@ -1147,6 +1149,7 @@
         </div>`;
 
         row.innerHTML = html;
+        _refreshSvBtn();
         updateCalcRateDisplay();
         setTimeout(renderOptimizer, 0);
 
@@ -1672,6 +1675,8 @@
         // Average WAX/shard across filtered set
         var ratios = filtered.map(function(x){ return x.ratio; }).filter(Boolean);
         var avgRatio = ratios.length ? ratios.reduce(function(a,b){return a+b;},0) / ratios.length : null;
+        _lastShardAvgWax = avgRatio;
+        _refreshSvBtn();
 
         var avgHtml = '';
         if (avgRatio !== null) {
@@ -1690,6 +1695,23 @@
             '</tr></thead><tbody>' + (rows || '<tr><td colspan="5" style="color:var(--muted);padding:10px;">No listings matched selected tiers.</td></tr>') + '</tbody></table>' +
             '</div>' + avgHtml;
     }
+
+    function _refreshSvBtn() {
+        var b = document.getElementById('calc-use-sv-btn');
+        if (!b) return;
+        if (_lastShardAvgWax) {
+            b.textContent = '◈ USE VALUATOR AVG (' + _lastShardAvgWax.toFixed(5) + ' WAX)';
+            b.style.opacity = '1';
+            b.disabled = false;
+        } else {
+            b.textContent = '◈ USE VALUATOR AVG';
+            b.style.opacity = '0.4';
+            b.disabled = true;
+        }
+    }
+    window.useShardValuatorAvg = function() {
+        if (_lastShardAvgWax) applyShardFloorRate(_lastShardAvgWax);
+    };
 
     window.applyShardFloorRate = function(rate) {
         _customShardWax = rate;
