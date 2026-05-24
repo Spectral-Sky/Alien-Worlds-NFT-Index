@@ -2629,7 +2629,7 @@
 var SWEEP_CODE      = '62766'; // NARON — unlocks queue panel AND auto-reroll
 var _tabClickCount  = 0;
 var _tabClickTimer  = null;
-var _sweepUnlocked  = false;
+var _sweepUnlocked  = (localStorage.getItem('naron_sweep_unlocked') === '1');
 var _sweepKpBuf     = '';
 
 // Queue state (exposed on window so onCell can read them)
@@ -2767,6 +2767,7 @@ function swKpClear() {
 function swKpEnter() {
     if (_sweepKpBuf === SWEEP_CODE) {
         _sweepUnlocked = true;
+        try { localStorage.setItem('naron_sweep_unlocked', '1'); } catch(e) {}
         var s = document.getElementById('sw-kp-status');
         if (s) { s.textContent = '✓ UNLOCKED'; s.style.color = '#60e090'; }
         setTimeout(function() {
