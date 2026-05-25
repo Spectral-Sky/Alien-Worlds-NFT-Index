@@ -151,6 +151,11 @@
     .lb-table tr.sel-row td:nth-child(1) { border-left:2px solid rgba(100,140,240,0.5); }
     .fighter-ck { cursor:pointer; accent-color:var(--gold); width:13px; height:13px; vertical-align:middle; margin-right:3px; }
 
+    /* payday lapsed row */
+    .lb-table tr.payday-row td { background:rgba(200,30,30,0.05) !important; }
+    .lb-table tr.payday-row td:nth-child(1) { border-left:2px solid rgba(220,50,50,0.6); }
+    .lb-table tr.payday-row .cls-name { color:#e83030 !important; font-weight:bold; }
+
     /* STICKY COLUMNS: # | CLASS | EL | RACE */
     .lb-table td:nth-child(1), .lb-table th:nth-child(1) { position:sticky; left:0;    z-index:1; background:#090912; text-align:left; color:var(--muted); font-size:0.88em; min-width:52px; width:52px; cursor:pointer; user-select:none; }
     .lb-table td:nth-child(2), .lb-table th:nth-child(2) { position:sticky; left:52px; z-index:1; background:#090912; text-align:left; min-width:160px; width:160px; max-width:160px; }
@@ -314,6 +319,7 @@
 <div class="controls-bar">
     <button class="ctrl-btn" id="load-btn" onclick="loadFighters()">&#8635; LOAD FIGHTERS</button>
     <button class="ctrl-btn" id="level-all-btn" onclick="levelAll()" disabled title="Level up all fighters with enough XP">&#8679; LEVEL ALL</button>
+    <button class="ctrl-btn" id="pay-grumpy-btn" onclick="payGrumpy()" disabled title="No fighters need payday" style="border-color:rgba(220,80,80,0.35);color:#c06060;">&#128184; PAY GRUMPY</button>
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
         <span style="font-size:0.62em;color:var(--muted);letter-spacing:2px;white-space:nowrap;">OTHER WALLET:</span>
         <input id="wallet-lookup" type="text" placeholder="e.g. abc.wam" autocomplete="off"
@@ -327,6 +333,7 @@
 
 <div id="bulk-bar">
     <span class="bulk-lbl" id="bulk-count">0 SELECTED</span>
+    <button class="ctrl-btn" onclick="paySelectedPayday()" style="font-size:0.82em;padding:4px 10px;border-color:rgba(220,80,80,0.35);color:#c06060;">&#128184; PAY PAYDAY</button>
     <button class="ctrl-btn" onclick="sellSelected()" style="font-size:0.82em;padding:4px 10px;border-color:rgba(220,80,80,0.4);color:#d06060;">&#128465; SELL</button>
     <div class="marker-drop">
         <button class="ctrl-btn" style="font-size:0.82em;padding:4px 10px;">&#9872; MARK &#9660;</button>
@@ -351,6 +358,7 @@
     <button class="col-toggle on" data-col="age" onclick="toggleCol(this)">AGE</button>
     <button class="col-toggle" data-col="abilities" onclick="toggleCol(this)">ABILITIES</button>
     <button class="col-toggle" data-col="id"        onclick="toggleCol(this)">FIGHTER ID</button>
+    <button class="col-toggle" data-col="payday"    onclick="toggleCol(this)">PAYDAY</button>
 </div>
 
 <div class="table-wrap">
@@ -500,6 +508,7 @@ var COL_DEFS = [
     { key:'age',       label:'AGE',        title:'Days since creation',         sortVal: function(f){ return fighterAgeDays(f)||0; } },
     { key:'abilities', label:'ABILITIES',  title:'Unlocked abilities',          sortVal: function(f){ return (f.stats&&f.stats.abilities)?f.stats.abilities.length:0; } },
     { key:'id',        label:'ID',         title:'Fighter asset ID',            sortVal: function(f){ return Number(f.fighter_id||0); } },
+    { key:'payday',    label:'PAYDAY',     title:'Next payday date — red = lapsed, cannot be used', defaultDir:1, sortVal: function(f){ return _paydayMs(f) || Infinity; } },
 ];
 
 function fighterAgeDays(f) {
@@ -510,6 +519,23 @@ function fighterAgeDays(f) {
         : new Date(String(cd).replace(' ','T') + (String(cd).includes('Z') ? '' : 'Z')).getTime();
     if (!ts || isNaN(ts)) return null;
     return Math.floor((Date.now() - ts) / 86400000);
+}
+
+function _paydayMs(f) {
+    var pd = f.next_payday;
+    if (!pd) return null;
+    if (typeof pd === 'number') return pd * 1000;
+    var s = String(pd).replace(' ', 'T');
+    if (!s.includes('Z')) s += 'Z';
+    var t = new Date(s).getTime();
+    return isNaN(t) ? null : t;
+}
+function _paydayColor(tsMs) {
+    var days = (tsMs - Date.now()) / 86400000;
+    if (days <= 1)  return '#e87030';
+    if (days <= 3)  return '#e8b030';
+    if (days <= 7)  return '#c8c040';
+    return '#60c080';
 }
 
 function meanRange(mn, mx) {
@@ -567,6 +593,19 @@ function cellContent(key, f) {
             return abls.map(function(a){ return a.displayname || a.name || '?'; }).join(', ');
         }
         case 'id': return '<span style="font-size:0.85em;color:var(--muted);">' + (f.fighter_id || '—') + '</span>';
+        case 'payday': {
+            var pdMs = _paydayMs(f);
+            if (!pdMs) return '<span class="zero">—</span>';
+            var now = Date.now();
+            var d = new Date(pdMs);
+            var dateStr = (d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(2);
+            if (pdMs <= now) {
+                var daysLate = Math.floor((now - pdMs) / 86400000);
+                var tip = daysLate > 0 ? daysLate + 'd overdue' : 'due today';
+                return '<span style="color:#e83030;font-weight:bold;letter-spacing:0.5px;" title="' + tip + '">&#9760; ' + dateStr + '</span>';
+            }
+            return '<span style="color:' + _paydayColor(pdMs) + ';font-size:0.9em;" title="' + Math.ceil((pdMs-now)/86400000) + 'd until payday">' + dateStr + '</span>';
+        }
     }
     return '';
 }
@@ -601,6 +640,15 @@ function renderTable() {
     });
     var laBtn = document.getElementById('level-all-btn');
     if (laBtn) { laBtn.disabled = levellable.length === 0; laBtn.title = levellable.length + ' fighter(s) ready to level up'; }
+
+    var now = Date.now();
+    var grumpy = _fighters.filter(function(f){ var p = _paydayMs(f); return p && p <= now; });
+    var pgBtn = document.getElementById('pay-grumpy-btn');
+    if (pgBtn) {
+        pgBtn.disabled = grumpy.length === 0;
+        pgBtn.title = grumpy.length > 0 ? grumpy.length + ' fighter(s) need payday' : 'No fighters need payday';
+        pgBtn.innerHTML = '&#128184; PAY GRUMPY' + (grumpy.length > 0 ? ' (' + grumpy.length + ')' : '');
+    }
 
     if (!_fighters.length) {
         showEmpty('No fighters loaded — log in and click LOAD FIGHTERS.');
@@ -641,10 +689,12 @@ function renderTable() {
         var ci     = FIGHTER_CLASSES[cls] || {e:'⚔️', n: f.classname || '?'};
         var el     = (f.element || '').toLowerCase();
         var race   = (f.racename || '').toUpperCase();
-        var inUse  = f.in_use === 1 || f.in_use === '1' || f.in_use === true || f.in_use === 'true';
-        var fid    = String(f.fighter_id);
-        var isSel  = _selected.has(fid);
-        var trCls  = (inUse ? ' arena-row' : '') + (isSel ? ' sel-row' : '');
+        var inUse   = f.in_use === 1 || f.in_use === '1' || f.in_use === true || f.in_use === 'true';
+        var fid     = String(f.fighter_id);
+        var isSel   = _selected.has(fid);
+        var pdMs    = _paydayMs(f);
+        var pdLapsed = pdMs && pdMs <= Date.now();
+        var trCls   = (inUse ? ' arena-row' : '') + (isSel ? ' sel-row' : '') + (pdLapsed ? ' payday-row' : '');
 
         tbody += '<tr class="' + trCls.trim() + '">'
             + '<td onclick="toggleSelect(\'' + fid + '\')">'
@@ -816,6 +866,55 @@ async function levelAll() {
         });
         await sess.transact({ actions: actions });
         alert('Level up TX sent! Reload fighters to refresh.');
+    } catch(e) {
+        alert('TX failed: ' + ((e && e.message) || String(e)));
+    }
+}
+
+async function payGrumpy() {
+    var wallet = getWallet();
+    if (!wallet) { alert('Not logged in.'); return; }
+    var now = Date.now();
+    var grumpy = _fighters.filter(function(f){ var p = _paydayMs(f); return p && p <= now; });
+    if (!grumpy.length) return;
+    if (!confirm('Pay payday for ' + grumpy.length + ' grumpy fighter(s)?')) return;
+    try {
+        var sess = window.walletSession;
+        if (!sess) { alert('No active wallet session.'); return; }
+        var actions = grumpy.map(function(f) {
+            return {
+                account: 'fighters.ale', name: 'payday',
+                authorization: [{ actor: wallet, permission: 'active' }],
+                data: { fighter_id: Number(f.fighter_id), wallet: wallet }
+            };
+        });
+        await sess.transact({ actions: actions });
+        alert('Payday TX sent for ' + grumpy.length + ' fighter(s)! Reload to refresh.');
+    } catch(e) {
+        alert('TX failed: ' + ((e && e.message) || String(e)));
+    }
+}
+
+async function paySelectedPayday() {
+    var wallet = getWallet();
+    if (!wallet) { alert('Not logged in.'); return; }
+    var ids = Array.from(_selected);
+    if (!ids.length) return;
+    var targets = _fighters.filter(function(f){ return ids.includes(String(f.fighter_id)); });
+    if (!targets.length) return;
+    if (!confirm('Pay payday for ' + targets.length + ' selected fighter(s)?')) return;
+    try {
+        var sess = window.walletSession;
+        if (!sess) { alert('No active wallet session.'); return; }
+        var actions = targets.map(function(f) {
+            return {
+                account: 'fighters.ale', name: 'payday',
+                authorization: [{ actor: wallet, permission: 'active' }],
+                data: { fighter_id: Number(f.fighter_id), wallet: wallet }
+            };
+        });
+        await sess.transact({ actions: actions });
+        alert('Payday TX sent for ' + targets.length + ' fighter(s)! Reload to refresh.');
     } catch(e) {
         alert('TX failed: ' + ((e && e.message) || String(e)));
     }
