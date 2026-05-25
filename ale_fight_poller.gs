@@ -1,11 +1,11 @@
 // ── ALE Fight Stats Poller ────────────────────────────────────────────────────
 // Paste into Google Apps Script (script.google.com) attached to a spreadsheet.
 //
-// Sheet columns (14):
+// Sheet columns (16):
 //   history_id | wallet | timestamp | fight_type | dungeon_difficulty |
 //   winner | crew_asset_id | weapon_asset_id |
 //   team1_classes | team2_classes | team1_fighter_ids | team2_fighter_ids |
-//   team1_races | team2_races
+//   team1_races | team2_races | team1_elements | team2_elements
 //
 // Note: team2 crew/weapon asset IDs are NOT in the fight data — the
 //       battle.ale::fight action only records the attacker's NFTs.
@@ -105,6 +105,14 @@ function processFightsData_(sheet) {
       .filter(function(f){ return f.racename && f.racename.trim(); })
       .map(function(f){ return f.racename; }).join('|');
 
+    var t1e = (row.team1_fighters || [])
+      .filter(function(f){ return (f.elementname || f.element || '').trim(); })
+      .map(function(f){ return f.elementname || f.element; }).join('|');
+
+    var t2e = (row.team2_fighters || [])
+      .filter(function(f){ return (f.elementname || f.element || '').trim(); })
+      .map(function(f){ return f.elementname || f.element; }).join('|');
+
     // fighter_id 99999999999 is the weapon NFT slot placeholder — exclude it
     var t1ids = (row.team1_fighters || [])
       .filter(function(f){ return f.fighter_id && String(f.fighter_id) !== '99999999999'; })
@@ -134,12 +142,14 @@ function processFightsData_(sheet) {
       t1ids,                        // K
       t2ids,                        // L
       t1r,                          // M
-      t2r                           // N
+      t2r,                          // N
+      t1e,                          // O
+      t2e                           // P
     ]);
   });
 
   if (newRows.length > 0) {
-    sheet.getRange(sheet.getLastRow() + 1, 1, newRows.length, 14).setValues(newRows);
+    sheet.getRange(sheet.getLastRow() + 1, 1, newRows.length, 16).setValues(newRows);
     Logger.log('Appended ' + newRows.length + ' rows.');
   } else {
     Logger.log('No new fights.');
@@ -156,14 +166,14 @@ function processFightsData_(sheet) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Write the canonical 14-column header
+// Write the canonical 16-column header
 // ─────────────────────────────────────────────────────────────────────────────
 function writeHeader_(sheet) {
-  sheet.getRange(1, 1, 1, 14).setValues([[
+  sheet.getRange(1, 1, 1, 16).setValues([[
     'history_id','wallet','timestamp','fight_type','dungeon_difficulty',
     'winner','crew_asset_id','weapon_asset_id',
     'team1_classes','team2_classes','team1_fighter_ids','team2_fighter_ids',
-    'team1_races','team2_races'
+    'team1_races','team2_races','team1_elements','team2_elements'
   ]]);
   sheet.setFrozenRows(1);
 }
