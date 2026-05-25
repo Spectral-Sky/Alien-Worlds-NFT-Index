@@ -333,7 +333,7 @@
 
 <div id="bulk-bar">
     <span class="bulk-lbl" id="bulk-count">0 SELECTED</span>
-    <button class="ctrl-btn" onclick="paySelectedPayday()" style="font-size:0.82em;padding:4px 10px;border-color:rgba(220,80,80,0.35);color:#c06060;">&#128184; PAY PAYDAY</button>
+    <button class="ctrl-btn" onclick="paySelectedPayday()" style="font-size:0.82em;padding:4px 10px;border-color:rgba(220,80,80,0.35);color:#c06060;">&#128184; PAYDAY</button>
     <button class="ctrl-btn" onclick="sellSelected()" style="font-size:0.82em;padding:4px 10px;border-color:rgba(220,80,80,0.4);color:#d06060;">&#128465; SELL</button>
     <div class="marker-drop">
         <button class="ctrl-btn" style="font-size:0.82em;padding:4px 10px;">&#9872; MARK &#9660;</button>
@@ -878,21 +878,7 @@ async function payGrumpy() {
     var grumpy = _fighters.filter(function(f){ var p = _paydayMs(f); return p && p <= now; });
     if (!grumpy.length) return;
     if (!confirm('Pay payday for ' + grumpy.length + ' grumpy fighter(s)?')) return;
-    try {
-        var sess = window.walletSession;
-        if (!sess) { alert('No active wallet session.'); return; }
-        var actions = grumpy.map(function(f) {
-            return {
-                account: 'fighters.ale', name: 'payday',
-                authorization: [{ actor: wallet, permission: 'active' }],
-                data: { fighter_id: Number(f.fighter_id), wallet: wallet }
-            };
-        });
-        await sess.transact({ actions: actions });
-        alert('Payday TX sent for ' + grumpy.length + ' fighter(s)! Reload to refresh.');
-    } catch(e) {
-        alert('TX failed: ' + ((e && e.message) || String(e)));
-    }
+    await _sendPayday(wallet, grumpy, grumpy.length + ' grumpy fighter(s)');
 }
 
 async function paySelectedPayday() {
@@ -903,18 +889,20 @@ async function paySelectedPayday() {
     var targets = _fighters.filter(function(f){ return ids.includes(String(f.fighter_id)); });
     if (!targets.length) return;
     if (!confirm('Pay payday for ' + targets.length + ' selected fighter(s)?')) return;
+    await _sendPayday(wallet, targets, targets.length + ' selected fighter(s)');
+}
+
+async function _sendPayday(wallet, fighters, label) {
     try {
         var sess = window.walletSession;
         if (!sess) { alert('No active wallet session.'); return; }
-        var actions = targets.map(function(f) {
-            return {
-                account: 'fighters.ale', name: 'payday',
-                authorization: [{ actor: wallet, permission: 'active' }],
-                data: { fighter_id: Number(f.fighter_id), wallet: wallet }
-            };
-        });
-        await sess.transact({ actions: actions });
-        alert('Payday TX sent for ' + targets.length + ' fighter(s)! Reload to refresh.');
+        var fids = fighters.map(function(f){ return Number(f.fighter_id); });
+        await sess.transact({ actions: [{
+            account: 'fighters.ale', name: 'payday',
+            authorization: [{ actor: wallet, permission: 'active' }],
+            data: { fighter_id: fids, wallet: wallet }
+        }]});
+        alert('Payday TX sent for ' + label + '! Reload to refresh.');
     } catch(e) {
         alert('TX failed: ' + ((e && e.message) || String(e)));
     }
