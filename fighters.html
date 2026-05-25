@@ -156,15 +156,29 @@
     .lb-table tr.payday-row td:nth-child(1) { border-left:2px solid rgba(220,50,50,0.6); }
     .lb-table tr.payday-row .cls-name { color:#e83030 !important; font-weight:bold; }
 
-    /* STICKY COLUMNS: # | CLASS | EL | RACE */
+    /* STICKY COLUMNS: # | CLASS | EL | RACE | LVL | MARK */
     .lb-table td:nth-child(1), .lb-table th:nth-child(1) { position:sticky; left:0;    z-index:1; background:#090912; text-align:left; color:var(--muted); font-size:0.88em; min-width:52px; width:52px; cursor:pointer; user-select:none; }
     .lb-table td:nth-child(2), .lb-table th:nth-child(2) { position:sticky; left:52px; z-index:1; background:#090912; text-align:left; min-width:160px; width:160px; max-width:160px; }
     .lb-table td:nth-child(3), .lb-table th:nth-child(3) { position:sticky; left:212px; z-index:1; background:#090912; text-align:center; min-width:46px; width:46px; }
-    .lb-table td:nth-child(4), .lb-table th:nth-child(4) { position:sticky; left:258px; z-index:1; background:#090912; text-align:left; min-width:82px; width:82px; box-shadow:2px 0 6px rgba(0,0,0,0.6); }
+    .lb-table td:nth-child(4), .lb-table th:nth-child(4) { position:sticky; left:258px; z-index:1; background:#090912; text-align:left; min-width:82px; width:82px; }
+    .lb-table td:nth-child(5), .lb-table th:nth-child(5) { position:sticky; left:340px; z-index:1; background:#090912; text-align:center; min-width:40px; width:40px; }
+    .lb-table td:nth-child(6), .lb-table th:nth-child(6) { position:sticky; left:380px; z-index:1; background:#090912; text-align:left; min-width:80px; width:80px; box-shadow:2px 0 6px rgba(0,0,0,0.6); }
     .lb-table thead th:nth-child(1), .lb-table thead th:nth-child(2),
-    .lb-table thead th:nth-child(3), .lb-table thead th:nth-child(4) { z-index:3; }
+    .lb-table thead th:nth-child(3), .lb-table thead th:nth-child(4),
+    .lb-table thead th:nth-child(5), .lb-table thead th:nth-child(6) { z-index:3; }
     .lb-table tr:hover td:nth-child(1), .lb-table tr:hover td:nth-child(2),
-    .lb-table tr:hover td:nth-child(3), .lb-table tr:hover td:nth-child(4) { background:#0f1220; }
+    .lb-table tr:hover td:nth-child(3), .lb-table tr:hover td:nth-child(4),
+    .lb-table tr:hover td:nth-child(5), .lb-table tr:hover td:nth-child(6) { background:#0f1220; }
+    /* Opaque frozen cell backgrounds for colored rows (prevent bleed-through) */
+    .lb-table tr.arena-row td:nth-child(1),.lb-table tr.arena-row td:nth-child(2),
+    .lb-table tr.arena-row td:nth-child(3),.lb-table tr.arena-row td:nth-child(4),
+    .lb-table tr.arena-row td:nth-child(5),.lb-table tr.arena-row td:nth-child(6) { background:#140d0b !important; }
+    .lb-table tr.sel-row td:nth-child(1),.lb-table tr.sel-row td:nth-child(2),
+    .lb-table tr.sel-row td:nth-child(3),.lb-table tr.sel-row td:nth-child(4),
+    .lb-table tr.sel-row td:nth-child(5),.lb-table tr.sel-row td:nth-child(6) { background:#0b0d18 !important; }
+    .lb-table tr.payday-row td:nth-child(1),.lb-table tr.payday-row td:nth-child(2),
+    .lb-table tr.payday-row td:nth-child(3),.lb-table tr.payday-row td:nth-child(4),
+    .lb-table tr.payday-row td:nth-child(5),.lb-table tr.payday-row td:nth-child(6) { background:#110909 !important; }
 
     /* bulk action bar */
     #bulk-bar { display:none; align-items:center; gap:8px; flex-wrap:wrap; padding:7px 28px; border-bottom:1px solid rgba(232,160,32,0.07); background:rgba(20,30,60,0.6); font-size:0.72em; }
@@ -202,9 +216,12 @@
     html.day .lb-table td:nth-child(1), html.day .lb-table th:nth-child(1),
     html.day .lb-table td:nth-child(2), html.day .lb-table th:nth-child(2),
     html.day .lb-table td:nth-child(3), html.day .lb-table th:nth-child(3),
-    html.day .lb-table td:nth-child(4), html.day .lb-table th:nth-child(4) { background:#dce8f8; }
+    html.day .lb-table td:nth-child(4), html.day .lb-table th:nth-child(4),
+    html.day .lb-table td:nth-child(5), html.day .lb-table th:nth-child(5),
+    html.day .lb-table td:nth-child(6), html.day .lb-table th:nth-child(6) { background:#dce8f8; }
     html.day .lb-table tr:hover td:nth-child(1), html.day .lb-table tr:hover td:nth-child(2),
-    html.day .lb-table tr:hover td:nth-child(3), html.day .lb-table tr:hover td:nth-child(4) { background:#ccd8f0; }
+    html.day .lb-table tr:hover td:nth-child(3), html.day .lb-table tr:hover td:nth-child(4),
+    html.day .lb-table tr:hover td:nth-child(5), html.day .lb-table tr:hover td:nth-child(6) { background:#ccd8f0; }
     html.day #bulk-bar { background:rgba(210,225,255,0.7); }
     html.day .marker-drop-menu { background:rgba(235,240,255,0.98); }
     html.day .marker-drop-item { color:#4060a0; }
@@ -344,8 +361,6 @@
 
 <div class="col-toggles">
     <span class="col-toggle-label">SHOW:</span>
-    <button class="col-toggle col-toggle-blue on"   data-col="lv"     onclick="toggleCol(this)">LV</button>
-    <button class="col-toggle col-toggle-purple on" data-col="marker" onclick="toggleCol(this)">MARKER</button>
     <button class="col-toggle col-toggle-purple on" data-col="asc"    onclick="toggleCol(this)">ASC</button>
     <div class="col-toggles-sep"></div>
     <button class="col-toggle col-toggle-red on"   data-col="hp"     onclick="toggleCol(this)">HP</button>
@@ -496,8 +511,8 @@ async function loadFighters() {
 
 // ── RENDER ───────────────────────────────────────────────────────────────────
 var COL_DEFS = [
-    { key:'lv',        label:'LVL',        title:'Level',                       sortVal: function(f){ return (f.stats&&f.stats.level!=null)?Number(f.stats.level):0; } },
-    { key:'marker',    label:'MARK',       title:'Marker type',                 sortVal: function(f){ return f.marker||''; } },
+    { key:'lv',        label:'LVL',        title:'Level',                       fixed:true, sortVal: function(f){ return (f.stats&&f.stats.level!=null)?Number(f.stats.level):0; } },
+    { key:'marker',    label:'MARK',       title:'Marker type',                 fixed:true, sortVal: function(f){ return f.marker||''; } },
     { key:'asc',       label:'ASCENSION',  title:'Ascension level',             sortVal: function(f){ return Number(f.ascension_level||0); } },
     { key:'hp',        label:'HEALTH',     title:'Health — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.health_min||0)+Number(s.health_max||0))/2); } },
     { key:'dmg',       label:'DAMAGE',     title:'Damage — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.damage_min||0)+Number(s.damage_max||0))/2); } },
@@ -506,9 +521,9 @@ var COL_DEFS = [
     { key:'tnt',       label:'TAUNT',      title:'Taunt — mean (±half-range)',  sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.taunt_min||0)+Number(s.taunt_max||0))/2); } },
     { key:'xp',        label:'XP',         title:'XP progress to next level',   sortVal: function(f){ var s=f.stats||{}; return s.required_experience?Number(s.experience||0)/Number(s.required_experience):0; } },
     { key:'age',       label:'AGE',        title:'Days since creation',         sortVal: function(f){ return fighterAgeDays(f)||0; } },
+    { key:'payday',    label:'PAYDAY',     title:'Next payday date — red = lapsed, cannot be used', defaultDir:1, sortVal: function(f){ return _paydayMs(f) || Infinity; } },
     { key:'abilities', label:'ABILITIES',  title:'Unlocked abilities',          sortVal: function(f){ return (f.stats&&f.stats.abilities)?f.stats.abilities.length:0; } },
     { key:'id',        label:'ID',         title:'Fighter asset ID',            sortVal: function(f){ return Number(f.fighter_id||0); } },
-    { key:'payday',    label:'PAYDAY',     title:'Next payday date — red = lapsed, cannot be used', defaultDir:1, sortVal: function(f){ return _paydayMs(f) || Infinity; } },
 ];
 
 function fighterAgeDays(f) {
@@ -590,7 +605,25 @@ function cellContent(key, f) {
         case 'abilities': {
             var abls = s.abilities || [];
             if (!abls.length) return '<span class="zero">—</span>';
-            return abls.map(function(a){ return a.displayname || a.name || '?'; }).join(', ');
+            var AW_RARITY = {
+                abundant:  '#888888',
+                common:    '#90c880',
+                rare:      '#4488ff',
+                epic:      '#aa44ff',
+                legendary: '#ff8800',
+                mythic:    '#ff3060'
+            };
+            return '<div style="display:flex;flex-direction:column;gap:3px;">' +
+                abls.map(function(a) {
+                    var r = (a.rarity || '').toLowerCase();
+                    var col = r ? (AW_RARITY[r] || '#666') : '#60c890';
+                    var name = a.displayname || a.name || '?';
+                    return '<div style="display:flex;align-items:center;gap:5px;white-space:nowrap;">'
+                        + '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'
+                        + col + ';flex-shrink:0;box-shadow:0 0 4px ' + col + '60;"></span>'
+                        + '<span style="color:' + col + ';font-size:0.85em;">' + name + '</span>'
+                        + '</div>';
+                }).join('') + '</div>';
         }
         case 'id': return '<span style="font-size:0.85em;color:var(--muted);">' + (f.fighter_id || '—') + '</span>';
         case 'payday': {
@@ -624,8 +657,8 @@ function renderTable() {
     if (sortDef) {
         _filtered.sort(function(a, b) {
             var av = sortDef.sortVal(a), bv = sortDef.sortVal(b);
-            if (av < bv) return _sortDir;
-            if (av > bv) return -_sortDir;
+            if (av < bv) return -_sortDir;
+            if (av > bv) return _sortDir;
             return 0;
         });
     }
@@ -659,25 +692,33 @@ function renderTable() {
         return;
     }
 
-    var visibleCols = COL_DEFS.filter(function(d){ return !_hiddenCols[d.key]; });
+    var visibleCols = COL_DEFS.filter(function(d){ return !d.fixed && !_hiddenCols[d.key]; });
     var allFilteredSelected = _filtered.length > 0 && _filtered.every(function(f){ return _selected.has(String(f.fighter_id)); });
+
+    function _sortArrow(key) {
+        if (_sortCol !== key) return '';
+        return _sortDir === -1 ? ' sort-desc' : ' sort-asc';
+    }
+    function _inlineArrow(key) {
+        if (_sortCol !== key) return '';
+        return _sortDir === -1 ? ' <span style="color:var(--gold)">▼</span>' : ' <span style="color:var(--gold)">▲</span>';
+    }
 
     var thead = '<thead><tr>'
         + '<th onclick="selectAllFiltered()" title="Select / deselect all visible" style="cursor:pointer;">'
             + '<input type="checkbox" class="fighter-ck" ' + (allFilteredSelected ? 'checked' : '') + ' onclick="event.stopPropagation();selectAllFiltered()" style="pointer-events:none;">'
             + '<span style="font-size:0.78em;margin-left:1px;">#</span>'
         + '</th>'
-        + '<th class="left" onclick="sortBy(\'class\')" title="Class">CLASS'
-            + (_sortCol==='class' ? (_sortDir===-1?' <span style="color:var(--gold)">▼</span>':' <span style="color:var(--gold)">▲</span>') : '') + '</th>'
-        + '<th onclick="sortBy(\'element\')" title="Element">ELEMENT'
-            + (_sortCol==='element' ? (_sortDir===-1?' <span style="color:var(--gold)">▼</span>':' <span style="color:var(--gold)">▲</span>') : '') + '</th>'
-        + '<th class="left" onclick="sortBy(\'race\')" title="Race">RACE'
-            + (_sortCol==='race' ? (_sortDir===-1?' <span style="color:var(--gold)">▼</span>':' <span style="color:var(--gold)">▲</span>') : '') + '</th>';
+        + '<th class="left" onclick="sortBy(\'class\')" title="Class">CLASS' + _inlineArrow('class') + '</th>'
+        + '<th onclick="sortBy(\'element\')" title="Element">ELEMENT' + _inlineArrow('element') + '</th>'
+        + '<th class="left" onclick="sortBy(\'race\')" title="Race">RACE' + _inlineArrow('race') + '</th>'
+        + '<th class="' + _sortArrow('lv') + '" onclick="sortBy(\'lv\')" title="Level">LVL</th>'
+        + '<th class="left ' + _sortArrow('marker') + '" onclick="sortBy(\'marker\')" title="Marker type">MARK</th>';
 
     visibleCols.forEach(function(d) {
         var sorted = _sortCol === d.key;
         var arrow  = sorted ? (_sortDir === -1 ? ' sort-desc' : ' sort-asc') : '';
-        var left   = (d.key === 'abilities' || d.key === 'marker') ? ' left' : '';
+        var left   = (d.key === 'abilities') ? ' left' : '';
         thead += '<th class="' + arrow + left + '" onclick="sortBy(\'' + d.key + '\')" title="' + d.title + '">'
                + d.label + '</th>';
     });
@@ -707,10 +748,12 @@ function renderTable() {
                 + '<span class="cls-name">' + ci.n.toUpperCase() + '</span>'
             + '</td>'
             + '<td title="' + el + '"><span class="el-badge">' + (el ? _elImg(el) : '<span class="zero">—</span>') + '</span></td>'
-            + '<td class="left" style="color:var(--muted);font-size:0.88em;">' + (race || '<span class="zero">—</span>') + '</td>';
+            + '<td class="left" style="color:var(--muted);font-size:0.88em;">' + (race || '<span class="zero">—</span>') + '</td>'
+            + '<td>' + cellContent('lv', f) + '</td>'
+            + '<td class="left">' + cellContent('marker', f) + '</td>';
 
         visibleCols.forEach(function(d) {
-            var left = (d.key === 'abilities' || d.key === 'marker') ? ' class="left"' : '';
+            var left = (d.key === 'abilities') ? ' class="left"' : '';
             tbody += '<td' + left + '>' + cellContent(d.key, f) + '</td>';
         });
         tbody += '</tr>';
