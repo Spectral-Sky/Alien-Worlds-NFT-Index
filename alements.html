@@ -714,6 +714,13 @@ window.runRecentScan = async function() {
         var enrichMap = results[1].status === 'fulfilled' ? results[1].value : {};
         _setStatsMsg('PROCESSING ' + fights.length + ' FIGHTS…');
         var agg = _aggregateFights(fights, enrichMap);
+        var allAssets = Object.keys(agg.crewNFTs).concat(Object.keys(agg.weaponNFTs));
+        if (allAssets.length) {
+            _setStatsMsg('RESOLVING NFT TEMPLATES…');
+            var tplMap = await _resolveTemplates(allAssets);
+            agg.crewNFTs   = _mergeByTemplate(agg.crewNFTs,   tplMap);
+            agg.weaponNFTs = _mergeByTemplate(agg.weaponNFTs, tplMap);
+        }
         _statsCache = agg;
         var skipNote = agg.total.skipped ? ' \xb7 ' + agg.total.skipped + ' unmatched skipped' : '';
         _setStatsMsg(fights.length + ' fights scanned \xb7 ' + agg.total.arena + ' arena \xb7 ' + agg.total.dungeon + ' dungeon' + skipNote);
@@ -730,6 +737,13 @@ window.runHistoricalScan = async function() {
         var res = await fetch(_statsGSheetURL);
         var csv = await res.text();
         var agg = _parseSheetCSV(csv);
+        var allAssets = Object.keys(agg.crewNFTs).concat(Object.keys(agg.weaponNFTs));
+        if (allAssets.length) {
+            _setStatsMsg('RESOLVING NFT TEMPLATES…');
+            var tplMap = await _resolveTemplates(allAssets);
+            agg.crewNFTs   = _mergeByTemplate(agg.crewNFTs,   tplMap);
+            agg.weaponNFTs = _mergeByTemplate(agg.weaponNFTs, tplMap);
+        }
         _statsCache = agg;
         _setStatsMsg(agg.count + ' rows \xb7 ' + agg.total.arena + ' arena \xb7 ' + agg.total.dungeon + ' dungeon');
         _renderStats(agg);
@@ -771,7 +785,7 @@ async function _buildEnrichMap() {
     return map;
 }
 function _aggregateFights(fights, enrichMap) {
-    var arena = {}, dungeon = {}, crewNFTs = {}, weaponNFTs = {}, total = {arena:0, dungeon:0, skipped:0};
+    var arena = {}, arenaRace = {}, dungeon = {}, dungeonRace = {}, crewNFTs = {}, weaponNFTs = {}, total = {arena:0, dungeon:0, skipped:0};
     fights.forEach(function(row) {
         var winner = (row.log === 'Team 1 wins') ? 1 : 2;
         var t1 = (row.team1_fighters || []).filter(function(f){ return f.classname && f.classname.trim(); });
@@ -783,15 +797,25 @@ function _aggregateFights(fights, enrichMap) {
         if (en.weapon && en.weapon !== '' && en.weapon !== 'undefined') _tally(weaponNFTs, en.weapon, won);
         if (ft === 'arena') {
             total.arena++;
-            t1.forEach(function(f){ _tally(arena, f.classname, winner === 1); });
-            t2.forEach(function(f){ _tally(arena, f.classname, winner === 2); });
+            t1.forEach(function(f){
+                _tally(arena, f.classname, winner === 1);
+                if (f.race) _tally(arenaRace, f.race, winner === 1);
+            });
+            t2.forEach(function(f){
+                _tally(arena, f.classname, winner === 2);
+                if (f.race) _tally(arenaRace, f.race, winner === 2);
+            });
         } else {
             total.dungeon++;
             if (!dungeon[diff]) dungeon[diff] = {};
-            t1.forEach(function(f){ _tally(dungeon[diff], f.classname, winner === 1); });
+            if (!dungeonRace[diff]) dungeonRace[diff] = {};
+            t1.forEach(function(f){
+                _tally(dungeon[diff], f.classname, winner === 1);
+                if (f.race) _tally(dungeonRace[diff], f.race, winner === 1);
+            });
         }
     });
-    return {arena:arena, dungeon:dungeon, crewNFTs:crewNFTs, weaponNFTs:weaponNFTs, total:total, count:fights.length};
+    return {arena:arena, arenaRace:arenaRace, dungeon:dungeon, dungeonRace:dungeonRace, crewNFTs:crewNFTs, weaponNFTs:weaponNFTs, total:total, count:fights.length};
 }
 function _tally(map, cls, won) {
     if (!map[cls]) map[cls] = {wins:0, played:0};
@@ -802,7 +826,7 @@ function _parseSheetCSV(csv) {
     var lines = csv.replace(/\r/g,'').split('\n');
     var hdr   = (lines[0]||'').split(',').map(function(h){return h.replace(/"/g,'').trim().toLowerCase();});
     var get   = function(cols, name){ var i=hdr.indexOf(name); return i>=0?(cols[i]||'').replace(/"/g,'').trim():''; };
-    var arena = {}, dungeon = {}, crewNFTs = {}, weaponNFTs = {}, total = {arena:0, dungeon:0};
+    var arena = {}, arenaRace = {}, dungeon = {}, dungeonRace = {}, crewNFTs = {}, weaponNFTs = {}, total = {arena:0, dungeon:0};
     for (var i = 1; i < lines.length; i++) {
         if (!lines[i].trim()) continue;
         var cols   = lines[i].split(',');
@@ -811,6 +835,8 @@ function _parseSheetCSV(csv) {
         var winner = Number(get(cols,'winner')||1);
         var t1c    = (get(cols,'team1_classes')||'').split('|').filter(Boolean);
         var t2c    = (get(cols,'team2_classes')||'').split('|').filter(Boolean);
+        var t1r    = (get(cols,'team1_races')||'').split('|').filter(Boolean);
+        var t2r    = (get(cols,'team2_races')||'').split('|').filter(Boolean);
         var crew   = get(cols,'crew_asset_id');
         var weapon = get(cols,'weapon_asset_id');
         var won    = winner === 1;
@@ -820,19 +846,25 @@ function _parseSheetCSV(csv) {
             total.arena++;
             t1c.forEach(function(c){ _tally(arena, c, winner===1); });
             t2c.forEach(function(c){ _tally(arena, c, winner===2); });
+            t1r.forEach(function(r){ _tally(arenaRace, r, winner===1); });
+            t2r.forEach(function(r){ _tally(arenaRace, r, winner===2); });
         } else if (ft === 'dungeon') {
             total.dungeon++;
             if (!dungeon[diff]) dungeon[diff] = {};
+            if (!dungeonRace[diff]) dungeonRace[diff] = {};
             t1c.forEach(function(c){ _tally(dungeon[diff], c, winner===1); });
+            t1r.forEach(function(r){ _tally(dungeonRace[diff], r, winner===1); });
         }
     }
-    return {arena:arena, dungeon:dungeon, crewNFTs:crewNFTs, weaponNFTs:weaponNFTs, total:total, count:lines.length-1};
+    return {arena:arena, arenaRace:arenaRace, dungeon:dungeon, dungeonRace:dungeonRace, crewNFTs:crewNFTs, weaponNFTs:weaponNFTs, total:total, count:lines.length-1};
 }
 function _renderStats(agg) {
     var el = document.getElementById('stats-results');
     if (!el) return;
     var diffs = Object.keys(agg.dungeon || {}).map(Number).sort(function(a,b){return a-b;});
     var html = _barSection('ARENA — CLASS WIN RATES', agg.arena);
+    if (Object.keys(agg.arenaRace || {}).length)
+        html += _barSection('ARENA — RACE WIN RATES', agg.arenaRace);
     if (diffs.length > 0) {
         html += '<div style="margin-top:32px;">';
         html += '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">&#9672; DUNGEON — CLASS USAGE</div>';
@@ -840,7 +872,7 @@ function _renderStats(agg) {
         diffs.forEach(function(d) {
             html += '<button id="ddb-'+d+'" onclick="selectDungDiff('+d+')" style="background:transparent;border:1px solid rgba(232,160,32,0.2);color:#808070;font-family:\'Courier New\',monospace;font-size:0.63em;padding:4px 10px;cursor:pointer;letter-spacing:1px;">LVL '+d+'</button>';
         });
-        html += '</div><div id="dung-bars"></div></div>';
+        html += '</div><div id="dung-bars"></div><div id="dung-race-bars"></div></div>';
     }
     if (Object.keys(agg.crewNFTs || {}).length) {
         html += '<div style="margin-top:36px;">';
@@ -859,9 +891,6 @@ function _renderStats(agg) {
         _activeDungDiff = diffs.includes(_activeDungDiff) ? _activeDungDiff : diffs[0];
         selectDungDiff(_activeDungDiff);
     }
-    if (Object.keys(agg.crewNFTs || {}).length || Object.keys(agg.weaponNFTs || {}).length) {
-        _injectNftImages();
-    }
 }
 window.selectDungDiff = function(diff) {
     _activeDungDiff = diff;
@@ -871,9 +900,17 @@ window.selectDungDiff = function(diff) {
         b.style.color = d===diff ? '#e8a020' : '#808070';
     });
     var el = document.getElementById('dung-bars');
-    if (!el) return;
-    var data = _statsCache && _statsCache.dungeon && _statsCache.dungeon[diff];
-    el.innerHTML = data ? _buildUsageBars(data) : '<div style="font-size:0.6em;color:#404050;">No data for level '+diff+'</div>';
+    if (el) {
+        var data = _statsCache && _statsCache.dungeon && _statsCache.dungeon[diff];
+        el.innerHTML = data ? _buildUsageBars(data) : '<div style="font-size:0.6em;color:#404050;">No data for level '+diff+'</div>';
+    }
+    var rel = document.getElementById('dung-race-bars');
+    if (rel) {
+        var rdata = _statsCache && _statsCache.dungeonRace && _statsCache.dungeonRace[diff];
+        rel.innerHTML = rdata && Object.keys(rdata).length
+            ? '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.4);margin:14px 0 8px;padding-top:10px;border-top:1px solid rgba(232,160,32,0.07);">RACE USAGE</div>' + _buildUsageBars(rdata)
+            : '';
+    }
 };
 function _barSection(title, data) {
     var inner = data && Object.keys(data).length ? _buildBars(data) : '<div style="font-size:0.6em;color:#404050;padding:8px 0;">No data</div>';
@@ -938,22 +975,17 @@ function _buildNftBars(nftStats, topN, folder) {
                 '<div style="height:100%;width:' + barPct + '%;background:linear-gradient(90deg,rgba(232,160,32,0.3),rgba(200,90,20,0.15));border-radius:10px;transition:width 0.4s;"></div>' +
                 '<span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:0.5em;color:#909080;white-space:nowrap;letter-spacing:0.5px;">' + winPct + '% win &middot; ' + e.played + ' fights</span>' +
             '</div>' +
-            '<img class="nft-thumb-lazy" data-id="' + e.id + '" data-folder="' + (folder||'') + '" src="" alt="" width="30" height="30" ' +
-                'style="border-radius:5px;background:rgba(255,255,255,0.04);object-fit:contain;flex-shrink:0;opacity:0;transition:opacity 0.35s;">' +
+            '<img src="' + (folder||'') + '/' + e.id + '.webp" alt="" width="30" height="30" ' +
+                'style="border-radius:5px;object-fit:contain;flex-shrink:0;" onerror="this.style.display=\'none\'">' +
         '</div>';
     });
     return html + '</div>';
 }
-async function _injectNftImages() {
-    var thumbs = document.querySelectorAll('.nft-thumb-lazy');
-    if (!thumbs.length) return;
-    var ids = [];
-    thumbs.forEach(function(img) { if (img.dataset.id) ids.push(img.dataset.id); });
-    // asset_id → template_id
+async function _resolveTemplates(assetIds) {
     var tplMap = {};
-    for (var i = 0; i < ids.length; i += 100) {
+    for (var i = 0; i < assetIds.length; i += 100) {
         try {
-            var batch = ids.slice(i, i + 100);
+            var batch = assetIds.slice(i, i + 100);
             var res  = await fetch('https://wax.api.atomicassets.io/atomicassets/v1/assets?ids=' + batch.join(',') + '&limit=100');
             var data = await res.json();
             (data.data || []).forEach(function(a) {
@@ -962,14 +994,18 @@ async function _injectNftImages() {
             });
         } catch(e) {}
     }
-    thumbs.forEach(function(img) {
-        var tpl = tplMap[img.dataset.id];
-        var folder = img.dataset.folder;
-        if (tpl && folder) {
-            img.src = folder + '/' + tpl + '.webp';
-            img.style.opacity = '1';
-        }
+    return tplMap;
+}
+function _mergeByTemplate(nftStats, tplMap) {
+    var merged = {};
+    Object.keys(nftStats).forEach(function(id) {
+        var key = tplMap[id] || id;
+        var s = nftStats[id];
+        if (!merged[key]) merged[key] = {wins:0, played:0};
+        merged[key].wins   += s.wins;
+        merged[key].played += s.played;
     });
+    return merged;
 }
 </script>
 
