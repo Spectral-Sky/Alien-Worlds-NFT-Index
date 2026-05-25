@@ -98,12 +98,12 @@ function processFightsData_(sheet) {
       .map(function(f){ return f.classname; }).join('|');
 
     var t1r = (row.team1_fighters || [])
-      .filter(function(f){ return f.race && f.race.trim(); })
-      .map(function(f){ return f.race; }).join('|');
+      .filter(function(f){ return f.racename && f.racename.trim(); })
+      .map(function(f){ return f.racename; }).join('|');
 
     var t2r = (row.team2_fighters || [])
-      .filter(function(f){ return f.race && f.race.trim(); })
-      .map(function(f){ return f.race; }).join('|');
+      .filter(function(f){ return f.racename && f.racename.trim(); })
+      .map(function(f){ return f.racename; }).join('|');
 
     // fighter_id 99999999999 is the weapon NFT slot placeholder — exclude it
     var t1ids = (row.team1_fighters || [])

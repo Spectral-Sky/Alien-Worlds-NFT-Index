@@ -1802,11 +1802,11 @@ function _aggregateFights(fights, enrichMap) {
             total.arena++;
             t1.forEach(function(f){
                 _tally(arena, f.classname, winner === 1);
-                if (f.race) _tally(arenaRace, f.race, winner === 1);
+                if (f.racename) _tally(arenaRace, f.racename, winner === 1);
             });
             t2.forEach(function(f){
                 _tally(arena, f.classname, winner === 2);
-                if (f.race) _tally(arenaRace, f.race, winner === 2);
+                if (f.racename) _tally(arenaRace, f.racename, winner === 2);
             });
         } else {
             total.dungeon++;
@@ -1814,7 +1814,7 @@ function _aggregateFights(fights, enrichMap) {
             if (!dungeonRace[diff]) dungeonRace[diff] = {};
             t1.forEach(function(f){
                 _tally(dungeon[diff], f.classname, winner === 1);
-                if (f.race) _tally(dungeonRace[diff], f.race, winner === 1);
+                if (f.racename) _tally(dungeonRace[diff], f.racename, winner === 1);
             });
         }
     });
