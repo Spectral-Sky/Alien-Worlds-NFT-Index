@@ -495,7 +495,8 @@
         { key:'tlm_earned',                 label:'TLM Earned',              src:'perm',   def:false },
         { key:'wax_earned',                 label:'WAX Earned',              src:'perm',   def:false },
         { key:'shard_wax_value', label:'Shard Value (WAX)', header:'Shard WAX',  src:'calc', def:false, title:'shards_earned \xd7 WAX/shard rate — set via ⚙ SHARDS button' },
-        { key:'earned_wax',      label:'Total Earned (WAX)', header:'Earned WAX', src:'calc', def:false, title:'wax_earned + tlm_earned\xd7(TLM/WAX) + shards\xd7shardRate — requires live prices + shard rate' },
+        { key:'wax_spent',       label:'WAX Spent (Gems)',   src:'perm',   def:false, title:'Exact WAX spent on gem purchases' },
+        { key:'earned_wax',      label:'Total Earned (WAX)', header:'Earned WAX VALUE', src:'calc', def:false, title:'wax_earned + tlm_earned\xd7(TLM/WAX) + shards\xd7shardRate — requires live prices + shard rate' },
     ];
 
     // Shard valuator state
@@ -763,6 +764,10 @@
         if (typeof v === 'string') return escHtml(v);
         if (key === 'shard_wax_value' || key === 'earned_wax') {
             return v.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + ' WAX';
+        }
+        if (key === 'wax_spent') {
+            var ws = v / 1e8;
+            return ws.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + ' WAX';
         }
         if (key in CALC_COLS) return v.toFixed(1) + ' %';
         var dec = DECIMAL_COLS[key];
