@@ -213,6 +213,26 @@
 <div class="content">
 
     <div class="game-section">
+        <div class="game-section-label">Alien Legends &mdash; Land Rewards</div>
+        <div class="action-grid">
+
+            <div class="action-card">
+                <div class="card-title">Claim All Land Rewards</div>
+                <div class="card-meta">
+                    <span>contract</span> lands.ale &rsaquo; claimlndrwrd<br>
+                    <span>scans</span> all land NFTs owned by logged-in wallet<br>
+                    <span>note</span> only lands with buildings are claimed
+                </div>
+                <div class="card-btns">
+                    <button class="claim-btn" id="land-claim-btn" onclick="claimAllLandRewards(this)">SCAN &amp; CLAIM ALL</button>
+                </div>
+                <div class="card-status" id="status-landrewards"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="game-section">
         <div class="game-section-label">Alien Legends &mdash; Pool Claims</div>
         <div class="action-grid">
 
@@ -317,6 +337,90 @@ function toggleDayMode() {
     localStorage.setItem('naron_day', on ? '1' : '0');
 }
 if (localStorage.getItem('naron_day') === '1') document.documentElement.classList.add('day');
+
+async function claimAllLandRewards(btn) {
+    var wallet = getWallet();
+    if (!wallet) { alert('Please log in first.'); return; }
+
+    var statusEl = document.getElementById('status-landrewards');
+    function setStatus(msg, cls) {
+        if (statusEl) { statusEl.textContent = msg; statusEl.className = 'card-status' + (cls ? ' ' + cls : ''); }
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'SCANNING…';
+    setStatus('Fetching land NFTs…');
+
+    try {
+        var lands = [];
+        var page = 1;
+        while (true) {
+            var res = await fetch('https://wax.api.atomicassets.io/atomicassets/v1/assets?owner=' + wallet
+                + '&collection_name=alien.worlds&schema_name=land.worlds&limit=100&page=' + page);
+            var json = await res.json();
+            var batch = json.data || [];
+            lands = lands.concat(batch);
+            if (batch.length < 100) break;
+            page++;
+        }
+
+        if (lands.length === 0) {
+            setStatus('No land NFTs found for this wallet.', 'err');
+            return;
+        }
+
+        setStatus('Found ' + lands.length + ' land(s). Checking buildings…');
+
+        var actions = [];
+        for (var i = 0; i < lands.length; i++) {
+            var nft = lands[i];
+            var x = nft.immutable_data && nft.immutable_data.x;
+            var y = nft.immutable_data && nft.immutable_data.y;
+            var nameParts = (nft.name || '').split(' on ');
+            var planet = nameParts.length > 1 ? nameParts[nameParts.length - 1].toLowerCase().trim() : null;
+            if (!planet || x == null || y == null) continue;
+
+            var landRes = await fetch('https://wax.eosusa.io/v1/chain/get_table_rows', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: 'lands.ale', scope: planet, table: 'lands',
+                    lower_bound: nft.asset_id, upper_bound: nft.asset_id,
+                    index_position: 2, key_type: 'i64', limit: 1, json: true })
+            });
+            var landJson = await landRes.json();
+            var row = landJson.rows && landJson.rows[0];
+            if (!row || !row.buildings || row.buildings.length === 0) continue;
+
+            actions.push({
+                account: 'lands.ale',
+                name: 'claimlndrwrd',
+                authorization: [{ actor: wallet, permission: 'active' }],
+                data: { wallet: wallet, planet: planet, x: String(x), y: String(y) }
+            });
+        }
+
+        if (actions.length === 0) {
+            setStatus('No lands with buildings found — nothing to claim.', 'err');
+            return;
+        }
+
+        setStatus('Claiming ' + actions.length + ' land(s)…');
+        btn.textContent = 'SENDING…';
+
+        var sess = window.walletSession;
+        if (!sess) { alert('No active wallet session. Please log in with Anchor.'); throw new Error('no session'); }
+
+        await sess.transact({ actions: actions });
+        setStatus('✓ Claimed rewards from ' + actions.length + ' land(s).', 'ok');
+
+    } catch(e) {
+        var msg = (e && e.message) || String(e);
+        if (msg !== 'no session') setStatus('✗ ' + msg, 'err');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'SCAN & CLAIM ALL';
+    }
+}
 
 async function doClaim(pool, historyId, count, btn) {
     var wallet = getWallet();
