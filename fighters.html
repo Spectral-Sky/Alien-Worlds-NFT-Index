@@ -379,7 +379,7 @@
 </div>
 
 <div id="stats-notice" style="display:none;padding:5px 28px;font-size:0.58em;color:#485060;letter-spacing:1px;background:rgba(5,8,20,0.4);border-bottom:1px solid rgba(232,160,32,0.04);">
-    &#9888; Stat values (HP, DMG, CD, WU, TNT) are raw on-chain data &mdash; they do not account for unit age bonus.
+    &#9432; Stat values (HP, DMG, CD, WU, TNT) are estimated in-game values based on level and age bonus. Age bonus is approximated from creation date if not stored on-chain &mdash; open browser console to verify.
 </div>
 
 <div class="table-wrap">
@@ -500,6 +500,7 @@ async function loadFighters() {
         }
 
         console.log('[fighters]', _fighters.length, 'fighters for', wallet);
+        if (_fighters.length) console.log('[fighter stats sample]', JSON.stringify(_fighters[0].stats));
         document.getElementById('footer-wallet').textContent = wallet;
         var sub = document.querySelector('.title-bar .sub');
         var myWallet = getWallet();
@@ -572,6 +573,54 @@ function meanRange(mn, mx) {
         : String(mean);
 }
 
+// Returns age_bonus as a decimal 0.0–1.0 (e.g. 84.25% → 0.8425)
+function _ageBonus(f) {
+    var s = f.stats || {};
+    // Try stats.age_bonus — may be stored as 0-100 or 0.0-1.0
+    if (s.age_bonus != null) {
+        var n = Number(s.age_bonus);
+        if (!isNaN(n) && n > 0) return n > 1 ? n / 100 : n;
+    }
+    // Try top-level f.age_bonus
+    if (f.age_bonus != null) {
+        var n2 = Number(f.age_bonus);
+        if (!isNaN(n2) && n2 > 0) return n2 > 1 ? n2 / 100 : n2;
+    }
+    // Derive from creation_date: ~0.246% lost per day (64d → 84.25%)
+    var days = fighterAgeDays(f);
+    if (days !== null) return Math.max(0, (100 - 0.24609375 * days) / 100);
+    return 1.0;
+}
+
+// Convert a raw on-chain stat value to estimated in-game value
+// isHPDMG=true: uses level scaling; false: CD/WU/Taunt (no level scale)
+function _convertStat(raw, isHPDMG, f) {
+    if (raw == null) return null;
+    var r = Number(raw);
+    if (isNaN(r)) return null;
+    var ab = _ageBonus(f);
+    var sqAb = Math.sqrt(ab);
+    if (isHPDMG) {
+        var lv = Number((f.stats || {}).level || 1);
+        var lm = 1 + (lv - 1) * 0.26;
+        return Math.floor(r * sqAb * lm / 12.94);
+    }
+    return Math.floor(r * sqAb / 10.2);
+}
+
+function convertedMeanRange(mn, mx, isHPDMG, f) {
+    if (mn == null && mx == null) return '<span class="zero">—</span>';
+    var cMin = _convertStat(mn, isHPDMG, f);
+    var cMax = _convertStat(mx, isHPDMG, f);
+    if (cMin === null && cMax === null) return '<span class="zero">—</span>';
+    cMin = cMin || 0; cMax = cMax || 0;
+    var mean = Math.ceil((cMin + cMax) / 2);
+    var half = Math.ceil((cMax - cMin) / 2);
+    return half > 0
+        ? mean + '<span style="font-size:0.8em;color:var(--muted);"> (±' + half + ')</span>'
+        : String(mean);
+}
+
 function cellContent(key, f) {
     var s = f.stats || {};
     switch(key) {
@@ -586,11 +635,11 @@ function cellContent(key, f) {
             return av > 0 ? '<span class="asc-val">' + '★'.repeat(Math.min(av,5)) + (av > 5 ? ' '+av : '') + '</span>'
                           : '<span class="zero">—</span>';
         }
-        case 'hp':  return meanRange(s.health_min,     s.health_max);
-        case 'dmg': return meanRange(s.damage_min,      s.damage_max);
-        case 'cd':  return meanRange(s.attackspeed_min, s.attackspeed_max);
-        case 'wu':  return meanRange(s.initiative_min,  s.initiative_max);
-        case 'tnt': return meanRange(s.taunt_min,       s.taunt_max);
+        case 'hp':  return convertedMeanRange(s.health_min,     s.health_max,     true,  f);
+        case 'dmg': return convertedMeanRange(s.damage_min,      s.damage_max,     true,  f);
+        case 'cd':  return convertedMeanRange(s.attackspeed_min, s.attackspeed_max,false, f);
+        case 'wu':  return convertedMeanRange(s.initiative_min,  s.initiative_max, false, f);
+        case 'tnt': return convertedMeanRange(s.taunt_min,       s.taunt_max,      false, f);
         case 'xp': {
             if (!s.required_experience) return '<span class="zero">—</span>';
             var cur = Number(s.experience || 0);
