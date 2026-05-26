@@ -533,11 +533,11 @@ var COL_DEFS = [
     { key:'lv',        label:'LVL',        title:'Level',                       fixed:true, sortVal: function(f){ return (f.stats&&f.stats.level!=null)?Number(f.stats.level):0; } },
     { key:'marker',    label:'MARK',       title:'Marker type',                 fixed:true, sortVal: function(f){ return f.marker||''; } },
     { key:'asc',       label:'ASCENSION',  title:'Ascension level',             sortVal: function(f){ return Number(f.ascension_level||0); } },
-    { key:'dmg',       label:'DAMAGE',     title:'Damage — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.damage_min||0)+Number(s.damage_max||0))/2); } },
-    { key:'hp',        label:'HEALTH',     title:'Health — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.health_min||0)+Number(s.health_max||0))/2); } },
-    { key:'cd',        label:'COOLDOWN ▲', title:'Cooldown — mean, lower is faster', defaultDir:1, sortVal: function(f){ return (f.stats&&f.stats.attackspeed_min!=null)?Number(f.stats.attackspeed_min):9999; } },
-    { key:'wu',        label:'WINDUP ▲',   title:'Wind Up — mean, lower is faster',  defaultDir:1, sortVal: function(f){ return (f.stats&&f.stats.initiative_min!=null)?Number(f.stats.initiative_min):9999; } },
-    { key:'tnt',       label:'TAUNT',      title:'Taunt — mean (±half-range)',  sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.taunt_min||0)+Number(s.taunt_max||0))/2); } },
+    { key:'dmg',       label:'DAMAGE',     title:'Damage — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; var lm=1+(Number(s.level||1)-1)*0.15; return Math.floor((Number(s.damage_min||0)+Number(s.damage_max||0))/2*Math.sqrt(_ageBonus(f))*lm/9.10); } },
+    { key:'hp',        label:'HEALTH',     title:'Health — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; var lm=1+(Number(s.level||1)-1)*0.15; return Math.floor((Number(s.health_min||0)+Number(s.health_max||0))/2*Math.sqrt(_ageBonus(f))*lm/9.10); } },
+    { key:'cd',        label:'COOLDOWN ▲', title:'Cooldown — mean, lower is faster', defaultDir:1, sortVal: function(f){ var s=f.stats||{}; return s.attackspeed_min!=null?Math.floor((Number(s.attackspeed_min||0)+Number(s.attackspeed_max||0))/2*Math.sqrt(_ageBonus(f))/10.2):9999; } },
+    { key:'wu',        label:'WINDUP ▲',   title:'Wind Up — mean, lower is faster',  defaultDir:1, sortVal: function(f){ var s=f.stats||{}; return s.initiative_min!=null?Math.floor((Number(s.initiative_min||0)+Number(s.initiative_max||0))/2*Math.sqrt(_ageBonus(f))/10.2):9999; } },
+    { key:'tnt',       label:'TAUNT',      title:'Taunt — mean (±half-range)',  sortVal: function(f){ var s=f.stats||{}; return Math.floor((Number(s.taunt_min||0)+Number(s.taunt_max||0))/2*Math.sqrt(_ageBonus(f))/10.2); } },
     { key:'xp',        label:'XP',         title:'XP progress to next level',   sortVal: function(f){ var s=f.stats||{}; return s.required_experience?Number(s.experience||0)/Number(s.required_experience):0; } },
     { key:'age',       label:'AGE',        title:'Days since creation',         sortVal: function(f){ return fighterAgeDays(f)||0; } },
     { key:'payday',    label:'PAYDAY',     title:'Next payday date — red = lapsed, cannot be used', defaultDir:1, sortVal: function(f){ return _paydayMs(f) || Infinity; } },
@@ -608,15 +608,23 @@ function _convertStat(raw, isHPDMG, f) {
 
 function convertedMeanRange(mn, mx, isHPDMG, f) {
     if (mn == null && mx == null) return '<span class="zero">—</span>';
-    var cMin = _convertStat(mn, isHPDMG, f);
-    var cMax = _convertStat(mx, isHPDMG, f);
-    if (cMin === null && cMax === null) return '<span class="zero">—</span>';
-    cMin = cMin || 0; cMax = cMax || 0;
-    var mean = Math.ceil((cMin + cMax) / 2);
-    var half = Math.ceil((cMax - cMin) / 2);
-    return half > 0
-        ? mean + '<span style="font-size:0.8em;color:var(--muted);"> (±' + half + ')</span>'
-        : String(mean);
+    var lo = Number(mn || 0), hi = Number(mx || 0);
+    var rawMid = (lo + hi) / 2;
+    var rawHalf = (hi - lo) / 2;
+    var sqAb = Math.sqrt(_ageBonus(f));
+    var base, range;
+    if (isHPDMG) {
+        var lm = 1 + (Number((f.stats || {}).level || 1) - 1) * 0.15;
+        base  = Math.floor(rawMid  * sqAb * lm / 9.10);
+        range = Math.floor(rawHalf * lm / 9.10);        // range: level-scaled only, no age
+    } else {
+        base  = Math.floor(rawMid  * sqAb / 10.2);
+        range = Math.floor(rawHalf / 10.2);             // range: no age, no level scaling
+    }
+    if (base === 0 && range === 0) return '<span class="zero">—</span>';
+    return range > 0
+        ? base + '<span style="font-size:0.8em;color:var(--muted);"> (±' + range + ')</span>'
+        : String(base);
 }
 
 function cellContent(key, f) {
