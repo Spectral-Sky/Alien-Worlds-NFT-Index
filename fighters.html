@@ -379,7 +379,7 @@
 </div>
 
 <div id="stats-notice" style="display:none;padding:5px 28px;font-size:0.58em;color:#485060;letter-spacing:1px;background:rgba(5,8,20,0.4);border-bottom:1px solid rgba(232,160,32,0.04);">
-    &#9432; Stat values (HP, DMG, CD, WU, TNT) are estimated in-game values based on level and age bonus. Age bonus is approximated from creation date if not stored on-chain &mdash; open browser console to verify.
+    &#9432; Stat values (HP, DMG, CD, WU, TNT) are estimated in-game values scaled by level (age bonus at 100%). Open browser console to see raw &rarr; converted values.
 </div>
 
 <div class="table-wrap">
@@ -465,7 +465,7 @@ async function loadFighters() {
         while (more) {
             var p = {code:'fighters.ale', scope:'fighters.ale', table:'fighters',
                      index_position:2, key_type:'name',
-                     lower_bound:wallet, upper_bound:wallet, limit:500, json:true};
+                     lower_bound:wallet, upper_bound:wallet, limit:1000, json:true};
             if (lb) { p.lower_bound = lb; p.upper_bound = wallet; }
             console.log('[fighters] fetch', JSON.stringify(p));
             var res = await fetchRows(p);
@@ -500,7 +500,17 @@ async function loadFighters() {
         }
 
         console.log('[fighters]', _fighters.length, 'fighters for', wallet);
-        if (_fighters.length) console.log('[fighter stats sample]', JSON.stringify(_fighters[0].stats));
+        if (_fighters.length) {
+            var _fs = _fighters[0], _ss = _fs.stats || {}, _lv = Number(_ss.level||1);
+            console.log('[fighter stats sample] raw stats:', JSON.stringify(_ss));
+            console.log('[stat conversion sample] class:', _fs.classname, '| level:', _lv,
+                '| HP raw:', _ss.health_min, '-', _ss.health_max,
+                '→ converted:', _convertStat(_ss.health_min,true,_fs), '-', _convertStat(_ss.health_max,true,_fs),
+                '| DMG raw:', _ss.damage_min, '-', _ss.damage_max,
+                '→ converted:', _convertStat(_ss.damage_min,true,_fs), '-', _convertStat(_ss.damage_max,true,_fs),
+                '| CD raw:', _ss.attackspeed_min, '-', _ss.attackspeed_max,
+                '→ converted:', _convertStat(_ss.attackspeed_min,false,_fs), '-', _convertStat(_ss.attackspeed_max,false,_fs));
+        }
         document.getElementById('footer-wallet').textContent = wallet;
         var sub = document.querySelector('.title-bar .sub');
         var myWallet = getWallet();
@@ -573,22 +583,9 @@ function meanRange(mn, mx) {
         : String(mean);
 }
 
-// Returns age_bonus as a decimal 0.0–1.0 (e.g. 84.25% → 0.8425)
+// Returns age_bonus as a decimal 0.0–1.0
+// Using 1.0 (100%) until the exact on-chain field is confirmed
 function _ageBonus(f) {
-    var s = f.stats || {};
-    // Try stats.age_bonus — may be stored as 0-100 or 0.0-1.0
-    if (s.age_bonus != null) {
-        var n = Number(s.age_bonus);
-        if (!isNaN(n) && n > 0) return n > 1 ? n / 100 : n;
-    }
-    // Try top-level f.age_bonus
-    if (f.age_bonus != null) {
-        var n2 = Number(f.age_bonus);
-        if (!isNaN(n2) && n2 > 0) return n2 > 1 ? n2 / 100 : n2;
-    }
-    // Derive from creation_date: ~0.246% lost per day (64d → 84.25%)
-    var days = fighterAgeDays(f);
-    if (days !== null) return Math.max(0, (100 - 0.24609375 * days) / 100);
     return 1.0;
 }
 
