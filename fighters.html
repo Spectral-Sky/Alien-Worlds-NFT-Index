@@ -533,8 +533,8 @@ var COL_DEFS = [
     { key:'lv',        label:'LVL',        title:'Level',                       fixed:true, sortVal: function(f){ return (f.stats&&f.stats.level!=null)?Number(f.stats.level):0; } },
     { key:'marker',    label:'MARK',       title:'Marker type',                 fixed:true, sortVal: function(f){ return f.marker||''; } },
     { key:'asc',       label:'ASCENSION',  title:'Ascension level',             sortVal: function(f){ return Number(f.ascension_level||0); } },
-    { key:'hp',        label:'HEALTH',     title:'Health — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.health_min||0)+Number(s.health_max||0))/2); } },
     { key:'dmg',       label:'DAMAGE',     title:'Damage — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.damage_min||0)+Number(s.damage_max||0))/2); } },
+    { key:'hp',        label:'HEALTH',     title:'Health — mean (±half-range)', sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.health_min||0)+Number(s.health_max||0))/2); } },
     { key:'cd',        label:'COOLDOWN ▲', title:'Cooldown — mean, lower is faster', defaultDir:1, sortVal: function(f){ return (f.stats&&f.stats.attackspeed_min!=null)?Number(f.stats.attackspeed_min):9999; } },
     { key:'wu',        label:'WINDUP ▲',   title:'Wind Up — mean, lower is faster',  defaultDir:1, sortVal: function(f){ return (f.stats&&f.stats.initiative_min!=null)?Number(f.stats.initiative_min):9999; } },
     { key:'tnt',       label:'TAUNT',      title:'Taunt — mean (±half-range)',  sortVal: function(f){ var s=f.stats||{}; return Math.ceil((Number(s.taunt_min||0)+Number(s.taunt_max||0))/2); } },
@@ -583,9 +583,10 @@ function meanRange(mn, mx) {
         : String(mean);
 }
 
-// Returns age_bonus as a decimal 0.0–1.0
-// Using 1.0 (100%) until the exact on-chain field is confirmed
+// Returns age_bonus as a decimal 0.0–1.0, derived from fighter creation date
 function _ageBonus(f) {
+    var days = fighterAgeDays(f);
+    if (days !== null) return Math.max(0, (100 - 0.24609375 * days) / 100);
     return 1.0;
 }
 
