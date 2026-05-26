@@ -605,6 +605,7 @@ function cellContent(key, f) {
         case 'abilities': {
             var abls = s.abilities || [];
             if (!abls.length) return '<span class="zero">—</span>';
+            if (abls[0] && !window._abilityLogged) { window._abilityLogged = true; console.log('[ability sample]', JSON.stringify(abls[0])); }
             var AW_RARITY = {
                 abundant:  '#888888',
                 common:    '#90c880',
