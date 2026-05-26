@@ -208,6 +208,12 @@
         .map-toast { position:fixed; bottom:32px; left:50%; transform:translateX(-50%) translateY(8px); padding:8px 22px; z-index:900; border-radius:4px; font-size:0.82em; letter-spacing:1px; pointer-events:none; opacity:0; transition:opacity 0.28s, transform 0.28s; white-space:nowrap; }
         .map-toast.visible { opacity:1; transform:translateX(-50%) translateY(0); }
         .map-toast.success { background:#fff; border:1.5px solid #3a8a3a; color:#2a6a2a; }
+        @keyframes mapPartyBanner { 0%{opacity:0;transform:translate(-50%,-50%) scale(0.5)} 15%{opacity:1;transform:translate(-50%,-50%) scale(1.05)} 80%{opacity:1;transform:translate(-50%,-50%) scale(1)} 100%{opacity:0;transform:translate(-50%,-50%) scale(1)} }
+        .map-party-banner { position:fixed; top:50%; left:50%; font-family:'Courier New',monospace; font-size:2em; font-weight:bold; color:#fff; letter-spacing:4px; text-shadow:0 0 20px #ff0,0 0 40px #f0f,0 0 60px #0ff; animation:mapPartyBanner 3.5s ease-in-out forwards; pointer-events:none; z-index:999999; white-space:nowrap; }
+        @keyframes confetti-map-fall { 0%{transform:translateY(-10px) rotate(0deg);opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0} }
+        .confetti-map { position:fixed; pointer-events:none; z-index:99998; animation:confetti-map-fall linear forwards; }
+        @keyframes rgb-moon-glow { 0%{border-color:#ff3366;box-shadow:0 0 7px #ff3366,inset 0 0 3px #ff336640} 16%{border-color:#ff8800;box-shadow:0 0 7px #ff8800,inset 0 0 3px #ff880040} 33%{border-color:#ffe000;box-shadow:0 0 7px #ffe000,inset 0 0 3px #ffe00040} 50%{border-color:#00ff88;box-shadow:0 0 7px #00ff88,inset 0 0 3px #00ff8840} 66%{border-color:#00aaff;box-shadow:0 0 7px #00aaff,inset 0 0 3px #00aaff40} 83%{border-color:#cc44ff;box-shadow:0 0 7px #cc44ff,inset 0 0 3px #cc44ff40} 100%{border-color:#ff3366;box-shadow:0 0 7px #ff3366,inset 0 0 3px #ff336640} }
+        #party-moon { position:fixed; width:12px; height:12px; border-radius:50%; border:2px solid; background:rgba(255,255,255,0.06); pointer-events:none; z-index:99999; animation:rgb-moon-glow 1.4s linear infinite; }
         #expand-toggle { padding:3px 8px; font-size:0.68em; letter-spacing:1px; background:transparent; border:1px solid #2a3040; color:#445; cursor:pointer; transition:all 0.2s; text-transform:uppercase; }
         #expand-toggle:hover { border-color:#607080; color:#8898a8; }
         #expand-toggle.on { border-color:#3060a0; color:#60a8e0; }
@@ -1443,6 +1449,7 @@
 
     function switchPlanet(planet){
         if(planet===_activePlanet)return;
+        stopPartyMoon();
         document.querySelectorAll('.planet-tab').forEach(function(t){
             t.classList.toggle('active',t.dataset.planet===planet);
         });
@@ -2631,6 +2638,12 @@
 var SWEEP_CODE      = '62766'; // NARON — unlocks queue panel AND auto-reroll
 var _tabClickCount  = 0;
 var _tabClickTimer  = null;
+var _partyClickCount = 0;
+var _partyClickTimer = null;
+var _mapPartyActive  = false;
+var _moonAngle       = 0;
+var _moonRaf         = null;
+var _moonTimeout     = null;
 var _sweepUnlocked  = (localStorage.getItem('naron_sweep_unlocked') === '1');
 var _sweepKpBuf     = '';
 
@@ -2709,6 +2722,7 @@ function txqApplyCostFix() {
 // ── KEYPAD unlock trigger ────────────────────────────────────────────────────
 function onPlanetTabClick(planet) {
     if (planet === _activePlanet) {
+        // Sweep console: 5 rapid clicks
         _tabClickCount++;
         clearTimeout(_tabClickTimer);
         _tabClickTimer = setTimeout(function(){ _tabClickCount = 0; }, 1800);
@@ -2716,10 +2730,74 @@ function onPlanetTabClick(planet) {
             _tabClickCount = 0;
             openSweepConsole();
         }
+        // Party mode: 15 rapid clicks (independent counter)
+        _partyClickCount++;
+        clearTimeout(_partyClickTimer);
+        _partyClickTimer = setTimeout(function(){ _partyClickCount = 0; }, 2500);
+        if (_partyClickCount >= 15) {
+            _partyClickCount = 0;
+            triggerMapParty();
+        }
     } else {
         _tabClickCount = 0;
+        _partyClickCount = 0;
         switchPlanet(planet);
     }
+}
+
+var _CONFETTI_COLORS = ['#ff3366','#ff8800','#ffe000','#00ff88','#00aaff','#cc44ff','#ffffff'];
+
+function spawnMapConfetti() {
+    for (var i = 0; i < 8; i++) {
+        var p = document.createElement('div');
+        p.className = 'confetti-map';
+        var size = (Math.random() * 7 + 5) + 'px';
+        p.style.cssText = 'left:' + (Math.random()*100) + 'vw;top:-12px;width:' + size + ';height:' + size + ';'
+            + 'background:' + _CONFETTI_COLORS[Math.floor(Math.random()*_CONFETTI_COLORS.length)] + ';'
+            + 'border-radius:' + (Math.random()>0.5?'50%':'2px') + ';'
+            + 'animation-duration:' + (Math.random()*2+2).toFixed(2) + 's;';
+        document.body.appendChild(p);
+        setTimeout(function(el){ el.remove(); }, 4200, p);
+    }
+}
+
+function startPartyMoon() {
+    stopPartyMoon();
+    var moon = document.createElement('div');
+    moon.id = 'party-moon';
+    document.body.appendChild(moon);
+    _moonAngle = 0;
+    function tick() {
+        var tab = document.querySelector('.planet-tab.active');
+        if (!tab) { _moonRaf = requestAnimationFrame(tick); return; }
+        var r = tab.getBoundingClientRect();
+        var cx = r.left + r.width / 2;
+        var cy = r.top  + r.height / 2;
+        _moonAngle += 0.055;
+        moon.style.left = (cx + Math.cos(_moonAngle) * 26 - 8) + 'px';
+        moon.style.top  = (cy + Math.sin(_moonAngle) * 18 - 8) + 'px';
+        _moonRaf = requestAnimationFrame(tick);
+    }
+    tick();
+    _moonTimeout = setTimeout(stopPartyMoon, 20000);
+}
+
+function stopPartyMoon() {
+    if (_moonRaf) { cancelAnimationFrame(_moonRaf); _moonRaf = null; }
+    if (_moonTimeout) { clearTimeout(_moonTimeout); _moonTimeout = null; }
+    var m = document.getElementById('party-moon');
+    if (m) m.remove();
+}
+
+function triggerMapParty() {
+    var banner = document.createElement('div');
+    banner.className = 'map-party-banner';
+    banner.textContent = '[ PARTY MODE ACTIVATED ]';
+    document.body.appendChild(banner);
+    setTimeout(function(){ banner.remove(); }, 3500);
+    var confettiInterval = setInterval(spawnMapConfetti, 550);
+    setTimeout(function(){ clearInterval(confettiInterval); }, 20000);
+    startPartyMoon();
 }
 
 function openSweepConsole() {
