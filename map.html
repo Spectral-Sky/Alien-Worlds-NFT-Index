@@ -2904,12 +2904,15 @@ async function txqAddAllTaverns() {
 
 function txqClear() {
     _txQueue = [];
+    _failedPlan = [];
     var pw = document.getElementById('txq-prog-wrap');
     if (pw) pw.style.display = 'none';
     var pl = document.getElementById('txq-prog-lbl');
     if (pl) pl.textContent = '';
     var pf = document.getElementById('txq-prog-fill');
     if (pf) pf.style.width = '0%';
+    var rf = document.getElementById('txq-retry-failed-btn');
+    if (rf) rf.style.display = 'none';
     renderTxQueue();
 }
 
