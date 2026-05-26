@@ -212,8 +212,6 @@
         .map-party-banner { position:fixed; top:50%; left:50%; font-family:'Courier New',monospace; font-size:2em; font-weight:bold; color:#fff; letter-spacing:4px; text-shadow:0 0 20px #ff0,0 0 40px #f0f,0 0 60px #0ff; animation:mapPartyBanner 3.5s ease-in-out forwards; pointer-events:none; z-index:999999; white-space:nowrap; }
         @keyframes confetti-map-fall { 0%{transform:translateY(-10px) rotate(0deg);opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0} }
         .confetti-map { position:fixed; pointer-events:none; z-index:99998; animation:confetti-map-fall linear forwards; }
-        @keyframes rgb-moon-glow { 0%{border-color:#ff3366;box-shadow:0 0 7px #ff3366,inset 0 0 3px #ff336640} 16%{border-color:#ff8800;box-shadow:0 0 7px #ff8800,inset 0 0 3px #ff880040} 33%{border-color:#ffe000;box-shadow:0 0 7px #ffe000,inset 0 0 3px #ffe00040} 50%{border-color:#00ff88;box-shadow:0 0 7px #00ff88,inset 0 0 3px #00ff8840} 66%{border-color:#00aaff;box-shadow:0 0 7px #00aaff,inset 0 0 3px #00aaff40} 83%{border-color:#cc44ff;box-shadow:0 0 7px #cc44ff,inset 0 0 3px #cc44ff40} 100%{border-color:#ff3366;box-shadow:0 0 7px #ff3366,inset 0 0 3px #ff336640} }
-        #party-moon { position:fixed; width:12px; height:12px; border-radius:50%; border:2px solid; background:rgba(255,255,255,0.06); pointer-events:none; z-index:99999; animation:rgb-moon-glow 1.4s linear infinite; }
         #expand-toggle { padding:3px 8px; font-size:0.68em; letter-spacing:1px; background:transparent; border:1px solid #2a3040; color:#445; cursor:pointer; transition:all 0.2s; text-transform:uppercase; }
         #expand-toggle:hover { border-color:#607080; color:#8898a8; }
         #expand-toggle.on { border-color:#3060a0; color:#60a8e0; }
@@ -1461,8 +1459,7 @@
 
     function switchPlanet(planet){
         if(planet===_activePlanet)return;
-        stopPartyMoon();
-        document.querySelectorAll('.planet-tab').forEach(function(t){
+            document.querySelectorAll('.planet-tab').forEach(function(t){
             t.classList.toggle('active',t.dataset.planet===planet);
         });
         _activePlanet=planet;
@@ -2652,10 +2649,6 @@ var _tabClickCount  = 0;
 var _tabClickTimer  = null;
 var _partyClickCount = 0;
 var _partyClickTimer = null;
-var _mapPartyActive  = false;
-var _moonAngle       = 0;
-var _moonRaf         = null;
-var _moonTimeout     = null;
 var _sweepUnlocked  = (localStorage.getItem('naron_sweep_unlocked') === '1');
 var _sweepKpBuf     = '';
 
@@ -2787,31 +2780,6 @@ function spawnPlanetConfettiBurst() {
     }
 }
 
-function startPartyMoon() {
-    stopPartyMoon();
-    var moon = document.createElement('div');
-    moon.id = 'party-moon';
-    document.body.appendChild(moon);
-    _moonAngle = 0;
-    function tick() {
-        var cx = window.innerWidth  / 2;
-        var cy = window.innerHeight / 2;
-        var orbitR = Math.min(window.innerWidth, window.innerHeight) * 0.30;
-        _moonAngle += 0.035;
-        moon.style.left = (cx + Math.cos(_moonAngle) * orbitR - 8) + 'px';
-        moon.style.top  = (cy + Math.sin(_moonAngle) * orbitR - 8) + 'px';
-        _moonRaf = requestAnimationFrame(tick);
-    }
-    tick();
-    _moonTimeout = setTimeout(stopPartyMoon, 20000);
-}
-
-function stopPartyMoon() {
-    if (_moonRaf) { cancelAnimationFrame(_moonRaf); _moonRaf = null; }
-    if (_moonTimeout) { clearTimeout(_moonTimeout); _moonTimeout = null; }
-    var m = document.getElementById('party-moon');
-    if (m) m.remove();
-}
 
 function triggerMapParty() {
     var banner = document.createElement('div');
@@ -2824,8 +2792,6 @@ function triggerMapParty() {
     rampStars(90, 700);
     // Planet confetti bursts
     var confettiInterval = setInterval(spawnPlanetConfettiBurst, 400);
-    // Moon
-    startPartyMoon();
     // Clean up after 20s
     setTimeout(function(){
         clearInterval(confettiInterval);
