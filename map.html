@@ -2794,14 +2794,12 @@ function startPartyMoon() {
     document.body.appendChild(moon);
     _moonAngle = 0;
     function tick() {
-        var tab = document.querySelector('.planet-tab.active');
-        if (!tab) { _moonRaf = requestAnimationFrame(tick); return; }
-        var r = tab.getBoundingClientRect();
-        var cx = r.left + r.width / 2;
-        var cy = r.top  + r.height / 2;
-        _moonAngle += 0.055;
-        moon.style.left = (cx + Math.cos(_moonAngle) * 26 - 8) + 'px';
-        moon.style.top  = (cy + Math.sin(_moonAngle) * 18 - 8) + 'px';
+        var cx = window.innerWidth  / 2;
+        var cy = window.innerHeight / 2;
+        var orbitR = Math.min(window.innerWidth, window.innerHeight) * 0.30;
+        _moonAngle += 0.035;
+        moon.style.left = (cx + Math.cos(_moonAngle) * orbitR - 8) + 'px';
+        moon.style.top  = (cy + Math.sin(_moonAngle) * orbitR - 8) + 'px';
         _moonRaf = requestAnimationFrame(tick);
     }
     tick();
