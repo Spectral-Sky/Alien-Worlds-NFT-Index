@@ -854,6 +854,18 @@ function renderBulkBar() {
 }
 
 // ── BULK ACTIONS ─────────────────────────────────────────────────────────────
+async function _transact(actions) {
+    if (window.walletSession) {
+        return await window.walletSession.transact({ actions: actions });
+    }
+    if (wax && wax.userAccount && wax.api) {
+        return await wax.api.transact(
+            { actions: actions },
+            { blocksBehind: 3, expireSeconds: 30 }
+        );
+    }
+    throw new Error('No active wallet session. Please log in first.');
+}
 async function sellSelected() {
     var wallet = getWallet();
     if (!wallet) { alert('Not logged in.'); return; }
@@ -861,13 +873,11 @@ async function sellSelected() {
     if (!ids.length) return;
     if (!confirm('Sell ' + ids.length + ' fighter(s)? This cannot be undone.')) return;
     try {
-        var sess = window.walletSession;
-        if (!sess) { alert('No active wallet session.'); return; }
-        await sess.transact({ actions: [{
+        await _transact([{
             account: 'fighters.ale', name: 'sellfighter',
             authorization: [{ actor: wallet, permission: 'active' }],
             data: { fighter_ids: ids.map(Number), wallet: wallet }
-        }]});
+        }]);
         alert('Sell TX sent! Reload fighters to refresh.');
         clearSelection();
     } catch(e) {
@@ -883,16 +893,13 @@ async function markSelected(markerType) {
     var label = markerType ? ('Mark ' + ids.length + ' fighter(s) as "' + markerType + '"?') : ('Clear marker on ' + ids.length + ' fighter(s)?');
     if (!confirm(label)) return;
     try {
-        var sess = window.walletSession;
-        if (!sess) { alert('No active wallet session.'); return; }
-        var actions = ids.map(function(fid) {
+        await _transact(ids.map(function(fid) {
             return {
                 account: 'fighters.ale', name: 'setmarker',
                 authorization: [{ actor: wallet, permission: 'active' }],
                 data: { fighter_id: Number(fid), marker: markerType, wallet: wallet }
             };
-        });
-        await sess.transact({ actions: actions });
+        }));
         alert('Mark TX sent! Reload fighters to refresh.');
         clearSelection();
     } catch(e) {
@@ -910,16 +917,13 @@ async function levelAll() {
     if (!levellable.length) return;
     if (!confirm('Level up ' + levellable.length + ' fighter(s)?')) return;
     try {
-        var sess = window.walletSession;
-        if (!sess) { alert('No active wallet session.'); return; }
-        var actions = levellable.map(function(f) {
+        await _transact(levellable.map(function(f) {
             return {
                 account: 'fighters.ale', name: 'levelup',
                 authorization: [{ actor: wallet, permission: 'active' }],
                 data: { fighter_id: Number(f.fighter_id), wallet: wallet }
             };
-        });
-        await sess.transact({ actions: actions });
+        }));
         alert('Level up TX sent! Reload fighters to refresh.');
     } catch(e) {
         alert('TX failed: ' + ((e && e.message) || String(e)));
@@ -968,14 +972,12 @@ async function paySelectedPayday() {
 
 async function _sendPayday(wallet, fighters, label) {
     try {
-        var sess = window.walletSession;
-        if (!sess) { alert('No active wallet session.'); return; }
         var fids = fighters.map(function(f){ return Number(f.fighter_id); });
-        await sess.transact({ actions: [{
+        await _transact([{
             account: 'fighters.ale', name: 'payday',
             authorization: [{ actor: wallet, permission: 'active' }],
             data: { fighter_id: fids, wallet: wallet }
-        }]});
+        }]);
         alert('Payday TX sent for ' + label + '! Reload to refresh.');
     } catch(e) {
         alert('TX failed: ' + ((e && e.message) || String(e)));
