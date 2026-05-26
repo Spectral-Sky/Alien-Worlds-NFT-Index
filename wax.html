@@ -493,6 +493,32 @@
         .nav-dropdown-wrap:hover .nav-dropdown-menu{display:block;}
         .nav-dropdown-item{display:block;padding:7px 14px;color:#cc88bb;text-decoration:none;font-family:"Courier New",monospace;font-size:0.82em;letter-spacing:1px;white-space:nowrap;}
         .nav-dropdown-item:hover,.nav-dropdown-item.active{color:#ff44cc;background:rgba(255,68,204,0.08);}
+
+        /* ── WHITELIST PANEL ──────────────────────────────────────────────── */
+        #wl-panel {
+            position:absolute; bottom:32px; left:32px;
+            background:rgba(8,0,12,0.97);
+            border:1px solid var(--border);
+            box-shadow:0 0 24px var(--pink-glow), inset 0 0 30px rgba(0,0,0,0.6);
+            padding:14px 16px 12px; border-radius:3px; min-width:190px;
+            font-family:'Courier New',monospace;
+        }
+        #wl-panel::before {
+            content:'◈ WALLET ACCESS';
+            display:block; font-size:0.55em; letter-spacing:3px;
+            color:var(--muted); text-align:center; margin-bottom:10px;
+        }
+        .wl-req { font-size:0.58em; color:rgba(255,68,204,0.3); letter-spacing:1px; text-align:center; margin-bottom:10px; line-height:1.7; }
+        .wl-btn {
+            width:100%; background:rgba(20,0,24,0.9); border:1px solid var(--border);
+            color:var(--text); cursor:pointer; padding:7px 6px; text-align:center;
+            border-radius:2px; transition:all 0.1s; font-family:'Courier New',monospace;
+            font-size:0.68em; letter-spacing:2px; margin-bottom:5px; display:block;
+        }
+        .wl-btn:hover  { background:rgba(80,0,80,0.4); border-color:var(--pink); }
+        .wl-btn:active { transform:scale(0.97); }
+        .wl-btn:disabled { opacity:0.35; cursor:not-allowed; }
+        #wl-status { margin-top:7px; font-size:0.58em; letter-spacing:1px; text-align:center; color:var(--muted); min-height:1em; line-height:1.5; }
 </style>
     <script src="waxjs.js"></script>
     <script type="module">
@@ -537,6 +563,13 @@
         <h1>🕯 Recovery.ALE</h1>
         <div class="lock-sub">Candle Operations Interface</div>
         <div class="lock-sub" style="margin-top:8px;font-size:0.55em;opacity:0.4;">◈ UNAUTHORIZED ACCESS RESTRICTED ◈</div>
+    </div>
+
+    <div id="wl-panel">
+        <div class="wl-req">1,500+ WAX spent on gems<br>— or — gems in candle &gt; 0</div>
+        <button class="wl-btn" id="wl-anchor-btn" onclick="wlLogin('anchor')">⚡ ANCHOR</button>
+        <button class="wl-btn" id="wl-wcc-btn"    onclick="wlLogin('wcc')">☁ CLOUD WALLET</button>
+        <div id="wl-status"></div>
     </div>
 
     <div id="keypad">
@@ -1731,6 +1764,116 @@
 
     setInterval(fetchLivePrices, 5 * 60 * 1000);
     if (sessionStorage.getItem('rcv_unlocked') === '1') { refreshAll(); checkWalletState(); initShardValuator(); }
+
+    // ── WHITELIST ─────────────────────────────────────────────────────────────
+    var WL_THRESHOLD = 1500;
+    var WL_NODES = ['https://wax.eosusa.io','https://wax.eosphere.io','https://api.waxsweden.org'];
+
+    function wlSetStatus(msg, cls) {
+        var el = document.getElementById('wl-status');
+        if (!el) return;
+        el.textContent = msg;
+        el.style.color = cls === 'err' ? 'var(--red)' : cls === 'ok' ? 'var(--gold)' : 'var(--muted)';
+    }
+    function wlSetBtns(disabled) {
+        ['wl-anchor-btn','wl-wcc-btn'].forEach(function(id) {
+            var b = document.getElementById(id); if (b) b.disabled = disabled;
+        });
+    }
+    function wlUnlock(reason) {
+        wlSetStatus('✓ ' + reason, 'ok');
+        sessionStorage.setItem('rcv_unlocked', '1');
+        setTimeout(function() {
+            document.getElementById('lock-screen').classList.add('unlocking');
+            setTimeout(function() {
+                document.getElementById('lock-screen').style.display = 'none';
+                document.getElementById('main').classList.add('visible');
+                refreshAll(); checkWalletState(); initShardValuator();
+            }, 600);
+        }, 900);
+    }
+
+    async function wlCheck(wallet) {
+        wlSetBtns(true);
+        wlSetStatus(wallet.length > 14 ? wallet.slice(0,12) + '…' : wallet);
+
+        // Step 1 — WAX spent on gems via Hyperion
+        wlSetStatus('Checking gem spend…');
+        var gemWax = 0;
+        for (var ni = 0; ni < WL_NODES.length; ni++) {
+            try {
+                var skip = 0, done = false;
+                while (!done) {
+                    var r = await fetch(WL_NODES[ni] + '/v2/history/get_actions?account=' + wallet
+                        + '&filter=eosio.token%3Atransfer&limit=100&skip=' + skip + '&sort=asc');
+                    if (!r.ok) throw new Error('http');
+                    var d = await r.json();
+                    (d.actions || []).forEach(function(a) {
+                        var ad = a.act && a.act.data;
+                        if (ad && ad.to === 'shop.ale' && ad.memo && ad.memo.indexOf('purchase,gem.') === 0)
+                            gemWax += parseFloat(ad.quantity) || 0;
+                    });
+                    var total = (d.total && d.total.value) || 0;
+                    skip += (d.actions || []).length;
+                    done = !d.actions || d.actions.length < 100 || skip >= total;
+                }
+                break;
+            } catch(e) { continue; }
+        }
+        if (gemWax >= WL_THRESHOLD) { wlUnlock(gemWax.toFixed(2) + ' WAX spent on gems'); return; }
+
+        // Step 2 — gems_in_candle > 0 via players.ale
+        wlSetStatus('Checking candle activity…');
+        for (var ni2 = 0; ni2 < WL_NODES.length; ni2++) {
+            try {
+                var r2 = await fetch(WL_NODES[ni2] + '/v1/chain/get_table_rows', {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({code:'players.ale',scope:'players.ale',table:'players',lower_bound:wallet,limit:1,json:true})
+                });
+                if (!r2.ok) throw new Error('http');
+                var d2 = await r2.json();
+                if (d2.rows && d2.rows[0] && d2.rows[0].wallet === wallet) {
+                    var perm2 = {};
+                    (d2.rows[0].permstats || []).forEach(function(s) { perm2[s.first] = Number(s.second) || 0; });
+                    var gic = perm2['gems_in_candle'] || 0;
+                    if (gic > 0) { wlUnlock(gic + ' gems in candle'); return; }
+                }
+                break;
+            } catch(e) { continue; }
+        }
+
+        // Fail
+        wlSetStatus('✗ NOT ELIGIBLE — ' + gemWax.toFixed(0) + ' / ' + WL_THRESHOLD + ' WAX spent', 'err');
+        wlSetBtns(false);
+    }
+
+    window.wlLogin = async function(method) {
+        wlSetBtns(true);
+        wlSetStatus('Connecting…');
+        try {
+            var wallet;
+            if (method === 'anchor') {
+                var res = await window.walletKit.login();
+                window.walletSession = res.session;
+                wallet = String(res.session.actor);
+            } else {
+                wallet = await wax.login();
+            }
+            localStorage.setItem('naron_wallet', wallet);
+            checkWalletState();
+            await wlCheck(wallet);
+        } catch(e) {
+            wlSetStatus('Login failed', 'err');
+            wlSetBtns(false);
+        }
+    };
+
+    // Auto-check on page load if wallet already stored and lock screen is showing
+    (function() {
+        if (sessionStorage.getItem('rcv_unlocked') === '1') return;
+        var stored = localStorage.getItem('naron_wallet');
+        if (stored) wlCheck(stored);
+    })();
 </script>
 
 <div class="nav-dropdown-wrap" id="lang-picker" style="position:fixed;bottom:16px;right:16px;z-index:9000;" id="lang-picker-float">
