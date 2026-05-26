@@ -2118,13 +2118,14 @@
                 objsEl.innerHTML='';
             } else {
                 var tmpls=checkedTids.map(function(tid){return _tavernTemplateMap&&_tavernTemplateMap[tid];}).filter(Boolean);
+                console.log('[hire panel] selected templates:', JSON.stringify(tmpls));
                 var ohtml='';
                 _hireObjectives.forEach(function(obj){
                     var covered=tmpls.some(function(tmpl){return _objMatch(tmpl,obj);});
-                    // Show type when string is blank/dash so user can see what the objective is
                     var _ot=String(obj.objective_type||''), _os=String(obj.objective_string||'');
-                    var label=(_os&&_os!=='-')?_os:(_ot&&_ot!=='-')?'['+_ot+']':(obj.objective_value!=null?String(obj.objective_value):'?');
+                    var label=(_os&&_os!=='-')?_os:(_ot&&_ot!=='-')?'['+_ot+(obj.objective_value!=null?' '+obj.objective_value:'')+']':(obj.objective_value!=null?String(obj.objective_value):'?');
                     var ap=Number(obj.mod_value||0);
+                    console.log('[hire obj]', _ot, _os||('val:'+obj.objective_value), '→ covered:', covered, '| ap:', ap);
                     ohtml+='<div class="hnp-obj-sq '+(covered?'covered':'uncovered')+'">'+label+(ap?'<br>−'+ap+' '+_AP_ICON:'')+'</div>';
                 });
                 objsEl.innerHTML=ohtml;
