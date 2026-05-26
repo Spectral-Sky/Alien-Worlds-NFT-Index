@@ -337,6 +337,8 @@
     <button class="ctrl-btn" id="load-btn" onclick="loadFighters()">&#8635; LOAD FIGHTERS</button>
     <button class="ctrl-btn" id="level-all-btn" onclick="levelAll()" disabled title="Level up all fighters with enough XP">&#8679; LEVEL ALL</button>
     <button class="ctrl-btn" id="pay-grumpy-btn" onclick="payGrumpy()" disabled title="No fighters need payday" style="border-color:rgba(220,80,80,0.35);color:#c06060;">&#128184; PAY GRUMPY</button>
+    <span style="font-size:0.6em;color:#704040;letter-spacing:1px;">1,000 CREDITS EACH</span>
+    <span id="credits-display" style="font-size:0.62em;color:var(--muted);letter-spacing:1px;margin-left:4px;"></span>
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
         <span style="font-size:0.62em;color:var(--muted);letter-spacing:2px;white-space:nowrap;">OTHER WALLET:</span>
         <input id="wallet-lookup" type="text" placeholder="e.g. abc.wam" autocomplete="off"
@@ -374,6 +376,10 @@
     <button class="col-toggle" data-col="abilities" onclick="toggleCol(this)">ABILITIES</button>
     <button class="col-toggle" data-col="id"        onclick="toggleCol(this)">FIGHTER ID</button>
     <button class="col-toggle" data-col="payday"    onclick="toggleCol(this)">PAYDAY</button>
+</div>
+
+<div id="stats-notice" style="display:none;padding:5px 28px;font-size:0.58em;color:#485060;letter-spacing:1px;background:rgba(5,8,20,0.4);border-bottom:1px solid rgba(232,160,32,0.04);">
+    &#9888; Stat values (HP, DMG, CD, WU, TNT) are raw on-chain data &mdash; they do not account for unit age bonus.
 </div>
 
 <div class="table-wrap">
@@ -495,12 +501,14 @@ async function loadFighters() {
 
         console.log('[fighters]', _fighters.length, 'fighters for', wallet);
         document.getElementById('footer-wallet').textContent = wallet;
-        // Show whose roster this is in the subtitle
         var sub = document.querySelector('.title-bar .sub');
         var myWallet = getWallet();
         var label = (myWallet && wallet === myWallet) ? wallet + ' (YOU)' : wallet;
         if (sub) sub.textContent = label + '  ·  ' + _fighters.length + ' ACTIVE FIGHTERS  ·  SOURCE: FIGHTERS.ALE';
+        var sn = document.getElementById('stats-notice');
+        if (sn) sn.style.display = '';
         renderTable();
+        fetchCredits(wallet);
     } catch(e) {
         console.error('[fighters] error:', e);
         showEmpty('ERROR: ' + (e && e.message || String(e)));
@@ -606,26 +614,26 @@ function cellContent(key, f) {
             var abls = s.abilities || [];
             if (!abls.length) return '<span class="zero">—</span>';
             var AW_RARITY = {
-                abundant:  '#888888',
-                common:    '#90c880',
-                rare:      '#4488ff',
-                epic:      '#aa44ff',
-                legendary: '#ff8800',
-                mythic:    '#ff3060',
-                mythical:  '#ff3060'
+                abundant:  { col:'#777777', dg:'none',                           tg:'none' },
+                common:    { col:'#aaaaaa', dg:'0 0 4px rgba(255,255,255,0.45)', tg:'0 0 5px rgba(255,255,255,0.3)' },
+                rare:      { col:'#4488ff', dg:'0 0 6px #4488ffaa',              tg:'0 0 6px #4488ff70' },
+                epic:      { col:'#aa44ff', dg:'0 0 8px #aa44ffcc',              tg:'0 0 8px #aa44ff90' },
+                legendary: { col:'#ff8800', dg:'0 0 10px #ff8800dd',             tg:'0 0 10px #ff8800a0' },
+                mythic:    { col:'#ff3060', dg:'0 0 13px #ff3060ee',             tg:'0 0 13px #ff3060c0' },
+                mythical:  { col:'#ff3060', dg:'0 0 13px #ff3060ee',             tg:'0 0 13px #ff3060c0' }
             };
+            var NO_RARITY = { col:'#60c890', dg:'0 0 4px #60c89060', tg:'none' };
             return '<div style="display:flex;flex-direction:column;gap:3px;">' +
                 abls.map(function(a) {
                     var raw = a.displayname || a.name || '?';
                     var m = raw.match(/\[(\w+)\]$/);
                     var r = m ? m[1].toLowerCase() : '';
-                    var col = r ? (AW_RARITY[r] || '#666') : '#60c890';
+                    var st = r ? (AW_RARITY[r] || { col:'#666', dg:'none', tg:'none' }) : NO_RARITY;
                     var name = m ? raw.slice(0, raw.lastIndexOf('[')).trim() : raw;
-                    var name = a.displayname || a.name || '?';
                     return '<div style="display:flex;align-items:center;gap:5px;white-space:nowrap;">'
                         + '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'
-                        + col + ';flex-shrink:0;box-shadow:0 0 4px ' + col + '60;"></span>'
-                        + '<span style="color:' + col + ';font-size:0.85em;">' + name + '</span>'
+                        + st.col + ';flex-shrink:0;box-shadow:' + st.dg + ';"></span>'
+                        + '<span style="color:' + st.col + ';font-size:0.85em;text-shadow:' + st.tg + ';">' + name + '</span>'
                         + '</div>';
                 }).join('') + '</div>';
         }
@@ -916,6 +924,25 @@ async function levelAll() {
     } catch(e) {
         alert('TX failed: ' + ((e && e.message) || String(e)));
     }
+}
+
+async function fetchCredits(wallet) {
+    var el = document.getElementById('credits-display');
+    if (!el) return;
+    el.textContent = 'CREDITS: …';
+    try {
+        var res = await fetch('https://wax.greymass.com/v1/chain/get_table_rows', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ code:'players.ale', scope:'players.ale', table:'players',
+                lower_bound: wallet, upper_bound: wallet, limit: 1, json: true })
+        });
+        var data = await res.json();
+        var row = data.rows && data.rows[0];
+        if (!row || row.wallet !== wallet) { el.textContent = ''; return; }
+        var credits = (row.activestats && row.activestats.credits != null)
+            ? Number(row.activestats.credits).toLocaleString() : '?';
+        el.textContent = 'CREDITS: ' + credits;
+    } catch(e) { el.textContent = ''; }
 }
 
 async function payGrumpy() {
