@@ -242,6 +242,9 @@
     /* SHARD VALUATOR TRAY */
     #lb-sv-tray { display:none; background:rgba(5,8,20,0.98); border-bottom:1px solid rgba(232,160,32,0.18); box-shadow:0 4px 20px rgba(0,0,0,0.5); }
     #lb-sv-tray.open { display:block; }
+    /* GEM SPEND TRAY */
+    #lb-gem-tray { display:none; background:rgba(5,8,20,0.98); border-bottom:1px solid rgba(96,180,232,0.18); box-shadow:0 4px 20px rgba(0,0,0,0.5); }
+    #lb-gem-tray.open { display:block; }
     .lb-sv-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 28px; border-bottom:1px solid rgba(232,160,32,0.08); }
     .lb-sv-body { padding:10px 28px 14px; }
     .lb-sv-tier-btn { background:transparent; font-family:'Courier New',monospace; font-size:0.62em; letter-spacing:2px; padding:3px 10px; cursor:pointer; border-radius:2px; transition:all 0.15s; text-transform:uppercase; }
@@ -368,6 +371,7 @@
     <span id="cache-info"></span>
     <input id="player-search" type="text" placeholder="Search player..." oninput="filterAndRender()">
     <button class="ctrl-btn" id="lb-sv-btn" onclick="toggleLbShardTray()" title="Shard Valuator — set WAX/shard rate for value columns">&#9881; SHARDS</button>
+    <button class="ctrl-btn" id="lb-gem-btn" onclick="toggleLbGemTray()" title="Gem Spend — fetch WAX spent on gem purchases from Hyperion">&#9881; GEMS</button>
     <span id="lb-sv-rate-info" style="font-size:0.62em;color:var(--gold);letter-spacing:1px;"></span>
     <span id="count-display"></span>
     <button class="dl-btn" id="dl-csv-btn" onclick="downloadCSV()" disabled title="Download visible columns as CSV">&#8659; CSV</button>
@@ -398,6 +402,19 @@
     </div>
     <div class="lb-sv-body" id="lb-sv-body">
         <div style="font-size:0.65em;color:var(--muted);letter-spacing:1px;">Scan the outpost to fetch live floor prices. The average WAX/shard rate values shard earnings in the Shard WAX and Earned WAX columns.</div>
+    </div>
+</div>
+
+<div id="lb-gem-tray">
+    <div class="lb-sv-toolbar">
+        <span style="font-size:0.6em;color:var(--muted);letter-spacing:2px;flex-shrink:0;">GEM SPEND:</span>
+        <span style="font-size:0.58em;color:#6090b0;letter-spacing:1px;">small=49 · medium=499 · large=4,999 · giant=49,999 WAX</span>
+        <button class="lb-sv-scan-btn" id="lb-gem-scan-btn" onclick="fetchGemSpend()">&#10231; SCAN PURCHASES</button>
+        <span id="lb-gem-active-info" style="font-size:0.62em;color:#60b0e0;letter-spacing:1px;flex:1;text-align:right;"></span>
+        <button class="lb-sv-clear-btn" id="lb-gem-clear-btn" style="display:none;" onclick="clearGemSpend()">&#10005; CLEAR</button>
+    </div>
+    <div class="lb-sv-body" id="lb-gem-body">
+        <div style="font-size:0.65em;color:var(--muted);letter-spacing:1px;">Scans all shop.ale transfer history on Hyperion to compute exact WAX spent on gems per wallet. Enables the WAX Spent (Gems) and Net WAX Value columns.</div>
     </div>
 </div>
 
@@ -495,13 +512,18 @@
         { key:'tlm_earned',                 label:'TLM Earned',              src:'perm',   def:false },
         { key:'wax_earned',                 label:'WAX Earned',              src:'perm',   def:false },
         { key:'shard_wax_value', label:'Shard Value (WAX)', header:'Shard WAX',  src:'calc', def:false, title:'shards_earned \xd7 WAX/shard rate — set via ⚙ SHARDS button' },
-        { key:'wax_spent',       label:'WAX Spent (Gems)',   src:'perm',   def:false, title:'Exact WAX spent on gem purchases' },
         { key:'earned_wax',      label:'Total Earned (WAX)', header:'Earned WAX VALUE', src:'calc', def:false, title:'wax_earned + tlm_earned\xd7(TLM/WAX) + shards\xd7shardRate — requires live prices + shard rate' },
+        { key:'gem_wax_spent',   label:'WAX Spent (Gems)',   src:'calc', def:false, title:'Total WAX spent on gem packs — click ⚙ GEMS to fetch from Hyperion' },
+        { key:'net_wax',         label:'Net WAX Value',       src:'calc', def:false, title:'Earned WAX VALUE minus WAX spent on gems — requires SHARDS rate + GEMS fetch' },
     ];
 
     // Shard valuator state
     var _lbWaxUsd = null, _lbTlmUsd = null;
     var _lbShardWax = null;
+
+    // Gem spend cache: wallet → total WAX spent (number), populated by fetchGemSpend()
+    var _gemSpendCache = {};
+    var _gemSpendFetched = false;
     var _lbShardListings = [];
     var _lbShardTierFilter = new Set(['rare','epic','legendary','mythical']);
 
@@ -735,6 +757,16 @@
             var total = waxRaw + tlmRaw * tlmToWax + shardWax;
             return total > 0 ? total : null;
         },
+        gem_wax_spent: function(fp) {
+            if (!_gemSpendFetched) return null;
+            return _gemSpendCache[fp.wallet] || 0;
+        },
+        net_wax: function(fp) {
+            if (!_gemSpendFetched) return null;
+            var earned = CALC_COLS.earned_wax(fp);
+            if (earned === null) return null;
+            return earned - (_gemSpendCache[fp.wallet] || 0);
+        },
     };
 
     function getVal(fp, key, src) {
@@ -755,19 +787,15 @@
     var DECIMAL_COLS = {
         tlm_earned:  4, tlm_gained:  4, tlm_mined:  4, tlm_claimed: 4,
         tlm_farmed:  4, tlm_spent:   4,
-        wax_earned:  8, wax_gained:  8, wax_spent:   8,
+        wax_earned:  8, wax_gained:  8,
         shards_earned: 1, shards_gained: 1, shards_spent: 1, shards: 1,
     };
 
     function formatVal(key, v) {
         if (v === null || v === undefined) return '—';
         if (typeof v === 'string') return escHtml(v);
-        if (key === 'shard_wax_value' || key === 'earned_wax') {
+        if (key === 'shard_wax_value' || key === 'earned_wax' || key === 'gem_wax_spent' || key === 'net_wax') {
             return v.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + ' WAX';
-        }
-        if (key === 'wax_spent') {
-            var ws = v / 1e8;
-            return ws.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + ' WAX';
         }
         if (key in CALC_COLS) return v.toFixed(1) + ' %';
         var dec = DECIMAL_COLS[key];
@@ -1379,6 +1407,85 @@
             b.classList.toggle('sv-active', _lbShardTierFilter.has(b.textContent.trim().toLowerCase()));
         });
         if (_lbShardListings.length) lbRenderShardValuator();
+    };
+
+    var HYPERION_NODES = [
+        'https://wax.eosusa.io',
+        'https://wax.eosphere.io',
+        'https://api.waxsweden.org',
+        'https://wax.eosrio.io',
+    ];
+
+    async function hyperionFetch(path) {
+        for (var i = 0; i < HYPERION_NODES.length; i++) {
+            try {
+                var r = await fetch(HYPERION_NODES[i] + path);
+                if (r.ok) return await r.json();
+            } catch(e) {}
+        }
+        return null;
+    }
+
+    window.toggleLbGemTray = function() {
+        var tray = document.getElementById('lb-gem-tray');
+        if (tray) tray.classList.toggle('open');
+    };
+
+    window.clearGemSpend = function() {
+        _gemSpendCache = {};
+        _gemSpendFetched = false;
+        var body = document.getElementById('lb-gem-body');
+        if (body) body.innerHTML = '<div style="font-size:0.65em;color:var(--muted);letter-spacing:1px;">Scans all shop.ale transfer history on Hyperion to compute exact WAX spent on gems per wallet. Enables the WAX Spent (Gems) and Net WAX Value columns.</div>';
+        var info = document.getElementById('lb-gem-active-info');
+        if (info) info.textContent = '';
+        var clearBtn = document.getElementById('lb-gem-clear-btn');
+        if (clearBtn) clearBtn.style.display = 'none';
+        renderTable();
+    };
+
+    window.fetchGemSpend = async function() {
+        var scanBtn = document.getElementById('lb-gem-scan-btn');
+        var bodyEl  = document.getElementById('lb-gem-body');
+        var info    = document.getElementById('lb-gem-active-info');
+        var clearBtn = document.getElementById('lb-gem-clear-btn');
+        if (scanBtn) { scanBtn.disabled = true; scanBtn.textContent = '⏳ SCANNING…'; }
+        if (bodyEl) bodyEl.innerHTML = '<div style="color:var(--muted);font-size:0.68em;" class="loading-pulse">Fetching gem purchase history from Hyperion…</div>';
+
+        var cache = {};
+        var skip = 0, limit = 1000, total = Infinity;
+        try {
+            while (skip < total) {
+                var data = await hyperionFetch(
+                    '/v2/history/get_actions?account=shop.ale&filter=eosio.token%3Atransfer&limit=' + limit + '&skip=' + skip + '&sort=desc'
+                );
+                if (!data || !data.actions || !data.actions.length) break;
+                total = (data.total && data.total.value) || 0;
+                data.actions.forEach(function(a) {
+                    var d = a.act && a.act.data;
+                    if (!d || d.to !== 'shop.ale') return;
+                    if (!d.memo || d.memo.indexOf('purchase,gem.') !== 0) return;
+                    var qty = parseFloat(d.quantity);
+                    if (!isNaN(qty)) cache[d.from] = (cache[d.from] || 0) + qty;
+                });
+                skip += data.actions.length;
+                if (bodyEl) bodyEl.innerHTML = '<div style="color:var(--muted);font-size:0.68em;" class="loading-pulse">Scanned ' + skip.toLocaleString() + ' of ' + total.toLocaleString() + ' records…</div>';
+            }
+        } catch(e) {
+            if (bodyEl) bodyEl.innerHTML = '<div style="color:#c05050;font-size:0.68em;">Error: ' + escHtml((e && e.message) || String(e)) + '</div>';
+            if (scanBtn) { scanBtn.disabled = false; scanBtn.textContent = '⟳ SCAN PURCHASES'; }
+            return;
+        }
+
+        _gemSpendCache = cache;
+        _gemSpendFetched = true;
+        renderTable();
+
+        var walletCount = Object.keys(cache).length;
+        var totalWax = Object.values(cache).reduce(function(s, v) { return s + v; }, 0);
+        if (bodyEl) bodyEl.innerHTML = '<div style="font-size:0.65em;color:#60b0e0;letter-spacing:1px;">&#10003; ' + walletCount.toLocaleString() + ' wallets · ' + totalWax.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) + ' WAX total spent on gems · sort order preserved</div>';
+        if (info) info.textContent = walletCount.toLocaleString() + ' wallets scanned';
+        if (clearBtn) clearBtn.style.display = '';
+        if (scanBtn) { scanBtn.disabled = false; scanBtn.textContent = '⟳ RESCAN'; }
     };
 
     window.lbScanOutpost = async function() {
