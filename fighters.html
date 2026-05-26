@@ -538,6 +538,7 @@ var COL_DEFS = [
     { key:'cd',        label:'COOLDOWN ▲', title:'Cooldown — mean, lower is faster', defaultDir:1, sortVal: function(f){ var s=f.stats||{}; return s.attackspeed_min!=null?Math.floor((Number(s.attackspeed_min||0)+Number(s.attackspeed_max||0))/2*Math.sqrt(_ageBonus(f))/10.2):9999; } },
     { key:'wu',        label:'WINDUP ▲',   title:'Wind Up — mean, lower is faster',  defaultDir:1, sortVal: function(f){ var s=f.stats||{}; return s.initiative_min!=null?Math.floor((Number(s.initiative_min||0)+Number(s.initiative_max||0))/2*Math.sqrt(_ageBonus(f))/10.2):9999; } },
     { key:'tnt',       label:'TAUNT',      title:'Taunt — mean (±half-range)',  sortVal: function(f){ var s=f.stats||{}; return Math.floor((Number(s.taunt_min||0)+Number(s.taunt_max||0))/2*Math.sqrt(_ageBonus(f))/10.2); } },
+    { key:'dps',       label:'DPS',        title:'DPS Rating — Damage ÷ Cooldown × 10 (estimated, not exact)',  sortVal: function(f){ return _dpsRating(f); } },
     { key:'xp',        label:'XP',         title:'XP progress to next level',   sortVal: function(f){ var s=f.stats||{}; return s.required_experience?Number(s.experience||0)/Number(s.required_experience):0; } },
     { key:'age',       label:'AGE',        title:'Days since creation',         sortVal: function(f){ return fighterAgeDays(f)||0; } },
     { key:'payday',    label:'PAYDAY',     title:'Next payday date — red = lapsed, cannot be used', defaultDir:1, sortVal: function(f){ return _paydayMs(f) || Infinity; } },
@@ -606,6 +607,18 @@ function _convertStat(raw, isHPDMG, f) {
     return Math.floor(r * sqAb / 10.2);
 }
 
+function _dpsRating(f) {
+    var s = f.stats || {};
+    var sqAb = Math.sqrt(_ageBonus(f));
+    var lm   = 1 + (Number(s.level || 1) - 1) * 0.15;
+    var dmgMid = (Number(s.damage_min || 0) + Number(s.damage_max || 0)) / 2;
+    var cdMid  = (Number(s.attackspeed_min || 0) + Number(s.attackspeed_max || 0)) / 2;
+    var dmgBase = Math.floor(dmgMid * sqAb * lm / 9.10);
+    var cdBase  = Math.floor(cdMid  * sqAb / 10.2);
+    if (!cdBase) return 0;
+    return Math.round(dmgBase / cdBase * 10) / 10;
+}
+
 function convertedMeanRange(mn, mx, isHPDMG, f) {
     if (mn == null && mx == null) return '<span class="zero">—</span>';
     var lo = Number(mn || 0), hi = Number(mx || 0);
@@ -646,6 +659,11 @@ function cellContent(key, f) {
         case 'cd':  return convertedMeanRange(s.attackspeed_min, s.attackspeed_max,false, f);
         case 'wu':  return convertedMeanRange(s.initiative_min,  s.initiative_max, false, f);
         case 'tnt': return convertedMeanRange(s.taunt_min,       s.taunt_max,      false, f);
+        case 'dps': {
+            var dps = _dpsRating(f);
+            if (!dps) return '<span class="zero">—</span>';
+            return '<span style="color:#c8a060;">' + dps.toFixed(1) + '</span>';
+        }
         case 'xp': {
             if (!s.required_experience) return '<span class="zero">—</span>';
             var cur = Number(s.experience || 0);
