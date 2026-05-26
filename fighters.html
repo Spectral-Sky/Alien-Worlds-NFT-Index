@@ -337,7 +337,7 @@
     <button class="ctrl-btn" id="load-btn" onclick="loadFighters()">&#8635; LOAD FIGHTERS</button>
     <button class="ctrl-btn" id="level-all-btn" onclick="levelAll()" disabled title="Level up all fighters with enough XP">&#8679; LEVEL ALL</button>
     <button class="ctrl-btn" id="pay-grumpy-btn" onclick="payGrumpy()" disabled title="No fighters need payday" style="border-color:rgba(220,80,80,0.35);color:#c06060;">&#128184; PAY GRUMPY</button>
-    <span style="font-size:0.6em;color:#704040;letter-spacing:1px;">1,000 CREDITS EACH</span>
+    <span style="font-size:0.6em;color:#704040;letter-spacing:1px;">999 CREDITS EACH</span>
     <span id="credits-display" style="font-size:0.62em;color:var(--muted);letter-spacing:1px;margin-left:4px;"></span>
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
         <span style="font-size:0.62em;color:var(--muted);letter-spacing:2px;white-space:nowrap;">OTHER WALLET:</span>
@@ -379,7 +379,7 @@
 </div>
 
 <div id="stats-notice" style="display:none;padding:5px 28px;font-size:0.58em;color:#485060;letter-spacing:1px;background:rgba(5,8,20,0.4);border-bottom:1px solid rgba(232,160,32,0.04);">
-    &#9432; Stat values (HP, DMG, CD, WU, TNT) are estimated in-game values scaled by level (age bonus at 100%). Open browser console to see raw &rarr; converted values.
+    &#9432; Stat values (HP, DMG, CD, WU, TNT) are estimated in-game values scaled by level (+15% per level) and age bonus. Open browser console to see raw &rarr; converted values.
 </div>
 
 <div class="table-wrap">
@@ -600,8 +600,8 @@ function _convertStat(raw, isHPDMG, f) {
     var sqAb = Math.sqrt(ab);
     if (isHPDMG) {
         var lv = Number((f.stats || {}).level || 1);
-        var lm = 1 + (lv - 1) * 0.26;
-        return Math.floor(r * sqAb * lm / 12.94);
+        var lm = 1 + (lv - 1) * 0.15;
+        return Math.floor(r * sqAb * lm / 9.10);
     }
     return Math.floor(r * sqAb / 10.2);
 }
@@ -968,7 +968,7 @@ async function levelAll() {
             return {
                 account: 'fighters.ale', name: 'levelup',
                 authorization: [{ actor: wallet, permission: 'active' }],
-                data: { fighter_id: Number(f.fighter_id), wallet: wallet }
+                data: { fighter_ids: [Number(f.fighter_id)], wallet: wallet, cost_gems: 0, cost_credits: 999 }
             };
         }));
         alert('Level up TX sent! Reload fighters to refresh.');
