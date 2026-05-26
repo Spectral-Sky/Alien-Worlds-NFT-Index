@@ -3153,6 +3153,7 @@ async function runTxQueue() {
                 i++;
             } else if (item.type === 'portal') {
                 plan.push({ label: 'PORTAL ('+item.x+','+item.y+')', qIdx: i,
+                    isPortal: true, toPlanet: item.to,
                     actions: [{ account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} }]
                 });
                 i++;
@@ -3162,6 +3163,7 @@ async function runTxQueue() {
         _txQueue.forEach(function(item, i){
             if (item.type === 'travel' || item.type === 'portal') {
                 plan.push({ label: 'TRAVEL ('+item.x+','+item.y+')', qIdx: i,
+                    isPortal: item.type === 'portal', toPlanet: item.to,
                     actions: [{ account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} }]
                 });
             } else if (item.type === 'travel+hire') {
@@ -3235,6 +3237,15 @@ async function runTxQueue() {
                 if (lbl) lbl.style.color = '#60e090';
             }
             succeeded++;
+            // Refresh map to show movement after each step
+            if (step.isPortal && step.toPlanet) {
+                _activePlanet = step.toPlanet;
+                _playerPos = { planet: step.toPlanet, x: travelAct ? travelAct.data.x : 1, y: travelAct ? travelAct.data.y : 1 };
+                setActiveTab(step.toPlanet);
+                buildMap(step.toPlanet);
+            } else if (travelAct) {
+                applyMarker();
+            }
         } catch(e) {
             console.error('Queue TX error (step '+j+'):', e);
             _failedPlan.push(step);
