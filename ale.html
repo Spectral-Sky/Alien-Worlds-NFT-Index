@@ -123,6 +123,10 @@
         .tab-content.active { display: block; }
 
         /* --- PREVIEW DECKS & MARKET INTEL --- */
+        body.deck-tab-hidden #deck-toggle-tab,
+        body.deck-tab-hidden #preview-frame,
+        body.deck-tab-hidden #market-frame { display: none !important; }
+        body.deck-tab-hidden .grid-container { grid-template-columns: minmax(20px, 1fr) auto minmax(20px, 1fr) !important; }
         #deck-toggle-tab { position: fixed; top: 240px; left: 298px; width: 30px; height: 460px; box-sizing: border-box; background: var(--theme-dark); border: 2px solid var(--theme-color); border-left: none; color: var(--theme-color); display: flex; align-items: center; justify-content: center; font-size: 1.2em; font-weight: bold; cursor: pointer; z-index: 3005; pointer-events: auto !important; transition: transform 0.4s ease-out, background-color 0.2s, color 0.2s; border-radius: 0 8px 8px 0; box-shadow: 5px 0 15px rgba(0,0,0,0.8); user-select: none; }
         #deck-toggle-tab:hover { background: var(--theme-color); color: #000; }
         #deck-toggle-tab.minimized { transform: translateX(-298px); }
@@ -368,7 +372,7 @@
         html.day .ale-mode-btn:hover { color:var(--theme-color); border-color:var(--theme-color); }
     </style>
 </head>
-<body class="deck-open">
+<body class="deck-open deck-tab-hidden">
 
     <div id="ale-splash">
         <canvas id="splash-stars-canvas"></canvas>
@@ -1066,6 +1070,8 @@
         var btn = document.getElementById('tab-btn-' + name) ||
                   Array.from(document.querySelectorAll('.tab-btn')).find(b => b.textContent.trim().toLowerCase() === name.toLowerCase());
         if (btn) btn.classList.add('active');
+        var deckTabs = new Set(['crew', 'arms']);
+        document.body.classList.toggle('deck-tab-hidden', !deckTabs.has(name));
     };
 
     window.filterTable = function() {
