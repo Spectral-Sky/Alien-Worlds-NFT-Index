@@ -338,6 +338,12 @@ function toggleDayMode() {
 }
 if (localStorage.getItem('naron_day') === '1') document.documentElement.classList.add('day');
 
+async function doTransact(actions) {
+    if (window.walletSession) return await window.walletSession.transact({ actions: actions });
+    if (wax && wax.api) return await wax.api.transact({ actions: actions }, { blocksBehind: 3, expireSeconds: 1200 });
+    throw new Error('No wallet session — please log in.');
+}
+
 async function claimAllLandRewards(btn) {
     var wallet = getWallet();
     if (!wallet) { alert('Please log in first.'); return; }
@@ -427,10 +433,7 @@ async function claimAllLandRewards(btn) {
         setStatus('Claiming ' + actions.length + ' land(s)…');
         btn.textContent = 'SENDING…';
 
-        var sess = window.walletSession;
-        if (!sess) { alert('No active wallet session. Please log in with Anchor.'); throw new Error('no session'); }
-
-        await sess.transact({ actions: actions });
+        await doTransact(actions);
         setStatus('✓ Claimed rewards from ' + actions.length + ' land(s).', 'ok');
 
     } catch(e) {
@@ -455,9 +458,6 @@ async function doClaim(pool, historyId, count, btn) {
     if (statusEl) { statusEl.textContent = 'Building ' + count + ' actions…'; statusEl.className = 'card-status'; }
 
     try {
-        var sess = window.walletSession;
-        if (!sess) { alert('No active wallet session. Please log in with Anchor.'); throw new Error('no session'); }
-
         var actions = [];
         for (var i = 0; i < count; i++) {
             actions.push({
@@ -473,7 +473,7 @@ async function doClaim(pool, historyId, count, btn) {
             });
         }
 
-        await sess.transact({ actions: actions });
+        await doTransact(actions);
 
         if (statusEl) { statusEl.textContent = '✓ ' + count + ' claims sent successfully'; statusEl.className = 'card-status ok'; }
     } catch(e) {
