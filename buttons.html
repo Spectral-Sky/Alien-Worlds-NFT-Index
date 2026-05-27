@@ -371,7 +371,8 @@ async function claimAllLandRewards(btn) {
 
         setStatus('Found ' + lands.length + ' land(s). Checking buildings…');
 
-        var actions = [];
+        // Group NFTs by planet so we fetch each planet's table once
+        var byPlanet = {};
         for (var i = 0; i < lands.length; i++) {
             var nft = lands[i];
             var x = nft.immutable_data && nft.immutable_data.x;
@@ -379,24 +380,42 @@ async function claimAllLandRewards(btn) {
             var nameParts = (nft.name || '').split(' on ');
             var planet = nameParts.length > 1 ? nameParts[nameParts.length - 1].toLowerCase().trim() : null;
             if (!planet || x == null || y == null) continue;
+            if (!byPlanet[planet]) byPlanet[planet] = [];
+            byPlanet[planet].push({ x: Number(x), y: Number(y) });
+        }
 
-            var landRes = await fetch('https://wax.eosusa.io/v1/chain/get_table_rows', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: 'lands.ale', scope: planet, table: 'lands',
-                    lower_bound: nft.asset_id, upper_bound: nft.asset_id,
-                    index_position: 2, key_type: 'i64', limit: 1, json: true })
-            });
-            var landJson = await landRes.json();
-            var row = landJson.rows && landJson.rows[0];
-            if (!row || !row.buildings || row.buildings.length === 0) continue;
+        // Fetch each planet's lands table and match by x,y
+        var actions = [];
+        var planets = Object.keys(byPlanet);
+        for (var p = 0; p < planets.length; p++) {
+            var pl = planets[p];
+            var rows = [];
+            var nextKey = '';
+            while (true) {
+                var qRes = await fetch('https://wax.eosusa.io/v1/chain/get_table_rows', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: 'lands.ale', scope: pl, table: 'lands',
+                        lower_bound: nextKey, limit: 500, json: true })
+                });
+                var qJson = await qRes.json();
+                rows = rows.concat(qJson.rows || []);
+                if (!qJson.more) break;
+                nextKey = qJson.next_key;
+            }
 
-            actions.push({
-                account: 'lands.ale',
-                name: 'claimlndrwrd',
-                authorization: [{ actor: wallet, permission: 'active' }],
-                data: { wallet: wallet, planet: planet, x: String(x), y: String(y) }
-            });
+            var coords = byPlanet[pl];
+            for (var c = 0; c < coords.length; c++) {
+                var cx = coords[c].x, cy = coords[c].y;
+                var row = rows.find(function(r){ return r.x === cx && r.y === cy; });
+                if (!row || !row.buildings || row.buildings.length === 0) continue;
+                actions.push({
+                    account: 'lands.ale',
+                    name: 'claimlndrwrd',
+                    authorization: [{ actor: wallet, permission: 'active' }],
+                    data: { wallet: wallet, planet: pl, x: String(cx), y: String(cy) }
+                });
+            }
         }
 
         if (actions.length === 0) {
