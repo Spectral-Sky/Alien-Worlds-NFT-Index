@@ -408,7 +408,8 @@ async function claimAllLandRewards(btn) {
             for (var c = 0; c < coords.length; c++) {
                 var cx = coords[c].x, cy = coords[c].y;
                 var row = rows.find(function(r){ return r.x === cx && r.y === cy; });
-                if (!row || !row.buildings || row.buildings.length === 0) continue;
+                var hasRewards = row && row.buildings && row.buildings.some(function(b){ return b.tlm > 0; });
+                if (!hasRewards) continue;
                 actions.push({
                     account: 'lands.ale',
                     name: 'claimlndrwrd',
