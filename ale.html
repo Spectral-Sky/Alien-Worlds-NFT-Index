@@ -513,15 +513,15 @@
     </div>
 
     <div class="tab-bar">
-        <button class="tab-btn active" onclick="showTab('crew')">CREW</button>
+        <button class="tab-btn active" id="tab-btn-stats" onclick="showTab('stats'); loadStatsIfNeeded()">LIVE STATS</button>
+        <button class="tab-btn" onclick="showTab('crew')">CREW</button>
         <button class="tab-btn" onclick="showTab('arms')">ARMS</button>
         <button class="tab-btn" onclick="showTab('tools')">TOOLS</button>
         <button class="tab-btn" onclick="showTab('farming')">FARMING</button>
         <button class="tab-btn" onclick="showTab('settings')">SETTINGS</button>
-        <button class="tab-btn" id="tab-btn-stats" onclick="onStatsTabClick()" style="opacity:0.55;color:#8090b0;">&#128274; LIVE STATS</button>
     </div>
 
-    <div id="tab-crew" class="tab-content active">
+    <div id="tab-crew" class="tab-content">
         <div class="grid-container">
             <table class="waffle" id="crew-table">
                 <thead>
@@ -638,7 +638,7 @@
         </div>
     </div>
 
-    <div id="tab-stats" class="tab-content">
+    <div id="tab-stats" class="tab-content active">
         <div style="padding:30px 40px;">
             <div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.5);margin-bottom:20px;">◈ USAGE STATISTICS</div>
             <div id="stats-loading" style="color:#666;font-size:0.7em;letter-spacing:2px;display:none;">LOADING DATA…</div>
@@ -1542,7 +1542,7 @@
 <script>
 // ── USAGE STATS KEYPAD UNLOCK ─────────────────────────────────────────────────
 var STATS_CODES    = new Set(['74233','73784']);
-var _statsUnlocked = (localStorage.getItem('naron_stats_unlocked') === '1');
+var _statsUnlocked = true;
 var _statsKpBuf    = '';
 var _statsFetched  = false;
 var _rawCSV        = null;
@@ -2088,8 +2088,8 @@ function _mergeByTemplate(nftStats, tplMap) {
     return merged;
 }
 
-// Restore unlocked state on page load
-if (_statsUnlocked) revealStatsTab();
+// Stats tab is public — auto-load on page open
+loadStatsIfNeeded();
 </script>
 
 <!-- ── TIP ──────────────────────────────────────────────────────────────── -->
