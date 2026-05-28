@@ -467,7 +467,7 @@ var _recapData    = null;
 var _recapTurn    = 0;
 var _recapPlaying = false;
 var _recapTimer   = null;
-var _recapSpeed   = 600; // ms per turn: 1200 slow / 600 medium / 200 fast
+var _recapSpeed   = 1800; // ms per turn: 1800 slow / 600 medium / 200 fast
 
 var TARGET_LABELS = {
     'enemy_taunt_min':     'lowest Taunt',
@@ -1498,7 +1498,7 @@ function renderRecapContent() {
         +   '<button class="ctrl-btn" id="rc-play-btn" style="padding:5px 12px;" onclick="recapTogglePlay()">&#9654; PLAY</button>'
         +   '<button class="ctrl-btn" style="padding:5px 12px;" onclick="recapReset()">&#8635; RESET</button>'
         +   '<span style="display:flex;gap:4px;align-items:center;margin-left:8px;">'
-        +     '<button id="rc-spd-slow" class="ctrl-btn rc-spd-btn rc-spd-active" style="padding:4px 9px;font-size:1em;" onclick="recapSetSpeed(1200,this)" title="Slow">🐢</button>'
+        +     '<button id="rc-spd-slow" class="ctrl-btn rc-spd-btn rc-spd-active" style="padding:4px 9px;font-size:1em;" onclick="recapSetSpeed(1800,this)" title="Slow">🐢</button>'
         +     '<button id="rc-spd-med"  class="ctrl-btn rc-spd-btn"              style="padding:4px 9px;font-size:1em;" onclick="recapSetSpeed(600,this)"  title="Medium">🐇</button>'
         +     '<button id="rc-spd-fast" class="ctrl-btn rc-spd-btn"              style="padding:4px 9px;font-size:1em;" onclick="recapSetSpeed(200,this)"  title="Fast">👽</button>'
         +   '</span>'
