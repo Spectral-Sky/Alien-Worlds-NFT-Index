@@ -103,9 +103,11 @@
         .nav-dropdown-item.active { color:var(--theme-color); font-weight:bold; background:rgba(255,255,255,0.03); }
 
         .wallet-section { position: relative; display:flex; gap:6px; align-items:center; }
-        .wallet-btn { background: #111; color: var(--theme-color); border: 1px dashed var(--theme-color); padding: 10px 20px; font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; transition: all 0.3s; }
-        .wallet-btn:hover { background: var(--theme-hover); box-shadow: var(--theme-shadow); }
-        .wallet-btn.logged-in { background: var(--theme-color); color: #000; border: 1px solid #fff; }
+        .wallet-btn { background:#111; color:var(--theme-color); border:1px dashed var(--theme-color); padding:6px 12px; font-family:'Courier New',monospace; font-size:0.74em; font-weight:bold; letter-spacing:1px; white-space:nowrap; cursor:pointer; transition:all 0.2s; border-radius:3px; }
+        .wallet-btn:hover { background:var(--theme-hover); border-color:var(--theme-color); }
+        .wallet-btn.logged-in { background:rgba(232,160,32,0.12); color:var(--theme-color); border:1px solid var(--theme-color); }
+        .tip-btn-sm { background:transparent; border:1px solid rgba(232,160,32,0.25); color:#a07840; font-family:'Courier New',monospace; font-size:0.7em; letter-spacing:1px; padding:5px 10px; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+        .tip-btn-sm:hover { color:#c09060; border-color:rgba(232,160,32,0.5); }
 
         /* --- UI BAR --- */
         .top-bar { display: flex; justify-content: space-between; align-items: flex-start; padding: 15px 30px; box-sizing: border-box; width: 100%; background: #050510; border-bottom: 2px solid var(--theme-color); position: sticky; top: 66px; z-index: 5000; box-shadow: 0 10px 20px rgba(0,0,0,0.8); margin-bottom: 0; flex-wrap: wrap; gap:10px; }
@@ -329,7 +331,7 @@
 
         /* ── FONT PICKER & MODE TOGGLE ────────────────────────────────────────── */
         .ale-font-preview { display:block; font-size:0.8em; color:#666; margin-top:1px; }
-        .ale-mode-btn { background:transparent; border:1px solid rgba(232,160,32,0.3); color:#888; padding:8px 10px; font-size:1em; line-height:1; cursor:pointer; border-radius:6px; transition:all 0.3s; }
+        .ale-mode-btn { background:transparent; border:1px solid rgba(232,160,32,0.3); color:#888; padding:5px 9px; font-size:0.95em; line-height:1; cursor:pointer; border-radius:4px; transition:all 0.2s; }
         .ale-mode-btn:hover { color:var(--theme-color); border-color:var(--theme-color); }
 
         /* ── DAY MODE ─────────────────────────────────────────────────────────── */
