@@ -403,6 +403,11 @@
         .welcome-title { color: var(--theme-color); font-size: 1.4em; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 10px var(--theme-color); margin-bottom: 6px; }
         .welcome-sub { color: #888; font-family: 'Courier New', monospace; font-size: 0.9em; letter-spacing: 1px; }
 
+        @keyframes ticker-scroll { 0% { transform:translateX(0); } 100% { transform:translateX(-50%); } }
+        .marquee-wrap { overflow:hidden; background:rgba(232,160,32,0.04); border-top:1px solid rgba(232,160,32,0.18); border-bottom:1px solid rgba(232,160,32,0.18); padding:6px 0; margin-bottom:14px; }
+        .marquee-track { white-space:nowrap; display:inline-block; animation:ticker-scroll 50s linear infinite; font-size:0.75em; color:#c09050; letter-spacing:1px; font-family:'Courier New',monospace; }
+        .marquee-track:hover { animation-play-state:paused; }
+        .card-wip { font-size:0.58em; color:#a07040; letter-spacing:1px; font-style:italic; position:absolute; top:8px; right:8px; z-index:10; }
         @media screen and (max-width: 900px) {
             .phases-wrapper { grid-template-columns: 1fr; gap: 20px; }
             .global-header { flex-direction: column; gap: 15px; }
@@ -554,6 +559,7 @@
     <a href="alewiki.html" class="nav-btn">&#9672; ALE WIKI</a>
     <a href="alements.html" class="nav-btn">&#11041; STAT EXPLORER</a>
     <a href="aleleaders.html" class="nav-btn">&#9670; LEADERBOARD</a>
+    <a href="fighters.html" class="nav-btn">&#9876; MY FIGHTERS</a>
     <a href="stash.html" class="nav-btn">&#11041; STASH</a>
     <a href="outpost.html" class="nav-btn">OUTPOST</a>
     <a href="ep.html" class="nav-btn">&#9672; ENDPOINTS</a>
@@ -574,6 +580,12 @@
                 <img src="Request Feature logo.png" alt="Request Feature">
                 REQUEST FEATURE
             </a>
+        </div>
+
+        <div class="marquee-wrap">
+            <span class="marquee-track">
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🐛 Alien Legends payout for Bug Reports (1,000,000 Shards) is on June 15th. Submit bugs in "ale-bugs" Channel on Mission Control Discord! 🐛 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🐛 Alien Legends payout for Bug Reports (1,000,000 Shards) is on June 15th. Submit bugs in "ale-bugs" Channel on Mission Control Discord! 🐛 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            </span>
         </div>
 
         <div class="phases-wrapper">
@@ -662,33 +674,37 @@
             <div style="position:relative;z-index:10;">
                 <div class="card-title" style="font-size:0.95em;color:#ffd080;">⚔ AW COMPETITION</div>
                 <span class="card-schema" style="color:#a07830;margin-bottom:6px;display:block;">Alien Legends · 28-day event</span>
-                <p style="font-size:0.68em;color:#c09050;margin:4px 0 6px;line-height:1.5;"><strong style="color:#ffd080;">Prize Pool: 1,000,000 Shards sponsored by gHubs</strong><br><strong style="color:#ffd080;">Start Time: May 2, 2026 at 5 PM UTC &nbsp;·&nbsp; End: May 29, 2026 at 3 PM UTC</strong></p>
+                <p style="font-size:0.68em;color:#c09050;margin:4px 0 4px;line-height:1.5;"><strong style="color:#ffd080;">Prize Pool: 1,000,000 Shards sponsored by gHubs</strong><br>May 2 – May 29, 2026 &nbsp;·&nbsp; <strong style="color:#ff7070;">ENDING MAY 29</strong></p>
                 <button id="comp-reg-btn" onclick="registerForComp()">[ REGISTER ]</button>
                 <div id="comp-reg-status" style="font-size:0.68em;margin-top:4px;color:#888;font-family:'Courier New',monospace;min-height:1em;"></div>
             </div>
     </div>
     <div class="module-grid">
         <a href="ale.html" class="module-card" style="border-color:rgba(232,160,32,0.3);">
-            <span class="rgb-text-badge" style="position:absolute;top:8px;right:8px;font-size:0.65em;transform:rotate(-15deg);z-index:10;">NEW</span>
+            <span class="card-wip">Work in Progress</span>
             <div class="card-text-wrapper">
                 <div class="card-title">Alien Legends Stats</div>
                 <span class="card-schema">Arms &amp; Crew Statistics &amp; Abilities, MP table, and more!</span>
-                <div class="card-status" style="background:#050e20;color:#e8a020;border:1px solid #e8a020;">ALPHA</div>
             </div>
         </a>
         <a href="alewiki.html" class="module-card" style="border-color:rgba(232,160,32,0.3);">
-            <span class="rgb-text-badge" style="position:absolute;top:8px;right:8px;font-size:0.65em;transform:rotate(-15deg);z-index:10;">NEW</span>
+            <span class="card-wip">Work in Progress</span>
             <div class="card-text-wrapper">
                 <div class="card-title">Alien Legends WIKI</div>
-                <span class="card-schema">Game Mechanics & Walkthrough</span>
-                <div class="card-status" style="background:#050e20;color:#e8a020;border:1px solid #e8a020;">ALPHA</div>
+                <span class="card-schema">Game Mechanics &amp; Walkthrough</span>
             </div>
         </a>
         <a href="aleleaders.html" class="module-card" style="border-color:rgba(232,160,32,0.3);">
             <div class="card-text-wrapper">
                 <div class="card-title">Leaderboard</div>
                 <span class="card-schema">Player rankings by stats, battles &amp; NFTs</span>
-                <div class="card-status" style="background:#050e20;color:#e8a020;border:1px solid #e8a020;">ALPHA</div>
+            </div>
+        </a>
+        <a href="fighters.html" class="module-card" style="border-color:rgba(232,160,32,0.3);">
+            <div class="card-text-wrapper">
+                <div class="card-title">&#9876; My Fighters</div>
+                <span class="card-schema">Fighter roster, fight recap &amp; turn-by-turn battle simulation</span>
+                <div class="card-status" style="background:#050e20;color:#e8a020;border:1px solid #e8a020;">LIVE</div>
             </div>
         </a>
     </div>
@@ -980,12 +996,18 @@
 }
 
         document.addEventListener("DOMContentLoaded", () => {
-            // Auto-expire NEW badges after April 18, 2026
-            if (new Date() > new Date('2026-04-18T23:59:59')) {
-                document.querySelectorAll('.rgb-text-badge').forEach(el => el.remove());
-            }
-
             checkWalletState();
+
+            // Competition end: May 29 2026 3 PM UTC
+            var _compEnd = new Date('2026-05-29T15:00:00Z');
+            var _compBtn = document.getElementById('comp-reg-btn');
+            var _compSt  = document.getElementById('comp-reg-status');
+            if (_compBtn && new Date() > _compEnd) {
+                _compBtn.disabled = true;
+                _compBtn.textContent = '[ EVENT ENDED ]';
+                _compBtn.style.cssText += 'animation:none;border-color:rgba(100,100,100,0.4);color:#666;';
+                if (_compSt) { _compSt.textContent = 'Competition closed May 29, 2026'; _compSt.style.color = '#555'; }
+            }
 
             const glow   = document.getElementById("cursor-glow");
             const planet = document.getElementById("cursor-planet");
