@@ -201,7 +201,9 @@
     .ftab-btn:hover { color:var(--gold); }
     .ftab-btn.ftab-active { color:var(--gold); border-bottom-color:var(--gold); }
     .rc-team { display:flex; flex-direction:column; flex:1; gap:6px; min-width:160px; }
-    .rc-card { border:1px solid rgba(232,160,32,0.15); border-radius:3px; padding:8px 12px; background:rgba(5,8,20,0.6); transition:background 0.2s, border-color 0.2s; }
+    .rc-card { border:1px solid rgba(232,160,32,0.15); border-radius:3px; padding:8px 12px; background:rgba(5,8,20,0.6); transition:background 0.2s, border-color 0.2s; position:relative; }
+    @keyframes rc-hit-fade { 0%{opacity:1;transform:translateY(0) scale(1)} 60%{opacity:1} 100%{opacity:0;transform:translateY(-14px) scale(0.85)} }
+    .rc-hit-badge { position:absolute; top:4px; right:5px; font-size:0.5em; padding:2px 5px; background:rgba(3,6,18,0.95); border:1px solid rgba(100,200,160,0.45); border-radius:3px; animation:rc-hit-fade 1.8s forwards; pointer-events:none; color:#80cca8; letter-spacing:0.5px; white-space:nowrap; }
     .rc-card.rc-attacker { border-color:rgba(232,160,32,0.7); background:rgba(232,160,32,0.07); }
     .rc-card.rc-defender { border-color:rgba(220,80,80,0.7); background:rgba(220,80,80,0.07); }
     .rc-card.rc-dead { opacity:0.35; border-color:rgba(100,100,100,0.3) !important; background:rgba(5,8,20,0.3) !important; }
@@ -1298,7 +1300,6 @@ function parseRecapCSV(text) {
             team1id = attackerTeamId;
             team2id = defenderTeamId;
             function _storeF(map, order, f) {
-                if (String(f.fighter_id) === '99999999999') return;
                 var fid = String(f.fighter_id);
                 map[fid] = {maxHp: f.max_health || 0, cls:'', race:'', elem:'', level: null,
                     rawStats: {dmg: f.damage||0, taunt: f.taunt||0, cd: f.attackspeed||0, wu: f.initiative||0,
@@ -1331,7 +1332,7 @@ function parseRecapCSV(text) {
             effectiveness:     Number(_stripQStr(row[col['Effectiveness']])),
         };
         var aFid = t.attackerFighterId;
-        if (aFid && aFid !== '99999999999') {
+        if (aFid) {
             var aMap = (t.attackerTeamId === team1id) ? team1fighters : team2fighters;
             if (!aMap[aFid]) aMap[aFid] = {maxHp:0, cls:'', race:'', elem:''};
             if (t.attackerClass)   aMap[aFid].cls  = t.attackerClass;
@@ -1339,7 +1340,7 @@ function parseRecapCSV(text) {
             if (t.attackerElement) aMap[aFid].elem = t.attackerElement;
         }
         var dFid = t.defenderFighterId;
-        if (dFid && dFid !== '99999999999') {
+        if (dFid) {
             var dMap = (t.defenderTeamId === team1id) ? team1fighters : team2fighters;
             if (!dMap[dFid]) dMap[dFid] = {maxHp:0, cls:'', race:'', elem:''};
             if (t.defenderClass)   dMap[dFid].cls  = t.defenderClass;
@@ -1408,13 +1409,8 @@ function buildRecapSummary(data) {
     var dealt = {}, taken = {}, turns = {};
     data.turns.forEach(function(t) {
         var ak = t.attackerFighterId, dk = t.defenderFighterId;
-        if (ak && ak !== '99999999999') {
-            dealt[ak] = (dealt[ak] || 0) + t.attackValue;
-            turns[ak] = (turns[ak] || 0) + 1;
-        }
-        if (dk && dk !== '99999999999') {
-            taken[dk] = (taken[dk] || 0) + t.attackValue;
-        }
+        if (ak) { dealt[ak] = (dealt[ak] || 0) + t.attackValue; turns[ak] = (turns[ak] || 0) + 1; }
+        if (dk) { taken[dk] = (taken[dk] || 0) + t.attackValue; }
     });
     return {dealt:dealt, taken:taken, turns:turns};
 }
@@ -1430,19 +1426,32 @@ function renderRecapContent() {
     function buildCard(fid, teamObj) {
         var fi     = teamObj.fighters[fid] || {};
         var cls    = fi.cls || '';
-        var em     = cls ? _recapClsEmoji(cls) : '⚔';
+        var isWpn  = (fid === '99999999999');
+        var em     = isWpn ? '⚔' : (cls ? _recapClsEmoji(cls) : '?');
         var elImg  = fi.elem ? _elImg(fi.elem) : '';
         var hpDisp = Math.round((fi.maxHp || 0) / 9.10);
-        var lvTag  = fi.level != null ? '<span style="font-size:0.58em;color:#506070;letter-spacing:1px;margin-right:2px;">L'+fi.level+'</span>' : '';
+        var lvTag  = fi.level != null ? '<span style="font-size:0.56em;color:#506070;letter-spacing:1px;margin-right:2px;">L'+fi.level+'</span>' : '';
+        var rs = fi.rawStats || {};
+        var dmgV = Math.round((rs.dmg||0) / 9.10);
+        var tntV = Math.round((rs.taunt||0) / 10.2);
+        var cdV  = Math.round((rs.cd||0) / 10.2);
+        var wuV  = Math.round((rs.wu||0) / 10.2);
+        var statRow = '<div style="display:flex;gap:7px;font-size:0.5em;color:#4a5a68;margin-top:4px;flex-wrap:wrap;">'
+            + (dmgV ? '<span title="Damage">⚔ '+dmgV+'</span>' : '')
+            + (tntV ? '<span title="Taunt">🐾 '+tntV+'</span>' : '')
+            + (cdV  ? '<span title="Cooldown">⏩ '+cdV+'</span>' : '')
+            + (wuV  ? '<span title="Warmup">⏳ '+wuV+'</span>' : '')
+            + '</div>';
         return '<div class="rc-card" id="rc-card-' + fid + '">'
             + '<div style="display:flex;align-items:center;gap:4px;">'
             +   lvTag + elImg
             +   '<span style="font-size:1.1em;line-height:1;">' + em + '</span>'
-            +   '<span style="font-size:0.7em;color:var(--gold);text-transform:uppercase;letter-spacing:1px;">' + (cls || 'weapon') + '</span>'
+            +   '<span style="font-size:0.7em;color:var(--gold);text-transform:uppercase;letter-spacing:1px;">' + (isWpn ? 'weapon' : (cls || '?')) + '</span>'
             + '</div>'
-            + '<div style="font-size:0.58em;color:#506070;margin-top:2px;letter-spacing:1px;text-transform:capitalize;">' + (fi.race || '') + '</div>'
+            + '<div style="font-size:0.56em;color:#506070;margin-top:2px;letter-spacing:1px;text-transform:capitalize;">' + (fi.race || '') + '</div>'
             + '<div class="rc-hp-track"><div class="rc-hp-fill" id="rc-hp-' + fid + '"></div></div>'
-            + '<div id="rc-hp-lbl-' + fid + '" style="font-size:0.56em;color:#506070;margin-top:2px;text-align:right;">' + hpDisp + ' / ' + hpDisp + '</div>'
+            + '<div id="rc-hp-lbl-' + fid + '" style="font-size:0.54em;color:#506070;margin-top:2px;text-align:right;">&#10084; ' + hpDisp + ' / ' + hpDisp + '</div>'
+            + statRow
             + '</div>';
     }
 
@@ -1590,17 +1599,17 @@ function renderRecapContent() {
         +   '<table style="border-collapse:collapse;font-size:0.66em;width:100%;white-space:nowrap;">'
         +     '<thead><tr style="color:#404858;">'
         +       '<th style="text-align:left;padding:4px 8px 6px 0;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">CLASS</th>'
-        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">HP</th>'
-        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">DMG</th>'
-        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">TNT</th>'
-        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">CD</th>'
-        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">WU</th>'
-        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">💎</th>'
-        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">⚙</th>'
-        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">💨</th>'
-        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">🔥</th>'
-        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">🌿</th>'
-        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">⚪</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;border-bottom:1px solid rgba(232,160,32,0.15);" title="HP">&#10084;</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;border-bottom:1px solid rgba(232,160,32,0.15);" title="Damage">⚔</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;border-bottom:1px solid rgba(232,160,32,0.15);" title="Taunt">🐾</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;border-bottom:1px solid rgba(232,160,32,0.15);" title="Cooldown">&gt;&gt;</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;border-bottom:1px solid rgba(232,160,32,0.15);" title="Warmup">⏳</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;border-bottom:1px solid rgba(232,160,32,0.15);" title="Gem res">'+_elImg('gem')+'</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;border-bottom:1px solid rgba(232,160,32,0.15);" title="Metal res">'+_elImg('metal')+'</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;border-bottom:1px solid rgba(232,160,32,0.15);" title="Air res">'+_elImg('air')+'</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;border-bottom:1px solid rgba(232,160,32,0.15);" title="Fire res">'+_elImg('fire')+'</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;border-bottom:1px solid rgba(232,160,32,0.15);" title="Nature res">'+_elImg('nature')+'</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;border-bottom:1px solid rgba(232,160,32,0.15);" title="Neutral res">'+_elImg('neutral')+'</th>'
         +     '</tr></thead>'
         +     '<tbody>'+statsRows+'</tbody>'
         +   '</table>'
@@ -1623,16 +1632,33 @@ function applyRecapTurn(turnIdx) {
         if (card) card.classList.remove('rc-attacker', 'rc-defender');
     });
 
-    // Apply current turn highlights
+    // Clear stale hit badges
+    document.querySelectorAll('.rc-hit-badge').forEach(function(b){ b.remove(); });
+
+    // Apply current turn highlights + resistance badge
     if (turnIdx > 0 && turnIdx <= d.turns.length) {
         var t = d.turns[turnIdx - 1];
-        if (t.attackerFighterId && t.attackerFighterId !== '99999999999') {
+        var allFightersForTurn = Object.assign({}, d.team1.fighters, d.team2.fighters);
+        if (t.attackerFighterId) {
             var ac = document.getElementById('rc-card-' + t.attackerFighterId);
             if (ac) ac.classList.add('rc-attacker');
         }
-        if (t.defenderFighterId && t.defenderFighterId !== '99999999999') {
+        if (t.defenderFighterId) {
             var dc = document.getElementById('rc-card-' + t.defenderFighterId);
-            if (dc) dc.classList.add('rc-defender');
+            if (dc) {
+                dc.classList.add('rc-defender');
+                // Resistance pop-up badge
+                var atEl = t.attackerElement;
+                if (atEl) {
+                    var defFi = allFightersForTurn[t.defenderFighterId] || {};
+                    var defRs = defFi.rawStats || {};
+                    var resVal = Math.round((defRs['res_' + atEl] || 0) / 10);
+                    var badge = document.createElement('div');
+                    badge.className = 'rc-hit-badge';
+                    badge.innerHTML = '🛡 ' + resVal + '% ' + (atEl ? '<img src="https://alienlegends.io/assets/markers/'+atEl+'.svg" width="10" height="10" style="vertical-align:middle;opacity:0.8;">' : '');
+                    dc.appendChild(badge);
+                }
+            }
         }
     }
 
