@@ -1297,18 +1297,17 @@ function parseRecapCSV(text) {
         if (team1id === null) {
             team1id = attackerTeamId;
             team2id = defenderTeamId;
-            (atTeam || []).forEach(function(f) {
+            function _storeF(map, order, f) {
                 if (String(f.fighter_id) === '99999999999') return;
                 var fid = String(f.fighter_id);
-                team1fighters[fid] = {maxHp: f.max_health || 0, cls:'', race:'', elem:''};
-                team1order.push(fid);
-            });
-            (dfTeam || []).forEach(function(f) {
-                if (String(f.fighter_id) === '99999999999') return;
-                var fid = String(f.fighter_id);
-                team2fighters[fid] = {maxHp: f.max_health || 0, cls:'', race:'', elem:''};
-                team2order.push(fid);
-            });
+                map[fid] = {maxHp: f.max_health || 0, cls:'', race:'', elem:'', level: null,
+                    rawStats: {dmg: f.damage||0, taunt: f.taunt||0, cd: f.attackspeed||0, wu: f.initiative||0,
+                        res_gem: f.res_gem||0, res_metal: f.res_metal||0, res_air: f.res_air||0,
+                        res_fire: f.res_fire||0, res_nature: f.res_nature||0, res_neutral: f.res_neutral||0}};
+                order.push(fid);
+            }
+            (atTeam || []).forEach(function(f){ _storeF(team1fighters, team1order, f); });
+            (dfTeam || []).forEach(function(f){ _storeF(team2fighters, team2order, f); });
         }
         var t = {
             turnNum:           Number(_stripQStr(row[col['Turn']])),
@@ -1358,6 +1357,17 @@ function parseRecapCSV(text) {
     };
 }
 
+function _recapEnrichLevels(data) {
+    if (!_fighters || !_fighters.length) return;
+    var lvMap = {};
+    _fighters.forEach(function(f){ if (f.fighter_id != null) lvMap[String(f.fighter_id)] = Number((f.stats||{}).level||1); });
+    [data.team1, data.team2].forEach(function(team) {
+        Object.keys(team.fighters).forEach(function(fid) {
+            if (lvMap[fid] != null) team.fighters[fid].level = lvMap[fid];
+        });
+    });
+}
+
 function recapInit(text) {
     var errEl = document.getElementById('recap-error');
     var data = parseRecapCSV(text);
@@ -1365,6 +1375,7 @@ function recapInit(text) {
         if (errEl) { errEl.style.display = ''; errEl.textContent = '✗ Could not parse CSV — check the file is a fight-history export'; }
         return;
     }
+    _recapEnrichLevels(data);
     _recapData = data;
     _recapTurn = 0;
     var area = document.getElementById('recap-upload-area');
@@ -1422,9 +1433,10 @@ function renderRecapContent() {
         var em     = cls ? _recapClsEmoji(cls) : '⚔';
         var elImg  = fi.elem ? _elImg(fi.elem) : '';
         var hpDisp = Math.round((fi.maxHp || 0) / 9.10);
+        var lvTag  = fi.level != null ? '<span style="font-size:0.58em;color:#506070;letter-spacing:1px;margin-right:2px;">L'+fi.level+'</span>' : '';
         return '<div class="rc-card" id="rc-card-' + fid + '">'
             + '<div style="display:flex;align-items:center;gap:4px;">'
-            +   elImg
+            +   lvTag + elImg
             +   '<span style="font-size:1.1em;line-height:1;">' + em + '</span>'
             +   '<span style="font-size:0.7em;color:var(--gold);text-transform:uppercase;letter-spacing:1px;">' + (cls || 'weapon') + '</span>'
             + '</div>'
@@ -1441,16 +1453,27 @@ function renderRecapContent() {
         return hdr + cards;
     }
 
-    var logRows = d.turns.map(function(t, idx) {
-        var atEm   = t.attackerClass ? _recapClsEmoji(t.attackerClass) : '⚔';
-        var dfEm   = t.defenderClass ? _recapClsEmoji(t.defenderClass) : '⚔';
-        var atCls  = t.attackerClass || 'weapon';
-        var dfCls  = t.defenderClass || 'weapon';
-        var atEl   = t.attackerElement ? _elImg(t.attackerElement) : '';
-        var dfEl   = t.defenderElement ? _elImg(t.defenderElement) : '';
-        var tgt    = TARGET_LABELS[t.attackerTarget] || t.attackerTarget;
-        var eColor = t.effectiveness >= 90 ? '#60e090' : (t.effectiveness < 60 ? '#e06060' : '#e8a020');
+    var LOG_HDR = '<div style="display:flex;gap:6px;padding:4px 10px 5px;border-bottom:1px solid rgba(232,160,32,0.12);background:rgba(5,8,20,0.8);position:sticky;top:0;z-index:1;">'
+        + '<span style="min-width:46px;font-size:0.7em;color:#404858;letter-spacing:1px;flex-shrink:0;">TURN</span>'
+        + '<span style="flex:1;font-size:0.7em;color:#404858;letter-spacing:1px;">ATTACKER → DEFENDER</span>'
+        + '<span style="min-width:68px;font-size:0.7em;color:#404858;letter-spacing:1px;text-align:right;flex-shrink:0;">DEALT</span>'
+        + '<span style="min-width:90px;font-size:0.7em;color:#404858;letter-spacing:1px;text-align:right;flex-shrink:0;">RESISTED</span>'
+        + '<span style="min-width:100px;font-size:0.7em;color:#404858;letter-spacing:1px;text-align:right;flex-shrink:0;">TARGETING</span>'
+        + '</div>';
+
+    var logRows = LOG_HDR + d.turns.map(function(t, idx) {
+        var atEm    = t.attackerClass ? _recapClsEmoji(t.attackerClass) : '⚔';
+        var dfEm    = t.defenderClass ? _recapClsEmoji(t.defenderClass) : '⚔';
+        var atCls   = t.attackerClass || 'weapon';
+        var dfCls   = t.defenderClass || 'weapon';
+        var atEl    = t.attackerElement ? _elImg(t.attackerElement) : '';
+        var dfEl    = t.defenderElement ? _elImg(t.defenderElement) : '';
+        var tgt     = TARGET_LABELS[t.attackerTarget] || t.attackerTarget;
         var dmgDisp = Math.round(t.attackValue / 9.10);
+        var resPct  = t.effectiveness > 0 ? Math.round(100 - t.effectiveness) : 0;
+        var resRaw  = t.effectiveness > 0 ? t.attackValue / (t.effectiveness / 100) - t.attackValue : 0;
+        var resDisp = Math.round(resRaw / 9.10);
+        var resColor = resPct >= 40 ? '#60c0a0' : (resPct >= 20 ? '#a0a060' : '#506070');
         return '<div class="rc-log-row" id="rc-log-row-'+idx+'" style="display:flex;gap:6px;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.02);align-items:center;flex-wrap:wrap;">'
             + '<span style="min-width:46px;color:#354050;font-size:0.9em;flex-shrink:0;">T'+t.turnNum+'</span>'
             + '<span style="flex:1;display:flex;align-items:center;gap:3px;flex-wrap:wrap;">'
@@ -1458,8 +1481,8 @@ function renderRecapContent() {
             +   ' <span style="color:#354050;margin:0 2px;">→</span> '
             +   dfEl+' '+dfEm+' <span style="color:#907060;text-transform:uppercase;">'+dfCls+'</span>'
             + '</span>'
-            + '<span style="color:#e8a020;min-width:60px;text-align:right;flex-shrink:0;">'+dmgDisp+' dmg</span>'
-            + '<span style="color:'+eColor+';font-size:0.88em;min-width:44px;text-align:right;flex-shrink:0;">('+t.effectiveness+'%)</span>'
+            + '<span style="color:#e8a020;min-width:68px;text-align:right;flex-shrink:0;">'+dmgDisp+'</span>'
+            + '<span style="color:'+resColor+';min-width:90px;text-align:right;flex-shrink:0;font-size:0.88em;">&#8722;'+resDisp+' ('+resPct+'%)</span>'
             + '<span style="color:#354058;font-size:0.85em;min-width:100px;text-align:right;flex-shrink:0;">'+tgt+'</span>'
             + '</div>';
     }).join('');
@@ -1484,6 +1507,47 @@ function renderRecapContent() {
     }
     addSumTeam(d.team1, 1);
     addSumTeam(d.team2, 2);
+
+    // ── Encounter stats rows ──────────────────────────────────────────────────
+    var statsRows = '';
+    function addStatsTeam(teamObj, tNum) {
+        var isWin = tNum === winnerNum;
+        var teamLbl = '<tr><td colspan="13" style="padding:6px 0 3px;font-size:0.75em;letter-spacing:2px;color:'+(isWin?'#60e090':'rgba(232,160,32,0.45)')+';border-top:1px solid rgba(232,160,32,0.08);">TEAM '+tNum+(isWin?' ✓':' ✗')+'</td></tr>';
+        statsRows += teamLbl;
+        teamObj.order.forEach(function(fid) {
+            var fi = teamObj.fighters[fid] || {};
+            var rs = fi.rawStats || {};
+            var em = _recapClsEmoji(fi.cls || '');
+            var elI = fi.elem ? _elImg(fi.elem) : '';
+            var lvT = fi.level != null ? 'L'+fi.level+' ' : '';
+            var hp  = Math.round((fi.maxHp||0) / 9.10);
+            var dmg = Math.round((rs.dmg||0) / 9.10);
+            var tnt = Math.round((rs.taunt||0) / 10.2);
+            var cd  = Math.round((rs.cd||0) / 10.2);
+            var wu  = Math.round((rs.wu||0) / 10.2);
+            var rGem = Math.round((rs.res_gem||0) / 10);
+            var rMet = Math.round((rs.res_metal||0) / 10);
+            var rAir = Math.round((rs.res_air||0) / 10);
+            var rFir = Math.round((rs.res_fire||0) / 10);
+            var rNat = Math.round((rs.res_nature||0) / 10);
+            var rNeu = Math.round((rs.res_neutral||0) / 10);
+            function resCell(v) {
+                var col = v >= 40 ? '#60c0a0' : (v >= 20 ? '#a0a060' : '#506070');
+                return '<td style="text-align:right;padding:4px 5px;color:'+col+';">'+v+'%</td>';
+            }
+            statsRows += '<tr style="border-bottom:1px solid rgba(255,255,255,0.015);">'
+                + '<td style="text-align:left;padding:5px 8px 5px 0;white-space:nowrap;">'+elI+' '+em+' <span style="'+(isWin?'color:#80e090;':'')+'text-transform:uppercase;">'+lvT+(fi.cls||'weapon')+'</span></td>'
+                + '<td style="text-align:right;padding:4px 8px;color:#e8a020;">'+hp+'</td>'
+                + '<td style="text-align:right;padding:4px 8px;color:#e8a020;">'+dmg+'</td>'
+                + '<td style="text-align:right;padding:4px 8px;color:#a0a070;">'+tnt+'</td>'
+                + '<td style="text-align:right;padding:4px 8px;color:#a0a070;">'+cd+'</td>'
+                + '<td style="text-align:right;padding:4px 8px;color:#a0a070;">'+wu+'</td>'
+                + resCell(rGem) + resCell(rMet) + resCell(rAir) + resCell(rFir) + resCell(rNat) + resCell(rNeu)
+                + '</tr>';
+        });
+    }
+    addStatsTeam(d.team1, 1);
+    addStatsTeam(d.team2, 2);
 
     el.innerHTML =
         '<div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">'
@@ -1519,6 +1583,28 @@ function renderRecapContent() {
         +     '</tr></thead>'
         +     '<tbody>'+sumRows+'</tbody>'
         +   '</table>'
+        + '</div>'
+        + '<div style="margin-top:24px;">'
+        +   '<div style="font-size:0.56em;letter-spacing:3px;color:#404858;margin-bottom:8px;">&#9672; ENCOUNTER STATS</div>'
+        +   '<div style="overflow-x:auto;">'
+        +   '<table style="border-collapse:collapse;font-size:0.66em;width:100%;white-space:nowrap;">'
+        +     '<thead><tr style="color:#404858;">'
+        +       '<th style="text-align:left;padding:4px 8px 6px 0;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">CLASS</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">HP</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">DMG</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">TNT</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">CD</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">WU</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">💎</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">⚙</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">💨</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">🔥</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">🌿</th>'
+        +       '<th style="text-align:right;padding:4px 5px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">⚪</th>'
+        +     '</tr></thead>'
+        +     '<tbody>'+statsRows+'</tbody>'
+        +   '</table>'
+        +   '</div>'
         + '</div>';
 
     applyRecapTurn(0);
