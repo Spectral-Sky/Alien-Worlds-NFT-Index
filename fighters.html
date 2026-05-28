@@ -1696,7 +1696,11 @@ function applyRecapTurn(turnIdx) {
         if (prev) prev.classList.remove('rc-log-active');
         if (turnIdx > 0) {
             var cur = document.getElementById('rc-log-row-' + (turnIdx - 1));
-            if (cur) { cur.classList.add('rc-log-active'); cur.scrollIntoView({block:'nearest'}); }
+            if (cur) {
+                cur.classList.add('rc-log-active');
+                var log = document.getElementById('rc-log');
+                if (log) log.scrollTop = Math.max(0, cur.offsetTop - log.offsetTop - log.clientHeight / 2 + cur.clientHeight / 2);
+            }
         }
     }
 }
