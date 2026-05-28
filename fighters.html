@@ -202,8 +202,9 @@
     .ftab-btn.ftab-active { color:var(--gold); border-bottom-color:var(--gold); }
     .rc-team { display:flex; flex-direction:column; flex:1; gap:6px; min-width:160px; }
     .rc-card { border:1px solid rgba(232,160,32,0.15); border-radius:3px; padding:8px 12px; background:rgba(5,8,20,0.6); transition:background 0.2s, border-color 0.2s; position:relative; }
-    @keyframes rc-hit-fade { 0%{opacity:1;transform:translateY(0) scale(1)} 60%{opacity:1} 100%{opacity:0;transform:translateY(-14px) scale(0.85)} }
-    .rc-hit-badge { position:absolute; top:4px; right:5px; font-size:0.5em; padding:2px 5px; background:rgba(3,6,18,0.95); border:1px solid rgba(100,200,160,0.45); border-radius:3px; animation:rc-hit-fade 1.8s forwards; pointer-events:none; color:#80cca8; letter-spacing:0.5px; white-space:nowrap; }
+    .rc-turn-badge { position:absolute; top:4px; right:5px; font-size:0.5em; padding:2px 6px; border-radius:3px; pointer-events:none; letter-spacing:0.5px; white-space:nowrap; display:flex; align-items:center; gap:3px; }
+    .rc-atk-badge  { background:rgba(3,6,18,0.92); border:1px solid rgba(232,160,32,0.5); color:#e8a020; }
+    .rc-def-badge  { background:rgba(3,6,18,0.92); border:1px solid rgba(220,80,80,0.45); color:#d08080; }
     .rc-card.rc-attacker { border-color:rgba(232,160,32,0.7); background:rgba(232,160,32,0.07); }
     .rc-card.rc-defender { border-color:rgba(220,80,80,0.7); background:rgba(220,80,80,0.07); }
     .rc-card.rc-dead { opacity:0.35; border-color:rgba(100,100,100,0.3) !important; background:rgba(5,8,20,0.3) !important; }
@@ -1462,7 +1463,7 @@ function renderRecapContent() {
         return hdr + cards;
     }
 
-    var LOG_HDR = '<div style="display:flex;gap:6px;padding:4px 10px 5px;border-bottom:1px solid rgba(232,160,32,0.12);background:rgba(5,8,20,0.8);position:sticky;top:0;z-index:1;">'
+    var LOG_HDR = '<div style="display:flex;gap:6px;padding:4px 10px 5px;border-bottom:1px solid rgba(232,160,32,0.12);background:rgb(5,8,20);position:sticky;top:0;z-index:1;">'
         + '<span style="min-width:46px;font-size:0.7em;color:#404858;letter-spacing:1px;flex-shrink:0;">TURN</span>'
         + '<span style="flex:1;font-size:0.7em;color:#404858;letter-spacing:1px;">ATTACKER → DEFENDER</span>'
         + '<span style="min-width:68px;font-size:0.7em;color:#404858;letter-spacing:1px;text-align:right;flex-shrink:0;">DEALT</span>'
@@ -1632,32 +1633,37 @@ function applyRecapTurn(turnIdx) {
         if (card) card.classList.remove('rc-attacker', 'rc-defender');
     });
 
-    // Clear stale hit badges
-    document.querySelectorAll('.rc-hit-badge').forEach(function(b){ b.remove(); });
+    // Clear stale turn badges
+    document.querySelectorAll('.rc-turn-badge').forEach(function(b){ b.remove(); });
 
-    // Apply current turn highlights + resistance badge
+    // Apply current turn highlights + attacker/defender badges
     if (turnIdx > 0 && turnIdx <= d.turns.length) {
         var t = d.turns[turnIdx - 1];
         var allFightersForTurn = Object.assign({}, d.team1.fighters, d.team2.fighters);
         if (t.attackerFighterId) {
             var ac = document.getElementById('rc-card-' + t.attackerFighterId);
-            if (ac) ac.classList.add('rc-attacker');
+            if (ac) {
+                ac.classList.add('rc-attacker');
+                var aBadge = document.createElement('div');
+                aBadge.className = 'rc-turn-badge rc-atk-badge';
+                aBadge.textContent = '🗡';
+                ac.appendChild(aBadge);
+            }
         }
         if (t.defenderFighterId) {
             var dc = document.getElementById('rc-card-' + t.defenderFighterId);
             if (dc) {
                 dc.classList.add('rc-defender');
-                // Resistance pop-up badge
                 var atEl = t.attackerElement;
-                if (atEl) {
-                    var defFi = allFightersForTurn[t.defenderFighterId] || {};
-                    var defRs = defFi.rawStats || {};
-                    var resVal = Math.round((defRs['res_' + atEl] || 0) / 10);
-                    var badge = document.createElement('div');
-                    badge.className = 'rc-hit-badge';
-                    badge.innerHTML = '🛡 ' + resVal + '% ' + (atEl ? '<img src="https://alienlegends.io/assets/markers/'+atEl+'.svg" width="10" height="10" style="vertical-align:middle;opacity:0.8;">' : '');
-                    dc.appendChild(badge);
-                }
+                var defFi = allFightersForTurn[t.defenderFighterId] || {};
+                var defRs = defFi.rawStats || {};
+                var resVal = atEl ? Math.round((defRs['res_' + atEl] || 0) / 10) : 0;
+                var dBadge = document.createElement('div');
+                dBadge.className = 'rc-turn-badge rc-def-badge';
+                dBadge.innerHTML = '🛡'
+                    + (atEl ? ' <img src="https://alienlegends.io/assets/markers/'+atEl+'.svg" width="10" height="10" style="vertical-align:middle;opacity:0.85;">' : '')
+                    + (resVal ? ' '+resVal+'%' : '');
+                dc.appendChild(dBadge);
             }
         }
     }
