@@ -202,7 +202,7 @@
     .ftab-btn.ftab-active { color:var(--gold); border-bottom-color:var(--gold); }
     .rc-team { display:flex; flex-direction:column; flex:1; gap:6px; min-width:160px; }
     .rc-card { border:1px solid rgba(232,160,32,0.15); border-radius:3px; padding:8px 12px; background:rgba(5,8,20,0.6); transition:background 0.2s, border-color 0.2s; position:relative; }
-    .rc-turn-badge { position:absolute; top:4px; right:5px; font-size:0.5em; padding:2px 6px; border-radius:3px; pointer-events:none; letter-spacing:0.5px; white-space:nowrap; display:flex; align-items:center; gap:3px; }
+    .rc-turn-badge { position:absolute; top:4px; right:5px; font-size:0.8em; padding:2px 6px; border-radius:3px; pointer-events:none; letter-spacing:0.5px; white-space:nowrap; display:flex; align-items:center; gap:3px; }
     .rc-atk-badge  { background:rgba(3,6,18,0.92); border:1px solid rgba(232,160,32,0.5); color:#e8a020; }
     .rc-def-badge  { background:rgba(3,6,18,0.92); border:1px solid rgba(220,80,80,0.45); color:#d08080; }
     .rc-card.rc-attacker { border-color:rgba(232,160,32,0.7); background:rgba(232,160,32,0.07); }
@@ -1447,7 +1447,7 @@ function renderRecapContent() {
             + '<div style="display:flex;align-items:center;gap:4px;">'
             +   lvTag + elImg
             +   '<span style="font-size:1.1em;line-height:1;">' + em + '</span>'
-            +   '<span style="font-size:0.7em;color:var(--gold);text-transform:uppercase;letter-spacing:1px;">' + (isWpn ? 'weapon' : (cls || '?')) + '</span>'
+            +   '<span style="font-size:0.7em;color:var(--gold);text-transform:uppercase;letter-spacing:1px;">' + (isWpn ? 'NFT FIGHTER' : (cls || '?')) + '</span>'
             + '</div>'
             + '<div style="font-size:0.56em;color:#506070;margin-top:2px;letter-spacing:1px;text-transform:capitalize;">' + (fi.race || '') + '</div>'
             + '<div class="rc-hp-track"><div class="rc-hp-fill" id="rc-hp-' + fid + '"></div></div>'
@@ -1646,7 +1646,7 @@ function applyRecapTurn(turnIdx) {
                 ac.classList.add('rc-attacker');
                 var aBadge = document.createElement('div');
                 aBadge.className = 'rc-turn-badge rc-atk-badge';
-                aBadge.textContent = '🗡';
+                aBadge.textContent = '🗡️';
                 ac.appendChild(aBadge);
             }
         }
@@ -1660,7 +1660,7 @@ function applyRecapTurn(turnIdx) {
                 var resVal = atEl ? Math.round((defRs['res_' + atEl] || 0) / 10) : 0;
                 var dBadge = document.createElement('div');
                 dBadge.className = 'rc-turn-badge rc-def-badge';
-                dBadge.innerHTML = '🛡'
+                dBadge.innerHTML = '🛡️'
                     + (atEl ? ' <img src="https://alienlegends.io/assets/markers/'+atEl+'.svg" width="10" height="10" style="vertical-align:middle;opacity:0.85;">' : '')
                     + (resVal ? ' '+resVal+'%' : '');
                 dc.appendChild(dBadge);
