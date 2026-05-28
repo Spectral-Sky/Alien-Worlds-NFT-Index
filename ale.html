@@ -1572,17 +1572,16 @@ var CLASS_META = {
     'tactician':    {e:'🎯', c:'rgba(64,200,160,0.85)'},
     'voidwarden':   {e:'🛡',  c:'rgba(52,84,200,0.85)'},
 };
+function _svgE(svg) {
+    return '<img src="data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg) + '" width="18" height="18" style="display:inline-block;vertical-align:middle;flex-shrink:0;">';
+}
 var ELEMENT_META = {
-    'fire':      {e:'🔥', c:'rgba(240,80,40,0.85)'},
-    'water':     {e:'💧', c:'rgba(40,130,240,0.85)'},
-    'earth':     {e:'🌿', c:'rgba(80,180,60,0.85)'},
-    'wind':      {e:'💨', c:'rgba(100,200,160,0.85)'},
-    'thunder':   {e:'⚡', c:'rgba(240,200,40,0.85)'},
-    'lightning': {e:'⚡', c:'rgba(240,200,40,0.85)'},
-    'light':     {e:'✨', c:'rgba(240,225,120,0.85)'},
-    'shadow':    {e:'🌑', c:'rgba(130,60,210,0.85)'},
-    'dark':      {e:'🌑', c:'rgba(130,60,210,0.85)'},
-    'metal':     {e:'⚙', c:'rgba(160,170,185,0.85)'},
+    'fire':    {e: _svgE("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><path d='M10 2C8 7 5 10 6 14c1 3 4 4 4 4s3-1 4-4c1-4-2-7-4-12z' fill='#f06030'/><path d='M10 11c-1 2-.5 4 0 4s1-2 0-4z' fill='#ffe060'/></svg>"), c:'rgba(240,80,40,0.85)'},
+    'nature':  {e: _svgE("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><path d='M10 2C5 2 2 8 3 14c2-3 5-4 7-4s5 1 7 4c1-6-2-12-7-12z' fill='#40b840'/><line x1='10' y1='18' x2='10' y2='10' stroke='#2a8020' stroke-width='1.5'/></svg>"), c:'rgba(60,180,60,0.85)'},
+    'air':     {e: _svgE("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><path d='M3 6Q10 2 17 6' stroke='#50c8e0' stroke-width='2' fill='none' stroke-linecap='round'/><path d='M3 10Q10 6 17 10' stroke='#50c8e0' stroke-width='1.5' fill='none' stroke-linecap='round'/><path d='M3 14Q10 10 17 14' stroke='#50c8e0' stroke-width='1' fill='none' stroke-linecap='round'/></svg>"), c:'rgba(60,200,220,0.85)'},
+    'gem':     {e: _svgE("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><polygon points='10,2 18,9 10,18 2,9' fill='#6070e0'/><polygon points='10,2 18,9 10,9 2,9' fill='#a0b0ff' opacity='.7'/></svg>"), c:'rgba(100,120,230,0.85)'},
+    'metal':   {e: _svgE("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><polygon points='10,2 17,6 17,14 10,18 3,14 3,6' fill='#909aaa'/><polygon points='10,5 14.5,7.5 14.5,12.5 10,15 5.5,12.5 5.5,7.5' fill='#606878'/></svg>"), c:'rgba(150,160,178,0.85)'},
+    'neutral': {e: _svgE("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><polygon points='10,2 11.8,7.8 18,7.8 13,11.5 15,18 10,14 5,18 7,11.5 2,7.8 8.2,7.8' fill='#e8a020'/></svg>"), c:'rgba(232,160,32,0.85)'},
 };
 function _getMeta(name) {
     var k = (name||'').toLowerCase();
@@ -1877,8 +1876,11 @@ function _parseSheetCSV(csv, cutoffMs, myWallet) {
     var hdr   = (lines[0]||'').split(',').map(function(h){return h.replace(/"/g,'').trim().toLowerCase();});
     var get   = function(cols, name){ var i=hdr.indexOf(name); return i>=0?(cols[i]||'').replace(/"/g,'').trim():''; };
     var arena = {}, arenaRace = {}, arenaElement = {}, dungeon = {}, dungeonRace = {}, dungeonElement = {}, crewNFTs = {}, weaponNFTs = {}, total = {arena:0, dungeon:0};
-    var myCrewNFTs = {}, myWeaponNFTs = {}, myFights = 0, myWins = 0;
+    var myCrewNFTs = {}, myWeaponNFTs = {}, myArenaRace = {}, myArenaElement = {}, myFights = 0, myWins = 0;
     var minTs = Infinity, maxTs = -Infinity, counted = 0;
+    var clsMinTs = Infinity, clsMaxTs = -Infinity;
+    var raceMinTs = Infinity, raceMaxTs = -Infinity;
+    var elemMinTs = Infinity, elemMaxTs = -Infinity;
     for (var i = 1; i < lines.length; i++) {
         if (!lines[i].trim()) continue;
         var cols   = lines[i].split(',');
@@ -1902,11 +1904,20 @@ function _parseSheetCSV(csv, cutoffMs, myWallet) {
         var won       = winner === 1;
         if (crew)   _tally(crewNFTs,   crew,   won);
         if (weapon) _tally(weaponNFTs, weapon, won);
+        if (tsMs) {
+            if (t1c.length || t2c.length) { if (tsMs < clsMinTs) clsMinTs = tsMs; if (tsMs > clsMaxTs) clsMaxTs = tsMs; }
+            if (t1r.length || t2r.length) { if (tsMs < raceMinTs) raceMinTs = tsMs; if (tsMs > raceMaxTs) raceMaxTs = tsMs; }
+            if (t1e.length || t2e.length) { if (tsMs < elemMinTs) elemMinTs = tsMs; if (tsMs > elemMaxTs) elemMaxTs = tsMs; }
+        }
         if (myWallet && rowWallet === myWallet) {
             if (crew)   _tally(myCrewNFTs,   crew,   won);
             if (weapon) _tally(myWeaponNFTs, weapon, won);
             myFights++;
             if (won) myWins++;
+            if (ft === 'arena') {
+                t1r.forEach(function(r){ _tally(myArenaRace,    r, won); });
+                t1e.forEach(function(e){ _tally(myArenaElement, e, won); });
+            }
         }
         if (ft === 'arena') {
             total.arena++;
@@ -1926,8 +1937,11 @@ function _parseSheetCSV(csv, cutoffMs, myWallet) {
             t1e.forEach(function(e){ _tally(dungeonElement[diff], e, winner===1); });
         }
     }
-    var dr = (minTs !== Infinity) ? {min:minTs, max:maxTs} : null;
-    return {arena:arena, arenaRace:arenaRace, arenaElement:arenaElement, dungeon:dungeon, dungeonRace:dungeonRace, dungeonElement:dungeonElement, crewNFTs:crewNFTs, weaponNFTs:weaponNFTs, total:total, count:counted, dateRange:dr, myCrewNFTs:myCrewNFTs, myWeaponNFTs:myWeaponNFTs, myFights:myFights, myWins:myWins};
+    var dr       = (minTs    !== Infinity) ? {min:minTs,    max:maxTs}    : null;
+    var clsDR    = (clsMinTs !== Infinity) ? {min:clsMinTs, max:clsMaxTs}  : null;
+    var raceDR   = (raceMinTs !== Infinity)? {min:raceMinTs,max:raceMaxTs} : null;
+    var elemDR   = (elemMinTs !== Infinity)? {min:elemMinTs,max:elemMaxTs} : null;
+    return {arena:arena, arenaRace:arenaRace, arenaElement:arenaElement, dungeon:dungeon, dungeonRace:dungeonRace, dungeonElement:dungeonElement, crewNFTs:crewNFTs, weaponNFTs:weaponNFTs, total:total, count:counted, dateRange:dr, clsDR:clsDR, raceDR:raceDR, elemDR:elemDR, myCrewNFTs:myCrewNFTs, myWeaponNFTs:myWeaponNFTs, myArenaRace:myArenaRace, myArenaElement:myArenaElement, myFights:myFights, myWins:myWins};
 }
 
 function _renderStats(agg) {
@@ -1935,11 +1949,11 @@ function _renderStats(agg) {
     if (!el) return;
     var diffs = Object.keys(agg.dungeon || {}).map(Number).sort(function(a,b){return a-b;});
     var sortLabel = _statsSortMode === 'wins' ? '# WINS' : 'WIN RATE';
-    var html = _barSection('ARENA — CLASS ' + sortLabel, agg.arena);
+    var html = _barSection('ARENA — CLASS ' + sortLabel, agg.arena, agg.clsDR);
     if (Object.keys(agg.arenaRace || {}).length)
-        html += _barSection('ARENA — RACE ' + sortLabel, agg.arenaRace);
+        html += _barSection('ARENA — RACE ' + sortLabel, agg.arenaRace, agg.raceDR);
     if (Object.keys(agg.arenaElement || {}).length)
-        html += _barSection('ARENA — ELEMENT ' + sortLabel, agg.arenaElement);
+        html += _barSection('ARENA — ELEMENT ' + sortLabel, agg.arenaElement, agg.elemDR);
     if (diffs.length > 0) {
         html += '<div style="margin-top:32px;">';
         html += '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ DUNGEON — CLASS USAGE &amp; WIN RATE</div>';
@@ -1964,21 +1978,34 @@ function _renderStats(agg) {
     }
     var myWallet = localStorage.getItem('naron_wallet');
     if (myWallet && agg.myFights > 0) {
-        var myWinPct = Math.round(agg.myWins / agg.myFights * 100);
-        var hasMyCrew   = Object.keys(agg.myCrewNFTs   || {}).length > 0;
-        var hasMyWeapon = Object.keys(agg.myWeaponNFTs || {}).length > 0;
+        var myWinPct    = Math.round(agg.myWins / agg.myFights * 100);
+        var hasMyCrew   = Object.keys(agg.myCrewNFTs     || {}).length > 0;
+        var hasMyWeapon = Object.keys(agg.myWeaponNFTs   || {}).length > 0;
+        var hasMyRace   = Object.keys(agg.myArenaRace    || {}).length > 0;
+        var hasMyElem   = Object.keys(agg.myArenaElement || {}).length > 0;
+        var sub = function(label) {
+            return '<div style="font-size:0.58em;letter-spacing:2px;color:rgba(232,160,32,0.4);margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.07);">' + label + '</div>';
+        };
         html += '<div style="margin-top:44px;padding-top:20px;border-top:1px solid rgba(232,160,32,0.12);">';
-        html += '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:6px;">◈ YOUR NFTs</div>';
+        html += '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:6px;">◈ YOUR STATS</div>';
         html += '<div style="font-size:0.56em;color:#707060;letter-spacing:1px;margin-bottom:18px;">'
             + myWallet + ' &nbsp;·&nbsp; '
             + agg.myWins + ' wins / ' + agg.myFights + ' fights &nbsp;·&nbsp; '
             + myWinPct + '% win rate</div>';
+        if (hasMyRace) {
+            html += sub('RACE WIN RATE');
+            html += _buildBars(agg.myArenaRace);
+        }
+        if (hasMyElem) {
+            html += sub('ELEMENT WIN RATE');
+            html += _buildBars(agg.myArenaElement);
+        }
         if (hasMyCrew) {
-            html += '<div style="font-size:0.58em;letter-spacing:2px;color:rgba(232,160,32,0.4);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.07);">CREW</div>';
+            html += sub('CREW NFTs');
             html += _buildNftBars(agg.myCrewNFTs, 20, 'crew.worlds');
         }
         if (hasMyWeapon) {
-            html += '<div style="font-size:0.58em;letter-spacing:2px;color:rgba(232,160,32,0.4);margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.07);">ARMS</div>';
+            html += sub('ARMS NFTs');
             html += _buildNftBars(agg.myWeaponNFTs, 20, 'arms.worlds');
         }
         html += '</div>';
@@ -2051,9 +2078,15 @@ window.selectSortMode = function(mode) {
     if (_statsCache) _renderStats(_statsCache);
 };
 
-function _barSection(title, data) {
+function _fmtDR(dr) {
+    if (!dr || !dr.min || !dr.max) return '';
+    var fmt = function(ms) { var d = new Date(ms); return (d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(2); };
+    return fmt(dr.min) + ' – ' + fmt(dr.max);
+}
+function _barSection(title, data, dr) {
+    var drStr = dr ? '<span style="font-size:0.75em;color:#404858;letter-spacing:1px;margin-left:8px;font-weight:normal;">' + _fmtDR(dr) + '</span>' : '';
     var inner = data && Object.keys(data).length ? _buildBars(data) : '<div style="font-size:0.6em;color:#404050;padding:8px 0;">No data</div>';
-    return '<div style="margin-bottom:4px;"><div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ '+title+'</div>'+inner+'</div>';
+    return '<div style="margin-bottom:4px;"><div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ '+title+drStr+'</div>'+inner+'</div>';
 }
 
 function _buildBars(classStats) {
