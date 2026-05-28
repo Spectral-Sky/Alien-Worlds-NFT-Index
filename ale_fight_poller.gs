@@ -35,7 +35,8 @@ function onOpen() {
     .addSeparator()
     .addItem('Setup Auto-Trigger (5 min)', 'createTrigger')
     .addSeparator()
-    .addItem('Repair Sheet (fix header + repopulate)', 'repairSheet')
+    .addItem('Repair Header (safe — keeps all rows)', 'repairSheet')
+    .addItem('⚠ Full Reset (DELETES all data)', 'fullResetSheet')
     .addToUi();
 }
 
@@ -244,17 +245,44 @@ function buildEnrichMap_() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// REPAIR — run once manually to fix any header/column mismatch, then repopulate
+// REPAIR — fixes the header row only, keeps all existing data rows intact,
+// then appends any new fights from chain (duplicates are skipped automatically)
 // ─────────────────────────────────────────────────────────────────────────────
 function repairSheet() {
+  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    Logger.log('Sheet not found — created new one.');
+  }
+  // Overwrite row 1 with canonical header, leave all data rows untouched
+  writeHeader_(sheet);
+  var count = processFightsData_(sheet);
+  ss.toast('Header fixed. Added ' + count + ' new rows (existing rows preserved).', 'Repair Done');
+  Logger.log('repairSheet done. ' + count + ' new rows appended.');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FULL RESET — wipes the sheet and repopulates from chain.
+// WARNING: only recovers as far back as battle.ale::fights table holds.
+// Historical data older than that is permanently lost.
+// ─────────────────────────────────────────────────────────────────────────────
+function fullResetSheet() {
+  var ui = SpreadsheetApp.getUi();
+  var confirm = ui.alert(
+    '⚠ Full Reset — Are you sure?',
+    'This will DELETE all rows and repopulate from the chain table.\n\nHistorical data NOT in the current chain table will be permanently lost.\n\nDuplicate the sheet manually before proceeding if you want a backup.',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (confirm !== ui.Button.OK) { ui.alert('Cancelled.'); return; }
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) { Logger.log('Sheet "' + SHEET_NAME + '" not found.'); return; }
   sheet.clearContents();
   writeHeader_(sheet);
   var count = processFightsData_(sheet);
-  ss.toast('Repaired. Added ' + count + ' rows.', 'Sheet Fixed');
-  Logger.log('repairSheet done. ' + count + ' rows.');
+  ss.toast('Full reset done. ' + count + ' rows written.', 'Reset Complete');
+  Logger.log('fullResetSheet done. ' + count + ' rows.');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
