@@ -196,6 +196,23 @@
     @keyframes fade-pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
     .loading-pulse { animation:fade-pulse 1.2s infinite; }
 
+    /* RECAP TAB */
+    .ftab-btn { background:transparent; border:none; border-bottom:3px solid transparent; color:#556; font-family:'Courier New',monospace; font-size:0.72em; letter-spacing:2px; padding:10px 18px; cursor:pointer; transition:all 0.2s; text-transform:uppercase; margin-bottom:-2px; }
+    .ftab-btn:hover { color:var(--gold); }
+    .ftab-btn.ftab-active { color:var(--gold); border-bottom-color:var(--gold); }
+    .rc-team { display:flex; flex-direction:column; flex:1; gap:6px; min-width:160px; }
+    .rc-card { border:1px solid rgba(232,160,32,0.15); border-radius:3px; padding:8px 12px; background:rgba(5,8,20,0.6); transition:background 0.2s, border-color 0.2s; }
+    .rc-card.rc-attacker { border-color:rgba(232,160,32,0.7); background:rgba(232,160,32,0.07); }
+    .rc-card.rc-defender { border-color:rgba(220,80,80,0.7); background:rgba(220,80,80,0.07); }
+    .rc-card.rc-dead { opacity:0.35; border-color:rgba(100,100,100,0.3) !important; background:rgba(5,8,20,0.3) !important; }
+    .rc-hp-track { height:8px; background:rgba(255,255,255,0.07); border-radius:4px; overflow:hidden; margin-top:6px; }
+    .rc-hp-fill { height:100%; width:100%; background:rgba(60,200,100,0.7); border-radius:4px; transition:width 0.3s; }
+    .rc-hp-fill.rc-hp-mid { background:rgba(232,160,32,0.8); }
+    .rc-hp-fill.rc-hp-low { background:rgba(220,80,80,0.8); }
+    .rc-log-row { cursor:default; }
+    .rc-log-row:hover { background:rgba(255,255,255,0.02); }
+    .rc-log-active { background:rgba(232,160,32,0.07) !important; border-left:2px solid rgba(232,160,32,0.5); }
+
     /* FOOTER */
     footer { border-top:1px solid rgba(232,160,32,0.07); padding:12px 28px; font-size:0.58em; color:var(--muted); letter-spacing:1.5px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
 
@@ -333,6 +350,12 @@
     <p class="sub">YOUR ACTIVE FIGHTERS &middot; SORTABLE BY ANY STAT &middot; SOURCE: FIGHTERS.ALE</p>
 </div>
 
+<div id="tab-bar" style="display:flex;gap:0;border-bottom:2px solid var(--gold);background:rgba(3,6,15,0.8);padding:0 28px;">
+    <button id="tbtn-fighters" class="ftab-btn ftab-active" onclick="showFighterTab('fighters')">&#9876; MY FIGHTERS</button>
+    <button id="tbtn-recap"    class="ftab-btn"             onclick="showFighterTab('recap')">&#9654; FIGHT RECAP</button>
+</div>
+<div id="tab-fighters" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+
 <div class="controls-bar">
     <button class="ctrl-btn" id="load-btn" onclick="loadFighters()">&#8635; LOAD FIGHTERS</button>
     <button class="ctrl-btn" id="level-all-btn" onclick="levelAll()" disabled title="Level up all fighters with enough XP">&#8679; LEVEL ALL</button>
@@ -387,6 +410,12 @@
         <div class="lb-empty">Log in and click LOAD FIGHTERS to see your roster.</div>
     </div>
 </div>
+</div>
+
+<div id="tab-recap" style="display:none;flex:1;overflow-y:auto;padding:20px 28px;">
+    <div id="recap-upload-area"></div>
+    <div id="recap-content" style="display:none;"></div>
+</div>
 
 <footer>
     <span>NARON CODEX &mdash; ALIEN LEGENDS FIGHTER ROSTER</span>
@@ -431,6 +460,19 @@ var _sortCol    = 'lv';
 var _sortDir    = -1;
 var _hiddenCols = {};
 var _selected   = new Set();
+
+var _recapData    = null;
+var _recapTurn    = 0;
+var _recapPlaying = false;
+var _recapTimer   = null;
+
+var TARGET_LABELS = {
+    'enemy_taunt_min':     'lowest Taunt',
+    'enemy_taunt_max':     'highest Taunt',
+    'enemy_health_max':    'highest HP',
+    'enemy_health_min':    'lowest HP',
+    'enemy_initiative_max':'highest Initiative',
+};
 
 // ── FETCH ────────────────────────────────────────────────────────────────────
 async function fetchRows(p) {
@@ -1148,6 +1190,434 @@ function toggleHamburger() {
     checkWalletState();
     if (getWallet()) loadFighters();
 })();
+
+// ── FIGHT RECAP ──────────────────────────────────────────────────────────────
+function showFighterTab(name) {
+    var tf = document.getElementById('tab-fighters');
+    var tr = document.getElementById('tab-recap');
+    if (tf) tf.style.display = name === 'fighters' ? 'flex' : 'none';
+    if (tr) tr.style.display = name === 'recap'    ? 'block' : 'none';
+    document.querySelectorAll('.ftab-btn').forEach(function(b){ b.classList.remove('ftab-active'); });
+    var btn = document.getElementById('tbtn-' + name);
+    if (btn) btn.classList.add('ftab-active');
+    if (name === 'recap') renderRecapUpload();
+}
+
+function renderRecapUpload() {
+    var area = document.getElementById('recap-upload-area');
+    if (!area) return;
+    if (_recapData) { area.style.display = 'none'; return; }
+    area.style.display = '';
+    area.innerHTML =
+        '<div id="recap-dropzone" style="border:2px dashed rgba(232,160,32,0.3);border-radius:4px;padding:50px 20px;text-align:center;cursor:pointer;transition:all 0.2s;max-width:500px;margin:0 auto;"'
+        +  ' ondragover="recapDragOver(event)" ondragleave="recapDragLeave(event)" ondrop="recapDrop(event)"'
+        +  ' onclick="document.getElementById(\'recap-file-input\').click()">'
+        +  '<div style="font-size:0.9em;letter-spacing:3px;color:#667;">&#9654; DROP FIGHT HISTORY CSV</div>'
+        +  '<div style="font-size:0.65em;color:#384050;margin-top:8px;letter-spacing:1px;">or click to browse &mdash; fight-history-*.csv</div>'
+        +  '<input id="recap-file-input" type="file" accept=".csv" style="display:none" onchange="recapFileChosen(this)">'
+        + '</div>'
+        + '<div id="recap-error" style="font-size:0.65em;color:#d06060;margin-top:8px;text-align:center;display:none;"></div>';
+}
+
+function recapDragOver(e) {
+    e.preventDefault();
+    var dz = document.getElementById('recap-dropzone');
+    if (dz) dz.style.borderColor = 'var(--gold)';
+}
+function recapDragLeave(e) {
+    var dz = document.getElementById('recap-dropzone');
+    if (dz) dz.style.borderColor = 'rgba(232,160,32,0.3)';
+}
+function recapDrop(e) {
+    e.preventDefault();
+    recapDragLeave(e);
+    var f = e.dataTransfer && e.dataTransfer.files[0];
+    if (f) recapLoadFile(f);
+}
+function recapFileChosen(inp) { if (inp.files[0]) recapLoadFile(inp.files[0]); }
+function recapLoadFile(f) {
+    var r = new FileReader();
+    r.onload = function(ev) { recapInit(ev.target.result); };
+    r.readAsText(f);
+}
+
+function parseCSVRow(line) {
+    var result = [], cur = '', inQ = false;
+    for (var i = 0; i < line.length; i++) {
+        var c = line[i];
+        if (inQ) {
+            if (c === '"') {
+                if (i + 1 < line.length && line[i + 1] === '"') { cur += '"'; i++; }
+                else { inQ = false; }
+            } else { cur += c; }
+        } else {
+            if (c === '"') { inQ = true; }
+            else if (c === ',') { result.push(cur); cur = ''; }
+            else { cur += c; }
+        }
+    }
+    result.push(cur);
+    return result;
+}
+function _stripQStr(s) {
+    var t = (s || '').trim();
+    if (t.length >= 2 && t[0] === '"' && t[t.length-1] === '"') return t.slice(1,-1).trim();
+    return t;
+}
+
+function parseRecapCSV(text) {
+    var lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
+    if (lines.length < 2) return null;
+    var hdr = parseCSVRow(lines[0]);
+    var col = {};
+    hdr.forEach(function(h,i){ col[h.trim()] = i; });
+    var required = ['Turn','Attacker Team ID','Attacker Fighter ID','Attacker Target',
+        'Attacker Team JSON','Attacker Classname','Attacker Racename','Attacker Element','Attacker Health',
+        'Defender Team ID','Defender Fighter ID','Defender Team JSON',
+        'Defender Classname','Defender Racename','Defender Element','Defender Health','Defender Taunt',
+        'Attack Value','Effectiveness'];
+    for (var ri = 0; ri < required.length; ri++) {
+        if (col[required[ri]] === undefined) return null;
+    }
+    var turns = [];
+    var team1fighters = {}, team2fighters = {};
+    var team1id = null, team2id = null;
+    var team1order = [], team2order = [];
+    for (var i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        var row = parseCSVRow(lines[i]);
+        var atTeam, dfTeam;
+        try { atTeam = JSON.parse(row[col['Attacker Team JSON']]); } catch(e) { atTeam = []; }
+        try { dfTeam = JSON.parse(row[col['Defender Team JSON']]); } catch(e) { dfTeam = []; }
+        var attackerTeamId = Number(_stripQStr(row[col['Attacker Team ID']]));
+        var defenderTeamId = Number(_stripQStr(row[col['Defender Team ID']]));
+        if (team1id === null) {
+            team1id = attackerTeamId;
+            team2id = defenderTeamId;
+            (atTeam || []).forEach(function(f) {
+                if (String(f.fighter_id) === '99999999999') return;
+                var fid = String(f.fighter_id);
+                team1fighters[fid] = {maxHp: f.max_health || 0, cls:'', race:'', elem:''};
+                team1order.push(fid);
+            });
+            (dfTeam || []).forEach(function(f) {
+                if (String(f.fighter_id) === '99999999999') return;
+                var fid = String(f.fighter_id);
+                team2fighters[fid] = {maxHp: f.max_health || 0, cls:'', race:'', elem:''};
+                team2order.push(fid);
+            });
+        }
+        var t = {
+            turnNum:           Number(_stripQStr(row[col['Turn']])),
+            attackerTeamId:    attackerTeamId,
+            attackerFighterId: _stripQStr(row[col['Attacker Fighter ID']]),
+            attackerTarget:    _stripQStr(row[col['Attacker Target']]),
+            attackerClass:     _stripQStr(row[col['Attacker Classname']]).toLowerCase(),
+            attackerRace:      _stripQStr(row[col['Attacker Racename']]).toLowerCase(),
+            attackerElement:   _stripQStr(row[col['Attacker Element']]).toLowerCase(),
+            attackerHealth:    Number(_stripQStr(row[col['Attacker Health']])),
+            attackerTeam:      atTeam,
+            defenderTeamId:    defenderTeamId,
+            defenderFighterId: _stripQStr(row[col['Defender Fighter ID']]),
+            defenderClass:     _stripQStr(row[col['Defender Classname']]).toLowerCase(),
+            defenderRace:      _stripQStr(row[col['Defender Racename']]).toLowerCase(),
+            defenderElement:   _stripQStr(row[col['Defender Element']]).toLowerCase(),
+            defenderHealth:    Number(_stripQStr(row[col['Defender Health']])),
+            defenderTaunt:     Number(_stripQStr(row[col['Defender Taunt']])),
+            defenderTeam:      dfTeam,
+            attackValue:       Number(_stripQStr(row[col['Attack Value']])),
+            effectiveness:     Number(_stripQStr(row[col['Effectiveness']])),
+        };
+        var aFid = t.attackerFighterId;
+        if (aFid && aFid !== '99999999999') {
+            var aMap = (t.attackerTeamId === team1id) ? team1fighters : team2fighters;
+            if (!aMap[aFid]) aMap[aFid] = {maxHp:0, cls:'', race:'', elem:''};
+            if (t.attackerClass)   aMap[aFid].cls  = t.attackerClass;
+            if (t.attackerRace)    aMap[aFid].race = t.attackerRace;
+            if (t.attackerElement) aMap[aFid].elem = t.attackerElement;
+        }
+        var dFid = t.defenderFighterId;
+        if (dFid && dFid !== '99999999999') {
+            var dMap = (t.defenderTeamId === team1id) ? team1fighters : team2fighters;
+            if (!dMap[dFid]) dMap[dFid] = {maxHp:0, cls:'', race:'', elem:''};
+            if (t.defenderClass)   dMap[dFid].cls  = t.defenderClass;
+            if (t.defenderRace)    dMap[dFid].race = t.defenderRace;
+            if (t.defenderElement) dMap[dFid].elem = t.defenderElement;
+        }
+        turns.push(t);
+    }
+    if (!turns.length) return null;
+    return {
+        turns:  turns,
+        team1:  {id: team1id, fighters: team1fighters, order: team1order},
+        team2:  {id: team2id, fighters: team2fighters, order: team2order},
+        winner: turns[turns.length - 1].attackerTeamId,
+    };
+}
+
+function recapInit(text) {
+    var errEl = document.getElementById('recap-error');
+    var data = parseRecapCSV(text);
+    if (!data) {
+        if (errEl) { errEl.style.display = ''; errEl.textContent = '✗ Could not parse CSV — check the file is a fight-history export'; }
+        return;
+    }
+    _recapData = data;
+    _recapTurn = 0;
+    var area = document.getElementById('recap-upload-area');
+    if (area) area.style.display = 'none';
+    var content = document.getElementById('recap-content');
+    if (content) content.style.display = '';
+    renderRecapContent();
+}
+
+function buildHpState(turnIdx) {
+    var state = {};
+    if (turnIdx === 0) {
+        var t1 = _recapData.turns[0];
+        (t1.attackerTeam || []).forEach(function(f){ state[String(f.fighter_id)] = f.max_health; });
+        (t1.defenderTeam || []).forEach(function(f){ state[String(f.fighter_id)] = f.max_health; });
+    } else {
+        var t = _recapData.turns[turnIdx - 1];
+        (t.attackerTeam || []).forEach(function(f){ state[String(f.fighter_id)] = f.health; });
+        (t.defenderTeam || []).forEach(function(f){ state[String(f.fighter_id)] = f.health; });
+    }
+    return state;
+}
+
+function _recapClsEmoji(cls) {
+    var fc = FIGHTER_CLASSES[cls];
+    return fc ? fc.e : '?';
+}
+
+function buildRecapSummary(data) {
+    var dealt = {}, taken = {}, turns = {};
+    data.turns.forEach(function(t) {
+        var ak = t.attackerFighterId, dk = t.defenderFighterId;
+        if (ak && ak !== '99999999999') {
+            dealt[ak] = (dealt[ak] || 0) + t.attackValue;
+            turns[ak] = (turns[ak] || 0) + 1;
+        }
+        if (dk && dk !== '99999999999') {
+            taken[dk] = (taken[dk] || 0) + t.attackValue;
+        }
+    });
+    return {dealt:dealt, taken:taken, turns:turns};
+}
+
+function renderRecapContent() {
+    var el = document.getElementById('recap-content');
+    if (!el || !_recapData) return;
+    var d = _recapData;
+    var summary = buildRecapSummary(d);
+    var winnerNum = (d.winner === d.team1.id) ? 1 : 2;
+    var loserNum  = winnerNum === 1 ? 2 : 1;
+
+    function buildCard(fid, teamObj) {
+        var fi     = teamObj.fighters[fid] || {};
+        var cls    = fi.cls || '';
+        var em     = cls ? _recapClsEmoji(cls) : '⚔';
+        var elImg  = fi.elem ? _elImg(fi.elem) : '';
+        var hpDisp = Math.round((fi.maxHp || 0) / 9.10);
+        return '<div class="rc-card" id="rc-card-' + fid + '">'
+            + '<div style="display:flex;align-items:center;gap:4px;">'
+            +   elImg
+            +   '<span style="font-size:1.1em;line-height:1;">' + em + '</span>'
+            +   '<span style="font-size:0.7em;color:var(--gold);text-transform:uppercase;letter-spacing:1px;">' + (cls || 'weapon') + '</span>'
+            + '</div>'
+            + '<div style="font-size:0.58em;color:#506070;margin-top:2px;letter-spacing:1px;text-transform:capitalize;">' + (fi.race || '') + '</div>'
+            + '<div class="rc-hp-track"><div class="rc-hp-fill" id="rc-hp-' + fid + '"></div></div>'
+            + '<div id="rc-hp-lbl-' + fid + '" style="font-size:0.56em;color:#506070;margin-top:2px;text-align:right;">' + hpDisp + ' / ' + hpDisp + '</div>'
+            + '</div>';
+    }
+
+    function buildTeam(teamObj, label, isWinner) {
+        var hdr = '<div style="font-size:0.58em;letter-spacing:3px;margin-bottom:6px;text-align:center;'+(isWinner?'color:#60e090;':'color:rgba(232,160,32,0.5);')+'">'
+            + label + (isWinner ? ' ✓ WIN' : ' ✗ LOSS') + '</div>';
+        var cards = teamObj.order.map(function(fid){ return buildCard(fid, teamObj); }).join('');
+        return hdr + cards;
+    }
+
+    var logRows = d.turns.map(function(t, idx) {
+        var atEm   = t.attackerClass ? _recapClsEmoji(t.attackerClass) : '⚔';
+        var dfEm   = t.defenderClass ? _recapClsEmoji(t.defenderClass) : '⚔';
+        var atCls  = t.attackerClass || 'weapon';
+        var dfCls  = t.defenderClass || 'weapon';
+        var atEl   = t.attackerElement ? _elImg(t.attackerElement) : '';
+        var dfEl   = t.defenderElement ? _elImg(t.defenderElement) : '';
+        var tgt    = TARGET_LABELS[t.attackerTarget] || t.attackerTarget;
+        var eColor = t.effectiveness >= 90 ? '#60e090' : (t.effectiveness < 60 ? '#e06060' : '#e8a020');
+        var dmgDisp = Math.round(t.attackValue / 9.10);
+        return '<div class="rc-log-row" id="rc-log-row-'+idx+'" style="display:flex;gap:6px;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.02);align-items:center;flex-wrap:wrap;">'
+            + '<span style="min-width:46px;color:#354050;font-size:0.9em;flex-shrink:0;">T'+t.turnNum+'</span>'
+            + '<span style="flex:1;display:flex;align-items:center;gap:3px;flex-wrap:wrap;">'
+            +   atEl+' '+atEm+' <span style="color:#a09070;text-transform:uppercase;">'+atCls+'</span>'
+            +   ' <span style="color:#354050;margin:0 2px;">→</span> '
+            +   dfEl+' '+dfEm+' <span style="color:#907060;text-transform:uppercase;">'+dfCls+'</span>'
+            + '</span>'
+            + '<span style="color:#e8a020;min-width:60px;text-align:right;flex-shrink:0;">'+dmgDisp+' dmg</span>'
+            + '<span style="color:'+eColor+';font-size:0.88em;min-width:44px;text-align:right;flex-shrink:0;">('+t.effectiveness+'%)</span>'
+            + '<span style="color:#354058;font-size:0.85em;min-width:100px;text-align:right;flex-shrink:0;">'+tgt+'</span>'
+            + '</div>';
+    }).join('');
+
+    var sumRows = '';
+    function addSumTeam(teamObj, tNum) {
+        var isWin = tNum === winnerNum;
+        teamObj.order.forEach(function(fid) {
+            var fi = teamObj.fighters[fid] || {};
+            var em = _recapClsEmoji(fi.cls || '');
+            var elI = fi.elem ? _elImg(fi.elem) : '';
+            var dealtDisp = Math.round((summary.dealt[fid]||0) / 9.10);
+            var takenDisp = Math.round((summary.taken[fid]||0) / 9.10);
+            sumRows += '<tr style="border-bottom:1px solid rgba(255,255,255,0.02);">'
+                + '<td style="text-align:left;padding:5px 8px 5px 0;'+(isWin?'color:#80e090;':'')+'">'+elI+' '+em+' '+(fi.cls||'weapon').toUpperCase()+'</td>'
+                + '<td style="text-align:left;padding:5px 8px;font-size:0.9em;color:#506070;text-transform:capitalize;">'+(fi.race||'—')+'</td>'
+                + '<td style="text-align:right;padding:5px 8px;">'+dealtDisp+'</td>'
+                + '<td style="text-align:right;padding:5px 8px;color:#906060;">'+takenDisp+'</td>'
+                + '<td style="text-align:right;padding:5px 8px;color:#506070;">'+(summary.turns[fid]||0)+'</td>'
+                + '</tr>';
+        });
+    }
+    addSumTeam(d.team1, 1);
+    addSumTeam(d.team2, 2);
+
+    el.innerHTML =
+        '<div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">'
+        +   '<div class="rc-team" id="rc-team-1">'+buildTeam(d.team1,'TEAM 1', winnerNum===1)+'</div>'
+        +   '<div style="display:flex;align-items:center;align-self:center;padding:0 8px;font-size:1.4em;color:rgba(232,160,32,0.2);flex-shrink:0;">vs</div>'
+        +   '<div class="rc-team" id="rc-team-2">'+buildTeam(d.team2,'TEAM 2', winnerNum===2)+'</div>'
+        + '</div>'
+        + '<div id="rc-controls" style="display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap;">'
+        +   '<button class="ctrl-btn" style="padding:5px 12px;" onclick="recapStep(-1)">&#9664; PREV</button>'
+        +   '<span id="rc-turn-label" style="font-size:0.62em;color:var(--muted);letter-spacing:2px;min-width:90px;text-align:center;">INITIAL</span>'
+        +   '<button class="ctrl-btn" style="padding:5px 12px;" onclick="recapStep(1)">NEXT &#9654;</button>'
+        +   '<button class="ctrl-btn" id="rc-play-btn" style="padding:5px 12px;" onclick="recapTogglePlay()">&#9654; PLAY</button>'
+        +   '<button class="ctrl-btn" style="padding:5px 12px;" onclick="recapReset()">&#8635; RESET</button>'
+        +   '<button class="ctrl-btn" style="padding:5px 12px;color:#706050;border-color:rgba(100,80,50,0.3);margin-left:auto;" onclick="recapClear()">&#10005; CLEAR</button>'
+        + '</div>'
+        + '<div id="rc-log" style="max-height:220px;overflow-y:auto;font-size:0.68em;letter-spacing:0.5px;border:1px solid rgba(232,160,32,0.07);border-radius:3px;margin-top:10px;font-family:\'Courier New\',monospace;">'
+        +   logRows
+        + '</div>'
+        + '<div style="margin-top:20px;">'
+        +   '<div style="font-size:0.56em;letter-spacing:3px;color:#404858;margin-bottom:8px;">&#9672; BATTLE SUMMARY</div>'
+        +   '<table style="border-collapse:collapse;font-size:0.7em;width:100%;">'
+        +     '<thead><tr style="color:#506070;">'
+        +       '<th style="text-align:left;padding:4px 8px 6px 0;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">CLASS</th>'
+        +       '<th style="text-align:left;padding:4px 8px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">RACE</th>'
+        +       '<th style="text-align:right;padding:4px 8px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">DEALT</th>'
+        +       '<th style="text-align:right;padding:4px 8px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">TAKEN</th>'
+        +       '<th style="text-align:right;padding:4px 8px 6px;font-weight:normal;letter-spacing:1px;border-bottom:1px solid rgba(232,160,32,0.15);">ATTACKS</th>'
+        +     '</tr></thead>'
+        +     '<tbody>'+sumRows+'</tbody>'
+        +   '</table>'
+        + '</div>';
+
+    applyRecapTurn(0);
+}
+
+function applyRecapTurn(turnIdx) {
+    if (!_recapData) return;
+    _recapTurn = turnIdx;
+    var hpState = buildHpState(turnIdx);
+    var d = _recapData;
+
+    // Clear highlights
+    var allIds = d.team1.order.concat(d.team2.order);
+    allIds.forEach(function(fid) {
+        var card = document.getElementById('rc-card-' + fid);
+        if (card) card.classList.remove('rc-attacker', 'rc-defender');
+    });
+
+    // Apply current turn highlights
+    if (turnIdx > 0 && turnIdx <= d.turns.length) {
+        var t = d.turns[turnIdx - 1];
+        if (t.attackerFighterId && t.attackerFighterId !== '99999999999') {
+            var ac = document.getElementById('rc-card-' + t.attackerFighterId);
+            if (ac) ac.classList.add('rc-attacker');
+        }
+        if (t.defenderFighterId && t.defenderFighterId !== '99999999999') {
+            var dc = document.getElementById('rc-card-' + t.defenderFighterId);
+            if (dc) dc.classList.add('rc-defender');
+        }
+    }
+
+    // Update HP bars
+    var allFighters = Object.assign({}, d.team1.fighters, d.team2.fighters);
+    allIds.forEach(function(fid) {
+        var maxHp = (allFighters[fid] || {}).maxHp || 1;
+        var curHp = hpState[fid] !== undefined ? hpState[fid] : maxHp;
+        var pct   = Math.max(0, Math.min(100, Math.round(curHp / maxHp * 100)));
+        var fill  = document.getElementById('rc-hp-' + fid);
+        var lbl   = document.getElementById('rc-hp-lbl-' + fid);
+        var card  = document.getElementById('rc-card-' + fid);
+        if (fill) {
+            fill.style.width = pct + '%';
+            fill.className = 'rc-hp-fill' + (pct <= 25 ? ' rc-hp-low' : (pct <= 50 ? ' rc-hp-mid' : ''));
+        }
+        if (lbl) lbl.textContent = Math.max(0, Math.round(curHp / 9.10)) + ' / ' + Math.round(maxHp / 9.10);
+        if (card) card.classList.toggle('rc-dead', curHp <= 0);
+    });
+
+    // Turn label
+    var lbl = document.getElementById('rc-turn-label');
+    if (lbl) lbl.textContent = turnIdx === 0 ? 'INITIAL' : ('TURN ' + turnIdx + ' / ' + d.turns.length);
+
+    // Log highlight
+    var logEl = document.getElementById('rc-log');
+    if (logEl) {
+        var prev = logEl.querySelector('.rc-log-active');
+        if (prev) prev.classList.remove('rc-log-active');
+        if (turnIdx > 0) {
+            var cur = document.getElementById('rc-log-row-' + (turnIdx - 1));
+            if (cur) { cur.classList.add('rc-log-active'); cur.scrollIntoView({block:'nearest'}); }
+        }
+    }
+}
+
+function recapStep(dir) {
+    if (!_recapData) return;
+    applyRecapTurn(Math.max(0, Math.min(_recapData.turns.length, _recapTurn + dir)));
+}
+
+function recapTogglePlay() {
+    if (!_recapData) return;
+    if (_recapPlaying) {
+        _recapPlaying = false;
+        clearInterval(_recapTimer);
+        var btn = document.getElementById('rc-play-btn');
+        if (btn) btn.textContent = '▶ PLAY';
+    } else {
+        if (_recapTurn >= _recapData.turns.length) recapReset();
+        _recapPlaying = true;
+        var btn2 = document.getElementById('rc-play-btn');
+        if (btn2) btn2.innerHTML = '&#9632; STOP';
+        _recapTimer = setInterval(function() {
+            if (_recapTurn >= _recapData.turns.length) { recapTogglePlay(); return; }
+            recapStep(1);
+        }, 600);
+    }
+}
+
+function recapReset() {
+    clearInterval(_recapTimer);
+    _recapPlaying = false;
+    var btn = document.getElementById('rc-play-btn');
+    if (btn) btn.innerHTML = '&#9654; PLAY';
+    applyRecapTurn(0);
+}
+
+function recapClear() {
+    clearInterval(_recapTimer);
+    _recapPlaying = false;
+    _recapData = null;
+    _recapTurn = 0;
+    var content = document.getElementById('recap-content');
+    if (content) { content.style.display = 'none'; content.innerHTML = ''; }
+    var area = document.getElementById('recap-upload-area');
+    if (area) area.style.display = '';
+    renderRecapUpload();
+}
 </script>
 <!-- ── TIP ──────────────────────────────────────────────────────────────── -->
 <style>#tip-pop{position:fixed;display:none;flex-direction:column;gap:10px;z-index:9999;background:rgba(4,8,20,0.97);border:1px solid rgba(232,160,32,0.35);padding:14px 18px;min-width:210px;box-shadow:0 6px 24px rgba(0,0,0,0.9);}.tip-btn-sm{background:transparent;border:1px solid rgba(232,160,32,0.25);color:#a07840;font-family:'Courier New',monospace;font-size:0.7em;letter-spacing:1px;padding:5px 10px;cursor:pointer;transition:all 0.2s;}.tip-btn-sm:hover{color:#c09060;border-color:rgba(232,160,32,0.5);}</style>
