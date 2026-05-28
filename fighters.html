@@ -212,6 +212,8 @@
     .rc-log-row { cursor:default; }
     .rc-log-row:hover { background:rgba(255,255,255,0.02); }
     .rc-log-active { background:rgba(232,160,32,0.07) !important; border-left:2px solid rgba(232,160,32,0.5); }
+    .rc-spd-btn { opacity:0.4; }
+    .rc-spd-btn.rc-spd-active { opacity:1; border-color:var(--gold); }
 
     /* FOOTER */
     footer { border-top:1px solid rgba(232,160,32,0.07); padding:12px 28px; font-size:0.58em; color:var(--muted); letter-spacing:1.5px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
@@ -465,6 +467,7 @@ var _recapData    = null;
 var _recapTurn    = 0;
 var _recapPlaying = false;
 var _recapTimer   = null;
+var _recapSpeed   = 600; // ms per turn: 1200 slow / 600 medium / 200 fast
 
 var TARGET_LABELS = {
     'enemy_taunt_min':     'lowest Taunt',
@@ -1494,6 +1497,11 @@ function renderRecapContent() {
         +   '<button class="ctrl-btn" style="padding:5px 12px;" onclick="recapStep(1)">NEXT &#9654;</button>'
         +   '<button class="ctrl-btn" id="rc-play-btn" style="padding:5px 12px;" onclick="recapTogglePlay()">&#9654; PLAY</button>'
         +   '<button class="ctrl-btn" style="padding:5px 12px;" onclick="recapReset()">&#8635; RESET</button>'
+        +   '<span style="display:flex;gap:4px;align-items:center;margin-left:8px;">'
+        +     '<button id="rc-spd-slow" class="ctrl-btn rc-spd-btn rc-spd-active" style="padding:4px 9px;font-size:1em;" onclick="recapSetSpeed(1200,this)" title="Slow">🐢</button>'
+        +     '<button id="rc-spd-med"  class="ctrl-btn rc-spd-btn"              style="padding:4px 9px;font-size:1em;" onclick="recapSetSpeed(600,this)"  title="Medium">🐇</button>'
+        +     '<button id="rc-spd-fast" class="ctrl-btn rc-spd-btn"              style="padding:4px 9px;font-size:1em;" onclick="recapSetSpeed(200,this)"  title="Fast">👽</button>'
+        +   '</span>'
         +   '<button class="ctrl-btn" style="padding:5px 12px;color:#706050;border-color:rgba(100,80,50,0.3);margin-left:auto;" onclick="recapClear()">&#10005; CLEAR</button>'
         + '</div>'
         + '<div id="rc-log" style="max-height:220px;overflow-y:auto;font-size:0.68em;letter-spacing:0.5px;border:1px solid rgba(232,160,32,0.07);border-radius:3px;margin-top:10px;font-family:\'Courier New\',monospace;">'
@@ -1595,7 +1603,7 @@ function recapTogglePlay() {
         _recapTimer = setInterval(function() {
             if (_recapTurn >= _recapData.turns.length) { recapTogglePlay(); return; }
             recapStep(1);
-        }, 600);
+        }, _recapSpeed);
     }
 }
 
@@ -1605,6 +1613,19 @@ function recapReset() {
     var btn = document.getElementById('rc-play-btn');
     if (btn) btn.innerHTML = '&#9654; PLAY';
     applyRecapTurn(0);
+}
+
+function recapSetSpeed(ms, el) {
+    _recapSpeed = ms;
+    document.querySelectorAll('.rc-spd-btn').forEach(function(b){ b.classList.remove('rc-spd-active'); });
+    if (el) el.classList.add('rc-spd-active');
+    if (_recapPlaying) {
+        clearInterval(_recapTimer);
+        _recapTimer = setInterval(function() {
+            if (_recapTurn >= _recapData.turns.length) { recapTogglePlay(); return; }
+            recapStep(1);
+        }, _recapSpeed);
+    }
 }
 
 function recapClear() {
