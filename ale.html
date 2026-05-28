@@ -2023,17 +2023,15 @@ function _buildBars(classStats) {
         var s = classStats[c];
         return {cls:c, wins:s.wins, played:s.played, pct: s.played>0 ? s.wins/s.played : 0};
     }).sort(function(a,b){ return _statsSortMode === 'wins' ? b.wins - a.wins : b.pct - a.pct; });
-    var maxWins = entries.length ? entries[0].wins : 1;
     var html = '<div style="max-width:560px;">';
     entries.forEach(function(e) {
-        var pct     = Math.round(e.pct * 100);
-        var barW    = _statsSortMode === 'wins' ? Math.round((e.wins / (maxWins || 1)) * 100) : pct;
-        var meta    = _getMeta(e.cls);
+        var pct  = Math.round(e.pct * 100);
+        var meta = _getMeta(e.cls);
         html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">' +
             '<span style="font-size:1em;min-width:22px;text-align:center;line-height:1;">' + meta.e + '</span>' +
             '<span style="font-size:0.56em;letter-spacing:1px;color:#b0a080;min-width:90px;text-transform:uppercase;">' + e.cls + '</span>' +
             '<div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;height:13px;overflow:hidden;">' +
-                '<div style="height:100%;width:' + barW + '%;background:' + meta.c + ';border-radius:10px;transition:width 0.4s;"></div>' +
+                '<div style="height:100%;width:' + pct + '%;background:' + meta.c + ';border-radius:10px;transition:width 0.4s;"></div>' +
             '</div>' +
             '<span style="font-size:0.54em;color:#707060;min-width:86px;text-align:right;">' + e.wins + ' wins · ' + pct + '%</span>' +
         '</div>';
@@ -2044,13 +2042,13 @@ function _buildUsageBars(classStats) {
     var entries = Object.keys(classStats).map(function(c) {
         var s = classStats[c];
         return {cls:c, played:s.played, wins:s.wins||0};
-    }).sort(function(a,b){ return _statsSortMode === 'wins' ? b.wins - a.wins : b.played - a.played; });
+    });
     if (!entries.length) return '<div style="font-size:0.6em;color:#404050;padding:8px 0;">No data</div>';
-    var maxVal = _statsSortMode === 'wins' ? entries[0].wins : entries[0].played;
+    var maxPlayed = entries.reduce(function(m, e){ return Math.max(m, e.played); }, 1);
+    entries.sort(function(a,b){ return _statsSortMode === 'wins' ? b.wins - a.wins : b.played - a.played; });
     var html = '<div style="max-width:560px;">';
     entries.forEach(function(e) {
-        var barVal = _statsSortMode === 'wins' ? e.wins : e.played;
-        var barPct = Math.round((barVal / (maxVal || 1)) * 100);
+        var barPct = Math.round((e.played / maxPlayed) * 100);
         var meta = _getMeta(e.cls);
         html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">' +
             '<span style="font-size:1em;min-width:22px;text-align:center;line-height:1;">' + meta.e + '</span>' +
@@ -2069,10 +2067,10 @@ function _buildNftBars(nftStats, topN, folder) {
         return {id:id, wins:s.wins, played:s.played, pct: s.played>0 ? s.wins/s.played : 0};
     }).sort(function(a,b){ return _statsSortMode === 'wins' ? b.wins - a.wins : b.played - a.played; }).slice(0, topN || 20);
     if (!entries.length) return '<div style="font-size:0.6em;color:#404050;padding:8px 0;">No data</div>';
-    var maxVal = _statsSortMode === 'wins' ? entries[0].wins : entries[0].played;
+    var maxPlayed = entries.reduce(function(m, e){ return Math.max(m, e.played); }, 1);
     var html = '<div style="max-width:620px;">';
     entries.forEach(function(e) {
-        var barPct = Math.round((_statsSortMode === 'wins' ? e.wins : e.played) / (maxVal || 1) * 100);
+        var barPct = Math.round(e.played / maxPlayed * 100);
         var winPct = Math.round(e.pct * 100);
         html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
             '<span style="font-size:0.48em;color:#605040;min-width:74px;font-family:\'Courier New\',monospace;flex-shrink:0;">#' + e.id + '</span>' +
