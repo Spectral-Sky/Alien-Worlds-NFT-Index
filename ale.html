@@ -1773,13 +1773,16 @@ window.runHistoricalScan = async function() {
         var res = await fetch(_statsGSheetURL);
         _rawCSV = await res.text();
         var cutoff = _timeFilter ? Date.now() - _timeFilter * 86400000 : 0;
-        var agg = _parseSheetCSV(_rawCSV, cutoff);
+        var myWallet = localStorage.getItem('naron_wallet') || '';
+        var agg = _parseSheetCSV(_rawCSV, cutoff, myWallet);
         var allAssets = Object.keys(agg.crewNFTs).concat(Object.keys(agg.weaponNFTs));
         if (allAssets.length) {
             _setStatsMsg('RESOLVING NFT TEMPLATES…');
             _tplMapCache = await _resolveTemplates(allAssets);
-            agg.crewNFTs   = _mergeByTemplate(agg.crewNFTs,   _tplMapCache);
-            agg.weaponNFTs = _mergeByTemplate(agg.weaponNFTs, _tplMapCache);
+            agg.crewNFTs     = _mergeByTemplate(agg.crewNFTs,     _tplMapCache);
+            agg.weaponNFTs   = _mergeByTemplate(agg.weaponNFTs,   _tplMapCache);
+            agg.myCrewNFTs   = _mergeByTemplate(agg.myCrewNFTs,   _tplMapCache);
+            agg.myWeaponNFTs = _mergeByTemplate(agg.myWeaponNFTs, _tplMapCache);
         }
         _statsCache = agg;
         _setStatsMsg(agg.count + ' rows · ' + agg.total.arena + ' arena · ' + agg.total.dungeon + ' dungeon' + _fmtDateRange(agg.dateRange));
@@ -1869,11 +1872,12 @@ function _tally(map, cls, won) {
     if (won) map[cls].wins++;
 }
 
-function _parseSheetCSV(csv, cutoffMs) {
+function _parseSheetCSV(csv, cutoffMs, myWallet) {
     var lines = csv.replace(/\r/g,'').split('\n');
     var hdr   = (lines[0]||'').split(',').map(function(h){return h.replace(/"/g,'').trim().toLowerCase();});
     var get   = function(cols, name){ var i=hdr.indexOf(name); return i>=0?(cols[i]||'').replace(/"/g,'').trim():''; };
     var arena = {}, arenaRace = {}, arenaElement = {}, dungeon = {}, dungeonRace = {}, dungeonElement = {}, crewNFTs = {}, weaponNFTs = {}, total = {arena:0, dungeon:0};
+    var myCrewNFTs = {}, myWeaponNFTs = {}, myFights = 0, myWins = 0;
     var minTs = Infinity, maxTs = -Infinity, counted = 0;
     for (var i = 1; i < lines.length; i++) {
         if (!lines[i].trim()) continue;
@@ -1892,11 +1896,18 @@ function _parseSheetCSV(csv, cutoffMs) {
         var t2r    = (get(cols,'team2_races')||'').split('|').filter(Boolean);
         var t1e    = (get(cols,'team1_elements')||'').split('|').filter(Boolean);
         var t2e    = (get(cols,'team2_elements')||'').split('|').filter(Boolean);
-        var crew   = get(cols,'crew_asset_id');
-        var weapon = get(cols,'weapon_asset_id');
-        var won    = winner === 1;
+        var crew      = get(cols,'crew_asset_id');
+        var weapon    = get(cols,'weapon_asset_id');
+        var rowWallet = get(cols,'wallet');
+        var won       = winner === 1;
         if (crew)   _tally(crewNFTs,   crew,   won);
         if (weapon) _tally(weaponNFTs, weapon, won);
+        if (myWallet && rowWallet === myWallet) {
+            if (crew)   _tally(myCrewNFTs,   crew,   won);
+            if (weapon) _tally(myWeaponNFTs, weapon, won);
+            myFights++;
+            if (won) myWins++;
+        }
         if (ft === 'arena') {
             total.arena++;
             t1c.forEach(function(c){ _tally(arena, c, winner===1); });
@@ -1916,7 +1927,7 @@ function _parseSheetCSV(csv, cutoffMs) {
         }
     }
     var dr = (minTs !== Infinity) ? {min:minTs, max:maxTs} : null;
-    return {arena:arena, arenaRace:arenaRace, arenaElement:arenaElement, dungeon:dungeon, dungeonRace:dungeonRace, dungeonElement:dungeonElement, crewNFTs:crewNFTs, weaponNFTs:weaponNFTs, total:total, count:counted, dateRange:dr};
+    return {arena:arena, arenaRace:arenaRace, arenaElement:arenaElement, dungeon:dungeon, dungeonRace:dungeonRace, dungeonElement:dungeonElement, crewNFTs:crewNFTs, weaponNFTs:weaponNFTs, total:total, count:counted, dateRange:dr, myCrewNFTs:myCrewNFTs, myWeaponNFTs:myWeaponNFTs, myFights:myFights, myWins:myWins};
 }
 
 function _renderStats(agg) {
@@ -1951,6 +1962,28 @@ function _renderStats(agg) {
         html += _buildNftBars(agg.weaponNFTs, 20, 'arms.worlds');
         html += '</div>';
     }
+    var myWallet = localStorage.getItem('naron_wallet');
+    if (myWallet && agg.myFights > 0) {
+        var myWinPct = Math.round(agg.myWins / agg.myFights * 100);
+        var hasMyCrew   = Object.keys(agg.myCrewNFTs   || {}).length > 0;
+        var hasMyWeapon = Object.keys(agg.myWeaponNFTs || {}).length > 0;
+        html += '<div style="margin-top:44px;padding-top:20px;border-top:1px solid rgba(232,160,32,0.12);">';
+        html += '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:6px;">◈ YOUR NFTs</div>';
+        html += '<div style="font-size:0.56em;color:#707060;letter-spacing:1px;margin-bottom:18px;">'
+            + myWallet + ' &nbsp;·&nbsp; '
+            + agg.myWins + ' wins / ' + agg.myFights + ' fights &nbsp;·&nbsp; '
+            + myWinPct + '% win rate</div>';
+        if (hasMyCrew) {
+            html += '<div style="font-size:0.58em;letter-spacing:2px;color:rgba(232,160,32,0.4);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.07);">CREW</div>';
+            html += _buildNftBars(agg.myCrewNFTs, 20, 'crew.worlds');
+        }
+        if (hasMyWeapon) {
+            html += '<div style="font-size:0.58em;letter-spacing:2px;color:rgba(232,160,32,0.4);margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.07);">ARMS</div>';
+            html += _buildNftBars(agg.myWeaponNFTs, 20, 'arms.worlds');
+        }
+        html += '</div>';
+    }
+
     el.innerHTML = html;
     if (diffs.length > 0) {
         _activeDungDiff = diffs.includes(_activeDungDiff) ? _activeDungDiff : diffs[0];
@@ -1995,10 +2028,13 @@ window.selectTimeFilter = function(days) {
     });
     if (!_rawCSV) return;
     var cutoff = days ? Date.now() - days * 86400000 : 0;
-    var agg = _parseSheetCSV(_rawCSV, cutoff);
+    var myWallet = localStorage.getItem('naron_wallet') || '';
+    var agg = _parseSheetCSV(_rawCSV, cutoff, myWallet);
     if (_tplMapCache) {
-        agg.crewNFTs   = _mergeByTemplate(agg.crewNFTs,   _tplMapCache);
-        agg.weaponNFTs = _mergeByTemplate(agg.weaponNFTs, _tplMapCache);
+        agg.crewNFTs     = _mergeByTemplate(agg.crewNFTs,     _tplMapCache);
+        agg.weaponNFTs   = _mergeByTemplate(agg.weaponNFTs,   _tplMapCache);
+        agg.myCrewNFTs   = _mergeByTemplate(agg.myCrewNFTs,   _tplMapCache);
+        agg.myWeaponNFTs = _mergeByTemplate(agg.myWeaponNFTs, _tplMapCache);
     }
     _statsCache = agg;
     _setStatsMsg(agg.count + ' rows · ' + agg.total.arena + ' arena · ' + agg.total.dungeon + ' dungeon');
