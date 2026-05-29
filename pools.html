@@ -380,4 +380,119 @@ function buildFilters() {
     });
 
     renderFilterGroup('filter-tlm',   tlmPools,   _activeTlm,   function(){ renderCharts(); });
-    renderFilterGroup('filter-shard', s
+    renderFilterGroup('filter-shard', shardPools, _activeShard, function(){ renderCharts(); });
+}
+
+function renderFilterGroup(containerId, poolSet, activeSet, onChange) {
+    var el = document.getElementById(containerId);
+    el.innerHTML = '';
+    poolSet.forEach(function(pool) {
+        var wrap = document.createElement('label');
+        wrap.className = 'pool-cb-wrap';
+        
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = activeSet.has(pool);
+        cb.onchange = function() {
+            cb.checked ? activeSet.add(pool) : activeSet.delete(pool);
+            onChange();
+        };
+        
+        var txt = document.createElement('span');
+        txt.textContent = humanPool(pool);
+        txt.style.color = poolColor(pool);
+        
+        wrap.appendChild(cb);
+        wrap.appendChild(txt);
+        el.appendChild(wrap);
+    });
+}
+
+// ── Chart init ───────────────────────────────────────────────────────────────
+function initCharts() {
+    var timeOpts = {
+        type: 'time',
+        time: { tooltipFormat: 'MMM d, HH:mm' },
+        ticks: { maxTicksLimit: 8, color: '#506070' },
+        grid: { color: 'rgba(255,255,255,0.05)' }
+    };
+    var yOpts = {
+        ticks: { color: '#506070' },
+        grid: { color: 'rgba(255,255,255,0.05)' }
+    };
+    var baseOpts = {
+        responsive: true, maintainAspectRatio: false,
+        animation: { duration: 300 },
+        elements: { point: { radius: 0, hitRadius: 8 }, line: { borderWidth: 1.5 } },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { labels: { color: '#708090', boxWidth: 12, padding: 14, font: { family: "'Courier New',monospace", size: 11 } } },
+            tooltip: {
+                backgroundColor: 'rgba(3,6,18,0.95)',
+                borderColor: 'rgba(232,160,32,0.3)',
+                borderWidth: 1,
+                titleColor: '#e8a020',
+                bodyColor: '#a0b8d0',
+                padding: 10,
+                titleFont: { family: "'Courier New',monospace" },
+                bodyFont:  { family: "'Courier New',monospace" }
+            }
+        },
+        scales: { x: timeOpts, y: yOpts }
+    };
+
+    _charts.fillPct  = new Chart(document.getElementById('chart-fill-pct'), {
+        type: 'line', data: { datasets: [] },
+        options: JSON.parse(JSON.stringify(baseOpts))
+    });
+    _charts.tlmCur   = new Chart(document.getElementById('chart-tlm-cur'), {
+        type: 'line', data: { datasets: [] },
+        options: JSON.parse(JSON.stringify(baseOpts))
+    });
+    _charts.shardCur  = new Chart(document.getElementById('chart-shard-cur'), {
+        type: 'line', data: { datasets: [] },
+        options: JSON.parse(JSON.stringify(baseOpts))
+    });
+    _charts.shardFill = new Chart(document.getElementById('chart-shard-fill'), {
+        type: 'line', data: { datasets: [] },
+        options: JSON.parse(JSON.stringify(baseOpts))
+    });
+
+    _charts.fillPct.options.scales.y.ticks.callback   = function(v){ return v.toFixed(1) + '%'; };
+    _charts.shardFill.options.scales.y.ticks.callback = function(v){ return v.toLocaleString() + ' /hr'; };
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function renderCharts() {
+    var fillData      = rollup(_rawTlm,   'fill_pct',      _activeTlm);
+    var tlmData       = rollup(_rawTlm,   'tlm_current',   _activeTlm);
+    var shardData     = rollup(_rawShard, 'shard_current', _activeShard);
+    var shardFillData = rollup(_rawShard, 'shard_fillrate', _activeShard);
+
+    function toDatasets(poolMap) {
+        return Object.keys(poolMap).map(function(pool) {
+            var c = poolColor(pool);
+            return { 
+                label: humanPool(pool), 
+                data: poolMap[pool], 
+                borderColor: c, 
+                backgroundColor: c + '22', 
+                fill: false, 
+                tension: 0.2 
+            };
+        });
+    }
+
+    _charts.fillPct.data.datasets   = toDatasets(fillData);
+    _charts.tlmCur.data.datasets    = toDatasets(tlmData);
+    _charts.shardCur.data.datasets  = toDatasets(shardData);
+    _charts.shardFill.data.datasets = toDatasets(shardFillData);
+
+    _charts.fillPct.update();
+    _charts.tlmCur.update();
+    _charts.shardCur.update();
+    _charts.shardFill.update();
+}
+</script>
+</body>
+</html>
