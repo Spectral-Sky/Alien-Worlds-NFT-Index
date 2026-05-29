@@ -184,6 +184,10 @@
         <div class="chart-card-title">Shard Current Balance</div>
         <div class="chart-wrap"><canvas id="chart-shard-cur"></canvas></div>
     </div>
+    <div class="chart-card">
+        <div class="chart-card-title">Shard Fill Rate (per hour)</div>
+        <div class="chart-wrap"><canvas id="chart-shard-fill"></canvas></div>
+    </div>
 </div>
 
 <script>
@@ -199,11 +203,24 @@ var _activeTlm  = new Set();
 var _activeShard = new Set();
 var _charts     = {};
 
-// Distinct colors for up to 12 pools — readable on dark bg
+// Neon colors — distinct and visible on dark bg
 var POOL_COLORS = [
-    '#e8a020','#4fc3f7','#81c784','#e57373','#ba68c8',
-    '#ffb74d','#4db6ac','#f06292','#aed581','#7986cb',
-    '#90a4ae','#fff176'
+    '#00ffff',  // cyan
+    '#39ff14',  // neon green
+    '#ff00ff',  // magenta
+    '#ffff00',  // yellow
+    '#ff6600',  // neon orange
+    '#00ff7f',  // spring green
+    '#ff073a',  // neon red
+    '#bf00ff',  // violet
+    '#00bfff',  // sky blue
+    '#ff1493',  // deep pink
+    '#ccff00',  // lime
+    '#ff4500',  // orange red
+    '#00ffcc',  // aquamarine
+    '#7fff00',  // lawn green
+    '#da70d6',  // orchid
+    '#fffb00',  // neon yellow
 ];
 var _colorIdx = {};
 var _colorCounter = 0;
@@ -245,8 +262,8 @@ function fetchData() {
 
     // TLM: snapshot_time(A), pool(B), tlm_current(E), fill_pct(F)
     var tlmQ   = encodeURIComponent("SELECT A,B,E,F WHERE A >= date '" + dateStr + "' ORDER BY A");
-    // Shard: snapshot_time(A), pool(B), shard_current(C)
-    var shardQ = encodeURIComponent("SELECT A,B,C WHERE A >= date '" + dateStr + "' ORDER BY A");
+    // Shard: snapshot_time(A), pool(B), shard_current(C), fillrate_per_hour(D)
+    var shardQ = encodeURIComponent("SELECT A,B,C,D WHERE A >= date '" + dateStr + "' ORDER BY A");
 
     var base  = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:json&cb=' + cb;
     var tlmUrl   = base + '&sheet=tlmpools&tq='   + tlmQ;
@@ -257,7 +274,7 @@ function fetchData() {
         fetch(shardUrl).then(function(r){ return r.text(); })
     ]).then(function(results) {
         _rawTlm   = parseGviz(results[0], ['ts','pool','tlm_current','fill_pct']);
-        _rawShard = parseGviz(results[1], ['ts','pool','shard_current']);
+        _rawShard = parseGviz(results[1], ['ts','pool','shard_current','shard_fillrate']);
 
         // Initialise active sets on first load
         if (_activeTlm.size === 0)   _rawTlm.forEach(function(r){ _activeTlm.add(r.pool); });
@@ -401,20 +418,26 @@ function initCharts() {
         type: 'line', data: { datasets: [] },
         options: JSON.parse(JSON.stringify(baseOpts))
     });
-    _charts.shardCur = new Chart(document.getElementById('chart-shard-cur'), {
+    _charts.shardCur  = new Chart(document.getElementById('chart-shard-cur'), {
+        type: 'line', data: { datasets: [] },
+        options: JSON.parse(JSON.stringify(baseOpts))
+    });
+    _charts.shardFill = new Chart(document.getElementById('chart-shard-fill'), {
         type: 'line', data: { datasets: [] },
         options: JSON.parse(JSON.stringify(baseOpts))
     });
 
-    // % suffix on fill chart
-    _charts.fillPct.options.scales.y.ticks.callback = function(v){ return v.toFixed(1) + '%'; };
+    // axis suffixes
+    _charts.fillPct.options.scales.y.ticks.callback   = function(v){ return v.toFixed(1) + '%'; };
+    _charts.shardFill.options.scales.y.ticks.callback = function(v){ return v.toLocaleString() + ' /hr'; };
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
 function renderCharts() {
-    var fillData  = rollup(_rawTlm,   'fill_pct',     _activeTlm);
-    var tlmData   = rollup(_rawTlm,   'tlm_current',  _activeTlm);
-    var shardData = rollup(_rawShard, 'shard_current', _activeShard);
+    var fillData      = rollup(_rawTlm,   'fill_pct',      _activeTlm);
+    var tlmData       = rollup(_rawTlm,   'tlm_current',   _activeTlm);
+    var shardData     = rollup(_rawShard, 'shard_current', _activeShard);
+    var shardFillData = rollup(_rawShard, 'shard_fillrate', _activeShard);
 
     function toDatasets(poolMap) {
         return Object.keys(poolMap).map(function(pool) {
@@ -423,13 +446,15 @@ function renderCharts() {
         });
     }
 
-    _charts.fillPct.data.datasets  = toDatasets(fillData);
-    _charts.tlmCur.data.datasets   = toDatasets(tlmData);
-    _charts.shardCur.data.datasets = toDatasets(shardData);
+    _charts.fillPct.data.datasets   = toDatasets(fillData);
+    _charts.tlmCur.data.datasets    = toDatasets(tlmData);
+    _charts.shardCur.data.datasets  = toDatasets(shardData);
+    _charts.shardFill.data.datasets = toDatasets(shardFillData);
 
     _charts.fillPct.update();
     _charts.tlmCur.update();
     _charts.shardCur.update();
+    _charts.shardFill.update();
 }
 </script>
 </body>
