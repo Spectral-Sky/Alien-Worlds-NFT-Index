@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-48CCMEYHXG"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-48CCMEYHXG');</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pool Metrics // Naron Codex</title>
+    <link rel="icon" type="image/png" href="NCico.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+    :root {
+        --bg:#03060f; --gold:#e8a020; --border:rgba(232,160,32,0.2);
+        --text:#c8ccd8; --muted:#50606a; --panel:rgba(5,8,20,0.7);
+        --hover:rgba(232,160,32,0.06);
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    html, body { min-height:100vh; background:var(--bg); color:var(--text); font-family:'Courier New',Courier,monospace; }
+    html { height:100%; }
+    body { display:flex; flex-direction:column; min-height:100vh; }
+    ::-webkit-scrollbar { height:8px; width:8px; }
+    ::-webkit-scrollbar-track { background:#050510; }
+    ::-webkit-scrollbar-thumb { background:#333; border:1px solid var(--gold); }
+
+    /* HEADER */
+    .global-header { display:flex; justify-content:space-between; align-items:center; background:rgba(3,6,15,0.97); border-bottom:2px solid var(--gold); padding:0 28px; height:66px; position:sticky; top:0; z-index:200; box-shadow:0 4px 20px rgba(0,0,0,0.8); backdrop-filter:blur(8px); }
+    .logo-section { display:flex; align-items:center; gap:8px; text-decoration:none; }
+    .logo-section h1 { color:var(--gold); font-size:1.5em; letter-spacing:4px; text-transform:uppercase; text-shadow:0 0 10px rgba(232,160,32,0.5); font-weight:normal; }
+    .nav-links { display:flex; gap:6px; flex-wrap:wrap; }
+    .nav-btn { background:transparent; color:#555; border:1px solid transparent; padding:7px 13px; font-family:'Courier New',monospace; font-size:0.78em; text-decoration:none; cursor:pointer; transition:all 0.2s; text-transform:uppercase; border-radius:3px; letter-spacing:1px; }
+    .nav-btn:hover { color:var(--gold); border-color:var(--border); }
+    .nav-btn.active { color:#000; background:var(--gold); border-color:var(--gold); }
+    .nav-dropdown-wrap { position:relative; }
+    .nav-dropdown-btn { background:transparent; color:#555; border:1px solid transparent; padding:7px 13px; font-family:'Courier New',monospace; font-size:0.78em; cursor:pointer; transition:all 0.2s; text-transform:uppercase; border-radius:3px; letter-spacing:1px; }
+    .nav-dropdown-btn:hover { color:var(--gold); border-color:var(--border); }
+    .nav-dropdown-btn.active { color:#000; background:var(--gold); border-color:var(--gold); }
+    .nav-dropdown-menu { display:none; position:absolute; top:100%; left:0; background:rgba(2,6,20,0.98); border:1px solid var(--border); min-width:160px; z-index:300; padding:4px 0; }
+    .nav-dropdown-wrap:hover .nav-dropdown-menu { display:block; }
+    .nav-dropdown-item { display:block; padding:8px 14px; color:#555; text-decoration:none; font-family:'Courier New',monospace; font-size:0.78em; transition:all 0.15s; text-transform:uppercase; letter-spacing:1px; }
+    .nav-dropdown-item:hover { color:var(--gold); background:var(--hover); }
+    .nav-dropdown-item.active { color:var(--gold); font-weight:bold; }
+    #hamburger-btn { display:none; background:transparent; border:1px solid #333; color:#888; font-size:1.1em; padding:6px 10px; cursor:pointer; border-radius:3px; }
+    #nav-dropdown { display:none; flex-direction:column; background:rgba(2,6,20,0.98); border-bottom:1px solid var(--border); padding:10px 20px; gap:6px; z-index:199; }
+    #nav-dropdown.open { display:flex; }
+    @media(max-width:768px){ .nav-links{display:none;} #hamburger-btn{display:block;} }
+
+    /* TITLE */
+    .title-bar { padding:16px 28px 13px; border-bottom:1px solid rgba(232,160,32,0.08); background:rgba(5,8,20,0.5); }
+    .title-bar h1 { font-size:1.2em; letter-spacing:5px; color:var(--gold); text-shadow:0 0 15px rgba(232,160,32,0.3); font-weight:normal; text-transform:uppercase; }
+    .title-bar .sub { font-size:0.62em; color:var(--muted); letter-spacing:2px; margin-top:4px; }
+
+    /* CONTROLS */
+    .controls-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 28px; border-bottom:1px solid rgba(232,160,32,0.07); background:rgba(3,6,15,0.6); }
+    .ctrl-btn { background:transparent; border:1px solid rgba(232,160,32,0.35); color:var(--gold); padding:6px 14px; font-family:'Courier New',monospace; font-size:0.74em; letter-spacing:1px; cursor:pointer; border-radius:2px; transition:all 0.2s; }
+    .ctrl-btn:hover { background:rgba(232,160,32,0.08); }
+    .ctrl-btn.active { background:rgba(232,160,32,0.18); border-color:var(--gold); }
+    .ctrl-btn:disabled { opacity:0.35; cursor:not-allowed; }
+    #status-txt { font-size:0.64em; color:var(--muted); letter-spacing:1px; margin-left:auto; }
+
+    /* SETUP BANNER */
+    #setup-banner { display:none; background:rgba(220,80,40,0.12); border:1px solid rgba(220,80,40,0.4); border-radius:3px; margin:16px 28px; padding:12px 16px; font-size:0.68em; color:#d08060; letter-spacing:1px; line-height:1.7; }
+    #setup-banner code { background:rgba(0,0,0,0.4); padding:2px 6px; border-radius:2px; color:#e8a060; }
+
+    /* POOL FILTERS */
+    .filter-bar { padding:10px 28px; border-bottom:1px solid rgba(232,160,32,0.06); background:rgba(3,6,15,0.4); display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .filter-label { font-size:0.58em; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-right:4px; }
+    .filter-sep { width:1px; height:16px; background:rgba(255,255,255,0.08); align-self:center; flex-shrink:0; }
+    .pool-cb-wrap { display:flex; align-items:center; gap:5px; cursor:pointer; }
+    .pool-cb-wrap input[type=checkbox] { accent-color:var(--gold); width:11px; height:11px; cursor:pointer; }
+    .pool-cb-wrap span { font-size:0.65em; letter-spacing:1px; color:#667; transition:color 0.15s; }
+    .pool-cb-wrap:hover span { color:var(--gold); }
+    .pool-cb-wrap input:checked + span { color:var(--gold); }
+
+    /* CHARTS */
+    .charts-wrap { padding:20px 28px; display:flex; flex-direction:column; gap:24px; }
+    .chart-card { background:rgba(5,8,20,0.7); border:1px solid rgba(232,160,32,0.12); border-radius:3px; padding:18px 20px 14px; }
+    .chart-card-title { font-size:0.68em; letter-spacing:3px; color:var(--gold); text-transform:uppercase; margin-bottom:12px; }
+    .chart-wrap { position:relative; height:280px; }
+
+    /* LOADING */
+    #loading-overlay { display:none; position:fixed; inset:0; background:rgba(3,6,15,0.7); z-index:500; align-items:center; justify-content:center; font-size:0.8em; letter-spacing:3px; color:var(--gold); }
+    #loading-overlay.show { display:flex; }
+    </style>
+</head>
+<body>
+
+<header class="global-header">
+    <div class="logo-section">
+        <a href="index.html" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
+            <img src="NCico.png" style="height:28px;border-radius:3px;" alt="">
+            <h1>NARON CODEX</h1>
+        </a>
+    </div>
+    <nav class="nav-links">
+        <a href="index.html" class="nav-btn">HUB</a>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn"><img src="https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://alienworlds.io&size=128" style="height:13px;vertical-align:middle;margin-right:3px;border-radius:2px;">AW &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="crew.worlds.html" class="nav-dropdown-item">CREW</a>
+                <a href="arms.worlds.html" class="nav-dropdown-item">ARMS</a>
+                <a href="tools.worlds.html" class="nav-dropdown-item">TOOLS</a>
+                <a href="faces.worlds.html" class="nav-dropdown-item">FACES</a>
+                <a href="land.worlds.html" class="nav-dropdown-item">LAND</a>
+            </div>
+        </div>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn"><img src="https://cdn.discordapp.com/icons/1187353785136320592/a_c13a45b66308d8ab5c08d02af58bf6d7.webp?size=64&animated=true" onerror="this.onerror=null;this.style.display='none'" style="height:13px;vertical-align:middle;margin-right:3px;">PD &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="pd.units.html" class="nav-dropdown-item">PD UNITS</a>
+                <a href="pd.materials.html" class="nav-dropdown-item">PD MATS</a>
+                <a href="army.html" class="nav-dropdown-item">ARMY BUILDER</a>
+            </div>
+        </div>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn active"><img src="Ale%20images/tavern.svg" style="height:13px;vertical-align:middle;margin-right:4px;opacity:0.85;">ALE &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="ale.html" class="nav-dropdown-item">&#9876; ALE STATS</a>
+                <a href="alewiki.html" class="nav-dropdown-item">&#9672; ALE WIKI</a>
+                <a href="alements.html" class="nav-dropdown-item">&#11041; STAT EXPLORER</a>
+                <a href="aleleaders.html" class="nav-dropdown-item">&#9670; LEADERBOARD</a>
+                <a href="fighters.html" class="nav-dropdown-item">&#9876; MY FIGHTERS</a>
+                <a href="pools.html" class="nav-dropdown-item active">&#9670; POOL METRICS</a>
+            </div>
+        </div>
+        <div class="nav-dropdown-wrap">
+            <button class="nav-btn nav-dropdown-btn">UTILITY &#9660;</button>
+            <div class="nav-dropdown-menu">
+                <a href="stash.html" class="nav-dropdown-item">&#11041; STASH</a>
+                <a href="outpost.html" class="nav-dropdown-item">OUTPOST</a>
+                <a href="ep.html" class="nav-dropdown-item">&#9672; ENDPOINTS</a>
+            </div>
+        </div>
+        <button class="mode-toggle-btn" id="mode-toggle-btn" title="Toggle day/night mode" style="background:transparent;border:1px solid rgba(232,160,32,0.25);color:var(--muted);padding:6px 9px;font-size:1em;cursor:pointer;border-radius:2px;transition:all 0.2s;line-height:1;">&#9728;</button>
+    </nav>
+    <button id="hamburger-btn" onclick="document.getElementById('nav-dropdown').classList.toggle('open')" aria-label="Navigation">&#9776;</button>
+</header>
+
+<nav id="nav-dropdown">
+    <a href="index.html" class="nav-dropdown-item">HUB</a>
+    <a href="ale.html" class="nav-dropdown-item">ALE STATS</a>
+    <a href="aleleaders.html" class="nav-dropdown-item">LEADERBOARD</a>
+    <a href="fighters.html" class="nav-dropdown-item">MY FIGHTERS</a>
+    <a href="pools.html" class="nav-dropdown-item active">POOL METRICS</a>
+</nav>
+
+<div id="loading-overlay">FETCHING DATA&#8230;</div>
+
+<div class="title-bar">
+    <h1>&#9670; ALE Pool Metrics</h1>
+    <div class="sub">TLM &amp; Shard pool fill rates &mdash; snapshots every 30 min</div>
+</div>
+
+<div id="setup-banner">
+    &#9888; Sheet ID not configured. Open pools.html, find <code>SHEET_ID</code> near the top of the script, and replace it with your Google Sheet's ID (the long string in the sheet URL between <code>/d/</code> and <code>/edit</code>).
+</div>
+
+<div class="controls-bar">
+    <button class="ctrl-btn time-btn" id="btn-1D" onclick="setWindow(1)">1D</button>
+    <button class="ctrl-btn time-btn active" id="btn-7D" onclick="setWindow(7)">7D</button>
+    <button class="ctrl-btn time-btn" id="btn-30D" onclick="setWindow(30)">30D</button>
+    <button class="ctrl-btn" onclick="fetchData()" style="margin-left:6px;">&#8635; REFRESH</button>
+    <span id="status-txt"></span>
+</div>
+
+<div class="filter-bar" id="filter-bar">
+    <span class="filter-label">Pools</span>
+    <span id="filter-tlm"></span>
+    <span class="filter-sep"></span>
+    <span class="filter-label">Shards</span>
+    <span id="filter-shard"></span>
+</div>
+
+<div class="charts-wrap">
+    <div class="chart-card">
+        <div class="chart-card-title">TLM Fill % &mdash; how full each pool is vs reserve</div>
+        <div class="chart-wrap"><canvas id="chart-fill-pct"></canvas></div>
+    </div>
+    <div class="chart-card">
+        <div class="chart-card-title">TLM Current Balance</div>
+        <div class="chart-wrap"><canvas id="chart-tlm-cur"></canvas></div>
+    </div>
+    <div class="chart-card">
+        <div class="chart-card-title">Shard Current Balance</div>
+        <div class="chart-wrap"><canvas id="chart-shard-cur"></canvas></div>
+    </div>
+</div>
+
+<script>
+// ── CONFIG — paste your Google Sheet ID here ─────────────────────────────────
+// Find it in the sheet URL: docs.google.com/spreadsheets/d/SHEET_ID/edit
+var SHEET_ID = 'YOUR_SHEET_ID_HERE';
+
+// ── State ────────────────────────────────────────────────────────────────────
+var _days       = 7;
+var _rawTlm     = [];
+var _rawShard   = [];
+var _activeTlm  = new Set();
+var _activeShard = new Set();
+var _charts     = {};
+
+// Distinct colors for up to 12 pools — readable on dark bg
+var POOL_COLORS = [
+    '#e8a020','#4fc3f7','#81c784','#e57373','#ba68c8',
+    '#ffb74d','#4db6ac','#f06292','#aed581','#7986cb',
+    '#90a4ae','#fff176'
+];
+var _colorIdx = {};
+var _colorCounter = 0;
+function poolColor(name) {
+    if (!_colorIdx[name]) _colorIdx[name] = POOL_COLORS[_colorCounter++ % POOL_COLORS.length];
+    return _colorIdx[name];
+}
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', function() {
+    if (SHEET_ID === 'YOUR_SHEET_ID_HERE') {
+        document.getElementById('setup-banner').style.display = 'block';
+    }
+    Chart.defaults.color          = '#506070';
+    Chart.defaults.borderColor    = 'rgba(255,255,255,0.06)';
+    initCharts();
+    setWindow(7);
+});
+
+// ── Time window ──────────────────────────────────────────────────────────────
+function setWindow(days) {
+    _days = days;
+    document.querySelectorAll('.time-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.getElementById('btn-' + days + 'D').classList.add('active');
+    fetchData();
+}
+
+// ── Fetch ────────────────────────────────────────────────────────────────────
+function fetchData() {
+    if (SHEET_ID === 'YOUR_SHEET_ID_HERE') return;
+    var overlay = document.getElementById('loading-overlay');
+    overlay.classList.add('show');
+    document.getElementById('status-txt').textContent = 'Fetching…';
+
+    var cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - _days);
+    var dateStr = cutoff.toISOString().split('T')[0];
+    var cb = Date.now();
+
+    // TLM: snapshot_time(A), pool(B), tlm_current(E), fill_pct(F)
+    var tlmQ   = encodeURIComponent("SELECT A,B,E,F WHERE A >= date '" + dateStr + "' ORDER BY A");
+    // Shard: snapshot_time(A), pool(B), shard_current(C)
+    var shardQ = encodeURIComponent("SELECT A,B,C WHERE A >= date '" + dateStr + "' ORDER BY A");
+
+    var base  = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:json&cb=' + cb;
+    var tlmUrl   = base + '&sheet=tlmpools&tq='   + tlmQ;
+    var shardUrl = base + '&sheet=shardpools&tq=' + shardQ;
+
+    Promise.all([
+        fetch(tlmUrl).then(function(r){ return r.text(); }),
+        fetch(shardUrl).then(function(r){ return r.text(); })
+    ]).then(function(results) {
+        _rawTlm   = parseGviz(results[0], ['ts','pool','tlm_current','fill_pct']);
+        _rawShard = parseGviz(results[1], ['ts','pool','shard_current']);
+
+        // Initialise active sets on first load
+        if (_activeTlm.size === 0)   _rawTlm.forEach(function(r){ _activeTlm.add(r.pool); });
+        if (_activeShard.size === 0) _rawShard.forEach(function(r){ _activeShard.add(r.pool); });
+
+        buildFilters();
+        renderCharts();
+        document.getElementById('status-txt').textContent = 'Updated ' + new Date().toLocaleTimeString();
+        overlay.classList.remove('show');
+    }).catch(function(err) {
+        console.error(err);
+        document.getElementById('status-txt').textContent = 'Error — see console';
+        overlay.classList.remove('show');
+    });
+}
+
+// ── GViz parser ──────────────────────────────────────────────────────────────
+// Strips JSONP wrapper, maps columns to named keys
+function parseGviz(text, keys) {
+    var match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]+)\);?\s*$/);
+    if (!match) return [];
+    var json = JSON.parse(match[1]);
+    if (!json.table || !json.table.rows) return [];
+
+    return json.table.rows.map(function(row) {
+        var obj = {};
+        // Column 0 is always snapshot_time — GViz returns "Date(YYYY,M,D,H,m,s)" (month is 0-indexed)
+        var dv = row.c[0] && row.c[0].v;
+        if (dv) {
+            var p = dv.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/);
+            obj.ts = p ? Date.UTC(+p[1], +p[2], +p[3], +p[4], +p[5], +p[6]) : 0;
+        } else { obj.ts = 0; }
+        for (var i = 1; i < keys.length; i++) {
+            obj[keys[i]] = row.c[i] ? row.c[i].v : 0;
+        }
+        return obj;
+    }).filter(function(r){ return r.ts > 0; });
+}
+
+// ── Client-side rollup (30D → hourly averages) ───────────────────────────────
+function rollup(rows, valueKey, activeSet) {
+    var byPool = {};
+    rows.forEach(function(r) {
+        if (!activeSet.has(r.pool)) return;
+        if (!byPool[r.pool]) byPool[r.pool] = [];
+        byPool[r.pool].push(r);
+    });
+
+    var result = {};
+    Object.keys(byPool).forEach(function(pool) {
+        var pts = byPool[pool];
+        if (_days < 30) {
+            // Raw points for 1D / 7D
+            result[pool] = pts.map(function(r){ return {x: r.ts, y: r[valueKey]}; });
+        } else {
+            // Hourly bucket average for 30D
+            var buckets = {};
+            pts.forEach(function(r) {
+                var h = Math.floor(r.ts / 3600000) * 3600000;
+                if (!buckets[h]) buckets[h] = {sum: 0, n: 0};
+                buckets[h].sum += r[valueKey];
+                buckets[h].n++;
+            });
+            result[pool] = Object.keys(buckets).sort(function(a,b){return a-b;}).map(function(h) {
+                return {x: +h, y: buckets[h].sum / buckets[h].n};
+            });
+        }
+    });
+    return result;
+}
+
+// ── Filter checkboxes ────────────────────────────────────────────────────────
+function buildFilters() {
+    var tlmPools   = new Set(_rawTlm.map(function(r){ return r.pool; }));
+    var shardPools = new Set(_rawShard.map(function(r){ return r.pool; }));
+
+    renderFilterGroup('filter-tlm',   tlmPools,   _activeTlm,   function(){ renderCharts(); });
+    renderFilterGroup('filter-shard', shardPools, _activeShard, function(){ renderCharts(); });
+}
+
+function renderFilterGroup(containerId, poolSet, activeSet, onChange) {
+    var el = document.getElementById(containerId);
+    el.innerHTML = '';
+    poolSet.forEach(function(pool) {
+        var wrap = document.createElement('label');
+        wrap.className = 'pool-cb-wrap';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = activeSet.has(pool);
+        cb.onchange = function() {
+            cb.checked ? activeSet.add(pool) : activeSet.delete(pool);
+            onChange();
+        };
+        var txt = document.createElement('span');
+        txt.textContent = pool;
+        txt.style.color = poolColor(pool);
+        wrap.appendChild(cb);
+        wrap.appendChild(txt);
+        el.appendChild(wrap);
+    });
+}
+
+// ── Chart init ───────────────────────────────────────────────────────────────
+function initCharts() {
+    var timeOpts = {
+        type: 'time',
+        time: { tooltipFormat: 'MMM d, HH:mm' },
+        ticks: { maxTicksLimit: 8, color: '#506070' },
+        grid: { color: 'rgba(255,255,255,0.05)' }
+    };
+    var yOpts = {
+        ticks: { color: '#506070' },
+        grid: { color: 'rgba(255,255,255,0.05)' }
+    };
+    var baseOpts = {
+        responsive: true, maintainAspectRatio: false,
+        animation: { duration: 300 },
+        elements: { point: { radius: 0, hitRadius: 8 }, line: { borderWidth: 1.5 } },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { labels: { color: '#708090', boxWidth: 12, padding: 14, font: { family: "'Courier New',monospace", size: 11 } } },
+            tooltip: {
+                backgroundColor: 'rgba(3,6,18,0.95)',
+                borderColor: 'rgba(232,160,32,0.3)',
+                borderWidth: 1,
+                titleColor: '#e8a020',
+                bodyColor: '#a0b8d0',
+                padding: 10,
+                titleFont: { family: "'Courier New',monospace" },
+                bodyFont:  { family: "'Courier New',monospace" }
+            }
+        },
+        scales: { x: timeOpts, y: yOpts }
+    };
+
+    _charts.fillPct  = new Chart(document.getElementById('chart-fill-pct'), {
+        type: 'line', data: { datasets: [] },
+        options: JSON.parse(JSON.stringify(baseOpts))
+    });
+    _charts.tlmCur   = new Chart(document.getElementById('chart-tlm-cur'), {
+        type: 'line', data: { datasets: [] },
+        options: JSON.parse(JSON.stringify(baseOpts))
+    });
+    _charts.shardCur = new Chart(document.getElementById('chart-shard-cur'), {
+        type: 'line', data: { datasets: [] },
+        options: JSON.parse(JSON.stringify(baseOpts))
+    });
+
+    // % suffix on fill chart
+    _charts.fillPct.options.scales.y.ticks.callback = function(v){ return v.toFixed(1) + '%'; };
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function renderCharts() {
+    var fillData  = rollup(_rawTlm,   'fill_pct',     _activeTlm);
+    var tlmData   = rollup(_rawTlm,   'tlm_current',  _activeTlm);
+    var shardData = rollup(_rawShard, 'shard_current', _activeShard);
+
+    function toDatasets(poolMap) {
+        return Object.keys(poolMap).map(function(pool) {
+            var c = poolColor(pool);
+            return { label: pool, data: poolMap[pool], borderColor: c, backgroundColor: c + '22', fill: false, tension: 0.2 };
+        });
+    }
+
+    _charts.fillPct.data.datasets  = toDatasets(fillData);
+    _charts.tlmCur.data.datasets   = toDatasets(tlmData);
+    _charts.shardCur.data.datasets = toDatasets(shardData);
+
+    _charts.fillPct.update();
+    _charts.tlmCur.update();
+    _charts.shardCur.update();
+}
+</script>
+</body>
+</html>
