@@ -152,7 +152,7 @@
 </div>
 
 <div id="setup-banner">
-    &#9888; Sheet ID not configured. Open pools.html, find <code>SHEET_ID</code> near the top of the script, and replace it with your Google Sheet's ID (the long string in the sheet URL between <code>/d/</code> and <code>/edit</code>).
+    &#9888; Sheet ID not configured. Open pools.html, find <code>SHEET_ID</code> near the top of the script, and replace it with your Google Sheet's ID.
 </div>
 
 <div class="controls-bar">
@@ -164,35 +164,34 @@
 </div>
 
 <div class="filter-bar" id="filter-bar">
-    <span class="filter-label">Pools</span>
+    <span class="filter-label">TLM Pools</span>
     <span id="filter-tlm"></span>
     <span class="filter-sep"></span>
-    <span class="filter-label">Shards</span>
+    <span class="filter-label">Shard Pools</span>
     <span id="filter-shard"></span>
 </div>
 
 <div class="charts-wrap">
     <div class="chart-card">
-        <div class="chart-card-title">TLM Fill % &mdash; how full each pool is vs reserve</div>
+        <div class="chart-card-title">TLM Pools: Fill % &mdash; how full each pool is vs reserve</div>
         <div class="chart-wrap"><canvas id="chart-fill-pct"></canvas></div>
     </div>
     <div class="chart-card">
-        <div class="chart-card-title">TLM Current Balance</div>
+        <div class="chart-card-title">TLM Pools: Current Balance</div>
         <div class="chart-wrap"><canvas id="chart-tlm-cur"></canvas></div>
     </div>
     <div class="chart-card">
-        <div class="chart-card-title">Shard Current Balance</div>
+        <div class="chart-card-title">Shard Pools: Current Balance</div>
         <div class="chart-wrap"><canvas id="chart-shard-cur"></canvas></div>
     </div>
     <div class="chart-card">
-        <div class="chart-card-title">Shard Fill Rate (per hour)</div>
+        <div class="chart-card-title">Shard Pools: Fill Rate (per hour)</div>
         <div class="chart-wrap"><canvas id="chart-shard-fill"></canvas></div>
     </div>
 </div>
 
 <script>
-// ── CONFIG — paste your Google Sheet ID here ─────────────────────────────────
-// Find it in the sheet URL: docs.google.com/spreadsheets/d/SHEET_ID/edit
+// ── CONFIG ───────────────────────────────────────────────────────────────────
 var SHEET_ID = '1FZ2ETRyJDWppuJ1vPn9DJFclpcyHqV2w8-koHPJ1rKY';
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -203,24 +202,10 @@ var _activeTlm  = new Set();
 var _activeShard = new Set();
 var _charts     = {};
 
-// Neon colors — distinct and visible on dark bg
 var POOL_COLORS = [
-    '#00ffff',  // cyan
-    '#39ff14',  // neon green
-    '#ff00ff',  // magenta
-    '#ffff00',  // yellow
-    '#ff6600',  // neon orange
-    '#00ff7f',  // spring green
-    '#ff073a',  // neon red
-    '#bf00ff',  // violet
-    '#00bfff',  // sky blue
-    '#ff1493',  // deep pink
-    '#ccff00',  // lime
-    '#ff4500',  // orange red
-    '#00ffcc',  // aquamarine
-    '#7fff00',  // lawn green
-    '#da70d6',  // orchid
-    '#fffb00',  // neon yellow
+    '#00ffff', '#39ff14', '#ff00ff', '#ffff00', '#ff6600', '#00ff7f',
+    '#ff073a', '#bf00ff', '#00bfff', '#ff1493', '#ccff00', '#ff4500',
+    '#00ffcc', '#7fff00', '#da70d6', '#fffb00'
 ];
 var _colorIdx = {};
 var _colorCounter = 0;
@@ -260,9 +245,7 @@ function fetchData() {
     var dateStr = cutoff.toISOString().split('T')[0];
     var cb = Date.now();
 
-    // TLM: snapshot_time(A), pool(B), tlm_current(E), fill_pct(F)
     var tlmQ   = encodeURIComponent("SELECT A,B,E,F WHERE A >= date '" + dateStr + "' ORDER BY A");
-    // Shard: snapshot_time(A), pool(B), shard_current(C), fillrate_per_hour(D)
     var shardQ = encodeURIComponent("SELECT A,B,C,D WHERE A >= date '" + dateStr + "' ORDER BY A");
 
     var base  = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:json&cb=' + cb;
@@ -276,9 +259,13 @@ function fetchData() {
         _rawTlm   = parseGviz(results[0], ['ts','pool','tlm_current','fill_pct']);
         _rawShard = parseGviz(results[1], ['ts','pool','shard_current','shard_fillrate']);
 
-        // Initialise active sets on first load
-        if (_activeTlm.size === 0)   _rawTlm.forEach(function(r){ _activeTlm.add(r.pool); });
-        if (_activeShard.size === 0) _rawShard.forEach(function(r){ _activeShard.add(r.pool); });
+        // Initialize active sets, explicitly excluding 'tlm'
+        if (_activeTlm.size === 0) {
+            _rawTlm.forEach(function(r){ if (r.pool !== 'tlm') _activeTlm.add(r.pool); });
+        }
+        if (_activeShard.size === 0) {
+            _rawShard.forEach(function(r){ if (r.pool !== 'tlm') _activeShard.add(r.pool); });
+        }
 
         buildFilters();
         renderCharts();
@@ -292,7 +279,6 @@ function fetchData() {
 }
 
 // ── GViz parser ──────────────────────────────────────────────────────────────
-// Strips JSONP wrapper, maps columns to named keys
 function parseGviz(text, keys) {
     var match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]+)\);?\s*$/);
     if (!match) return [];
@@ -301,7 +287,6 @@ function parseGviz(text, keys) {
 
     return json.table.rows.map(function(row) {
         var obj = {};
-        // Column 0 is always snapshot_time — GViz returns "Date(YYYY,M,D,H,m,s)" (month is 0-indexed)
         var dv = row.c[0] && row.c[0].v;
         if (dv) {
             var p = dv.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/);
@@ -314,7 +299,7 @@ function parseGviz(text, keys) {
     }).filter(function(r){ return r.ts > 0; });
 }
 
-// ── Client-side rollup (30D → hourly averages) ───────────────────────────────
+// ── Client-side rollup ───────────────────────────────────────────────────────
 function rollup(rows, valueKey, activeSet) {
     var byPool = {};
     rows.forEach(function(r) {
@@ -327,10 +312,8 @@ function rollup(rows, valueKey, activeSet) {
     Object.keys(byPool).forEach(function(pool) {
         var pts = byPool[pool];
         if (_days < 30) {
-            // Raw points for 1D / 7D
             result[pool] = pts.map(function(r){ return {x: r.ts, y: r[valueKey]}; });
         } else {
-            // Hourly bucket average for 30D
             var buckets = {};
             pts.forEach(function(r) {
                 var h = Math.floor(r.ts / 3600000) * 3600000;
@@ -346,10 +329,44 @@ function rollup(rows, valueKey, activeSet) {
     return result;
 }
 
+// ── Human Readable Mapping ───────────────────────────────────────────────────
+var POOL_NAMES = {
+    'tlmarena': 'Arena',
+    'tlmarenadom': 'Arena Dominance',
+    'tlmarenalbd': 'Arena Leaderboard Daily',
+    'tlmarenalbw': 'Arena Leaderboard Weekly',
+    'tlmdung': 'Dungeons',
+    'tlmdunglb': 'Dungeon Leaderboard',
+    'tlmquests': 'Quests',
+    'tlmrec': 'Rec',
+    'tlmtavern': 'Tavern',
+    'tlmtourna': 'Tournament',
+    'stz.naron': 'Naron',
+    'stz.eyeke': 'Eyeke',
+    'stz.veles': 'Veles',
+    'stz.kavian': 'Kavian',
+    'stz.neri': 'Neri',
+    'stz.magor': 'Magor'
+};
+
+function humanPool(p) {
+    if (POOL_NAMES[p]) return POOL_NAMES[p];
+    // Fallback logic for unexpected pool strings
+    var clean = p.replace('stz.', '').replace(/^tlm/, '');
+    return clean.charAt(0).toUpperCase() + clean.slice(1);
+}
+
 // ── Filter checkboxes ────────────────────────────────────────────────────────
 function buildFilters() {
-    var tlmPools   = new Set(_rawTlm.map(function(r){ return r.pool; }));
-    var shardPools = new Set(_rawShard.map(function(r){ return r.pool; }));
+    var tlmPools = new Set();
+    _rawTlm.forEach(function(r) { 
+        if (r.pool !== 'tlm') tlmPools.add(r.pool); 
+    });
+    
+    var shardPools = new Set();
+    _rawShard.forEach(function(r) { 
+        if (r.pool !== 'tlm') shardPools.add(r.pool); 
+    });
 
     renderFilterGroup('filter-tlm',   tlmPools,   _activeTlm,   function(){ renderCharts(); });
     renderFilterGroup('filter-shard', shardPools, _activeShard, function(){ renderCharts(); });
@@ -361,6 +378,7 @@ function renderFilterGroup(containerId, poolSet, activeSet, onChange) {
     poolSet.forEach(function(pool) {
         var wrap = document.createElement('label');
         wrap.className = 'pool-cb-wrap';
+        
         var cb = document.createElement('input');
         cb.type = 'checkbox';
         cb.checked = activeSet.has(pool);
@@ -368,9 +386,11 @@ function renderFilterGroup(containerId, poolSet, activeSet, onChange) {
             cb.checked ? activeSet.add(pool) : activeSet.delete(pool);
             onChange();
         };
+        
         var txt = document.createElement('span');
-        txt.textContent = pool;
+        txt.textContent = humanPool(pool);
         txt.style.color = poolColor(pool);
+        
         wrap.appendChild(cb);
         wrap.appendChild(txt);
         el.appendChild(wrap);
@@ -427,7 +447,6 @@ function initCharts() {
         options: JSON.parse(JSON.stringify(baseOpts))
     });
 
-    // axis suffixes
     _charts.fillPct.options.scales.y.ticks.callback   = function(v){ return v.toFixed(1) + '%'; };
     _charts.shardFill.options.scales.y.ticks.callback = function(v){ return v.toLocaleString() + ' /hr'; };
 }
@@ -442,7 +461,14 @@ function renderCharts() {
     function toDatasets(poolMap) {
         return Object.keys(poolMap).map(function(pool) {
             var c = poolColor(pool);
-            return { label: pool, data: poolMap[pool], borderColor: c, backgroundColor: c + '22', fill: false, tension: 0.2 };
+            return { 
+                label: humanPool(pool), 
+                data: poolMap[pool], 
+                borderColor: c, 
+                backgroundColor: c + '22', 
+                fill: false, 
+                tension: 0.2 
+            };
         });
     }
 
