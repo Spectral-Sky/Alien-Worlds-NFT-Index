@@ -63,14 +63,13 @@
     #setup-banner code { background:rgba(0,0,0,0.4); padding:2px 6px; border-radius:2px; color:#e8a060; }
 
     /* POOL FILTERS */
-    .filter-bar { padding:10px 28px; border-bottom:1px solid rgba(232,160,32,0.06); background:rgba(3,6,15,0.4); display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-    .filter-label { font-size:0.58em; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-right:4px; }
-    .filter-sep { width:1px; height:16px; background:rgba(255,255,255,0.08); align-self:center; flex-shrink:0; }
+    .filter-bar { padding:14px 28px; border-bottom:1px solid rgba(232,160,32,0.06); background:rgba(3,6,15,0.4); display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
+    .filter-label { font-size:0.85em; letter-spacing:2px; text-transform:uppercase; margin-right:4px; font-weight:bold; }
+    .filter-sep { width:1px; height:24px; background:rgba(255,255,255,0.08); align-self:center; flex-shrink:0; }
     .pool-cb-wrap { display:flex; align-items:center; gap:5px; cursor:pointer; }
     .pool-cb-wrap input[type=checkbox] { accent-color:var(--gold); width:11px; height:11px; cursor:pointer; }
-    .pool-cb-wrap span { font-size:0.65em; letter-spacing:1px; color:#667; transition:color 0.15s; }
-    .pool-cb-wrap:hover span { color:var(--gold); }
-    .pool-cb-wrap input:checked + span { color:var(--gold); }
+    .pool-cb-wrap span { font-size:0.65em; letter-spacing:1px; transition:color 0.15s; }
+    .pool-cb-wrap:hover span { opacity:0.8; }
 
     /* CHARTS */
     .charts-wrap { padding:20px 28px; display:flex; flex-direction:column; gap:24px; }
@@ -164,11 +163,13 @@
 </div>
 
 <div class="filter-bar" id="filter-bar">
-    <span class="filter-label">TLM Pools</span>
-    <span id="filter-tlm"></span>
+    <span class="filter-label" style="color:#ffff00; text-shadow: 0 0 5px rgba(255,255,0,0.3);">TLM Pools</span>
+    <span id="filter-tlm" style="display:flex; flex-wrap:wrap; gap:8px;"></span>
+    
     <span class="filter-sep"></span>
-    <span class="filter-label">Shard Pools</span>
-    <span id="filter-shard"></span>
+    
+    <span class="filter-label" style="color:#ff00ff; text-shadow: 0 0 5px rgba(255,0,255,0.3);">Shard Pools</span>
+    <span id="filter-shard" style="display:flex; flex-wrap:wrap; gap:8px;"></span>
 </div>
 
 <div class="charts-wrap">
@@ -202,16 +203,35 @@ var _activeTlm  = new Set();
 var _activeShard = new Set();
 var _charts     = {};
 
-var POOL_COLORS = [
-    '#00ffff', '#39ff14', '#ff00ff', '#ffff00', '#ff6600', '#00ff7f',
-    '#ff073a', '#bf00ff', '#00bfff', '#ff1493', '#ccff00', '#ff4500',
-    '#00ffcc', '#7fff00', '#da70d6', '#fffb00'
-];
-var _colorIdx = {};
-var _colorCounter = 0;
+// ── Deterministic Color Mapping ──────────────────────────────────────────────
+var BASE_COLORS = {
+    'arena': '#ff0000',       // Red
+    'arenadom': '#00ff00',    // Green
+    'dung': '#0088ff',        // Blue
+    'quests': '#ffff00',      // Yellow
+    'rec': '#ff6600',         // Orange
+    'tavern': '#bf00ff',      // Purple
+    'tourna': '#00ffff',      // Cyan
+    'arenalbd': '#ff1493',    // Deep Pink
+    'arenalbw': '#ccff00',    // Lime
+    'dunglb': '#00ffcc',      // Aquamarine
+    'stz.naron': '#da70d6',   // Orchid
+    'stz.eyeke': '#fffb00',   // Neon Yellow
+    'stz.veles': '#7fff00',   // Lawn Green
+    'stz.kavian': '#ff4500',  // Orange Red
+    'stz.neri': '#00ff7f',    // Spring Green
+    'stz.magor': '#ff00ff'    // Magenta
+};
+
 function poolColor(name) {
-    if (!_colorIdx[name]) _colorIdx[name] = POOL_COLORS[_colorCounter++ % POOL_COLORS.length];
-    return _colorIdx[name];
+    // Strip prefixes to assign consistent colors across TLM and Shards
+    var base = name.replace(/^tlm/, '').replace(/^shrd/, '');
+    if (BASE_COLORS[base]) return BASE_COLORS[base];
+    
+    // Fallback: Generate a consistent color based on string hash
+    var hash = 0;
+    for (var i = 0; i < base.length; i++) hash = base.charCodeAt(i) + ((hash << 5) - hash);
+    return 'hsl(' + (hash % 360) + ', 70%, 50%)';
 }
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
@@ -259,7 +279,6 @@ function fetchData() {
         _rawTlm   = parseGviz(results[0], ['ts','pool','tlm_current','fill_pct']);
         _rawShard = parseGviz(results[1], ['ts','pool','shard_current','shard_fillrate']);
 
-        // Initialize active sets, explicitly excluding 'tlm'
         if (_activeTlm.size === 0) {
             _rawTlm.forEach(function(r){ if (r.pool !== 'tlm') _activeTlm.add(r.pool); });
         }
@@ -362,7 +381,6 @@ var POOL_NAMES = {
 
 function humanPool(p) {
     if (POOL_NAMES[p]) return POOL_NAMES[p];
-    // Fallback logic for unexpected pool strings (strips stz., tlm, and shrd prefixes)
     var clean = p.replace('stz.', '').replace(/^tlm/, '').replace(/^shrd/, '');
     return clean.charAt(0).toUpperCase() + clean.slice(1);
 }
