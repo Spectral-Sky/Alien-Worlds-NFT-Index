@@ -480,6 +480,12 @@ function initCharts() {
 
     _charts.fillPct.options.scales.y.ticks.callback   = function(v){ return v.toFixed(1) + '%'; };
     _charts.shardFill.options.scales.y.ticks.callback = function(v){ return v.toLocaleString() + ' /hr'; };
+
+    // Sort tooltip items high→low to match visual line order on the graph
+    var _sortByValue = function(a, b) { return b.parsed.y - a.parsed.y; };
+    Object.keys(_charts).forEach(function(k) {
+        _charts[k].options.plugins.tooltip.itemSort = _sortByValue;
+    });
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
