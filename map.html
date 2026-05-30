@@ -3136,9 +3136,12 @@ function txqBestHire(wallet, allNFTs, objectives) {
             if (nft) aids.push(nft.asset_id);
         });
         var reduction = calcTotalReduction(optTids, objs);
-        return { wallet: wallet, asset_ids: aids,
-                 cost_action_points: Math.max(1, (_hireBaseCost||100) - reduction) };
+        var cost = Math.max(1, (_hireBaseCost||100) - reduction);
+        _logHireBreakdown('txqBestHire — submitting cost '+cost+' AP (base '+(_hireBaseCost||100)+' − '+reduction+')', optTids, objs);
+        console.log('[txqBestHire] asset_ids:', aids, '| avail pool:', allNFTs.length, '| scored>0:', scored.filter(function(n){return n.mod_value>0;}).map(function(n){return n.template_id+'('+n.mod_value+')';}));
+        return { wallet: wallet, asset_ids: aids, cost_action_points: cost };
     }
+    console.warn('[txqBestHire] no reduction path — allNFTs:', (allNFTs||[]).length, 'objs:', (objs||[]).length, '→ submitting full base', _hireBaseCost||100);
     return { wallet: wallet, asset_ids: [], cost_action_points: _hireBaseCost || 100 };
 }
 
