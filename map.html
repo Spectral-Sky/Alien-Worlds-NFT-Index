@@ -1835,31 +1835,37 @@
         return false;
     }
 
-    // Per-NFT potential reduction (for display label only — not used for the final cost)
-    // Once per objective_type category — mirrors calcTotalReduction's dedup logic
+    // Deduplicate an objectives array by exact content.
+    // Prevents the same objective appearing twice in chain data from counting twice.
+    // Does NOT collapse different objectives that share the same type — those are independent.
+    function _dedupeObjectives(objectives){
+        var seen={};
+        return (objectives||[]).filter(function(obj){
+            var k=String(obj.objective_type||'')+'\x00'
+                 +String(obj.objective_string||'')+'\x00'
+                 +String(obj.objective_value||'')+'\x00'
+                 +String(obj.mod_value||'');
+            if(seen[k])return false;
+            seen[k]=true;
+            return true;
+        });
+    }
+
+    // Per-NFT potential reduction (display + greedy selection scoring)
     function calcHireMod(tmplRow, objectives){
         if(!objectives||!tmplRow)return 0;
-        var used={};
-        return objectives.reduce(function(t,obj){
-            var type=String(obj.objective_type||'');
-            if(used[type])return t;
-            var match=_objMatch(tmplRow,obj);
-            if(match)used[type]=true;
-            return t+(match?Number(obj.mod_value||0):0);
+        return _dedupeObjectives(objectives).reduce(function(t,obj){
+            return t+(_objMatch(tmplRow,obj)?Number(obj.mod_value||0):0);
         },0);
     }
 
-    // True cost reduction: each objective_type category counts at most once,
-    // applied if ANY selected template covers an objective of that type.
+    // True cost reduction: each unique objective counts once if ANY selected template covers it.
+    // Multiple cards covering the same objective still only fire it once (via .some()).
     function calcTotalReduction(checkedTids, objectives){
         if(!objectives||!checkedTids||!checkedTids.length)return 0;
         var tmpls=checkedTids.map(function(tid){return _tavernTemplateMap&&_tavernTemplateMap[tid];}).filter(Boolean);
-        var used={};
-        return objectives.reduce(function(t,obj){
-            var type=String(obj.objective_type||'');
-            if(used[type])return t; // category already applied — skip
+        return _dedupeObjectives(objectives).reduce(function(t,obj){
             var covered=tmpls.some(function(tmpl){return _objMatch(tmpl,obj);});
-            if(covered)used[type]=true;
             return t+(covered?Number(obj.mod_value||0):0);
         },0);
     }
@@ -1876,25 +1882,24 @@
         console.log('Base AP:', _hireBaseCost);
         console.log('Selected templates:', checkedTids.length ? checkedTids.join(', ') : '(none)');
         tmplInfos.forEach(function(t){ console.log('  tmpl['+t.tid+']: '+t.desc); });
-        console.log('Objectives ('+objectives.length+'):');
-        var used={};
+        var deduped=_dedupeObjectives(objectives);
+        var dropped=objectives.length-deduped.length;
+        console.log('Objectives: '+objectives.length+' raw → '+deduped.length+' unique'+(dropped?' ('+dropped+' exact duplicate'+(dropped>1?'s':'')+' removed)':''));
+        var tmpRows=tmplInfos.map(function(t){return t.row;}).filter(Boolean);
         var total=0;
-        objectives.forEach(function(obj,i){
+        deduped.forEach(function(obj,i){
             var type=String(obj.objective_type||'');
             var str=String(obj.objective_string||'');
             var mod=Number(obj.mod_value||0);
-            var skip=!!used[type];
-            var tmpRows=tmplInfos.map(function(t){return t.row;}).filter(Boolean);
-            var coveredBy=skip?null:tmpRows.filter(function(r){return _objMatch(r,obj);});
-            var covered=!skip&&coveredBy&&coveredBy.length>0;
-            if(covered)used[type]=true;
+            var coveredBy=tmpRows.filter(function(r){return _objMatch(r,obj);});
+            var covered=coveredBy.length>0;
             var ap=covered?mod:0;
             total+=ap;
-            var status=skip?'SKIPPED (category already used)':covered?'✓ COVERED (+'+ap+' AP)':'✗ not covered';
+            var status=covered?'✓ COVERED (+'+ap+' AP)':'✗ not covered';
             console.log('  ['+i+'] type='+type+' str="'+str+'" mod='+mod+' → '+status);
-            if(covered&&coveredBy.length){
+            if(covered){
                 coveredBy.forEach(function(r){
-                    console.log('       ↳ matched via: rarity='+r.rarity+' shine='+r.shine+' element='+r.element);
+                    console.log('       ↳ matched: rarity='+r.rarity+' shine='+r.shine+' element='+r.element+' schema='+r.schema);
                 });
             }
         });
