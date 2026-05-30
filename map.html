@@ -1836,17 +1836,30 @@
     }
 
     // Per-NFT potential reduction (for display label only — not used for the final cost)
+    // Once per objective_type category — mirrors calcTotalReduction's dedup logic
     function calcHireMod(tmplRow, objectives){
         if(!objectives||!tmplRow)return 0;
-        return objectives.reduce(function(t,obj){return t+(_objMatch(tmplRow,obj)?Number(obj.mod_value||0):0);},0);
+        var used={};
+        return objectives.reduce(function(t,obj){
+            var type=String(obj.objective_type||'');
+            if(used[type])return t;
+            var match=_objMatch(tmplRow,obj);
+            if(match)used[type]=true;
+            return t+(match?Number(obj.mod_value||0):0);
+        },0);
     }
 
-    // True cost reduction: each objective counts once if ANY selected template covers it
+    // True cost reduction: each objective_type category counts at most once,
+    // applied if ANY selected template covers an objective of that type.
     function calcTotalReduction(checkedTids, objectives){
         if(!objectives||!checkedTids||!checkedTids.length)return 0;
         var tmpls=checkedTids.map(function(tid){return _tavernTemplateMap&&_tavernTemplateMap[tid];}).filter(Boolean);
+        var used={};
         return objectives.reduce(function(t,obj){
+            var type=String(obj.objective_type||'');
+            if(used[type])return t; // category already applied — skip
             var covered=tmpls.some(function(tmpl){return _objMatch(tmpl,obj);});
+            if(covered)used[type]=true;
             return t+(covered?Number(obj.mod_value||0):0);
         },0);
     }
