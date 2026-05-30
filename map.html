@@ -1864,6 +1864,45 @@
         },0);
     }
 
+    // Diagnostic: logs a full per-objective breakdown to the console.
+    // Call before any hire action to see exactly what fired and why.
+    function _logHireBreakdown(label, checkedTids, objectives){
+        var tmplInfos=checkedTids.map(function(tid){
+            var r=_tavernTemplateMap&&_tavernTemplateMap[tid];
+            return {tid:tid, row:r,
+                    desc:r?('rarity='+r.rarity+' shine='+r.shine+' element='+r.element+' race='+r.race+' schema='+r.schema):'NOT FOUND IN MAP'};
+        });
+        console.group('%c[ALE hire] '+label, 'color:#e8a020;font-weight:bold');
+        console.log('Base AP:', _hireBaseCost);
+        console.log('Selected templates:', checkedTids.length ? checkedTids.join(', ') : '(none)');
+        tmplInfos.forEach(function(t){ console.log('  tmpl['+t.tid+']: '+t.desc); });
+        console.log('Objectives ('+objectives.length+'):');
+        var used={};
+        var total=0;
+        objectives.forEach(function(obj,i){
+            var type=String(obj.objective_type||'');
+            var str=String(obj.objective_string||'');
+            var mod=Number(obj.mod_value||0);
+            var skip=!!used[type];
+            var tmpRows=tmplInfos.map(function(t){return t.row;}).filter(Boolean);
+            var coveredBy=skip?null:tmpRows.filter(function(r){return _objMatch(r,obj);});
+            var covered=!skip&&coveredBy&&coveredBy.length>0;
+            if(covered)used[type]=true;
+            var ap=covered?mod:0;
+            total+=ap;
+            var status=skip?'SKIPPED (category already used)':covered?'✓ COVERED (+'+ap+' AP)':'✗ not covered';
+            console.log('  ['+i+'] type='+type+' str="'+str+'" mod='+mod+' → '+status);
+            if(covered&&coveredBy.length){
+                coveredBy.forEach(function(r){
+                    console.log('       ↳ matched via: rarity='+r.rarity+' shine='+r.shine+' element='+r.element);
+                });
+            }
+        });
+        console.log('%cTOTAL REDUCTION: '+total+' AP  |  Final cost: '+Math.max(1,(_hireBaseCost||100)-total)+' AP',
+                    'font-weight:bold;color:'+(total>0?'#80e090':'#a06050'));
+        console.groupEnd();
+    }
+
     async function loadPlayerHireNFTs(wallet, objectives){
         await loadTavernData();
         var now=Date.now();
@@ -1996,6 +2035,7 @@
         var checkedTids=[];
         checked.forEach(function(cb){if(cb.dataset.tid)checkedTids.push(cb.dataset.tid);});
         var reduction=calcTotalReduction(checkedTids,_hireObjectives);
+        if(checkedTids.length) _logHireBreakdown('updateHireCost', checkedTids, _hireObjectives);
         var final=Math.max(1,base-reduction);
         var btn=document.getElementById('hire-btn');
         if(btn)btn.innerHTML='HIRE FIGHTER ('+final+' '+_AP_ICON+')';
@@ -2052,11 +2092,7 @@
         cbs.forEach(function(cb){asset_ids.push(cb.value);if(cb.dataset.tid)checkedTids.push(cb.dataset.tid);});
         var reduction=calcTotalReduction(checkedTids,_hireObjectives);
         var authorizedCost=Math.max(1,(_hireBaseCost||100)-reduction);
-        console.log('[ALE hire] tids:',checkedTids,'reduction:',reduction,'cost:',authorizedCost);
-        checkedTids.forEach(function(tid){
-            var tmpl=_tavernTemplateMap&&_tavernTemplateMap[tid];
-            console.log('[ALE hire] tmpl['+tid+']:', tmpl?JSON.stringify(tmpl):'NOT FOUND');
-        });
+        _logHireBreakdown('doHire — submitting cost '+authorizedCost+' AP', checkedTids, _hireObjectives);
         btn.disabled=true;btn.textContent='HIRING…';
         status.textContent='';status.className='';
         try{
