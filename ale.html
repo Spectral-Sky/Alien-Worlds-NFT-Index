@@ -139,6 +139,17 @@
         #preview-label { margin-top: 8px; color: #fff; font-weight: bold; font-size: 0.9em; text-align: center; letter-spacing: 1px; width: 90%; border-top: 1px dashed #333; padding-top: 5px; }
         #preview-ability { display: none; margin-top: 8px; padding: 6px 8px; border-top: 1px dashed #333; font-size: 0.75em; color: #c8b880; white-space: normal; text-align: left; line-height: 1.4; font-weight: normal; width: 90%; }
 
+        /* ── NFT Stats Preview (Live Stats tab only) ──────────────────────── */
+        #nft-stats-preview { display:none; position:fixed; top:120px; right:28px; width:210px; background:rgba(4,8,20,0.97); border:1px solid rgba(232,160,32,0.3); border-radius:4px; padding:14px; z-index:150; text-align:center; box-shadow:0 0 28px rgba(0,0,0,0.9),0 0 14px rgba(232,160,32,0.07); pointer-events:none; }
+        #nft-stats-preview.nsp-visible { display:block; }
+        #nsp-img { width:178px; height:178px; object-fit:contain; border-radius:5px; border:1px solid rgba(232,160,32,0.18); display:block; margin:0 auto; }
+        #nsp-id  { font-size:0.5em; color:rgba(232,160,32,0.45); letter-spacing:2px; margin-top:8px; font-family:'Courier New',monospace; }
+        #nsp-pin { font-size:0.48em; color:rgba(232,160,32,0.25); letter-spacing:1px; margin-top:4px; font-family:'Courier New',monospace; }
+        .nft-stats-thumb { cursor:pointer !important; border-radius:5px; object-fit:contain; flex-shrink:0; }
+        .nft-stats-thumb:hover { box-shadow:0 0 7px rgba(232,160,32,0.55); }
+        @keyframes nft-flip { 0%{transform:perspective(180px) rotateY(0deg)} 100%{transform:perspective(180px) rotateY(360deg)} }
+        .nft-stats-thumb.flipping { animation:nft-flip 0.44s ease-in-out 2; }
+
         #market-frame { position: fixed; top: 720px; left: 20px; width: 280px; height: auto; border: 2px solid var(--theme-color); background: #000; box-sizing: border-box; box-shadow: var(--theme-shadow); z-index: 3000; padding: 10px; transition: transform 0.4s, opacity 0.4s; transform: translateX(0); opacity: 1; }
         #market-frame.minimized { transform: translateX(-400px); opacity: 0; }
         .intel-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #333; padding: 6px 0; font-size: 0.9em; }
@@ -387,6 +398,13 @@
     <div id="mobile-backdrop" onclick="closeDeckMobile()"></div>
     <div id="cursor-glow"></div>
     <div id="deck-toggle-tab" onclick="toggleDeck()">&#10094;</div>
+
+    <!-- NFT Stats Preview panel — Live Stats tab only -->
+    <div id="nft-stats-preview">
+        <img id="nsp-img" src="" alt="">
+        <div id="nsp-id"></div>
+        <div id="nsp-pin">CLICK TO PIN</div>
+    </div>
 
     <div id="preview-frame">
         <div class="close-btn" onclick="closeDeckMobile()">[ X CLOSE ]</div>
@@ -1074,6 +1092,12 @@
         if (btn) btn.classList.add('active');
         var deckTabs = new Set(['crew', 'arms']);
         document.body.classList.toggle('deck-tab-hidden', !deckTabs.has(name));
+        // dismiss NFT stats preview when leaving stats tab
+        if (name !== 'stats') {
+            var nsp = document.getElementById('nft-stats-preview');
+            if (nsp) { nsp.classList.remove('nsp-visible'); }
+            window._nspPinned = null;
+        }
     };
 
     window.filterTable = function() {
@@ -2132,6 +2156,37 @@ function _buildUsageBars(classStats) {
     });
     return html + '</div>';
 }
+// ── NFT Stats Preview ────────────────────────────────────────────────────────
+window._nspPinned = null;
+window.nftStatsHover = function(img) {
+    var src = img.getAttribute('data-nft-src');
+    var id  = img.getAttribute('data-nft-id');
+    var nsp = document.getElementById('nft-stats-preview');
+    document.getElementById('nsp-img').src = src;
+    document.getElementById('nsp-id').textContent = '#' + id;
+    document.getElementById('nsp-pin').textContent = window._nspPinned === img ? '◈ PINNED — click to unpin' : 'CLICK TO PIN';
+    nsp.classList.add('nsp-visible');
+};
+window.nftStatsUnhover = function() {
+    if (window._nspPinned) return;
+    document.getElementById('nft-stats-preview').classList.remove('nsp-visible');
+};
+window.nftStatsClick = function(img) {
+    if (window._nspPinned === img) {
+        window._nspPinned = null;
+        document.getElementById('nft-stats-preview').classList.remove('nsp-visible');
+        return;
+    }
+    window._nspPinned = img;
+    // trigger flip animation (restart if already running)
+    img.classList.remove('flipping');
+    void img.offsetWidth;
+    img.classList.add('flipping');
+    img.addEventListener('animationend', function h(){ img.classList.remove('flipping'); img.removeEventListener('animationend', h); }, {once:true});
+    nftStatsHover(img);
+    document.getElementById('nsp-pin').textContent = '◈ PINNED — click to unpin';
+};
+
 function _buildNftBars(nftStats, topN, folder) {
     var entries = Object.keys(nftStats).map(function(id) {
         var s = nftStats[id];
@@ -2150,7 +2205,13 @@ function _buildNftBars(nftStats, topN, folder) {
                 '<span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:0.5em;color:#909080;white-space:nowrap;letter-spacing:0.5px;">' + winPct + '% win &middot; ' + e.played + ' fights</span>' +
             '</div>' +
             '<img src="' + (folder||'') + '/' + e.id + '.webp" alt="" width="30" height="30" ' +
-                'style="border-radius:5px;object-fit:contain;flex-shrink:0;" onerror="this.style.display=\'none\'">' +
+                'class="nft-stats-thumb" ' +
+                'data-nft-src="' + (folder||'') + '/' + e.id + '.webp" ' +
+                'data-nft-id="' + e.id + '" ' +
+                'onmouseenter="nftStatsHover(this)" ' +
+                'onmouseleave="nftStatsUnhover()" ' +
+                'onclick="nftStatsClick(this)" ' +
+                'onerror="this.style.display=\'none\'">' +
         '</div>';
     });
     return html + '</div>';
