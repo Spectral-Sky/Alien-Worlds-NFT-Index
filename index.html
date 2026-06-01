@@ -1005,7 +1005,7 @@
             if (_compBtn && new Date() > _compEnd) {
                 _compBtn.disabled = false;
                 _compBtn.textContent = '[ CLAIM PRIZE ]';
-                _compBtn.style.cssText += 'animation:none;border-color:rgba(100,100,100,0.4);color:#666;';
+                _compBtn.style.cssText += 'animation:none;border-color:rgba(60,10,60,0.9);color:#666;';
                 if (_compSt) { _compSt.textContent = 'Competition closed May 29, 2026'; _compSt.style.color = '#555'; }
             }
 
@@ -1230,7 +1230,7 @@
             var btn    = document.getElementById('comp-reg-btn');
             var status = document.getElementById('comp-reg-status');
             if (!wallet) {
-                status.style.color = '#e06060';
+                status.style.color = '#FF0000';
                 status.textContent = 'Please log in first.';
                 return;
             }
