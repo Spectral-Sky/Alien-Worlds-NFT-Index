@@ -1002,12 +1002,14 @@
             var _compEnd = new Date('2026-05-29T15:00:00Z');
             var _compBtn = document.getElementById('comp-reg-btn');
             var _compSt  = document.getElementById('comp-reg-status');
-            if (_compBtn && new Date() > _compEnd) {
-                _compBtn.disabled = false;
-                _compBtn.textContent = '[ CLAIM PRIZE ]';
-                _compBtn.style.cssText += 'animation:none;border-color:rgba(60,10,60,0.9);color:#666;';
-                if (_compSt) { _compSt.textContent = 'Competition closed May 29, 2026'; _compSt.style.color = '#555'; }
-            }
+            
+            // --- REMOVED DATE OVERRIDE TO KEEP CLAIM BUTTON ACTIVE & GLOWING ---
+            // if (_compBtn && new Date() > _compEnd) {
+            //     _compBtn.disabled = false;
+            //     _compBtn.textContent = '[ CLAIM PRIZE ]';
+            //     _compBtn.style.cssText += 'animation:none;border-color:rgba(60,10,60,0.9);color:#666;';
+            //     if (_compSt) { _compSt.textContent = 'Competition ended'; }
+            // }
 
             const glow   = document.getElementById("cursor-glow");
             const planet = document.getElementById("cursor-planet");
