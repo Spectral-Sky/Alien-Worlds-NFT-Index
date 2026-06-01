@@ -1260,14 +1260,14 @@
                 } else if (typeof wax !== 'undefined' && wax && wax.api) {
                     await wax.api.transact({ actions }, { blocksBehind:3, expireSeconds:90 });
                 } else { throw new Error('No wallet session'); }
-                btn.textContent = '[ ✓ REGISTERED ]';
-                btn.style.borderColor = '#60c870';
-                btn.style.color = '#60c870';
-                status.style.color = '#60c870';
-                status.textContent = 'Good luck on May 2nd!';
+                btn.textContent = '[ ✓ Claimed ]';
+                btn.style.borderColor = '#CC4422';
+                btn.style.color = '#FF0000';
+                status.style.color = '#CC0044';
+                status.textContent = 'Thanks for playing! :-]';
             } catch(e) {
                 btn.disabled = false;
-                btn.textContent = '[ REGISTER ]';
+                btn.textContent = '[ CLAIM ]';
                 status.style.color = '#e06060';
                 status.textContent = '✗ ' + (e.message || String(e));
             }
