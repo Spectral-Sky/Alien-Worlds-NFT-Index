@@ -1226,8 +1226,10 @@
 
     // ── AW Competition registration ──────────────────────────────────────────
         async function registerForComp() {
+            // wax.userAccount is set from localStorage in the constructor even without login,
+            // so require wax.api (only set after a real WCC login) to count it as active.
             var wallet = (window.walletSession ? String(window.walletSession.actor) : null)
-                      || (typeof wax !== 'undefined' && wax && wax.userAccount ? wax.userAccount : null)
+                      || (typeof wax !== 'undefined' && wax && wax.api && wax.userAccount ? wax.userAccount : null)
                       || localStorage.getItem('naron_wallet');
             var btn    = document.getElementById('comp-reg-btn');
             var status = document.getElementById('comp-reg-status');
@@ -1240,12 +1242,10 @@
             btn.textContent = '[ SIGNING… ]';
             status.style.color = '#888';
             status.textContent = '';
-            // If no active signer, try to silently restore the previous session
+            // Silently restore Anchor/Wharf session only — WCC requires explicit re-login
+            // (wax.login() pops a modal, never call it silently)
             if (!window.walletSession && !(typeof wax !== 'undefined' && wax && wax.api)) {
-                if (typeof wax !== 'undefined' && wax && wax.userAccount) {
-                    try { await wax.login(); } catch(e) {}
-                }
-                if (!window.walletSession && window.walletKit) {
+                if (window.walletKit) {
                     try {
                         const s = await window.walletKit.restore();
                         if (s) { window.walletSession = s; localStorage.setItem('naron_wallet', String(s.actor)); }
@@ -1269,7 +1269,7 @@
                 status.textContent = 'Thanks for playing! :-]';
             } catch(e) {
                 btn.disabled = false;
-                btn.textContent = '[ CLAIM ]';
+                btn.textContent = '[ CLAIM PRIZE ]';
                 status.style.color = '#e06060';
                 status.textContent = '✗ ' + (e.message || String(e));
             }
