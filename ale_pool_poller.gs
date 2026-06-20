@@ -41,6 +41,10 @@ function onOpen() {
     .addSeparator()
     .addItem('Repair Headers (keeps all data)', 'repairSheets')
     .addItem('⚠ Full Reset (DELETES all data)', 'fullResetSheets')
+    .addSeparator()
+    .addItem('NFT Stats — Run Manual Refresh', 'refreshNftValuesManual')
+    .addItem('NFT Stats — Setup Daily Trigger', 'createNftTrigger')
+    .addItem('NFT Stats — Remove Daily Trigger', 'removeNftTrigger')
     .addToUi();
 }
 
@@ -256,5 +260,126 @@ function createTrigger() {
 function removeTrigger() {
   ScriptApp.getProjectTriggers().forEach(function(t) {
     if (t.getHandlerFunction() === 'snapshotPools') ScriptApp.deleteTrigger(t);
+  });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ALE NFT VALUES POLLER
+// Pulls fighters.ale::nftvalues (crew + arms base stats) once per day.
+// Writes to a single "nftvalues" sheet — full overwrite each run.
+//
+// nftvalues columns (20):
+//   template_id | type | rarity | shine | classname | racename | element |
+//   health | damage | taunt | initiative | attackspeed |
+//   res_fire | res_nature | res_air | res_gem | res_metal | res_neutral |
+//   ability_name | ability_desc
+//
+// All stat values are stored RAW (on-chain units).
+// ale.html divides by 10 for display; resistances / 10 = percentage.
+//
+// After first run, publish the "nftvalues" sheet as CSV:
+//   File → Share → Publish to web → Sheet "nftvalues" → CSV → Copy link
+//   Paste that URL (or the Sheet ID) into ale.html config.
+// ═════════════════════════════════════════════════════════════════════════════
+
+var NFT_SHEET = 'nftvalues';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MANUAL — run once to populate / re-populate on demand
+// ─────────────────────────────────────────────────────────────────────────────
+function refreshNftValuesManual() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  ss.toast('Fetching NFT stats from chain…', 'ALE NFT Poller');
+  var count = runNftRefresh_();
+  ss.toast('Done. ' + count + ' NFTs written to "' + NFT_SHEET + '".', 'NFT Refresh Complete');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTO — called by daily time trigger
+// ─────────────────────────────────────────────────────────────────────────────
+function refreshNftValues() {
+  runNftRefresh_();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CORE — fetch, filter, overwrite
+// ─────────────────────────────────────────────────────────────────────────────
+function runNftRefresh_() {
+  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(NFT_SHEET);
+  if (!sheet) sheet = ss.insertSheet(NFT_SHEET);
+
+  // Fetch all rows from fighters.ale::nftvalues
+  var allRows = fetchTable_('fighters.ale', 'fighters.ale', 'nftvalues');
+
+  // Filter to crew and arms only (exclude faces, tools, etc.)
+  var KEEP = { 'crew.worlds': true, 'arms.worlds': true };
+  var rows = allRows.filter(function(r) { return KEEP[r.type]; });
+
+  if (!rows.length) {
+    Logger.log('runNftRefresh_: no crew/arms rows returned — aborting overwrite.');
+    return 0;
+  }
+
+  // Build data array
+  var data = [writeNftHeader_()];
+  rows.forEach(function(r) {
+    var s   = r.stats  || {};
+    var ab  = (r.ability && r.ability[0]) || {};
+    data.push([
+      r.template_id   || '',   // A
+      r.type          || '',   // B
+      r.rarity        || '',   // C
+      r.shine         || '',   // D
+      r.classname     || '',   // E
+      r.racename      || '',   // F
+      r.element       || '',   // G
+      s.health        || 0,    // H
+      s.damage        || 0,    // I
+      s.taunt         || 0,    // J
+      s.initiative    || 0,    // K  (windup — lower = attacks sooner)
+      s.attackspeed   || 0,    // L  (cooldown — lower = attacks faster)
+      s.res_fire      || 0,    // M
+      s.res_nature    || 0,    // N
+      s.res_air       || 0,    // O
+      s.res_gem       || 0,    // P
+      s.res_metal     || 0,    // Q
+      s.res_neutral   || 0,    // R
+      ab.displayname  || '',   // S
+      ab.description  || ''    // T
+    ]);
+  });
+
+  // Full overwrite: clear content, write header + all data in one call
+  sheet.clearContents();
+  sheet.getRange(1, 1, data.length, 20).setValues(data);
+  sheet.setFrozenRows(1);
+
+  Logger.log('runNftRefresh_: wrote ' + (data.length - 1) + ' NFT rows.');
+  return data.length - 1;
+}
+
+function writeNftHeader_() {
+  return [
+    'template_id', 'type', 'rarity', 'shine', 'classname', 'racename', 'element',
+    'health', 'damage', 'taunt', 'initiative', 'attackspeed',
+    'res_fire', 'res_nature', 'res_air', 'res_gem', 'res_metal', 'res_neutral',
+    'ability_name', 'ability_desc'
+  ];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TRIGGER — daily, independent of the pool trigger
+// ─────────────────────────────────────────────────────────────────────────────
+function createNftTrigger() {
+  removeNftTrigger();
+  ScriptApp.newTrigger('refreshNftValues').timeBased().everyHours(24).create();
+  SpreadsheetApp.getActiveSpreadsheet().toast('NFT stats polling daily.', 'NFT Trigger Set');
+  Logger.log('NFT daily trigger created.');
+}
+
+function removeNftTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    if (t.getHandlerFunction() === 'refreshNftValues') ScriptApp.deleteTrigger(t);
   });
 }
