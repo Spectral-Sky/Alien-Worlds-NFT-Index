@@ -3,6 +3,33 @@
 <head>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-48CCMEYHXG"></script>
     <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-48CCMEYHXG');</script>
+    <script>
+    (function(){
+        var KEY='aleleaders_access',CODE='BAGUETTE64';
+        if(sessionStorage.getItem(KEY)!==CODE){
+            document.addEventListener('DOMContentLoaded',function(){
+                document.body.style.display='none';
+                var overlay=document.createElement('div');
+                overlay.style.cssText='position:fixed;inset:0;background:#03060f;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;font-family:"Courier New",monospace;';
+                overlay.innerHTML='<div style="font-size:1.1em;letter-spacing:4px;color:#e8a020;margin-bottom:20px;text-transform:uppercase;">&#9670; Internal Access Only</div>'
+                    +'<div style="font-size:0.65em;color:#506070;letter-spacing:2px;margin-bottom:16px;">Enter passcode to continue</div>'
+                    +'<input id="_pc_in" type="password" placeholder="PASSCODE" autocomplete="off" style="background:rgba(3,6,15,0.9);border:1px solid rgba(232,160,32,0.4);color:#e8a020;font-family:\'Courier New\',monospace;font-size:0.8em;padding:8px 16px;letter-spacing:3px;outline:none;text-align:center;width:200px;">'
+                    +'<div id="_pc_err" style="font-size:0.6em;color:#e06060;margin-top:10px;letter-spacing:1px;min-height:1em;"></div>'
+                    +'<button id="_pc_btn" style="margin-top:12px;background:transparent;border:1px solid rgba(232,160,32,0.4);color:#e8a020;font-family:\'Courier New\',monospace;font-size:0.72em;letter-spacing:2px;padding:7px 20px;cursor:pointer;">ENTER</button>';
+                document.body.appendChild(overlay);
+                document.body.style.display='';
+                function attempt(){
+                    var v=document.getElementById('_pc_in').value.trim().toUpperCase();
+                    if(v===CODE){sessionStorage.setItem(KEY,CODE);overlay.remove();}
+                    else{document.getElementById('_pc_err').textContent='Incorrect passcode.';document.getElementById('_pc_in').value='';}
+                }
+                document.getElementById('_pc_btn').addEventListener('click',attempt);
+                document.getElementById('_pc_in').addEventListener('keydown',function(e){if(e.key==='Enter')attempt();});
+                document.getElementById('_pc_in').focus();
+            });
+        }
+    })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ALE Leaderboard // Naron Codex</title>

@@ -2365,7 +2365,24 @@ loadStatsIfNeeded();
 </div>
 <script>
 function toggleTipPop(btn){var p=document.getElementById('tip-pop');if(!p)return;if(p.style.display==='flex'){p.style.display='none';return;}if(btn){var r=btn.getBoundingClientRect();p.style.top=(r.bottom+6)+'px';p.style.right=(window.innerWidth-r.right)+'px';p.style.left='';}p.style.display='flex';}
-async function sendWaxTip(selId,fbId){var w=window.walletSession?String(window.walletSession.actor):null;if(!w){alert('Please connect your wallet first.');return;}var amt=Number(document.getElementById(selId).value);var qty=amt.toFixed(8)+' WAX';var fb=document.getElementById(fbId);if(fb){fb.textContent='Sending…';fb.style.color='#a09060';}try{await window.walletSession.transact({actions:[{account:'eosio.token',name:'transfer',authorization:[{actor:w,permission:'active'}],data:{from:w,to:'1x1ci.wam',quantity:qty,memo:'Naron Codex Tip'}}]});if(fb){fb.textContent='♥ Sent! Thank you!';fb.style.color='#60e090';}setTimeout(function(){var e=document.getElementById(fbId);if(e)e.textContent='';},4000);}catch(e){if(fb){fb.textContent='✗ '+(e&&e.message?e.message.slice(0,50):'Error');fb.style.color='#e06060';}}}
+async function sendWaxTip(selId,fbId){
+    var w=(window.walletSession?String(window.walletSession.actor):null)
+        ||(typeof wax!=='undefined'&&wax&&wax.api&&wax.userAccount?wax.userAccount:null)
+        ||localStorage.getItem('naron_wallet');
+    if(!w){alert('Please connect your wallet first.');return;}
+    var amt=Number(document.getElementById(selId).value);
+    var qty=amt.toFixed(8)+' WAX';
+    var fb=document.getElementById(fbId);
+    if(fb){fb.textContent='Sending…';fb.style.color='#a09060';}
+    var actions=[{account:'eosio.token',name:'transfer',authorization:[{actor:w,permission:'active'}],data:{from:w,to:'1x1ci.wam',quantity:qty,memo:'Naron Codex Tip'}}];
+    try{
+        if(window.walletSession){await window.walletSession.transact({actions});}
+        else if(typeof wax!=='undefined'&&wax&&wax.api){await wax.api.transact({actions},{blocksBehind:3,expireSeconds:30});}
+        else{throw new Error('No active session.');}
+        if(fb){fb.textContent='♥ Sent! Thank you!';fb.style.color='#60e090';}
+        setTimeout(function(){var e=document.getElementById(fbId);if(e)e.textContent='';},4000);
+    }catch(e){if(fb){fb.textContent='✗ '+(e&&e.message?e.message.slice(0,50):'Error');fb.style.color='#e06060';}}
+}
 </script>
 </body>
 </html>
