@@ -266,10 +266,11 @@ function removeTrigger() {
 // ═════════════════════════════════════════════════════════════════════════════
 // ALE NFT VALUES POLLER
 // Pulls fighters.ale::nftvalues (crew + arms base stats) once per day.
+// Joins with tavern.ale::nfttemplates to add card name.
 // Writes to a single "nftvalues" sheet — full overwrite each run.
 //
-// nftvalues columns (20):
-//   template_id | type | rarity | shine | classname | racename | element |
+// nftvalues columns (21):
+//   template_id | cardname | type | rarity | shine | classname | racename | element |
 //   health | damage | taunt | initiative | attackspeed |
 //   res_fire | res_nature | res_air | res_gem | res_metal | res_neutral |
 //   ability_name | ability_desc
@@ -302,12 +303,20 @@ function refreshNftValues() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CORE — fetch, filter, overwrite
+// CORE — fetch, filter, join cardname, overwrite
 // ─────────────────────────────────────────────────────────────────────────────
 function runNftRefresh_() {
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(NFT_SHEET);
   if (!sheet) sheet = ss.insertSheet(NFT_SHEET);
+
+  // Build templateId → cardname map from tavern.ale::nfttemplates
+  var nameMap = {};
+  var tmplRows = fetchTable_('tavern.ale', 'tavern.ale', 'nfttemplates');
+  tmplRows.forEach(function(t) {
+    if (t.templateid && t.cardname) nameMap[String(t.templateid)] = t.cardname;
+  });
+  Logger.log('runNftRefresh_: loaded ' + Object.keys(nameMap).length + ' cardnames from nfttemplates.');
 
   // Fetch all rows from fighters.ale::nftvalues
   var allRows = fetchTable_('fighters.ale', 'fighters.ale', 'nftvalues');
@@ -326,33 +335,35 @@ function runNftRefresh_() {
   rows.forEach(function(r) {
     var s   = r.stats  || {};
     var ab  = (r.ability && r.ability[0]) || {};
+    var tid = String(r.template_id || '');
     data.push([
-      r.template_id   || '',   // A
-      r.type          || '',   // B
-      r.rarity        || '',   // C
-      r.shine         || '',   // D
-      r.classname     || '',   // E
-      r.racename      || '',   // F
-      r.element       || '',   // G
-      s.health        || 0,    // H
-      s.damage        || 0,    // I
-      s.taunt         || 0,    // J
-      s.initiative    || 0,    // K  (windup — lower = attacks sooner)
-      s.attackspeed   || 0,    // L  (cooldown — lower = attacks faster)
-      s.res_fire      || 0,    // M
-      s.res_nature    || 0,    // N
-      s.res_air       || 0,    // O
-      s.res_gem       || 0,    // P
-      s.res_metal     || 0,    // Q
-      s.res_neutral   || 0,    // R
-      ab.displayname  || '',   // S
-      ab.description  || ''    // T
+      tid,                                  // A template_id
+      nameMap[tid] || '',                   // B cardname  (from nfttemplates)
+      r.type          || '',                // C type
+      r.rarity        || '',                // D rarity
+      r.shine         || '',                // E shine
+      r.classname     || '',                // F classname (populated when staked, empty at template level)
+      r.racename      || '',                // G racename
+      r.element       || '',                // H element
+      s.health        || 0,                 // I
+      s.damage        || 0,                 // J
+      s.taunt         || 0,                 // K
+      s.initiative    || 0,                 // L  (windup)
+      s.attackspeed   || 0,                 // M  (cooldown)
+      s.res_fire      || 0,                 // N
+      s.res_nature    || 0,                 // O
+      s.res_air       || 0,                 // P
+      s.res_gem       || 0,                 // Q
+      s.res_metal     || 0,                 // R
+      s.res_neutral   || 0,                 // S
+      ab.displayname  || '',                // T ability_name
+      ab.description  || ''                 // U ability_desc
     ]);
   });
 
   // Full overwrite: clear content, write header + all data in one call
   sheet.clearContents();
-  sheet.getRange(1, 1, data.length, 20).setValues(data);
+  sheet.getRange(1, 1, data.length, 21).setValues(data);
   sheet.setFrozenRows(1);
 
   Logger.log('runNftRefresh_: wrote ' + (data.length - 1) + ' NFT rows.');
@@ -361,7 +372,7 @@ function runNftRefresh_() {
 
 function writeNftHeader_() {
   return [
-    'template_id', 'type', 'rarity', 'shine', 'classname', 'racename', 'element',
+    'template_id', 'cardname', 'type', 'rarity', 'shine', 'classname', 'racename', 'element',
     'health', 'damage', 'taunt', 'initiative', 'attackspeed',
     'res_fire', 'res_nature', 'res_air', 'res_gem', 'res_metal', 'res_neutral',
     'ability_name', 'ability_desc'
