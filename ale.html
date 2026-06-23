@@ -1309,7 +1309,7 @@
     // Sheet ID: same spreadsheet as pool metrics (1FZ2ETRyJDWppuJ1vPn9DJFclpcyHqV2w8-koHPJ1rKY)
     // Published CSV URL (nftvalues tab):
     var ALE_NFT_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR58SPWML0aiB7vd1-MJobiKrQXX4PyHWDs1m_1fYuYCQVUUZ5u7PWKmdvdI7KMsO3iglyeqXJHCgOL/pub?gid=840153696&single=true&output=csv';
-    var ALE_NFT_CACHE_KEY = 'ale_nft_cache';
+    var ALE_NFT_CACHE_KEY = 'ale_nft_cache_v2'; // bumped to invalidate old lowercase cache
     var ALE_NFT_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
     // Column indices in the sheet (header row):
@@ -1321,6 +1321,8 @@
     function parseNftCsv_(text) {
         var lines = text.trim().split('\n');
         if (lines.length < 2) return null;
+        // Capitalize first letter of each word (handles "stardust" → "Stardust", "Human Augmented" → "Human Augmented")
+        var cap = function(s){ return (s||'').replace(/\b\w/g, function(c){ return c.toUpperCase(); }); };
         // Parse header to column index map
         var hdr = lines[0].split(',').map(function(h){ return h.trim().replace(/^"|"$/g,''); });
         var col = {};
@@ -1337,12 +1339,12 @@
             // [6]=hp [7]=dmg [8]=taunt [9]=windup [10]=cooldown
             // [11]=fire [12]=nature [13]=air [14]=gem [15]=metal [16]=neutral [17]=ability
             var row = [
-                cells[col['template_id']] || '',   // 0 id
-                cells[col['cardname']]    || '',   // 1 name
-                cells[col['rarity']]     || '',   // 2 rarity
-                cells[col['shine']]      || '',   // 3 shine
-                cells[col['racename']]   || '',   // 4 race  (crew only; arms is empty)
-                cells[col['element']]    || '',   // 5 element
+                cells[col['template_id']]      || '',   // 0 id
+                cells[col['cardname']]         || '',   // 1 name (already proper case from chain)
+                cap(cells[col['rarity']])      || '',   // 2 rarity
+                cap(cells[col['shine']])       || '',   // 3 shine
+                cap(cells[col['racename']])    || '',   // 4 race  (crew only; arms is empty)
+                cap(cells[col['element']])     || '',   // 5 element
                 d10('health'),                     // 6 hp
                 d10('damage'),                     // 7 dmg
                 d10('taunt'),                      // 8 taunt
