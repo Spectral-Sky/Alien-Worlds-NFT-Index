@@ -1404,16 +1404,32 @@ function processData(data) {
         const mult   = SHINE_MULT[shine]   || 1;
         const bonus  = RARITY_BONUS[rarity] || 1;
 
-        // Look up verified stats from local database (PD templates)
+        // Look up verified stats from local database (PD templates only)
         const localData  = NFT_DATA[templateId];
 
-        // Stats: local DB is the source of truth for all known templates (PD and AW)
         let atk, def, moveCostVal, moveCostRedVal;
         if (localData) {
-            atk            = localData.atk  ?? 0;
-            def            = localData.def  ?? 0;
             moveCostVal    = localData.movecost            ?? null;
             moveCostRedVal = localData.move_cost_reduction ?? null;
+            if (isPD) {
+                // PD NFTs: use hardcoded verified values
+                atk = localData.atk ?? 0;
+                def = localData.def ?? 0;
+            } else {
+                // AW NFTs: compute from live AtomicAssets base stats + formula
+                // (avoids relying on pre-computed DEF values that had spreadsheet errors)
+                const cat = localData.category;
+                if (cat === 'face' || cat === 'warlord') {
+                    atk = 0; def = 0;
+                } else if (rarity === 'abundant' && cat === 'arms') {
+                    atk = mult; def = mult;
+                } else {
+                    const baseAtk = parseFloat(d.attack  ?? td.attack  ?? 0);
+                    const baseDef = parseFloat(d.defense ?? td.defense ?? 0);
+                    atk = (baseAtk + bonus) * mult;
+                    def = (baseDef + bonus) * mult;
+                }
+            }
         } else {
             // Fallback for unknown templates: AW formula from AtomicAssets base values
             const baseAtk = parseFloat(d.attack  ?? td.attack  ?? 0);
