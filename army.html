@@ -334,6 +334,7 @@
         .card-subtext { font-size: 0.8em; margin-bottom: 5px; font-weight: bold; color: var(--theme-color); line-height: 1.6; }
         .card-move-cost { font-size: 0.88em; color: #ffd700; font-weight: bold; letter-spacing: 1px; }
         .card-move-reduc { font-size: 0.88em; color: #ffd700; font-weight: bold; letter-spacing: 1px; }
+        .card-eff-badge { font-size: 0.65em; letter-spacing: 0.5px; margin-top: 1px; font-weight: bold; }
         .card-name { font-weight: bold; font-size: 0.75em; height: 30px; overflow: hidden; color: #ccc; line-height: 1.4; }
         .card-tpl-link { display:block; font-size:0.62em; color:#333; text-decoration:none; margin-top:5px; letter-spacing:0.5px; }
         .card-tpl-link:hover { color:var(--theme-color); }
@@ -878,6 +879,7 @@
     <button id="empty-div-btn" class="cyber-btn" onclick="toggleEmptyDivisions()" style="display:none;">▶ SHOW EMPTY DIVISIONS</button>
     <button class="cyber-btn" onclick="adjustFontSize(1)" title="Increase font size" style="padding:8px 11px;letter-spacing:0">A+</button>
     <button class="cyber-btn" onclick="adjustFontSize(-1)" title="Decrease font size" style="padding:8px 11px;letter-spacing:0">A−</button>
+    <button id="aw-filter-btn" class="cyber-btn" onclick="toggleAWFilter()" style="display:none;">⊘ HIDE AW NFTs</button>
     <button id="export-csv-btn"  class="cyber-btn" onclick="exportArmyCSV()"  style="display:none; color:#40c080; border-color:#40c08066;">⬇ CSV</button>
     <button id="export-xlsx-btn" class="cyber-btn" onclick="exportArmyXLSX()" style="display:none; color:#40c080; border-color:#40c08066;">⬇ XLSX</button>
     <span style="display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap;">
@@ -1227,6 +1229,20 @@ function toggleArmyView() {
 }
 
 let _emptyDivisionsShown = false;
+let _awHidden = false;
+let _armyAvgEff = 0;
+
+function toggleAWFilter() {
+    _awHidden = !_awHidden;
+    const btn = document.getElementById('aw-filter-btn');
+    if (btn) {
+        btn.textContent = _awHidden ? '⊞ SHOW AW NFTs' : '⊘ HIDE AW NFTs';
+        btn.style.color = _awHidden ? '#ff6060' : '';
+        btn.style.borderColor = _awHidden ? 'rgba(255,96,96,0.5)' : '';
+    }
+    recalculate();
+}
+
 function toggleEmptyDivisions() {
     _emptyDivisionsShown = !_emptyDivisionsShown;
     document.querySelectorAll('.division-block.division-empty').forEach(block => {
@@ -1373,6 +1389,9 @@ function processData(data) {
         const collection = (nft.collection?.collection_name || "").toLowerCase();
         const name       = (nft.name || "").toLowerCase();
         const templateId = parseInt(nft.template?.template_id || 0);
+
+        // AW toggle: skip alien.worlds NFTs when filter is active
+        if (_awHidden && collection === 'alien.worlds') return;
 
         // Services (Lava Lux) — check by template ID first, before any filters
         if (SERVICES_TEMPLATE_IDS.has(templateId)) {
@@ -1564,6 +1583,14 @@ function processData(data) {
     const baseAtk = allActive.reduce((s, x) => s + (x.atk || 0), 0);
     const baseDef = allActive.reduce((s, x) => s + (x.def || 0), 0);
 
+    // Efficiency: (ATK+DEF) / moveCost per crew unit; compute army average from active crew
+    const effActive = activeCrew.filter(c => (c.moveCost || 0) > 0);
+    _armyAvgEff = effActive.length > 0
+        ? effActive.reduce((s, c) => s + (c.atk + c.def) / c.moveCost, 0) / effActive.length
+        : 0;
+    // Stamp efficiency on ALL crew (active + reserve) so reserve cards show vs active average
+    crew.forEach(c => { c.efficiency = c.moveCost > 0 ? (c.atk + c.def) / c.moveCost : null; });
+
     // Lava Lux total bonus across all assigned keycards
     let lavaAtkBonus = 0, lavaDefBonus = 0, lavaMoveDelta = 0;
     lavaLuxList.forEach((svc, i) => {
@@ -1634,6 +1661,7 @@ function processData(data) {
     } else if (lavaEl) { lavaEl.style.display = 'none'; }
     bdSet('bd-total', 'TOTAL', finalAtk.toLocaleString(), finalDef.toLocaleString(), hm(totalMoveSecs));
     document.getElementById('breakdown-btn').style.display    = 'inline-block';
+    document.getElementById('aw-filter-btn').style.display    = 'inline-block';
     document.getElementById('export-csv-btn').style.display   = 'inline-block';
     document.getElementById('export-xlsx-btn').style.display  = 'inline-block';
     document.getElementById('stake-auto-btn').style.display   = 'inline-block';
@@ -1927,6 +1955,12 @@ function makeNFTCard(item, activeMode, type, showStatus) {
     } else if (type === "stats") {
         subText = `<span style="white-space:nowrap"><span style="color:#ff4444">⚔&nbsp;${Math.floor(item.atk)}</span>&nbsp;|&nbsp;<span style="color:#4488ff">🛡&nbsp;${Math.floor(item.def)}</span></span>`;
         if (item.moveCost) subText += `<br><span class="card-move-cost">&gt;&gt; ${item.moveCost}</span>`;
+        if (item.efficiency != null && _armyAvgEff > 0) {
+            const delta = item.efficiency - _armyAvgEff;
+            const color = delta >= 0 ? '#44cc66' : '#cc4444';
+            const arrow = delta >= 0 ? '▲' : '▼';
+            subText += `<br><span class="card-eff-badge" style="color:${color}">${arrow}&nbsp;${item.efficiency.toFixed(1)}<span style="opacity:0.65;font-weight:normal">&nbsp;(${delta>=0?'+':'−'}${Math.abs(delta).toFixed(1)} avg)</span></span>`;
+        }
     } else if (type === "reduction") {
         const parts = [];
         if (item.moveCostReduction) parts.push(`<span class="card-move-reduc">▼ -${item.moveCostReduction}</span>`);
