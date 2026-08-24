@@ -908,8 +908,12 @@
             idLabel.innerText = "ID: " + id;
 
             if (imgSrc) {
-                if (previewImg.getAttribute("data-current-src") !== imgSrc) {
-                    previewImg.src = imgSrc; previewImg.setAttribute("data-current-src", imgSrc);
+                let safeSrc = imgSrc;
+                if (imgSrc.includes("ipfs.io/ipfs/")) {
+                    safeSrc = "https://wsrv.nl/?url=" + encodeURIComponent(imgSrc.replace("https://", "")) + "&w=400&output=webp";
+                }
+                if (previewImg.getAttribute("data-current-src") !== safeSrc) {
+                    previewImg.src = safeSrc; previewImg.setAttribute("data-current-src", safeSrc);
                 }
                 previewImg.style.display = "block"; status.style.display = "none";
             } else {
@@ -1699,7 +1703,7 @@ function _inj(){
   var ws=document.getElementById('lang-picker')||document.querySelector('.wallet-section')||document.querySelector('.global-header');
   if(!ws)return;
   var fd=document.createElement('div');fd.className='nav-dropdown-wrap pg-font-dd';
-  fd.innerHTML='<button class="nav-dropdown-btn">Aa &#9660;<\/button><div class="nav-dropdown-menu"><a class="nav-dropdown-item font-opt" href="#" data-font="segoe" onclick="pgSetFont(this.dataset.font);return false;">CLEAN<span class="font-preview" style="font-family:'Segoe UI',sans-serif;">Segoe UI<\/span><\/a><a class="nav-dropdown-item font-opt" href="#" data-font="calibri" onclick="pgSetFont(this.dataset.font);return false;">SOFT<span class="font-preview" style="font-family:'Calibri',sans-serif;">Calibri<\/span><\/a><a class="nav-dropdown-item font-opt" href="#" data-font="georgia" onclick="pgSetFont(this.dataset.font);return false;">CLASSIC<span class="font-preview" style="font-family:'Georgia',serif;">Georgia<\/span><\/a><a class="nav-dropdown-item font-opt active" href="#" data-font="terminal" onclick="pgSetFont(this.dataset.font);return false;">TERMINAL<span class="font-preview" style="font-family:'Courier New',monospace;">Courier New<\/span><\/a><\/div>';
+  fd.innerHTML='<button class="nav-dropdown-btn">Aa &#9660;<\/button><div class="nav-dropdown-menu"><a class="nav-dropdown-item font-opt" href="#" data-font="segoe" onclick="pgSetFont(this.dataset.font);return false;">CLEAN<span class="font-preview" style="font-family:\'Segoe UI\',sans-serif;">Segoe UI<\/span><\/a><a class="nav-dropdown-item font-opt" href="#" data-font="calibri" onclick="pgSetFont(this.dataset.font);return false;">SOFT<span class="font-preview" style="font-family:Calibri,sans-serif;">Calibri<\/span><\/a><a class="nav-dropdown-item font-opt" href="#" data-font="georgia" onclick="pgSetFont(this.dataset.font);return false;">CLASSIC<span class="font-preview" style="font-family:Georgia,serif;">Georgia<\/span><\/a><a class="nav-dropdown-item font-opt active" href="#" data-font="terminal" onclick="pgSetFont(this.dataset.font);return false;">TERMINAL<span class="font-preview" style="font-family:\'Courier New\',monospace;">Courier New<\/span><\/a><\/div>';
   var mb=document.createElement('button');mb.id='pg-mode-btn';mb.className='pg-mode-btn';mb.title='Toggle day/night mode';
   var isDay=document.documentElement.classList.contains('day');mb.textContent=isDay?'🌙':'☀';
   mb.onclick=pgToggleDay;ws.insertAdjacentElement('afterend',fd);fd.insertAdjacentElement('afterend',mb);
