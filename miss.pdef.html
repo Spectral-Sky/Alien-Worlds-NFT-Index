@@ -87,9 +87,10 @@
         .global-header {
             display:flex; justify-content:space-between; align-items:center;
             background: #020810; border-bottom:2px solid var(--accent);
-            padding:0 24px; height:66px;
+            padding:0 16px; height:66px;
             position:sticky; top:0; z-index:6000;
             box-shadow:0 4px 24px rgba(0,0,0,0.9);
+            min-width:0; overflow:hidden;
         }
         .logo-section { display:flex; align-items:center; gap:12px; }
         .logo-section h1 { color:var(--accent); margin:0; font-size:1.5em; letter-spacing:4px; text-transform:uppercase; text-shadow:0 0 10px var(--accent); }
@@ -99,10 +100,27 @@
         .nav-btn:hover { color:var(--accent); border-color:var(--accent); }
         .nav-btn.active { color:#000; background:var(--accent); border-color:var(--accent); box-shadow:0 0 12px var(--accent-glow); }
 
-        .wallet-section { display:flex; gap:6px; align-items:center; position:relative; }
-        .wallet-btn { background:#111; color:var(--accent); border:1px dashed var(--accent); padding:8px 16px; font-family:'Courier New',monospace; font-size:0.8em; font-weight:bold; cursor:pointer; transition:all 0.2s; }
+        .wallet-section { position:relative; display:flex; gap:6px; align-items:center; flex-shrink:0; }
+        .wallet-btn {
+            background:#111; color:var(--accent); border:1px dashed var(--accent);
+            padding:8px 14px; font-family:'Courier New',monospace; font-size:0.78em; font-weight:bold;
+            cursor:pointer; transition:all 0.2s; white-space:nowrap; flex-shrink:0;
+        }
         .wallet-btn:hover { background:var(--accent-dim); box-shadow:0 0 10px var(--accent-glow); }
         .wallet-btn.logged-in { background:var(--accent); color:#000; border-style:solid; }
+
+        /* ── FONT PICKER DROPDOWN (injected) ── */
+        .nav-dropdown-wrap { position:relative; display:inline-block; }
+        .nav-dropdown-btn { background:transparent; color:#6080a0; border:1px solid transparent; padding:7px 12px; font-family:'Courier New',monospace; font-weight:bold; font-size:0.8em; cursor:pointer; transition:all 0.2s; text-transform:uppercase; letter-spacing:1px; white-space:nowrap; }
+        .nav-dropdown-btn:hover { color:var(--accent); border-color:var(--accent); }
+        .nav-dropdown-menu { display:none; position:absolute; top:100%; right:0; z-index:7000; background:#02080e; border:1px solid var(--accent); min-width:160px; padding:6px 0; box-shadow:0 8px 24px rgba(0,0,0,0.9); }
+        .nav-dropdown-wrap:hover .nav-dropdown-menu { display:block; }
+        .nav-dropdown-item { display:block; padding:7px 14px; color:#6080a0; text-decoration:none; font-family:'Courier New',monospace; font-size:0.82em; letter-spacing:1px; text-transform:uppercase; transition:all 0.15s; white-space:nowrap; }
+        .nav-dropdown-item:hover { color:var(--accent); background:rgba(91,173,255,0.06); }
+        .nav-dropdown-item.active { color:var(--accent); font-weight:bold; }
+        .font-preview { display:block; font-size:0.82em; color:var(--text-dim); margin-top:1px; }
+        .pg-mode-btn { background:transparent; border:1px solid rgba(91,173,255,0.2); color:#6080a0; padding:6px 9px; font-size:1em; cursor:pointer; border-radius:2px; transition:all 0.2s; line-height:1; margin-left:2px; white-space:nowrap; }
+        .pg-mode-btn:hover { color:var(--accent); border-color:rgba(91,173,255,0.6); }
 
         /* ── FILTER BAR ── */
         .filter-bar {
@@ -600,56 +618,63 @@ let valueIn  = 'tlm';   // 'def' | 'tlm' | 'wax' | 'usd'
 let defPriceOverridden = false;  // true when user has manually edited the field
 
 // ─────────────────────────────────────────────
-// PRICE FETCH
+// PRICE FETCH  (on-chain via WAX RPC — avoids CORS issues)
 // ─────────────────────────────────────────────
+async function fetchTableFrom(code, scope, table, limit) {
+    limit = limit || 200;
+    var res = await fetch(getWaxRpc(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ json: true, code: code, scope: scope, table: table, limit: limit, reverse: false })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return (await res.json()).rows || [];
+}
+
 async function fetchPrices() {
-    // Alcor DEX markets (WAX network)
+    // ── DEF/TLM and TLM/WAX from Alcor AMM pools on-chain ──────────────────
+    // Uses the same WAX RPC we already have working (cryptolions.io by default)
     try {
-        var res = await fetch('https://alcor.exchange/api/v2/markets?network=wax');
-        if (res.ok) {
-            var markets = await res.json();
-            // Find DEF/TLM pair (base=DEF, quote=TLM  →  last_price = TLM per DEF)
-            var defTlm = markets.find(function(mk) {
-                return mk.base_token && mk.quote_token &&
-                    mk.base_token.symbol === 'DEF' && mk.quote_token.symbol === 'TLM';
-            });
-            if (defTlm && defTlm.last_price > 0) defInTlm = defTlm.last_price;
+        var pools = await fetchTableFrom('alcorammswap', 'alcorammswap', 'pools', 500);
+        pools.forEach(function(p) {
+            var tA = p.tokenA, tB = p.tokenB;
+            if (!tA || !tB) return;
+            var symA = tA.quantity ? tA.quantity.split(' ')[1] : '';
+            var symB = tB.quantity ? tB.quantity.split(' ')[1] : '';
+            var amtA = tA.quantity ? parseFloat(tA.quantity) : 0;
+            var amtB = tB.quantity ? parseFloat(tB.quantity) : 0;
+            if (amtA <= 0 || amtB <= 0) return;
 
-            // Fallback: inverse TLM/DEF pair
-            if (!defInTlm) {
-                var tlmDef = markets.find(function(mk) {
-                    return mk.base_token && mk.quote_token &&
-                        mk.base_token.symbol === 'TLM' && mk.quote_token.symbol === 'DEF';
-                });
-                if (tlmDef && tlmDef.last_price > 0) defInTlm = 1 / tlmDef.last_price;
+            // DEF/TLM pool
+            var isDef = tA.contract === 'def.worlds' || tB.contract === 'def.worlds';
+            var isTlm = tA.contract === 'alien.worlds' || tB.contract === 'alien.worlds';
+            var isWax = (symA === 'WAX' && tA.contract === 'eosio.token') || (symB === 'WAX' && tB.contract === 'eosio.token');
+
+            if (isDef && isTlm) {
+                var defAmt = tA.contract === 'def.worlds' ? amtA : amtB;
+                var tlmAmt = tA.contract === 'alien.worlds' ? amtA : amtB;
+                if (defAmt > 0) defInTlm = tlmAmt / defAmt;
             }
-
-            // TLM/WAX pair (base=TLM, quote=WAX  →  last_price = WAX per TLM)
-            var tlmWax = markets.find(function(mk) {
-                return mk.base_token && mk.quote_token &&
-                    mk.base_token.symbol === 'TLM' && mk.quote_token.symbol === 'WAX';
-            });
-            if (tlmWax && tlmWax.last_price > 0) tlmInWax = tlmWax.last_price;
-
-            // Fallback: DEF/WAX pair for direct conversion
-            if (defInTlm && !tlmInWax) {
-                var defWax = markets.find(function(mk) {
-                    return mk.base_token && mk.quote_token &&
-                        mk.base_token.symbol === 'DEF' && mk.quote_token.symbol === 'WAX';
-                });
-                if (defWax && defWax.last_price > 0) tlmInWax = defWax.last_price / defInTlm;
+            if (isTlm && isWax) {
+                var tlmAmt2 = tA.contract === 'alien.worlds' ? amtA : amtB;
+                var waxAmt  = (symA === 'WAX' ? amtA : amtB);
+                if (tlmAmt2 > 0) tlmInWax = waxAmt / tlmAmt2;
             }
-        }
-    } catch(e) { console.warn('Alcor price fetch failed:', e); }
+        });
+    } catch(e) { console.warn('On-chain Alcor pool price fetch failed:', e); }
 
-    // WAX/USD via CoinGecko
+    // ── WAX/USD via CoinGecko (correct IDs; same URL that aleleaders.html uses) ──
     try {
-        var gr = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=wax-io&vs_currencies=usd');
+        var gr = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=wax,alien-worlds&vs_currencies=usd', { cache: 'no-store' });
         if (gr.ok) {
             var gd = await gr.json();
-            if (gd['wax-io'] && gd['wax-io'].usd > 0) waxInUsd = gd['wax-io'].usd;
+            if (gd['wax'] && gd['wax'].usd > 0)            waxInUsd  = gd['wax'].usd;
+            // Derive TLM/WAX from USD prices if we didn't get it on-chain
+            if (!tlmInWax && gd['alien-worlds'] && gd['alien-worlds'].usd > 0 && waxInUsd) {
+                tlmInWax = gd['alien-worlds'].usd / waxInUsd;
+            }
         }
-    } catch(e) { console.warn('CoinGecko price fetch failed:', e); }
+    } catch(e) { console.warn('CoinGecko WAX/USD fetch failed:', e); }
 
     updatePriceTicker();
 
@@ -1041,9 +1066,11 @@ var COLS = [
     { key:'daysLeft',     label:'Expires',    sortable:true },
 ];
 
-var COL_KEYS = ['planet','title','costAmt','rwAmt','cooldownSec','_ratio','rwPerHr','breakEvenDef','minAtk','divsJoined','daysLeft'];
-var COL_LABELS = ['Planet','Mission','Cost / Run','Reward / Run','Cooldown','Ratio / Run','Earn / hr','Break-even DEF','Min ATK','Divs In','Expires'];
-var COL_SORT   = ['planet','title','costAmt','rwAmt','cooldownSec','breakEvenDef','rwPerHr','breakEvenDef','minAtk','divsJoined','daysLeft'];
+// Column order: Planet, Mission, Earn/hr, WAX/hr, Cost/Run, Reward/Run, Cooldown, Ratio/Run, Break-even, [Profit/hr], Min ATK, Min DEF, Divs In, Expires
+var COL_KEYS   = ['planet','title','rwPerHr','_waxhr','costAmt','rwAmt','cooldownSec','_ratio','breakEvenDef','minAtk','minDef','divsJoined','daysLeft'];
+var COL_LABELS = ['Planet','Mission','Earn / hr','WAX / hr','Cost / Run','Reward / Run','Cooldown','Ratio / Run','Break-even DEF','Min ATK','Min DEF','Divs In','Expires'];
+var COL_SORT   = ['planet','title','rwPerHr','_waxhr','costAmt','rwAmt','cooldownSec','breakEvenDef','breakEvenDef','minAtk','minDef','divsJoined','daysLeft'];
+var COL_TITLE  = ['','','Reward earned per hour (native token)','Estimated WAX value of reward per hour','Token cost per mission run','Token reward per mission run','Mission cooldown time','Token ratio per run','DEF price (TLM) at which this mission breaks even','Minimum division attack required','Minimum division defense required','',''];
 
 function buildHeader() {
     var showProfit = defPrice > 0;
@@ -1052,12 +1079,13 @@ function buildHeader() {
         var sk = COL_SORT[i];
         var arrow = sortKey === sk ? (sortDir === 1 ? ' ↑' : ' ↓') : ' ·';
         var cls = sortKey === sk ? 'sorted' : '';
-        ths += '<th class="' + cls + '" onclick="setSort(\'' + sk + '\')">' + COL_LABELS[i] + '<span class="sort-arrow">' + arrow + '</span></th>';
+        var tip = COL_TITLE[i] ? ' title="' + COL_TITLE[i] + '"' : '';
+        ths += '<th class="' + cls + '"' + tip + ' onclick="setSort(\'' + sk + '\')">' + COL_LABELS[i] + '<span class="sort-arrow">' + arrow + '</span></th>';
     }
     if (showProfit) {
         var profArr = sortKey === '_profit' ? (sortDir === 1 ? ' ↑' : ' ↓') : ' ·';
         var profCls = sortKey === '_profit' ? 'sorted' : '';
-        ths += '<th class="' + profCls + '" onclick="setSort(\'_profit\')" title="TLM profit per hour at your DEF price">Profit / hr<span class="sort-arrow">' + profArr + '</span></th>';
+        ths += '<th class="' + profCls + '" onclick="setSort(\'_profit\')" title="Profit per hour in selected display currency at your DEF price">Profit / hr<span class="sort-arrow">' + profArr + '</span></th>';
     }
     document.getElementById('thead-row').innerHTML = '<tr>' + ths + '</tr>';
 }
@@ -1075,18 +1103,12 @@ function getFilteredSorted() {
 
     rows.sort(function(a, b) {
         var av, bv;
-
-        if (sortKey === '_profit') {
-            av = calcProfitHr(a);
-            bv = calcProfitHr(b);
-        } else {
-            av = a[sortKey];
-            bv = b[sortKey];
-        }
+        if (sortKey === '_profit') { av = calcProfitHr(a); bv = calcProfitHr(b); }
+        else if (sortKey === '_waxhr') { av = calcWaxHr(a); bv = calcWaxHr(b); }
+        else { av = a[sortKey]; bv = b[sortKey]; }
 
         if (av === null || av === undefined) av = sortDir > 0 ? Infinity : -Infinity;
         if (bv === null || bv === undefined) bv = sortDir > 0 ? Infinity : -Infinity;
-
         if (typeof av === 'string') return sortDir * av.localeCompare(bv);
         return sortDir * (av - bv);
     });
@@ -1105,6 +1127,28 @@ function calcProfitHr(m) {
     return null;
 }
 
+function calcWaxHr(m) {
+    if (!tlmInWax || m.rwChests > 0) return null;
+    var rwWax = toDisplay(m.rwAmt, m.rwTok);
+    if (rwWax === null && m.rwTok === 'TLM') rwWax = m.rwAmt * tlmInWax;
+    if (rwWax === null && m.rwTok === 'DEF' && defInTlm) rwWax = m.rwAmt * defInTlm * tlmInWax;
+    return rwWax !== null ? rwWax / m.cooldownHrs : null;
+}
+
+function fmtWaxHr(m) {
+    if (m.rwChests > 0) return '<span style="color:var(--text-dim)">—</span>';
+    var whr = calcWaxHr(m);
+    if (whr === null) return tlmInWax ? '—' : '<span style="color:var(--text-dim)" title="Prices not loaded">…</span>';
+    // Build tooltip showing the math
+    var mathTip = '';
+    if (m.rwTok === 'TLM') {
+        mathTip = m.rwAmt.toFixed(2) + ' TLM × ' + tlmInWax.toFixed(5) + ' WAX/TLM ÷ ' + m.cooldownHrs.toFixed(1) + 'h';
+    } else if (m.rwTok === 'DEF' && defInTlm) {
+        mathTip = m.rwAmt.toFixed(2) + ' DEF × ' + defInTlm.toFixed(1) + ' TLM/DEF × ' + tlmInWax.toFixed(5) + ' WAX/TLM ÷ ' + m.cooldownHrs.toFixed(1) + 'h';
+    }
+    return '<span class="tok tok-wax" title="' + mathTip + '">' + fmtN(whr, 4) + ' WAX/hr</span>';
+}
+
 function renderTable() {
     buildHeader();
     var rows = getFilteredSorted();
@@ -1112,7 +1156,7 @@ function renderTable() {
     var showProfit = defPrice > 0;
 
     if (rows.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="' + (COL_KEYS.length + (showProfit?1:0)) + '" class="no-results">[ NO MISSIONS MATCH CURRENT FILTERS ]</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="' + (COL_KEYS.length + (showProfit ? 1 : 0)) + '" class="no-results">[ NO MISSIONS MATCH CURRENT FILTERS ]</td></tr>';
         return;
     }
 
@@ -1130,17 +1174,25 @@ function renderTable() {
 
         var expiredCls = m.isExpired ? ' row-expired' : '';
 
+        // Earn/hr tooltip showing math
+        var earnTip = '';
+        if (m.rwAmt > 0 && m.cooldownHrs > 0) {
+            earnTip = 'title="' + fmtN(m.rwAmt, 2) + ' ' + (m.rwTok||'') + ' ÷ ' + fmtN(m.cooldownHrs, 1) + 'h = ' + fmtN(m.rwPerHr, 3) + ' ' + (m.rwTok||'') + '/hr"';
+        }
+
         return '<tr class="mission-row row-type-' + m.missionType + expiredCls + '" data-id="' + m.id + '">' +
             '<td>' + planetBadge + '</td>' +
             '<td class="mission-name-cell">' + nameCell + '</td>' +
+            '<td class="mono" ' + earnTip + '>' + fmtPerHr(m) + '</td>' +
+            '<td class="mono">' + fmtWaxHr(m) + '</td>' +
             '<td class="mono">' + fmtCost(m) + '</td>' +
             '<td class="mono">' + fmtReward(m) + '</td>' +
             '<td class="mono dim">' + fmtCooldown(m.cooldownSec) + '</td>' +
             '<td class="mono">' + fmtRatio(m) + '</td>' +
-            '<td class="mono">' + fmtPerHr(m) + '</td>' +
             '<td class="mono">' + fmtBreakEven(m) + '</td>' +
             profitTd +
             '<td class="mono dim">' + (m.minAtk > 0 ? m.minAtk.toLocaleString() : '—') + '</td>' +
+            '<td class="mono dim">' + (m.minDef > 0 ? m.minDef.toLocaleString() : '—') + '</td>' +
             '<td class="mono dim">' + m.divsJoined + '</td>' +
             '<td>' + fmtExpiry(m) + '</td>' +
         '</tr>';
