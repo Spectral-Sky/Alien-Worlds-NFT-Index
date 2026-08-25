@@ -706,10 +706,13 @@ function _poolAmt(tok) {
 }
 function _poolSym(tok) {
     if (!tok) return '';
-    if (tok.symbol) return tok.symbol.toUpperCase();
-    if (typeof tok.quantity === 'string') return (tok.quantity.split(' ')[1] || '').toUpperCase();
-    if (tok.id && tok.id.includes('-')) return tok.id.split('-')[0].toUpperCase();
-    return '';
+    var s = '';
+    if (tok.symbol)                        s = tok.symbol;
+    else if (typeof tok.quantity === 'string') s = tok.quantity.split(' ')[1] || '';
+    else if (tok.id && tok.id.includes('-'))   s = tok.id.split('-')[0];
+    // Strip EOS precision prefix: "4,DEF" → "DEF"
+    if (s.includes(',')) s = s.split(',').pop();
+    return s.toUpperCase();
 }
 
 // Attempt 1: Alcor REST /api/v2/swap/pools — all pools with live reserves → spot price
@@ -740,6 +743,13 @@ async function alcorCandlePrice(tokenA, tokenB) {
 // Parse pools array (REST or on-chain) and extract DEF/TLM/WAX prices
 function parsePools(pools, priceObj) {
     var DEF_C = ['def.worlds', 'defensetoken'];
+    // Debug: log first pool structure + first DEF-adjacent pool
+    if (pools.length) {
+        console.log('[parsePools] sample pool[0]:', JSON.stringify(pools[0]).substring(0, 300));
+        var defSample = pools.find(function(p) { return JSON.stringify(p).toLowerCase().includes('defensetoken') || JSON.stringify(p).toLowerCase().includes('def.worlds'); });
+        if (defSample) console.log('[parsePools] DEF pool found:', JSON.stringify(defSample).substring(0, 400));
+        else console.warn('[parsePools] No DEF pool found in', pools.length, 'pools');
+    }
     pools.forEach(function(p) {
         var tA = p.tokenA || p.token0 || null;
         var tB = p.tokenB || p.token1 || null;
