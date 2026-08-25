@@ -740,29 +740,42 @@ async function alcorCandlePrice(tokenA, tokenB) {
     return close;
 }
 
+// Match an Alcor pool token to one of our known token IDs.
+// Alcor REST token objects have: {id:"def-defensetoken", quantity:"1234.5678 DEF", contract:"defensetoken"}
+// On-chain rows use: {quantity:"1234.5678 DEF", contract:"defensetoken"} (no id field)
+var ALCOR_TOKEN_IDS = {
+    DEF: ['def-defensetoken'],
+    TLM: ['tlm-alien.worlds', 'tlm-alienworlds'],
+    WAX: ['wax-eosio.token'],
+};
+var DEF_CONTRACTS = ['defensetoken', 'def.worlds'];
+
+function _tokIs(tok, key) {
+    if (!tok) return false;
+    // Check Alcor REST id field first (most reliable)
+    if (tok.id && ALCOR_TOKEN_IDS[key] && ALCOR_TOKEN_IDS[key].indexOf(tok.id) >= 0) return true;
+    // Fallback: symbol + contract match
+    var sym = _poolSym(tok);
+    var con = (tok.contract || '').toLowerCase();
+    if (sym !== key) return false;
+    if (key === 'DEF') return DEF_CONTRACTS.indexOf(con) >= 0 || !con;
+    if (key === 'TLM') return con === 'alien.worlds' || !con;
+    if (key === 'WAX') return con === 'eosio.token' || !con;
+    return false;
+}
+
 // Parse pools array (REST or on-chain) and extract DEF/TLM/WAX prices
 function parsePools(pools, priceObj) {
-    var DEF_C = ['def.worlds', 'defensetoken'];
-    // Debug: log first pool structure + first DEF-adjacent pool
-    if (pools.length) {
-        console.log('[parsePools] sample pool[0]:', JSON.stringify(pools[0]).substring(0, 300));
-        var defSample = pools.find(function(p) { return JSON.stringify(p).toLowerCase().includes('defensetoken') || JSON.stringify(p).toLowerCase().includes('def.worlds'); });
-        if (defSample) console.log('[parsePools] DEF pool found:', JSON.stringify(defSample).substring(0, 400));
-        else console.warn('[parsePools] No DEF pool found in', pools.length, 'pools');
-    }
     pools.forEach(function(p) {
         var tA = p.tokenA || p.token0 || null;
         var tB = p.tokenB || p.token1 || null;
         if (!tA && p.reserve0) { tA = parseReserveStr(p.reserve0); tB = parseReserveStr(p.reserve1 || ''); }
         if (!tA || !tB) return;
-        var symA = _poolSym(tA), symB = _poolSym(tB);
         var amtA = _poolAmt(tA), amtB = _poolAmt(tB);
         if (amtA <= 0 || amtB <= 0) return;
-        var cA = (tA.contract || '').toLowerCase(), cB = (tB.contract || '').toLowerCase();
-        var isDefA = symA === 'DEF' && (DEF_C.indexOf(cA) >= 0 || !cA);
-        var isDefB = symB === 'DEF' && (DEF_C.indexOf(cB) >= 0 || !cB);
-        var isTlmA = symA === 'TLM', isTlmB = symB === 'TLM';
-        var isWaxA = symA === 'WAX', isWaxB = symB === 'WAX';
+        var isDefA = _tokIs(tA,'DEF'), isDefB = _tokIs(tB,'DEF');
+        var isTlmA = _tokIs(tA,'TLM'), isTlmB = _tokIs(tB,'TLM');
+        var isWaxA = _tokIs(tA,'WAX'), isWaxB = _tokIs(tB,'WAX');
         if (isDefA && isWaxB && !priceObj.defInWax) priceObj.defInWax = amtB / amtA;
         if (isDefB && isWaxA && !priceObj.defInWax) priceObj.defInWax = amtA / amtB;
         if (isDefA && isTlmB && !priceObj.defInTlm) priceObj.defInTlm = amtB / amtA;
@@ -770,6 +783,7 @@ function parsePools(pools, priceObj) {
         if (isTlmA && isWaxB && !priceObj.tlmInWax) priceObj.tlmInWax = amtB / amtA;
         if (isTlmB && isWaxA && !priceObj.tlmInWax) priceObj.tlmInWax = amtA / amtB;
     });
+    console.log('[parsePools] result:', JSON.stringify(priceObj));
 }
 
 async function fetchPrices() {
