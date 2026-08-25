@@ -631,50 +631,183 @@ async function fetchTableFrom(code, scope, table, limit) {
     return (await res.json()).rows || [];
 }
 
-async function fetchPrices() {
-    // ── DEF/TLM and TLM/WAX from Alcor AMM pools on-chain ──────────────────
-    // Uses the same WAX RPC we already have working (cryptolions.io by default)
-    try {
-        var pools = await fetchTableFrom('alcorammswap', 'alcorammswap', 'pools', 500);
-        pools.forEach(function(p) {
-            var tA = p.tokenA, tB = p.tokenB;
-            if (!tA || !tB) return;
-            var symA = tA.quantity ? tA.quantity.split(' ')[1] : '';
-            var symB = tB.quantity ? tB.quantity.split(' ')[1] : '';
-            var amtA = tA.quantity ? parseFloat(tA.quantity) : 0;
-            var amtB = tB.quantity ? parseFloat(tB.quantity) : 0;
-            if (amtA <= 0 || amtB <= 0) return;
+function parseReserveStr(s) {
+    // Handle "1234.5678 TLM@alien.worlds" or just "1234.5678 TLM"
+    if (!s) return null;
+    var atIdx = s.indexOf('@');
+    var contract = atIdx >= 0 ? s.slice(atIdx + 1).trim() : '';
+    var qty = atIdx >= 0 ? s.slice(0, atIdx).trim() : s.trim();
+    return { contract: contract, quantity: qty };
+}
 
-            // DEF/TLM pool
-            var isDef = tA.contract === 'def.worlds' || tB.contract === 'def.worlds';
-            var isTlm = tA.contract === 'alien.worlds' || tB.contract === 'alien.worlds';
-            var isWax = (symA === 'WAX' && tA.contract === 'eosio.token') || (symB === 'WAX' && tB.contract === 'eosio.token');
+// Fetch last-sold price for chest NFTs from AtomicAssets market
+var _chestFloorCache = {};
+async function fetchChestPrices() {
+    var chestMissions = allMissions.filter(function(m) { return m.rwChests > 0; });
+    if (!chestMissions.length) return;
 
-            if (isDef && isTlm) {
-                var defAmt = tA.contract === 'def.worlds' ? amtA : amtB;
-                var tlmAmt = tA.contract === 'alien.worlds' ? amtA : amtB;
-                if (defAmt > 0) defInTlm = tlmAmt / defAmt;
-            }
-            if (isTlm && isWax) {
-                var tlmAmt2 = tA.contract === 'alien.worlds' ? amtA : amtB;
-                var waxAmt  = (symA === 'WAX' ? amtA : amtB);
-                if (tlmAmt2 > 0) tlmInWax = waxAmt / tlmAmt2;
-            }
+    // Collect unique template IDs
+    var templateIds = [];
+    chestMissions.forEach(function(m) {
+        (m.rwNftTemplates || []).forEach(function(tid) {
+            if (templateIds.indexOf(tid) < 0) templateIds.push(tid);
         });
-    } catch(e) { console.warn('On-chain Alcor pool price fetch failed:', e); }
+    });
 
-    // ── WAX/USD via CoinGecko (correct IDs; same URL that aleleaders.html uses) ──
+    // If no template IDs from config, fetch recent planetdefnft sales to identify chest templates
+    if (!templateIds.length) {
+        try {
+            var sr = await fetch('https://wax.api.atomicassets.io/atomicmarket/v1/sales?state=3&collection_name=planetdefnft&sort=updated&order=desc&limit=50', { cache: 'no-store' });
+            if (sr.ok) {
+                var sd = await sr.json();
+                if (sd.data) {
+                    sd.data.forEach(function(sale) {
+                        if (sale.assets && sale.assets[0] && sale.assets[0].template) {
+                            var tid = sale.assets[0].template.template_id;
+                            var waxPrice = parseInt(sale.price.amount) / Math.pow(10, sale.price.token_precision || 8);
+                            if (!_chestFloorCache[tid] || waxPrice < _chestFloorCache[tid]) {
+                                _chestFloorCache[tid] = waxPrice;
+                            }
+                            if (templateIds.indexOf(tid) < 0) templateIds.push(tid);
+                        }
+                    });
+                }
+            }
+        } catch(e) { console.warn('AtomicAssets chest sales fetch failed:', e); }
+    } else {
+        // Fetch floor/last price per template ID
+        for (var i = 0; i < templateIds.length; i++) {
+            var tid2 = templateIds[i];
+            if (_chestFloorCache[tid2] !== undefined) continue;
+            try {
+                var tr2 = await fetch('https://wax.api.atomicassets.io/atomicmarket/v1/sales?state=3&collection_name=planetdefnft&template_id=' + tid2 + '&sort=updated&order=desc&limit=5', { cache: 'no-store' });
+                if (tr2.ok) {
+                    var td2 = await tr2.json();
+                    if (td2.data && td2.data[0]) {
+                        _chestFloorCache[tid2] = parseInt(td2.data[0].price.amount) / Math.pow(10, td2.data[0].price.token_precision || 8);
+                    }
+                }
+            } catch(e) {}
+        }
+    }
+
+    // Apply floor prices to chest missions
+    var updated = false;
+    chestMissions.forEach(function(m) {
+        var tids = m.rwNftTemplates && m.rwNftTemplates.length ? m.rwNftTemplates : templateIds;
+        var totalWax = 0, found = 0;
+        tids.forEach(function(tid) {
+            if (_chestFloorCache[tid] > 0) { totalWax += _chestFloorCache[tid]; found++; }
+        });
+        var avgWax = found > 0 ? totalWax / found : 0;
+        if (avgWax > 0 && m.chestFloorWax !== avgWax) {
+            m.chestFloorWax = avgWax;
+            updated = true;
+        }
+    });
+
+    if (updated && allMissions.length) renderTable();
+}
+
+async function fetchPrices() {
+    // ── Attempt 1: Alcor REST API (wax subdomain — different CORS policy) ──
+    var alcorOk = false;
+    try {
+        var ar = await fetch('https://wax.alcor.exchange/api/v2/markets', { cache: 'no-store' });
+        if (ar.ok) {
+            var markets = await ar.json();
+            if (Array.isArray(markets)) {
+                markets.forEach(function(mk) {
+                    var bSym = mk.base_token && mk.base_token.symbol ? mk.base_token.symbol.toUpperCase() : '';
+                    var qSym = mk.quote_token && mk.quote_token.symbol ? mk.quote_token.symbol.toUpperCase() : '';
+                    var lp   = parseFloat(mk.last_price || mk.close || 0);
+                    if (!lp || lp <= 0) return;
+                    // DEF/TLM: base=DEF quote=TLM → lp = TLM per DEF
+                    if (bSym === 'DEF' && qSym === 'TLM' && !defInTlm) defInTlm = lp;
+                    if (bSym === 'TLM' && qSym === 'DEF' && !defInTlm) defInTlm = 1 / lp;
+                    // TLM/WAX: base=TLM quote=WAX → lp = WAX per TLM
+                    if (bSym === 'TLM' && qSym === 'WAX' && !tlmInWax) tlmInWax = lp;
+                    if (bSym === 'WAX' && qSym === 'TLM' && !tlmInWax) tlmInWax = 1 / lp;
+                });
+                if (defInTlm && tlmInWax) alcorOk = true;
+            }
+        }
+    } catch(e) { console.warn('wax.alcor.exchange REST failed:', e); }
+
+    // ── Attempt 2: On-chain Alcor AMM pool query via WAX RPC (avoids CORS entirely) ──
+    if (!alcorOk) {
+        try {
+            // Try both known Alcor AMM contract names on WAX
+            var pools = [];
+            for (var cn of ['alcorammswap', 'swap.alcor']) {
+                try { pools = await fetchTableFrom(cn, cn, 'pools', 500); if (pools.length) break; } catch(e2) {}
+            }
+            pools.forEach(function(p) {
+                // Handle both field name conventions
+                var tA = p.tokenA || p.token0 || null;
+                var tB = p.tokenB || p.token1 || null;
+                // Also handle reserve strings like "1234.5678 TLM@alien.worlds"
+                if (!tA && p.reserve0) {
+                    var rs0 = parseReserveStr(p.reserve0);
+                    var rs1 = parseReserveStr(p.reserve1 || '');
+                    tA = rs0; tB = rs1;
+                }
+                if (!tA || !tB) return;
+                var amtA = parseFloat(tA.quantity || '0'), amtB = parseFloat(tB.quantity || '0');
+                if (amtA <= 0 || amtB <= 0) return;
+                var cA = tA.contract || '', cB = tB.contract || '';
+                var isDef = cA === 'def.worlds' || cB === 'def.worlds';
+                var isTlm = cA === 'alien.worlds' || cB === 'alien.worlds';
+                var isWax = (cA === 'eosio.token' && (tA.quantity||'').includes(' WAX')) ||
+                            (cB === 'eosio.token' && (tB.quantity||'').includes(' WAX'));
+                if (isDef && isTlm && !defInTlm) {
+                    var da = cA === 'def.worlds' ? amtA : amtB;
+                    var ta = cA === 'alien.worlds' ? amtA : amtB;
+                    if (da > 0) defInTlm = ta / da;
+                }
+                if (isTlm && isWax && !tlmInWax) {
+                    var ta2 = cA === 'alien.worlds' ? amtA : amtB;
+                    var wa  = (tA.quantity||'').includes(' WAX') ? amtA : amtB;
+                    if (ta2 > 0) tlmInWax = wa / ta2;
+                }
+            });
+        } catch(e) { console.warn('On-chain Alcor pool query failed:', e); }
+    }
+
+    // ── WAX/USD: try CoinGecko first, then CoinCap.io, then CoinPaprika ──
+    // CoinGecko (same IDs as aleleaders.html which works)
     try {
         var gr = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=wax,alien-worlds&vs_currencies=usd', { cache: 'no-store' });
         if (gr.ok) {
             var gd = await gr.json();
-            if (gd['wax'] && gd['wax'].usd > 0)            waxInUsd  = gd['wax'].usd;
-            // Derive TLM/WAX from USD prices if we didn't get it on-chain
+            if (gd.wax && gd.wax.usd > 0) waxInUsd = gd.wax.usd;
             if (!tlmInWax && gd['alien-worlds'] && gd['alien-worlds'].usd > 0 && waxInUsd) {
                 tlmInWax = gd['alien-worlds'].usd / waxInUsd;
             }
         }
-    } catch(e) { console.warn('CoinGecko WAX/USD fetch failed:', e); }
+    } catch(e) {}
+
+    // CoinCap.io fallback (reliable CORS; no API key)
+    if (!waxInUsd) {
+        try {
+            var cr = await fetch('https://api.coincap.io/v2/assets/wax', { cache: 'no-store' });
+            if (cr.ok) {
+                var cd = await cr.json();
+                if (cd.data && parseFloat(cd.data.priceUsd) > 0) waxInUsd = parseFloat(cd.data.priceUsd);
+            }
+        } catch(e) {}
+    }
+
+    // If we got WAX/USD and TLM/WAX is still missing, try CoinGecko for TLM separately
+    if (waxInUsd && !tlmInWax) {
+        try {
+            var tr = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=alien-worlds&vs_currencies=usd', { cache: 'no-store' });
+            if (tr.ok) {
+                var td = await tr.json();
+                if (td['alien-worlds'] && td['alien-worlds'].usd > 0) tlmInWax = td['alien-worlds'].usd / waxInUsd;
+            }
+        } catch(e) {}
+    }
 
     updatePriceTicker();
 
@@ -841,6 +974,9 @@ async function loadData() {
         document.getElementById('missions-table').style.display = 'table';
         document.getElementById('stats-bar').style.display = 'flex';
 
+        // Fetch chest NFT last-sold prices in the background
+        fetchChestPrices();
+
     } catch(e) {
         document.getElementById('loading-state').style.display = 'none';
         document.getElementById('error-state').style.display = 'block';
@@ -871,11 +1007,15 @@ function parseMission(m) {
     }
 
     var rwCfg = rewardMap[m.reward_config_id];
-    var rwAmt = 0, rwTok = null, rwChests = 0;
+    var rwAmt = 0, rwTok = null, rwChests = 0, rwNftTemplates = [];
     if (rwCfg) {
         if (rwCfg.nft_reward_count > 0) {
             rwChests = rwCfg.nft_reward_count;
             rwTok = 'CHEST';
+            // Capture any template IDs stored in the config
+            if (rwCfg.nft_template_ids) rwNftTemplates = rwCfg.nft_template_ids;
+            else if (rwCfg.template_id) rwNftTemplates = [rwCfg.template_id];
+            else if (rwCfg.nft_templates) rwNftTemplates = rwCfg.nft_templates;
         } else if (rwCfg.tiers && rwCfg.tiers[0]) {
             var rp = rwCfg.tiers[0].reward_asset.split(' ');
             rwAmt = parseFloat(rp[0]);
@@ -913,6 +1053,8 @@ function parseMission(m) {
         rwAmt:        rwAmt,
         rwTok:        rwTok,
         rwChests:     rwChests,
+        rwNftTemplates: rwNftTemplates,
+        chestFloorWax: 0,  // filled by fetchChestPrices()
         cooldownSec:  m.cooldown_base_sec,
         cooldownHrs:  cooldownHrs,
         minAtk:       m.min_div_attack || 0,
@@ -1128,23 +1270,38 @@ function calcProfitHr(m) {
 }
 
 function calcWaxHr(m) {
-    if (!tlmInWax || m.rwChests > 0) return null;
-    var rwWax = toDisplay(m.rwAmt, m.rwTok);
-    if (rwWax === null && m.rwTok === 'TLM') rwWax = m.rwAmt * tlmInWax;
-    if (rwWax === null && m.rwTok === 'DEF' && defInTlm) rwWax = m.rwAmt * defInTlm * tlmInWax;
-    return rwWax !== null ? rwWax / m.cooldownHrs : null;
+    // Always compute WAX directly — never goes through toDisplay() which reflects valueIn
+    if (!tlmInWax) return null;
+    if (m.rwChests > 0) return chestWaxValue(m) ? chestWaxValue(m) / m.cooldownHrs : null;
+    if (m.rwTok === 'TLM' && m.rwAmt > 0) return (m.rwAmt * tlmInWax) / m.cooldownHrs;
+    if (m.rwTok === 'DEF' && m.rwAmt > 0 && defInTlm) return (m.rwAmt * defInTlm * tlmInWax) / m.cooldownHrs;
+    return null;
+}
+
+function chestWaxValue(m) {
+    // Returns total WAX value for the chest reward of mission m, or null if unknown
+    var fp = m.rwChests > 0 && m.chestFloorWax > 0 ? m.rwChests * m.chestFloorWax : null;
+    return fp;
 }
 
 function fmtWaxHr(m) {
-    if (m.rwChests > 0) return '<span style="color:var(--text-dim)">—</span>';
+    if (!tlmInWax) return '<span style="color:var(--text-dim)" title="Prices loading…">…</span>';
+
+    if (m.rwChests > 0) {
+        var cv = chestWaxValue(m);
+        if (!cv) return '<span style="color:var(--text-dim)" title="Fetching chest NFT price…">…</span>';
+        var whr2 = cv / m.cooldownHrs;
+        return '<span class="tok tok-wax" title="' + fmtN(cv, 3) + ' WAX chest value ÷ ' + fmtN(m.cooldownHrs, 1) + 'h">' + fmtN(whr2, 4) + ' WAX/hr</span>';
+    }
+
     var whr = calcWaxHr(m);
-    if (whr === null) return tlmInWax ? '—' : '<span style="color:var(--text-dim)" title="Prices not loaded">…</span>';
-    // Build tooltip showing the math
+    if (whr === null) return '—';
+
     var mathTip = '';
     if (m.rwTok === 'TLM') {
-        mathTip = m.rwAmt.toFixed(2) + ' TLM × ' + tlmInWax.toFixed(5) + ' WAX/TLM ÷ ' + m.cooldownHrs.toFixed(1) + 'h';
+        mathTip = fmtN(m.rwAmt, 2) + ' TLM × ' + tlmInWax.toFixed(6) + ' WAX/TLM ÷ ' + fmtN(m.cooldownHrs, 1) + 'h';
     } else if (m.rwTok === 'DEF' && defInTlm) {
-        mathTip = m.rwAmt.toFixed(2) + ' DEF × ' + defInTlm.toFixed(1) + ' TLM/DEF × ' + tlmInWax.toFixed(5) + ' WAX/TLM ÷ ' + m.cooldownHrs.toFixed(1) + 'h';
+        mathTip = fmtN(m.rwAmt, 2) + ' DEF × ' + fmtN(defInTlm, 2) + ' TLM/DEF × ' + tlmInWax.toFixed(6) + ' WAX/TLM ÷ ' + fmtN(m.cooldownHrs, 1) + 'h';
     }
     return '<span class="tok tok-wax" title="' + mathTip + '">' + fmtN(whr, 4) + ' WAX/hr</span>';
 }
@@ -1166,9 +1323,6 @@ function renderTable() {
         var planetBadge = '<span class="planet-badge" style="color:' + planet.color + ';border-color:' + planet.color + ';background:' + planet.color + '18">' + planet.label + '</span>';
 
         var nameCell = '<button class="mission-title-btn" onclick="openLore(' + m.id + ')">' + escHtml(m.title) + '</button>';
-        if (m.minDef > 0) {
-            nameCell += ' <span class="req-badge">DEF ' + m.minDef.toLocaleString() + '</span>';
-        }
 
         var profitTd = showProfit ? fmtProfitHr(m) : '';
 
