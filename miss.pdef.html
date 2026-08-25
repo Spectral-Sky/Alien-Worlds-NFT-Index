@@ -696,84 +696,110 @@ async function fetchChestPrices() {
     if (updated && allMissions.length) renderTable();
 }
 
-// Parse a candle array or object and return the close price
-function candleClose(c) {
-    if (!c) return 0;
-    // Object form: {time, open, high, low, close, volume}
-    if (typeof c.close === 'number') return c.close;
-    // Array form: [time, open, high, low, close, volume]  (OHLCV)
-    if (Array.isArray(c) && c.length >= 5) return parseFloat(c[4]) || 0;
+// ── Alcor swap pool price helpers ───────────────────────────────────────────
+function _poolAmt(tok) {
+    if (!tok) return 0;
+    if (typeof tok.quantity === 'string') return parseFloat(tok.quantity) || 0;
+    if (typeof tok.amount  === 'number')  return tok.amount;
+    if (typeof tok.reserve === 'number')  return tok.reserve;
     return 0;
 }
+function _poolSym(tok) {
+    if (!tok) return '';
+    if (tok.symbol) return tok.symbol.toUpperCase();
+    if (typeof tok.quantity === 'string') return (tok.quantity.split(' ')[1] || '').toUpperCase();
+    if (tok.id && tok.id.includes('-')) return tok.id.split('-')[0].toUpperCase();
+    return '';
+}
 
-async function alcorCandle(tokenA, tokenB) {
-    // Returns WAX-per-tokenA price using 1D candles. tokenA format: "symbol-contract"
-    // Use 90-day window — Alcor's own frontend queries ~54 days; a narrow window returns []
-    var now = Date.now();
-    var from = now - 90 * 24 * 3600 * 1000;
-    var url = 'https://wax.alcor.exchange/api/v2/swap/candles'
+// Attempt 1: Alcor REST /api/v2/swap/pools — all pools with live reserves → spot price
+async function alcorPoolsFromRest() {
+    var r = await fetch('https://wax.alcor.exchange/api/v2/swap/pools', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var pools = await r.json();
+    if (!Array.isArray(pools) || !pools.length) throw new Error('empty pools');
+    return pools;
+}
+
+// Attempt 2: Alcor candles — last close price from 90-day 1D window
+async function alcorCandlePrice(tokenA, tokenB) {
+    var now = Date.now(), from = now - 90 * 24 * 3600 * 1000;
+    var r = await fetch('https://wax.alcor.exchange/api/v2/swap/candles'
         + '?tokenA=' + tokenA + '&tokenB=' + tokenB
-        + '&resolution=1D&from=' + from + '&to=' + now;
-    var r = await fetch(url, { cache: 'no-store' });
+        + '&resolution=1D&from=' + from + '&to=' + now, { cache: 'no-store' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     var data = await r.json();
-    if (!Array.isArray(data) || !data.length) throw new Error('no candle data');
-    return candleClose(data[data.length - 1]);
+    if (!Array.isArray(data) || !data.length) throw new Error('no candles');
+    var last = data[data.length - 1];
+    var close = (typeof last.close === 'number') ? last.close
+               : (Array.isArray(last) && last.length >= 5) ? parseFloat(last[4]) || 0 : 0;
+    if (!close) throw new Error('bad close');
+    return close;
+}
+
+// Parse pools array (REST or on-chain) and extract DEF/TLM/WAX prices
+function parsePools(pools, priceObj) {
+    var DEF_C = ['def.worlds', 'defensetoken'];
+    pools.forEach(function(p) {
+        var tA = p.tokenA || p.token0 || null;
+        var tB = p.tokenB || p.token1 || null;
+        if (!tA && p.reserve0) { tA = parseReserveStr(p.reserve0); tB = parseReserveStr(p.reserve1 || ''); }
+        if (!tA || !tB) return;
+        var symA = _poolSym(tA), symB = _poolSym(tB);
+        var amtA = _poolAmt(tA), amtB = _poolAmt(tB);
+        if (amtA <= 0 || amtB <= 0) return;
+        var cA = (tA.contract || '').toLowerCase(), cB = (tB.contract || '').toLowerCase();
+        var isDefA = symA === 'DEF' && (DEF_C.indexOf(cA) >= 0 || !cA);
+        var isDefB = symB === 'DEF' && (DEF_C.indexOf(cB) >= 0 || !cB);
+        var isTlmA = symA === 'TLM', isTlmB = symB === 'TLM';
+        var isWaxA = symA === 'WAX', isWaxB = symB === 'WAX';
+        if (isDefA && isWaxB && !priceObj.defInWax) priceObj.defInWax = amtB / amtA;
+        if (isDefB && isWaxA && !priceObj.defInWax) priceObj.defInWax = amtA / amtB;
+        if (isDefA && isTlmB && !priceObj.defInTlm) priceObj.defInTlm = amtB / amtA;
+        if (isDefB && isTlmA && !priceObj.defInTlm) priceObj.defInTlm = amtA / amtB;
+        if (isTlmA && isWaxB && !priceObj.tlmInWax) priceObj.tlmInWax = amtB / amtA;
+        if (isTlmB && isWaxA && !priceObj.tlmInWax) priceObj.tlmInWax = amtA / amtB;
+    });
 }
 
 async function fetchPrices() {
-    // ── DEF/WAX and TLM/WAX from Alcor candles (discovered from naroncodex network tab) ──
-    // DEF token contract on Alcor: "defensetoken" (not def.worlds)
-    // TLM token contract on Alcor: "alien.worlds"
-    var defInWax = 0;
+    var prices = { defInWax: 0, defInTlm: 0, tlmInWax: 0 };
+
+    // ── Attempt 1: Alcor REST pools list (live reserve ratios) ──────────────
     try {
-        defInWax = await alcorCandle('def-defensetoken', 'wax-eosio.token');
-    } catch(e) { console.warn('Alcor DEF/WAX candle failed:', e); }
+        var restPools = await alcorPoolsFromRest();
+        console.log('[prices] Alcor pools REST: ' + restPools.length + ' pools');
+        parsePools(restPools, prices);
+    } catch(e) { console.warn('[prices] Alcor REST pools failed:', e); }
 
-    if (!tlmInWax) {
-        try {
-            tlmInWax = await alcorCandle('tlm-alien.worlds', 'wax-eosio.token');
-        } catch(e) { console.warn('Alcor TLM/WAX candle failed:', e); }
+    // ── Attempt 2: Alcor candles (DEF/WAX token names found from network tab) ─
+    if (!prices.defInWax && !prices.defInTlm) {
+        try { prices.defInWax = await alcorCandlePrice('def-defensetoken', 'wax-eosio.token'); }
+        catch(e) { console.warn('[prices] DEF/WAX candle failed:', e); }
+    }
+    if (!prices.tlmInWax) {
+        try { prices.tlmInWax = await alcorCandlePrice('tlm-alien.worlds', 'wax-eosio.token'); }
+        catch(e) { console.warn('[prices] TLM/WAX candle failed:', e); }
     }
 
-    // DEF/TLM = (WAX per DEF) / (WAX per TLM)
-    if (defInWax > 0 && tlmInWax > 0) defInTlm = defInWax / tlmInWax;
-
-    // On-chain pool fallback (uses correct contract name: defensetoken)
-    if (!defInTlm || !tlmInWax) {
+    // ── Attempt 3: On-chain swap.alcor pools table ───────────────────────────
+    if ((!prices.defInWax && !prices.defInTlm) || !prices.tlmInWax) {
         try {
-            var pools = [];
-            for (var ci = 0; ci < ['alcorammswap', 'swap.alcor'].length; ci++) {
-                var cn = ['alcorammswap', 'swap.alcor'][ci];
-                try { pools = await fetchTableFrom(cn, cn, 'pools', 500); if (pools.length) break; } catch(e2) {}
+            var onChainPools = [];
+            for (var cn of ['swap.alcor', 'alcorammswap']) {
+                try {
+                    onChainPools = await fetchTableFrom(cn, cn, 'pools', 500);
+                    if (onChainPools.length) { console.log('[prices] on-chain pools from', cn, ':', onChainPools.length); break; }
+                } catch(e2) {}
             }
-            pools.forEach(function(p) {
-                var tA = p.tokenA || p.token0 || null;
-                var tB = p.tokenB || p.token1 || null;
-                if (!tA && p.reserve0) { tA = parseReserveStr(p.reserve0); tB = parseReserveStr(p.reserve1 || ''); }
-                if (!tA || !tB) return;
-                var amtA = parseFloat(tA.quantity || '0'), amtB = parseFloat(tB.quantity || '0');
-                if (amtA <= 0 || amtB <= 0) return;
-                var cA = tA.contract || '', cB = tB.contract || '';
-                // DEF contract can appear as def.worlds OR defensetoken
-                var defC = ['def.worlds', 'defensetoken'];
-                var isDef = defC.indexOf(cA) >= 0 || defC.indexOf(cB) >= 0;
-                var isTlm = cA === 'alien.worlds' || cB === 'alien.worlds';
-                var isWaxQ = (cA === 'eosio.token' && (tA.quantity||'').includes(' WAX')) ||
-                             (cB === 'eosio.token' && (tB.quantity||'').includes(' WAX'));
-                if (isDef && isTlm && !defInTlm) {
-                    var dA = defC.indexOf(cA) >= 0 ? amtA : amtB;
-                    var tAm = cA === 'alien.worlds' ? amtA : amtB;
-                    if (dA > 0) defInTlm = tAm / dA;
-                }
-                if (isTlm && isWaxQ && !tlmInWax) {
-                    var tA2 = cA === 'alien.worlds' ? amtA : amtB;
-                    var wA  = (tA.quantity||'').includes(' WAX') ? amtA : amtB;
-                    if (tA2 > 0) tlmInWax = wA / tA2;
-                }
-            });
-        } catch(e) { console.warn('On-chain pool fallback failed:', e); }
+            if (onChainPools.length) parsePools(onChainPools, prices);
+        } catch(e) { console.warn('[prices] on-chain pool fallback failed:', e); }
     }
+
+    // Apply what we found
+    if (prices.tlmInWax > 0) tlmInWax = prices.tlmInWax;
+    if (prices.defInTlm > 0) defInTlm = prices.defInTlm;
+    if (!defInTlm && prices.defInWax > 0 && tlmInWax > 0) defInTlm = prices.defInWax / tlmInWax;
 
     // ── WAX/USD: CoinGecko → CoinPaprika (CoinCap.io domain is unresolvable) ──
     try {
