@@ -708,8 +708,9 @@ function candleClose(c) {
 
 async function alcorCandle(tokenA, tokenB) {
     // Returns WAX-per-tokenA price using 1D candles. tokenA format: "symbol-contract"
+    // Use 90-day window — Alcor's own frontend queries ~54 days; a narrow window returns []
     var now = Date.now();
-    var from = now - 3 * 24 * 3600 * 1000; // 3 days back to ensure we get at least one candle
+    var from = now - 90 * 24 * 3600 * 1000;
     var url = 'https://wax.alcor.exchange/api/v2/swap/candles'
         + '?tokenA=' + tokenA + '&tokenB=' + tokenB
         + '&resolution=1D&from=' + from + '&to=' + now;
