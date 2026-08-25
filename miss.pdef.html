@@ -299,6 +299,55 @@
             color:var(--text-muted); font-size:0.75em; letter-spacing:1px; text-align:center;
         }
 
+        /* ── VALUE IN TOGGLE ── */
+        .val-in-group { display:flex; border:1px solid var(--border); border-radius:4px; overflow:hidden; }
+        .val-pill {
+            background:transparent; color:var(--text-muted); border:none; border-right:1px solid var(--border);
+            padding:4px 10px; font-family:'Courier New',monospace; font-size:0.75em; font-weight:bold;
+            text-transform:uppercase; letter-spacing:1px; cursor:pointer; transition:all 0.15s;
+        }
+        .val-pill:last-child { border-right:none; }
+        .val-pill:hover { background:var(--accent-dim); color:var(--accent); }
+        .val-pill.active { background:var(--accent); color:#000; }
+        .val-pill.vi-wax.active  { background:#38b09a; }
+        .val-pill.vi-usd.active  { background:#4caf50; }
+        .val-pill.vi-def.active  { background:#5badff; }
+        .val-pill.vi-tlm.active  { background:#e8a020; }
+
+        /* Converted value sub-text under cost/reward */
+        .val-conv { display:block; font-size:0.78em; color:var(--text-dim); margin-top:1px; letter-spacing:0; font-weight:normal; }
+
+        /* Tokens */
+        .tok-wax { color:#38b09a; }
+        .tok-usd { color:#4caf50; }
+
+        /* ── PRICE TICKER ── */
+        .price-ticker {
+            background:#020810; border-bottom:1px solid var(--border);
+            padding:6px 24px; display:flex; gap:20px; align-items:center; flex-wrap:wrap;
+            font-size:0.72em; letter-spacing:1px;
+        }
+        .price-ticker .ptick-label { color:var(--text-dim); text-transform:uppercase; }
+        .price-ticker .ptick-sep   { color:var(--text-dim); }
+        .price-ticker .ptick-stale { color:var(--text-dim); font-size:0.9em; font-style:italic; }
+        .price-ticker .ptick-err   { color:var(--loss); font-size:0.9em; }
+        .price-ticker .ptick-live  { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--profit); margin-right:4px; animation:livePulse 2s ease-in-out infinite; vertical-align:middle; }
+        @keyframes livePulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+        .ptick-manual-wrap { display:flex; align-items:center; gap:5px; margin-left:auto; }
+        .ptick-manual-wrap label { color:var(--text-dim); font-size:0.9em; }
+        #def-price-input {
+            background:#000; border:1px solid var(--border); color:var(--accent);
+            padding:3px 7px; font-family:'Courier New',monospace; font-size:0.9em; font-weight:bold;
+            width:72px; text-align:right; transition:border-color 0.2s;
+        }
+        #def-price-input:focus { outline:none; border-color:var(--accent); }
+        #def-price-input.has-live { border-color:#3a5070; }
+        .ptick-live-btn {
+            background:transparent; border:1px solid #3a5070; color:var(--text-dim);
+            padding:2px 6px; font-family:'Courier New',monospace; font-size:0.8em; cursor:pointer; transition:all 0.2s;
+        }
+        .ptick-live-btn:hover { border-color:var(--accent); color:var(--accent); }
+
         a, button, th, td { cursor:crosshair !important; }
         .mission-title-btn { cursor:pointer !important; }
 
@@ -367,16 +416,40 @@
 
     <div class="filter-sep"></div>
 
-    <!-- DEF price input -->
-    <div class="def-price-wrap">
-        <label for="def-price-input">1 DEF =</label>
-        <input type="number" id="def-price-input" placeholder="0.00" min="0" step="0.01" oninput="onDefPriceChange(this.value)">
-        <span class="unit">TLM</span>
+    <!-- Value in toggle -->
+    <div class="filter-group">
+        <span class="filter-label">Value in</span>
+        <div class="val-in-group">
+            <button class="val-pill vi-def"  id="vi-def"  onclick="setValueIn('def')">DEF</button>
+            <button class="val-pill vi-tlm active" id="vi-tlm" onclick="setValueIn('tlm')">TLM</button>
+            <button class="val-pill vi-wax"  id="vi-wax"  onclick="setValueIn('wax')">WAX</button>
+            <button class="val-pill vi-usd"  id="vi-usd"  onclick="setValueIn('usd')">USD</button>
+        </div>
     </div>
 
     <!-- Refresh + timestamp -->
     <button class="refresh-btn" onclick="loadData()">↺ REFRESH</button>
     <span id="last-updated" title="Last fetched from WAX chain">—</span>
+</div>
+
+<!-- ── PRICE TICKER ── -->
+<div class="price-ticker" id="price-ticker">
+    <span class="ptick-label">1 DEF</span>
+    <span class="ptick-sep">=</span>
+    <span id="ptick-tlm" class="tok-tlm ptick-stale">…</span>
+    <span class="ptick-sep">TLM</span>
+    <span id="ptick-wax" class="tok-wax ptick-stale">…</span>
+    <span class="ptick-sep">WAX</span>
+    <span id="ptick-usd" class="tok-usd ptick-stale">…</span>
+    <span class="ptick-sep">USD</span>
+    <span id="ptick-status" class="ptick-stale">fetching live prices…</span>
+    <!-- Manual DEF price override (for break-even colouring) -->
+    <div class="ptick-manual-wrap" title="Override DEF price for break-even/profit column">
+        <label for="def-price-input">Override 1 DEF =</label>
+        <input type="number" id="def-price-input" placeholder="auto" min="0" step="0.01" oninput="onDefPriceChange(this.value)">
+        <span style="color:var(--text-dim);font-size:0.85em">TLM</span>
+        <button class="ptick-live-btn" onclick="resetDefPrice()" title="Reset to live price">↺ live</button>
+    </div>
 </div>
 
 <!-- ── STATS BAR ── -->
@@ -475,7 +548,176 @@ let sortDir = 1;
 let filterType = 'all';
 let filterPlanet = 'all';
 let hideExpired = true;
-let defPrice = 0;
+let defPrice = 0;       // TLM per 1 DEF (for break-even colouring; auto-set from live price)
+let defInTlm = null;    // live: TLM per 1 DEF
+let tlmInWax = null;    // live: WAX per 1 TLM
+let waxInUsd = null;    // live: USD per 1 WAX
+let valueIn  = 'tlm';   // 'def' | 'tlm' | 'wax' | 'usd'
+let defPriceOverridden = false;  // true when user has manually edited the field
+
+// ─────────────────────────────────────────────
+// PRICE FETCH
+// ─────────────────────────────────────────────
+async function fetchPrices() {
+    // Alcor DEX markets (WAX network)
+    try {
+        var res = await fetch('https://alcor.exchange/api/v2/markets?network=wax');
+        if (res.ok) {
+            var markets = await res.json();
+            // Find DEF/TLM pair (base=DEF, quote=TLM  →  last_price = TLM per DEF)
+            var defTlm = markets.find(function(mk) {
+                return mk.base_token && mk.quote_token &&
+                    mk.base_token.symbol === 'DEF' && mk.quote_token.symbol === 'TLM';
+            });
+            if (defTlm && defTlm.last_price > 0) defInTlm = defTlm.last_price;
+
+            // Fallback: inverse TLM/DEF pair
+            if (!defInTlm) {
+                var tlmDef = markets.find(function(mk) {
+                    return mk.base_token && mk.quote_token &&
+                        mk.base_token.symbol === 'TLM' && mk.quote_token.symbol === 'DEF';
+                });
+                if (tlmDef && tlmDef.last_price > 0) defInTlm = 1 / tlmDef.last_price;
+            }
+
+            // TLM/WAX pair (base=TLM, quote=WAX  →  last_price = WAX per TLM)
+            var tlmWax = markets.find(function(mk) {
+                return mk.base_token && mk.quote_token &&
+                    mk.base_token.symbol === 'TLM' && mk.quote_token.symbol === 'WAX';
+            });
+            if (tlmWax && tlmWax.last_price > 0) tlmInWax = tlmWax.last_price;
+
+            // Fallback: DEF/WAX pair for direct conversion
+            if (defInTlm && !tlmInWax) {
+                var defWax = markets.find(function(mk) {
+                    return mk.base_token && mk.quote_token &&
+                        mk.base_token.symbol === 'DEF' && mk.quote_token.symbol === 'WAX';
+                });
+                if (defWax && defWax.last_price > 0) tlmInWax = defWax.last_price / defInTlm;
+            }
+        }
+    } catch(e) { console.warn('Alcor price fetch failed:', e); }
+
+    // WAX/USD via CoinGecko
+    try {
+        var gr = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=wax-io&vs_currencies=usd');
+        if (gr.ok) {
+            var gd = await gr.json();
+            if (gd['wax-io'] && gd['wax-io'].usd > 0) waxInUsd = gd['wax-io'].usd;
+        }
+    } catch(e) { console.warn('CoinGecko price fetch failed:', e); }
+
+    updatePriceTicker();
+
+    // Auto-fill DEF price input from live rate (unless user overrode it)
+    if (defInTlm && !defPriceOverridden) {
+        defPrice = defInTlm;
+        var inp = document.getElementById('def-price-input');
+        if (inp) { inp.value = defInTlm.toFixed(2); inp.classList.add('has-live'); }
+        document.getElementById('profit-legend').style.display = 'flex';
+        if (allMissions.length) renderTable();
+    }
+}
+
+function updatePriceTicker() {
+    var tlmEl    = document.getElementById('ptick-tlm');
+    var waxEl    = document.getElementById('ptick-wax');
+    var usdEl    = document.getElementById('ptick-usd');
+    var statEl   = document.getElementById('ptick-status');
+    if (!tlmEl) return;
+
+    var anyLive = false;
+
+    if (defInTlm) {
+        tlmEl.textContent = fmtN(defInTlm, 1);
+        tlmEl.className = 'tok-tlm';
+        anyLive = true;
+    } else {
+        tlmEl.textContent = '—';
+        tlmEl.className = 'tok-tlm ptick-stale';
+    }
+
+    if (defInTlm && tlmInWax) {
+        waxEl.textContent = fmtN(defInTlm * tlmInWax, 4);
+        waxEl.className = 'tok-wax';
+        anyLive = true;
+    } else {
+        waxEl.textContent = '—';
+        waxEl.className = 'tok-wax ptick-stale';
+    }
+
+    if (defInTlm && tlmInWax && waxInUsd) {
+        usdEl.textContent = '$' + fmtN(defInTlm * tlmInWax * waxInUsd, 4);
+        usdEl.className = 'tok-usd';
+        anyLive = true;
+    } else {
+        usdEl.textContent = '—';
+        usdEl.className = 'tok-usd ptick-stale';
+    }
+
+    if (anyLive) {
+        statEl.innerHTML = '<span class="ptick-live"></span> alcor.exchange · coingecko';
+        statEl.className = 'ptick-stale';
+    } else {
+        statEl.textContent = 'price fetch failed — enter manually';
+        statEl.className = 'ptick-err';
+    }
+}
+
+// ─────────────────────────────────────────────
+// CURRENCY CONVERSION
+// ─────────────────────────────────────────────
+function toDisplay(amount, fromTok) {
+    if (!amount || amount === 0) return null;
+    var inTlm;
+    if (fromTok === 'TLM')       inTlm = amount;
+    else if (fromTok === 'DEF')  inTlm = defInTlm ? amount * defInTlm : null;
+    else return null;
+    if (inTlm === null) return null;
+
+    switch (valueIn) {
+        case 'tlm': return inTlm;
+        case 'def': return defInTlm ? inTlm / defInTlm : null;
+        case 'wax': return tlmInWax ? inTlm * tlmInWax : null;
+        case 'usd': return (tlmInWax && waxInUsd) ? inTlm * tlmInWax * waxInUsd : null;
+    }
+    return null;
+}
+
+function viLabel() {
+    switch (valueIn) {
+        case 'def': return 'DEF';
+        case 'tlm': return 'TLM';
+        case 'wax': return 'WAX';
+        case 'usd': return 'USD';
+    }
+    return '';
+}
+
+function viTokClass() {
+    switch (valueIn) {
+        case 'def': return 'tok-def';
+        case 'tlm': return 'tok-tlm';
+        case 'wax': return 'tok-wax';
+        case 'usd': return 'tok-usd';
+    }
+    return '';
+}
+
+function fmtDisplayVal(amount, fromTok) {
+    // Returns an HTML string: the native amount + a ≈ converted line if valueIn differs
+    var nativeCls = fromTok === 'TLM' ? 'tok-tlm' : fromTok === 'DEF' ? 'tok-def' : '';
+    var nativeHtml = '<span class="tok ' + nativeCls + '">' + fmtN(amount, 4) + ' ' + fromTok + '</span>';
+    var nativeIsTarget = (fromTok === valueIn.toUpperCase());
+    if (nativeIsTarget) return nativeHtml;
+
+    var converted = toDisplay(amount, fromTok);
+    if (converted === null) return nativeHtml;
+
+    var usdPrefix = valueIn === 'usd' ? '$' : '';
+    var convHtml = '<span class="val-conv">≈ ' + usdPrefix + fmtN(converted, valueIn === 'usd' ? 4 : 3) + (valueIn !== 'usd' ? ' ' + viLabel() : '') + '</span>';
+    return nativeHtml + convHtml;
+}
 
 // ─────────────────────────────────────────────
 // FETCH
@@ -634,15 +876,13 @@ function fmtCooldown(secs) {
 
 function fmtCost(m) {
     if (!m.costTok || m.costAmt === 0) return '<span class="tok tok-free">FREE</span>';
-    var cls = m.costTok === 'TLM' ? 'tok-tlm' : 'tok-def';
-    return '<span class="tok ' + cls + '">' + fmtN(m.costAmt) + ' ' + m.costTok + '</span>';
+    return fmtDisplayVal(m.costAmt, m.costTok);
 }
 
 function fmtReward(m) {
     if (m.rwChests > 0) return '<span class="tok tok-chest">&#128230;&thinsp;&times;' + m.rwChests + '</span>';
     if (!m.rwTok || m.rwAmt === 0) return '—';
-    var cls = m.rwTok === 'TLM' ? 'tok-tlm' : m.rwTok === 'DEF' ? 'tok-def' : '';
-    return '<span class="tok ' + cls + '">' + fmtN(m.rwAmt) + ' ' + m.rwTok + '</span>';
+    return fmtDisplayVal(m.rwAmt, m.rwTok);
 }
 
 function fmtRatio(m) {
@@ -659,10 +899,18 @@ function fmtRatio(m) {
 }
 
 function fmtPerHr(m) {
-    if (m.rwChests > 0) return '<span class="tok tok-chest">' + fmtN(m.rwPerHr, 2) + '/hr</span>';
-    if (!m.rwTok) return '—';
-    var cls = m.rwTok === 'TLM' ? 'tok-tlm' : m.rwTok === 'DEF' ? 'tok-def' : '';
-    return '<span class="tok ' + cls + '">' + fmtN(m.rwPerHr, 2) + '/hr</span>';
+    if (m.rwChests > 0) return '<span class="tok tok-chest">' + fmtN(m.rwPerHr, 2) + ' /hr</span>';
+    if (!m.rwTok || m.rwAmt === 0) return '—';
+    var nativeCls = m.rwTok === 'TLM' ? 'tok-tlm' : m.rwTok === 'DEF' ? 'tok-def' : '';
+    var nativeHtml = '<span class="tok ' + nativeCls + '">' + fmtN(m.rwPerHr, 2) + ' ' + m.rwTok + '/hr</span>';
+    var nativeIsTarget = (m.rwTok === valueIn.toUpperCase());
+    if (nativeIsTarget) return nativeHtml;
+    var convertedAmt = toDisplay(m.rwAmt, m.rwTok);
+    if (convertedAmt === null) return nativeHtml;
+    var convertedPerHr = convertedAmt / m.cooldownHrs;
+    var usdPrefix = valueIn === 'usd' ? '$' : '';
+    var convHtml = '<span class="val-conv">≈ ' + usdPrefix + fmtN(convertedPerHr, 3) + (valueIn !== 'usd' ? ' ' + viLabel() + '/hr' : '/hr') + '</span>';
+    return nativeHtml + convHtml;
 }
 
 function fmtBreakEven(m) {
@@ -679,19 +927,31 @@ function fmtBreakEven(m) {
 
 function fmtProfitHr(m) {
     if (defPrice <= 0) return '';
-    var profitPerRun, profitPerHr;
+    // All profit calculated in TLM first
+    var profitTlmPerRun;
     if (m.missionType === 'def-tlm' && m.costAmt > 0) {
-        profitPerRun = m.rwAmt - (m.costAmt * defPrice);
-        profitPerHr  = profitPerRun / m.cooldownHrs;
+        profitTlmPerRun = m.rwAmt - (m.costAmt * defPrice);
     } else if (m.missionType === 'tlm-def' && m.rwAmt > 0) {
-        profitPerRun = (m.rwAmt * defPrice) - m.costAmt;
-        profitPerHr  = profitPerRun / m.cooldownHrs;
+        profitTlmPerRun = (m.rwAmt * defPrice) - m.costAmt;
     } else {
         return '<td class="mono" style="color:var(--text-dim)">—</td>';
     }
-    var cls = profitPerHr >= 0 ? 'profit-pos' : 'profit-neg';
-    var sign = profitPerHr >= 0 ? '+' : '';
-    return '<td class="mono ' + cls + '">' + sign + fmtN(profitPerHr, 1) + ' TLM/hr</td>';
+    var profitTlmPerHr = profitTlmPerRun / m.cooldownHrs;
+
+    // Convert to selected display currency
+    var dispPerHr, dispLabel, usdPrefix = '';
+    switch (valueIn) {
+        case 'def': dispPerHr = defPrice > 0 ? profitTlmPerHr / defPrice : null; dispLabel = 'DEF/hr'; break;
+        case 'wax': dispPerHr = tlmInWax ? profitTlmPerHr * tlmInWax : null; dispLabel = 'WAX/hr'; break;
+        case 'usd': dispPerHr = (tlmInWax && waxInUsd) ? profitTlmPerHr * tlmInWax * waxInUsd : null; dispLabel = '/hr'; usdPrefix = '$'; break;
+        default:    dispPerHr = profitTlmPerHr; dispLabel = 'TLM/hr';
+    }
+    var val   = dispPerHr !== null ? dispPerHr : profitTlmPerHr;
+    var label = dispPerHr !== null ? dispLabel : 'TLM/hr';
+    var pfx   = dispPerHr !== null ? usdPrefix : '';
+    var cls   = val >= 0 ? 'profit-pos' : 'profit-neg';
+    var sign  = val >= 0 ? '+' : '';
+    return '<td class="mono ' + cls + '">' + sign + pfx + fmtN(val, 2) + ' ' + label + '</td>';
 }
 
 function fmtExpiry(m) {
@@ -887,7 +1147,28 @@ function toggleHideExpired(val) {
 
 function onDefPriceChange(val) {
     defPrice = parseFloat(val) || 0;
+    defPriceOverridden = true;
+    var inp = document.getElementById('def-price-input');
+    if (inp) inp.classList.remove('has-live');
     document.getElementById('profit-legend').style.display = defPrice > 0 ? 'flex' : 'none';
+    renderTable();
+}
+
+function resetDefPrice() {
+    if (!defInTlm) return;
+    defPrice = defInTlm;
+    defPriceOverridden = false;
+    var inp = document.getElementById('def-price-input');
+    if (inp) { inp.value = defInTlm.toFixed(2); inp.classList.add('has-live'); }
+    document.getElementById('profit-legend').style.display = 'flex';
+    renderTable();
+}
+
+function setValueIn(vi) {
+    valueIn = vi;
+    document.querySelectorAll('.val-pill').forEach(function(b) { b.classList.remove('active'); });
+    var btn = document.getElementById('vi-' + vi);
+    if (btn) btn.classList.add('active');
     renderTable();
 }
 
@@ -1050,6 +1331,7 @@ document.addEventListener('DOMContentLoaded', function() {
     _inj();
     checkWalletState();
     loadData();
+    fetchPrices();
 });
 </script>
 </body>
