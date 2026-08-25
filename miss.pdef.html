@@ -732,11 +732,14 @@ async function alcorCandlePrice(tokenA, tokenB) {
         + '&resolution=1D&from=' + from + '&to=' + now, { cache: 'no-store' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     var data = await r.json();
-    if (!Array.isArray(data) || !data.length) throw new Error('no candles');
-    var last = data[data.length - 1];
+    // Response may be a bare array OR an object like {candles:[...]} / {data:[...]}
+    var candles = Array.isArray(data) ? data : (data.candles || data.data || data.result || []);
+    if (!candles.length) throw new Error('no candles (keys: ' + Object.keys(data||{}).join(',') + ')');
+    var last = candles[candles.length - 1];
     var close = (typeof last.close === 'number') ? last.close
+               : (typeof last.close === 'string') ? parseFloat(last.close) || 0
                : (Array.isArray(last) && last.length >= 5) ? parseFloat(last[4]) || 0 : 0;
-    if (!close) throw new Error('bad close');
+    if (!close) throw new Error('bad close value: ' + JSON.stringify(last).substring(0,120));
     return close;
 }
 
@@ -796,14 +799,22 @@ async function fetchPrices() {
         parsePools(restPools, prices);
     } catch(e) { console.warn('[prices] Alcor REST pools failed:', e); }
 
-    // ── Attempt 2: Alcor candles (DEF/WAX token names found from network tab) ─
-    if (!prices.defInWax && !prices.defInTlm) {
-        try { prices.defInWax = await alcorCandlePrice('def-defensetoken', 'wax-eosio.token'); }
-        catch(e) { console.warn('[prices] DEF/WAX candle failed:', e); }
+    // ── Attempt 2: Alcor candles — DEF is an order-book market, not an AMM pool ─
+    // Both DEF/WAX and DEF/TLM pairs confirmed working from Alcor network tab
+    if (!prices.defInWax) {
+        try { prices.defInWax = await alcorCandlePrice('def-defensetoken', 'wax-eosio.token');
+              console.log('[prices] DEF/WAX candle:', prices.defInWax); }
+        catch(e) { console.warn('[prices] DEF/WAX candle failed:', e.message); }
+    }
+    if (!prices.defInTlm) {
+        try { prices.defInTlm = await alcorCandlePrice('def-defensetoken', 'tlm-alien.worlds');
+              console.log('[prices] DEF/TLM candle:', prices.defInTlm); }
+        catch(e) { console.warn('[prices] DEF/TLM candle failed:', e.message); }
     }
     if (!prices.tlmInWax) {
-        try { prices.tlmInWax = await alcorCandlePrice('tlm-alien.worlds', 'wax-eosio.token'); }
-        catch(e) { console.warn('[prices] TLM/WAX candle failed:', e); }
+        try { prices.tlmInWax = await alcorCandlePrice('tlm-alien.worlds', 'wax-eosio.token');
+              console.log('[prices] TLM/WAX candle:', prices.tlmInWax); }
+        catch(e) { console.warn('[prices] TLM/WAX candle failed:', e.message); }
     }
 
     // ── Attempt 3: On-chain swap.alcor pools table ───────────────────────────
