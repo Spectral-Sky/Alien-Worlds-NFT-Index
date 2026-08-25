@@ -697,101 +697,109 @@ async function fetchChestPrices() {
 }
 
 async function fetchPrices() {
-    // ── Attempt 1: Alcor REST API (wax subdomain — different CORS policy) ──
-    var alcorOk = false;
-    try {
-        var ar = await fetch('https://wax.alcor.exchange/api/v2/markets', { cache: 'no-store' });
-        if (ar.ok) {
-            var markets = await ar.json();
-            if (Array.isArray(markets)) {
-                markets.forEach(function(mk) {
-                    var bSym = mk.base_token && mk.base_token.symbol ? mk.base_token.symbol.toUpperCase() : '';
-                    var qSym = mk.quote_token && mk.quote_token.symbol ? mk.quote_token.symbol.toUpperCase() : '';
-                    var lp   = parseFloat(mk.last_price || mk.close || 0);
-                    if (!lp || lp <= 0) return;
-                    // DEF/TLM: base=DEF quote=TLM → lp = TLM per DEF
-                    if (bSym === 'DEF' && qSym === 'TLM' && !defInTlm) defInTlm = lp;
-                    if (bSym === 'TLM' && qSym === 'DEF' && !defInTlm) defInTlm = 1 / lp;
-                    // TLM/WAX: base=TLM quote=WAX → lp = WAX per TLM
-                    if (bSym === 'TLM' && qSym === 'WAX' && !tlmInWax) tlmInWax = lp;
-                    if (bSym === 'WAX' && qSym === 'TLM' && !tlmInWax) tlmInWax = 1 / lp;
-                });
-                if (defInTlm && tlmInWax) alcorOk = true;
-            }
-        }
-    } catch(e) { console.warn('wax.alcor.exchange REST failed:', e); }
-
-    // ── Attempt 2: On-chain Alcor AMM pool query via WAX RPC (avoids CORS entirely) ──
-    if (!alcorOk) {
+    // ── DEF/TLM + TLM/WAX: Alcor Exchange REST API ──────────────────────────
+    // The WAX-subdomain uses unversioned /api/markets (not /api/v2/markets)
+    var alcorUrls = [
+        'https://wax.alcor.exchange/api/markets',
+        'https://alcor.exchange/api/v2/markets?network=wax',
+    ];
+    for (var ai = 0; ai < alcorUrls.length && !defInTlm; ai++) {
         try {
-            // Try both known Alcor AMM contract names on WAX
+            var ar = await fetch(alcorUrls[ai], { cache: 'no-store' });
+            if (!ar.ok) continue;
+            var mkts = await ar.json();
+            if (!Array.isArray(mkts)) continue;
+            mkts.forEach(function(mk) {
+                // Support multiple field name conventions from different API versions
+                var bSym = (mk.base_token  && (mk.base_token.symbol  || mk.base_token.str  || '')).toUpperCase();
+                var qSym = (mk.quote_token && (mk.quote_token.symbol || mk.quote_token.str || '')).toUpperCase();
+                var lp   = parseFloat(mk.last_price || mk.lastPrice || mk.close || 0);
+                if (!lp || lp <= 0) return;
+                if (bSym === 'DEF' && qSym === 'TLM' && !defInTlm) defInTlm = lp;
+                if (bSym === 'TLM' && qSym === 'DEF' && !defInTlm) defInTlm = 1 / lp;
+                if (bSym === 'TLM' && qSym === 'WAX' && !tlmInWax) tlmInWax = lp;
+                if (bSym === 'WAX' && qSym === 'TLM' && !tlmInWax) tlmInWax = 1 / lp;
+            });
+        } catch(e) { console.warn('Alcor REST attempt ' + ai + ' failed:', e); }
+    }
+
+    // ── DEF/TLM fallback: on-chain Alcor AMM pool via WAX RPC ───────────────
+    if (!defInTlm) {
+        try {
             var pools = [];
-            for (var cn of ['alcorammswap', 'swap.alcor']) {
-                try { pools = await fetchTableFrom(cn, cn, 'pools', 500); if (pools.length) break; } catch(e2) {}
+            var contractNames = ['alcorammswap', 'swap.alcor'];
+            for (var ci = 0; ci < contractNames.length; ci++) {
+                try { pools = await fetchTableFrom(contractNames[ci], contractNames[ci], 'pools', 500); if (pools.length) break; } catch(e2) {}
             }
             pools.forEach(function(p) {
-                // Handle both field name conventions
                 var tA = p.tokenA || p.token0 || null;
                 var tB = p.tokenB || p.token1 || null;
-                // Also handle reserve strings like "1234.5678 TLM@alien.worlds"
-                if (!tA && p.reserve0) {
-                    var rs0 = parseReserveStr(p.reserve0);
-                    var rs1 = parseReserveStr(p.reserve1 || '');
-                    tA = rs0; tB = rs1;
-                }
+                if (!tA && p.reserve0) { tA = parseReserveStr(p.reserve0); tB = parseReserveStr(p.reserve1 || ''); }
                 if (!tA || !tB) return;
                 var amtA = parseFloat(tA.quantity || '0'), amtB = parseFloat(tB.quantity || '0');
                 if (amtA <= 0 || amtB <= 0) return;
                 var cA = tA.contract || '', cB = tB.contract || '';
-                var isDef = cA === 'def.worlds' || cB === 'def.worlds';
-                var isTlm = cA === 'alien.worlds' || cB === 'alien.worlds';
-                var isWax = (cA === 'eosio.token' && (tA.quantity||'').includes(' WAX')) ||
-                            (cB === 'eosio.token' && (tB.quantity||'').includes(' WAX'));
-                if (isDef && isTlm && !defInTlm) {
-                    var da = cA === 'def.worlds' ? amtA : amtB;
-                    var ta = cA === 'alien.worlds' ? amtA : amtB;
-                    if (da > 0) defInTlm = ta / da;
+                if ((cA === 'def.worlds' || cB === 'def.worlds') && (cA === 'alien.worlds' || cB === 'alien.worlds') && !defInTlm) {
+                    var dAmt = cA === 'def.worlds' ? amtA : amtB;
+                    var tAmt = cA === 'alien.worlds' ? amtA : amtB;
+                    if (dAmt > 0) defInTlm = tAmt / dAmt;
                 }
-                if (isTlm && isWax && !tlmInWax) {
-                    var ta2 = cA === 'alien.worlds' ? amtA : amtB;
-                    var wa  = (tA.quantity||'').includes(' WAX') ? amtA : amtB;
-                    if (ta2 > 0) tlmInWax = wa / ta2;
+                if ((cA === 'alien.worlds' || cB === 'alien.worlds') && !tlmInWax) {
+                    var hasWax = (cA === 'eosio.token' && (tA.quantity||'').includes(' WAX')) ||
+                                 (cB === 'eosio.token' && (tB.quantity||'').includes(' WAX'));
+                    if (hasWax) {
+                        var tA2 = cA === 'alien.worlds' ? amtA : amtB;
+                        var wA  = (tA.quantity||'').includes(' WAX') ? amtA : amtB;
+                        if (tA2 > 0) tlmInWax = wA / tA2;
+                    }
                 }
             });
         } catch(e) { console.warn('On-chain Alcor pool query failed:', e); }
     }
 
-    // ── WAX/USD: try CoinGecko first, then CoinCap.io, then CoinPaprika ──
-    // CoinGecko (same IDs as aleleaders.html which works)
+    // ── WAX/USD + TLM/USD: CoinCap first (reliable CORS), then CoinGecko, then CoinPaprika ──
+    // 1. CoinCap.io — no API key, good CORS
     try {
-        var gr = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=wax,alien-worlds&vs_currencies=usd', { cache: 'no-store' });
-        if (gr.ok) {
-            var gd = await gr.json();
-            if (gd.wax && gd.wax.usd > 0) waxInUsd = gd.wax.usd;
-            if (!tlmInWax && gd['alien-worlds'] && gd['alien-worlds'].usd > 0 && waxInUsd) {
-                tlmInWax = gd['alien-worlds'].usd / waxInUsd;
-            }
+        var r1 = await fetch('https://api.coincap.io/v2/assets?ids=wax,alien-worlds', { cache: 'no-store' });
+        if (r1.ok) {
+            var d1 = await r1.json();
+            (d1.data || []).forEach(function(a) {
+                if (a.id === 'wax'          && parseFloat(a.priceUsd) > 0) waxInUsd = parseFloat(a.priceUsd);
+                if (a.id === 'alien-worlds' && parseFloat(a.priceUsd) > 0 && !tlmInWax && waxInUsd)
+                    tlmInWax = parseFloat(a.priceUsd) / waxInUsd;
+            });
         }
     } catch(e) {}
 
-    // CoinCap.io fallback (reliable CORS; no API key)
+    // 2. CoinGecko fallback
     if (!waxInUsd) {
         try {
-            var cr = await fetch('https://api.coincap.io/v2/assets/wax', { cache: 'no-store' });
-            if (cr.ok) {
-                var cd = await cr.json();
-                if (cd.data && parseFloat(cd.data.priceUsd) > 0) waxInUsd = parseFloat(cd.data.priceUsd);
+            var r2 = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=wax,alien-worlds&vs_currencies=usd', { cache: 'no-store' });
+            if (r2.ok) {
+                var d2 = await r2.json();
+                if (d2.wax && d2.wax.usd > 0) waxInUsd = d2.wax.usd;
+                if (!tlmInWax && d2['alien-worlds'] && d2['alien-worlds'].usd > 0 && waxInUsd)
+                    tlmInWax = d2['alien-worlds'].usd / waxInUsd;
             }
         } catch(e) {}
     }
 
-    // If we got WAX/USD and TLM/WAX is still missing, try CoinGecko for TLM separately
-    if (waxInUsd && !tlmInWax) {
+    // 3. CoinPaprika — another reliable free API with CORS
+    if (!waxInUsd) {
         try {
-            var tr = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=alien-worlds&vs_currencies=usd', { cache: 'no-store' });
-            if (tr.ok) {
-                var td = await tr.json();
-                if (td['alien-worlds'] && td['alien-worlds'].usd > 0) tlmInWax = td['alien-worlds'].usd / waxInUsd;
+            var r3 = await fetch('https://api.coinpaprika.com/v1/tickers/waxp-wax-token', { cache: 'no-store' });
+            if (r3.ok) {
+                var d3 = await r3.json();
+                if (d3.quotes && d3.quotes.USD && d3.quotes.USD.price > 0) waxInUsd = d3.quotes.USD.price;
+            }
+        } catch(e) {}
+    }
+    if (!tlmInWax && waxInUsd) {
+        try {
+            var r4 = await fetch('https://api.coinpaprika.com/v1/tickers/tlm-alien-worlds-token', { cache: 'no-store' });
+            if (r4.ok) {
+                var d4 = await r4.json();
+                if (d4.quotes && d4.quotes.USD && d4.quotes.USD.price > 0) tlmInWax = d4.quotes.USD.price / waxInUsd;
             }
         } catch(e) {}
     }
