@@ -640,41 +640,28 @@ function parseReserveStr(s) {
     return { contract: contract, quantity: qty };
 }
 
+// Known PD V3 chest NFT template IDs (planetdefnft collection)
+var KNOWN_CHEST_TEMPLATES = {
+    874216: 'Quantum Chest',
+    874218: 'Quantum Key',
+};
+
 // Fetch last-sold price for chest NFTs from AtomicAssets market
 var _chestFloorCache = {};
 async function fetchChestPrices() {
     var chestMissions = allMissions.filter(function(m) { return m.rwChests > 0; });
     if (!chestMissions.length) return;
 
-    // Collect unique template IDs
-    var templateIds = [];
+    // Start with known template IDs, then add any found in rewardcfg data
+    var templateIds = Object.keys(KNOWN_CHEST_TEMPLATES).map(Number);
     chestMissions.forEach(function(m) {
         (m.rwNftTemplates || []).forEach(function(tid) {
-            if (templateIds.indexOf(tid) < 0) templateIds.push(tid);
+            if (templateIds.indexOf(Number(tid)) < 0) templateIds.push(Number(tid));
         });
     });
 
-    // If no template IDs from config, fetch recent planetdefnft sales to identify chest templates
-    if (!templateIds.length) {
-        try {
-            var sr = await fetch('https://wax.api.atomicassets.io/atomicmarket/v1/sales?state=3&collection_name=planetdefnft&sort=updated&order=desc&limit=50', { cache: 'no-store' });
-            if (sr.ok) {
-                var sd = await sr.json();
-                if (sd.data) {
-                    sd.data.forEach(function(sale) {
-                        if (sale.assets && sale.assets[0] && sale.assets[0].template) {
-                            var tid = sale.assets[0].template.template_id;
-                            var waxPrice = parseInt(sale.price.amount) / Math.pow(10, sale.price.token_precision || 8);
-                            if (!_chestFloorCache[tid] || waxPrice < _chestFloorCache[tid]) {
-                                _chestFloorCache[tid] = waxPrice;
-                            }
-                            if (templateIds.indexOf(tid) < 0) templateIds.push(tid);
-                        }
-                    });
-                }
-            }
-        } catch(e) { console.warn('AtomicAssets chest sales fetch failed:', e); }
-    } else {
+    // Fetch last-sold price per known template ID
+    {
         // Fetch floor/last price per template ID
         for (var i = 0; i < templateIds.length; i++) {
             var tid2 = templateIds[i];
