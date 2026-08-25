@@ -348,6 +348,27 @@
         }
         .ptick-live-btn:hover { border-color:var(--accent); color:var(--accent); }
 
+        /* ── ENDPOINT SETTINGS FOOTER ── */
+        .ep-footer {
+            background:#020810; border-top:1px solid var(--border);
+            padding:10px 24px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+            font-size:0.72em; color:var(--text-muted); letter-spacing:1px;
+        }
+        .ep-footer .ep-label { text-transform:uppercase; white-space:nowrap; color:var(--text-dim); }
+        .ep-select {
+            background:#000; border:1px solid var(--border); color:var(--text); font-family:'Courier New',monospace;
+            font-size:1em; padding:3px 8px; cursor:pointer; transition:border-color 0.2s;
+        }
+        .ep-select:focus { outline:none; border-color:var(--accent); }
+        .ep-ping { color:var(--text-dim); }
+        .ep-ping.ok  { color:var(--profit); }
+        .ep-ping.err { color:var(--loss); }
+        .ep-test-btn {
+            background:transparent; border:1px solid var(--border); color:var(--text-muted);
+            padding:3px 8px; font-family:'Courier New',monospace; font-size:1em; cursor:pointer; transition:all 0.2s;
+        }
+        .ep-test-btn:hover { border-color:var(--accent); color:var(--accent); }
+
         a, button, th, td { cursor:crosshair !important; }
         .mission-title-btn { cursor:pointer !important; }
 
@@ -520,13 +541,36 @@
     </div>
 </div>
 
+<!-- ── ENDPOINT SETTINGS FOOTER ── -->
+<div class="ep-footer" id="ep-footer">
+    <span class="ep-label">WAX endpoint</span>
+    <select class="ep-select" id="ep-select" onchange="setEndpoint(this.value)">
+        <!-- populated by JS -->
+    </select>
+    <button class="ep-test-btn" onclick="testEndpoint()">Test ↗</button>
+    <span class="ep-ping" id="ep-ping">—</span>
+    <span style="color:var(--text-dim);margin-left:auto">miss.pdef contract · <a href="https://wax.bloks.io/account/miss.pdef" target="_blank" style="color:var(--text-dim);text-decoration:none">bloks.io</a></span>
+</div>
+
 <script>
 // ─────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────
-const WAX_RPC = 'https://wax.greymass.com/v1/chain/get_table_rows';
 const CONTRACT = 'miss.pdef';
 const SCOPE = 'miss.pdef';
+
+var WAX_ENDPOINTS = [
+    { id: 'cryptolions', label: 'wax.cryptolions.io',  url: 'https://wax.cryptolions.io' },
+    { id: 'eosusa',      label: 'wax.eosusa.io',       url: 'https://wax.eosusa.io' },
+    { id: 'eosphere',    label: 'wax.eosphere.io',     url: 'https://wax.eosphere.io' },
+    { id: 'greeneosio',  label: 'api.wax.greeneosio.com', url: 'https://api.wax.greeneosio.com' },
+    { id: 'greymass',    label: 'wax.greymass.com',    url: 'https://wax.greymass.com' },
+];
+var activeEndpointId = localStorage.getItem('naron_wax_ep') || 'cryptolions';
+function getWaxRpc() {
+    var ep = WAX_ENDPOINTS.find(function(e) { return e.id === activeEndpointId; }) || WAX_ENDPOINTS[0];
+    return ep.url + '/v1/chain/get_table_rows';
+}
 
 const PLANETS = {
     naron:  { label:'NARON',  color:'#e8a020' },
@@ -724,13 +768,13 @@ function fmtDisplayVal(amount, fromTok) {
 // ─────────────────────────────────────────────
 async function fetchTable(table, limit) {
     limit = limit || 200;
-    const res = await fetch(WAX_RPC, {
+    var res = await fetch(getWaxRpc(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ json: true, code: CONTRACT, scope: SCOPE, table: table, limit: limit, reverse: false })
     });
     if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching ' + table);
-    const data = await res.json();
+    var data = await res.json();
     return data.rows || [];
 }
 
@@ -1173,6 +1217,46 @@ function setValueIn(vi) {
 }
 
 // ─────────────────────────────────────────────
+// ENDPOINT SETTINGS
+// ─────────────────────────────────────────────
+function buildEndpointSelect() {
+    var sel = document.getElementById('ep-select');
+    if (!sel) return;
+    sel.innerHTML = WAX_ENDPOINTS.map(function(ep) {
+        return '<option value="' + ep.id + '"' + (ep.id === activeEndpointId ? ' selected' : '') + '>' + ep.label + '</option>';
+    }).join('');
+}
+
+function setEndpoint(id) {
+    activeEndpointId = id;
+    try { localStorage.setItem('naron_wax_ep', id); } catch(e) {}
+    document.getElementById('ep-ping').textContent = '—';
+    document.getElementById('ep-ping').className = 'ep-ping';
+    loadData();
+}
+
+async function testEndpoint() {
+    var pingEl = document.getElementById('ep-ping');
+    pingEl.className = 'ep-ping';
+    pingEl.textContent = 'testing…';
+    var t0 = Date.now();
+    try {
+        var res = await fetch(getWaxRpc(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ json: true, code: CONTRACT, scope: SCOPE, table: 'missions', limit: 1 })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var ms = Date.now() - t0;
+        pingEl.textContent = ms + 'ms ✓';
+        pingEl.className = 'ep-ping ok';
+    } catch(e) {
+        pingEl.textContent = 'failed ✗';
+        pingEl.className = 'ep-ping err';
+    }
+}
+
+// ─────────────────────────────────────────────
 // LORE MODAL
 // ─────────────────────────────────────────────
 function openLore(id) {
@@ -1330,6 +1414,7 @@ if (localStorage.getItem('naron_day') === '1') document.documentElement.classLis
 document.addEventListener('DOMContentLoaded', function() {
     _inj();
     checkWalletState();
+    buildEndpointSelect();
     loadData();
     fetchPrices();
 });
