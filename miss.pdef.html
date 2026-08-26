@@ -1326,12 +1326,25 @@ function calcProfitHr(m) {
     return null;
 }
 
+function costInWax(m) {
+    if (!m.costTok || m.costAmt <= 0) return 0;
+    if (m.costTok === 'TLM') return m.costAmt * (tlmInWax || 0);
+    if (m.costTok === 'DEF' && defInTlm) return m.costAmt * defInTlm * (tlmInWax || 0);
+    return 0;
+}
+
 function calcWaxHr(m) {
-    // Always compute WAX directly — never goes through toDisplay() which reflects valueIn
+    // Net WAX per hour = (reward WAX value − entry cost WAX value) / cooldown hours
     if (!tlmInWax) return null;
-    if (m.rwChests > 0) return chestWaxValue(m) ? chestWaxValue(m) / m.cooldownHrs : null;
-    if (m.rwTok === 'TLM' && m.rwAmt > 0) return (m.rwAmt * tlmInWax) / m.cooldownHrs;
-    if (m.rwTok === 'DEF' && m.rwAmt > 0 && defInTlm) return (m.rwAmt * defInTlm * tlmInWax) / m.cooldownHrs;
+    var cost = costInWax(m);
+    if (m.rwChests > 0) {
+        var cv = chestWaxValue(m);
+        return cv != null ? (cv - cost) / m.cooldownHrs : null;
+    }
+    if (m.rwTok === 'TLM' && m.rwAmt > 0)
+        return ((m.rwAmt * tlmInWax) - cost) / m.cooldownHrs;
+    if (m.rwTok === 'DEF' && m.rwAmt > 0 && defInTlm)
+        return ((m.rwAmt * defInTlm * tlmInWax) - cost) / m.cooldownHrs;
     return null;
 }
 
