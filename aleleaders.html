@@ -277,39 +277,6 @@
 </head>
 <body>
 
-<!-- ── PASSCODE GATE ─────────────────────────────────────────────────────── -->
-<div id="pc-overlay" style="position:fixed;inset:0;background:#03060f;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Courier New',monospace;text-align:center;padding:30px;">
-    <div style="font-size:2em;color:#e8a020;margin-bottom:18px;text-shadow:0 0 20px rgba(232,160,32,0.5);">&#9670;</div>
-    <div style="font-size:1em;letter-spacing:4px;color:#e8a020;text-transform:uppercase;margin-bottom:24px;">Alien Legends Leaderboard</div>
-    <div style="max-width:480px;font-size:0.78em;color:#a0b0c0;line-height:1.8;letter-spacing:1px;margin-bottom:28px;border:1px solid rgba(232,160,32,0.12);padding:20px 28px;background:rgba(5,8,20,0.7);">
-        Thanks for testing ALE!<br>
-        <span style="color:#e8a020;">The Leaderboard will return for ALE Open Beta.</span><br><br>
-        Follow the <strong style="color:#c8a060;">Mission Control Discord</strong><br>
-        <span style="font-size:0.88em;color:#506070;letter-spacing:2px;">#announcements</span><br>
-        for the latest news &amp; launch info!
-    </div>
-    <div style="font-size:0.6em;color:#384050;letter-spacing:2px;margin-bottom:10px;text-transform:uppercase;">Internal access</div>
-    <input id="_pc_in" type="password" placeholder="PASSCODE" autocomplete="off"
-        style="background:rgba(3,6,15,0.9);border:1px solid rgba(232,160,32,0.3);color:#e8a020;font-family:'Courier New',monospace;font-size:0.78em;padding:8px 16px;letter-spacing:4px;outline:none;text-align:center;width:180px;">
-    <div id="_pc_err" style="font-size:0.6em;color:#e06060;margin-top:8px;letter-spacing:1px;min-height:1em;"></div>
-    <button id="_pc_btn" style="margin-top:10px;background:transparent;border:1px solid rgba(232,160,32,0.35);color:#e8a020;font-family:'Courier New',monospace;font-size:0.68em;letter-spacing:2px;padding:6px 18px;cursor:pointer;">ENTER</button>
-</div>
-<script>
-(function(){
-    var KEY='aleleaders_v2', CODE='BAGUETTE64';
-    var overlay=document.getElementById('pc-overlay');
-    if(sessionStorage.getItem(KEY)===CODE){ overlay.style.display='none'; return; }
-    function attempt(){
-        var v=document.getElementById('_pc_in').value.trim().toUpperCase();
-        if(v===CODE){ sessionStorage.setItem(KEY,CODE); overlay.style.display='none'; }
-        else{ document.getElementById('_pc_err').textContent='Incorrect passcode.'; document.getElementById('_pc_in').value=''; }
-    }
-    document.getElementById('_pc_btn').addEventListener('click',attempt);
-    document.getElementById('_pc_in').addEventListener('keydown',function(e){ if(e.key==='Enter') attempt(); });
-    document.getElementById('_pc_in').focus();
-})();
-</script>
-<!-- ────────────────────────────────────────────────────────────────────────── -->
 
 <header class="global-header">
     <div class="logo-section">
