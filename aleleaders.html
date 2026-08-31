@@ -144,13 +144,13 @@
     .zero { color:#2a3040 !important; }
     /* frozen columns: rank | player | battle NFTs | mine NFTs */
     .lb-table td:first-child,
-    .lb-table th:first-child { position:sticky; left:0; z-index:1; background:#090912; }
+    .lb-table th:first-child { position:sticky; left:0; z-index:1; background:#090912; min-width:44px; max-width:44px; width:44px; }
     .lb-table td:nth-child(2),
-    .lb-table th:nth-child(2) { position:sticky; left:44px; z-index:1; background:#090912; width:130px; max-width:130px; }
+    .lb-table th:nth-child(2) { position:sticky; left:44px; z-index:1; background:#090912; min-width:130px; width:130px; max-width:130px; overflow:hidden; text-overflow:ellipsis; }
     .lb-table td:nth-child(3),
-    .lb-table th:nth-child(3) { position:sticky; left:174px; z-index:1; background:#090912; width:104px; max-width:104px; }
+    .lb-table th:nth-child(3) { position:sticky; left:174px; z-index:1; background:#090912; min-width:104px; width:104px; max-width:104px; }
     .lb-table td:nth-child(4),
-    .lb-table th:nth-child(4) { position:sticky; left:278px; z-index:1; background:#090912; width:88px; max-width:88px; box-shadow:2px 0 6px rgba(0,0,0,0.6); }
+    .lb-table th:nth-child(4) { position:sticky; left:278px; z-index:1; background:#090912; min-width:88px; width:88px; max-width:88px; box-shadow:2px 0 6px rgba(0,0,0,0.6); }
     /* header intersection cells sit above both axes */
     .lb-table thead th:first-child,
     .lb-table thead th:nth-child(2),
@@ -211,7 +211,7 @@
     html.day .lb-table td:first-child, html.day .lb-table th:first-child,
     html.day .lb-table td:nth-child(2), html.day .lb-table th:nth-child(2),
     html.day .lb-table td:nth-child(3), html.day .lb-table th:nth-child(3),
-    html.day .lb-table td:nth-child(4), html.day .lb-table th:nth-child(4) { background:#dce8f8; }
+    html.day .lb-table td:nth-child(4), html.day .lb-table th:nth-child(4) { background:#dce8f8; overflow:hidden; }
     html.day .lb-table tr:hover td:first-child, html.day .lb-table tr:hover td:nth-child(2),
     html.day .lb-table tr:hover td:nth-child(3), html.day .lb-table tr:hover td:nth-child(4) { background:#ccd8f0; }
     html.day .lb-table tr.me td:first-child, html.day .lb-table tr.me td:nth-child(2),
@@ -458,7 +458,6 @@
     var COLUMNS = [
         // Official Dungeon LB + AW Competition (adjacent glowing buttons)
         { key:'dungeon_rating',   label:'Dungeon Rating',  header:'Dung. Rating',   src:'dungeon', def:true,  title:'Official dungeon leaderboard rating from dungeons.ale — decay-weighted total difficulty' },
-        { key:'comp_live_score', label:'AW Level-Up Competition', header:'AW Level-Up', src:'comp', def:true, title:'live_score from comp.worlds — em dash = not registered' },
         // Dungeons
         { key:'dungeons_won',               label:'Dungeons Won',            src:'perm',   def:true  },
         { key:'dungeons_played',            label:'Dungeons Played',         src:'perm',   def:false },
@@ -1201,7 +1200,7 @@
                     fetchBattleNFTRarities(collectBattleTemplateIds(_allPlayers))
                         .then(function() { return fetchMineAssetInfo(collectMineAssetIds(_allPlayers)); })
                         .then(refreshNFTImages);
-                    fetchCompData();
+
                     loadDungeonLBSilent();
                     return;
                 }
