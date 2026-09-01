@@ -1075,12 +1075,19 @@
             const data = await res.json();
             if (data.data) {
                 data.data.forEach(t => {
-                    const hash = t.immutable_data && t.immutable_data.img ? t.immutable_data.img : '';
+                    const tid  = String(t.template_id);
+                    const hash = t.immutable_data && t.immutable_data.img  ? t.immutable_data.img  : '';
+                    const name = t.immutable_data && t.immutable_data.name ? t.immutable_data.name : '';
                     if (hash) {
-                        ALE_IMG_CACHE[t.template_id] = hash;
-                        document.querySelectorAll(`img[data-tid="${t.template_id}"]`).forEach(img => {
+                        ALE_IMG_CACHE[tid] = hash;
+                        document.querySelectorAll(`img[data-tid="${tid}"]`).forEach(img => {
                             img.onerror = function() { window._ipfsFallback(img, hash, IPFS_GATEWAYS, 0); };
                             img.src = IPFS_GATEWAYS[0](hash);
+                        });
+                    }
+                    if (name) {
+                        document.querySelectorAll(`td[data-name-tid="${tid}"]`).forEach(td => {
+                            if (!td.textContent.trim()) td.textContent = name;
                         });
                     }
                 });
@@ -1113,7 +1120,8 @@
             const templateId = row[0];
             let imgHtml = `<img data-tid="${templateId}" data-folder="${isCrew ? 'crew.worlds' : 'arms.worlds'}" style="height:46px!important;width:auto!important;display:block;margin:0 auto;border-radius:4px;" loading="lazy">`;
 
-            tr.onclick = () => openDeck(templateId, row[1], row[2], row[3], row[17]);
+            tr.dataset.ability = row[17] || '';
+            tr.onclick = () => openDeck(templateId, tr.querySelector('[data-name-tid]').textContent || row[1], row[2], row[3], tr.dataset.ability);
 
             const tag = v => v ? `<span class="tag-${String(v).toLowerCase().replace(/[^a-z]/g,'')}">${v}</span>` : '-';
             const n = v => (v !== '' && v !== undefined) ? v : '-';
@@ -1123,7 +1131,7 @@
                 <td>${row[0]}</td>
                 <td class="ability-td">${renderAbility(row[17], row[0]) || ''}</td>
                 <td>${imgHtml}</td>
-                <td style="font-weight:bold;color:var(--theme-color);text-align:left;">${row[1]}</td>
+                <td data-name-tid="${templateId}" style="font-weight:bold;color:var(--theme-color);text-align:left;">${row[1]}</td>
                 <td>${tag(row[2])}</td>
                 <td>${tag(row[3])}</td>
                 ${isCrew ? `<td>${row[4] || '-'}</td>` : ''}
@@ -1174,7 +1182,7 @@
             tr.innerHTML = `
                 <td>${row[0]}</td>
                 <td>${imgHtml}</td>
-                <td style="font-weight:bold;color:var(--theme-color);text-align:left;">${row[1]}</td>
+                <td data-name-tid="${templateId}" style="font-weight:bold;color:var(--theme-color);text-align:left;">${row[1]}</td>
                 <td>${tag(row[2])}</td>
                 <td>${tag(row[3])}</td>
                 <td class="stat-attack">${row[5]}</td>
