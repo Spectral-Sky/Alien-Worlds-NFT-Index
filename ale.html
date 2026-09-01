@@ -694,7 +694,7 @@
         splash.style.transition = 'opacity 0.8s';
         splash.style.opacity = '0';
         setTimeout(function() { splash.style.display = 'none'; }, 800);
-        if (turboed && window._endBgWarp) window._endBgWarp(20000);
+        if (turboed && window._endBgWarp) window._endBgWarp(8000);
     }
     window.skipSplash = endSplash;
 
@@ -904,6 +904,15 @@
         bgRunning = true;
         bgC.style.opacity = '0.18';
         bgFrame();
+        // decelerate from 14 → 0.3 over 7s
+        var t0 = performance.now();
+        (function decel(now) {
+            if (!bgRunning) return;
+            var t = Math.min(1, (now - t0) / 7000);
+            var e = 1 - Math.pow(1 - t, 2);
+            bgSpeed = 14 - e * 13.7;
+            if (t < 1) requestAnimationFrame(decel);
+        })(performance.now());
     };
     window._endBgWarp = function(delay) {
         setTimeout(function() {
