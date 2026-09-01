@@ -3375,7 +3375,8 @@
             <button class="txq-mode-btn" id="txq-mode-sep" onclick="setTxqRunMode('separate')">SPLIT</button>
         </div>
         <button class="txq-qm-btn" id="txq-qm-btn" onclick="toggleTxQueueMode()">○ QUEUE MODE</button>
-        <button class="txq-add-btn" onclick="txqAddAllTaverns()">+ ALL PLANETS</button>
+        <button class="txq-add-btn" id="txq-recruit-btn" onclick="txqAddAllTaverns()">RECRUIT RUN</button>
+        <button class="txq-add-btn" id="txq-dungeon-btn" onclick="txqAddDungeonRun()">DUNGEON RUN</button>
         <button class="txq-clr-btn" onclick="txqClear()">CLEAR</button>
         <span class="txq-ap-total" id="txq-ap-total">0 AP</span>
         <button class="txq-close-btn" id="txq-close-btn" onclick="closeTxQueuePanel()">▼</button>
@@ -3701,11 +3702,11 @@ window.txqAddCell = txqAddCell;
 
 async function txqAddAllTaverns() {
     var wallet = getWallet();
-    var btn = document.querySelector('.txq-add-btn');
+    var btn = document.getElementById('txq-recruit-btn');
     if (btn) { btn.textContent = '…'; btn.disabled = true; }
     // Refresh from chain first — active_taverns changes after each hire
     if (wallet) { try { await fetchPlayerTaverns(wallet); } catch(e){} }
-    if (btn) { btn.textContent = '+ ALL PLANETS'; btn.disabled = false; }
+    if (btn) { btn.textContent = 'RECRUIT RUN'; btn.disabled = false; }
 
     // Use chain-queried ALE_LOCATIONS as the source of truth (no session filter)
     var byPlanet = {};
@@ -3735,6 +3736,84 @@ async function txqAddAllTaverns() {
                 land_id: tv.land_id, objectives: tv.objectives||[] });
         });
     });
+    renderTxQueue();
+}
+
+async function txqAddDungeonRun() {
+    var wallet = getWallet();
+    if (!wallet) return;
+    var btn = document.getElementById('txq-dungeon-btn');
+    if (btn) { btn.textContent = '…'; btn.disabled = true; }
+
+    // Ensure fighters are loaded
+    if (!_myFighters || !_myFighters.length) {
+        try { await _fetchAllFighters(wallet); } catch(e){}
+    }
+
+    // Ensure _bpFighters is populated (auto-fill with highest-level available if empty)
+    if (!_bpFighters.some(Boolean)) {
+        var avail = (_myFighters||[]).filter(function(f){ return !(f.in_use===1||f.in_use==='1'); })
+            .slice().sort(function(a,b){ return ((b.stats&&b.stats.level)||0)-((a.stats&&a.stats.level)||0); });
+        for (var si=0;si<5;si++) { if (!_bpFighters[si]&&avail.length) _bpFighters[si]=avail.shift(); }
+    }
+
+    // Find fighters currently ready to level up
+    var readyFighters = (_myFighters||[]).filter(function(f){
+        var s = f.stats||{};
+        return (s.level||0) < 10 && Number(s.experience||0) >= Number(s.required_experience||1);
+    });
+
+    // Gather all unfought dungeons across all planets
+    var allDungeons = [];
+    Object.keys(ALE_LOCATIONS).forEach(function(planet){
+        var dungeons = ALE_LOCATIONS[planet].dungeons || [];
+        dungeons.forEach(function(d){
+            var key = planet+'.'+d.land_id;
+            if (!_playerPlayedDungeons.has(key)) {
+                allDungeons.push({planet:planet, x:d.x, y:d.y, land_id:d.land_id});
+            }
+        });
+    });
+
+    if (!allDungeons.length) {
+        if (btn) { btn.textContent = 'DUNGEON RUN'; btn.disabled = false; }
+        alert('No unfought dungeons found!');
+        return;
+    }
+
+    // Sort: same planet first, then by Manhattan distance from current position
+    var px = _playerPos ? _playerPos.x : 1, py = _playerPos ? _playerPos.y : 1;
+    var curPlanet = _activePlanet;
+    allDungeons.sort(function(a, b){
+        var aDist = (a.planet !== curPlanet ? 9999 : 0) + Math.abs(a.x-px) + Math.abs(a.y-py);
+        var bDist = (b.planet !== curPlanet ? 9999 : 0) + Math.abs(b.x-px) + Math.abs(b.y-py);
+        return aDist - bDist;
+    });
+
+    var chosen = allDungeons.slice(0, 5);
+    var fromPlanet = curPlanet;
+    var readyIds = readyFighters.map(function(f){ return Number(f.fighter_id); });
+
+    chosen.forEach(function(d){
+        // Portal across planets if needed
+        if (d.planet !== fromPlanet) {
+            var portal = (ALE_PORTALS[fromPlanet]||[]).find(function(p){ return p.to === d.planet; });
+            if (portal) _txQueue.push({type:'portal', x:portal.x, y:portal.y, planet:fromPlanet, to:d.planet});
+            fromPlanet = d.planet;
+        }
+        // Travel to dungeon cell
+        _txQueue.push({type:'travel', x:d.x, y:d.y});
+        // Level up any ready fighters (before each fight)
+        if (readyIds.length) {
+            _txQueue.push({type:'levelup', fighter_ids:readyIds.slice(), count:readyIds.length,
+                name:'LEVEL UP ('+readyIds.length+' fighter'+(readyIds.length>1?'s':'')+')'});
+        }
+        // Dungeon fight
+        _txQueue.push({type:'dungeon', x:d.x, y:d.y, planet:d.planet, land_id:d.land_id,
+            name:'DUNGEON ('+d.x+', '+d.y+')', difficulty:_bpDifficulty||5});
+    });
+
+    if (btn) { btn.textContent = 'DUNGEON RUN'; btn.disabled = false; }
     renderTxQueue();
 }
 
@@ -3792,7 +3871,7 @@ function renderTxQueue() {
             + '</div>';
     } else {
         var simX = _playerPos ? _playerPos.x : 0, simY = _playerPos ? _playerPos.y : 0;
-        var icons = { travel:'→', hire:'⊕', portal:'◈', 'travel+hire':'→⊕' };
+        var icons = { travel:'→', hire:'⊕', portal:'◈', 'travel+hire':'→⊕', levelup:'↑', dungeon:'⚔' };
         list.innerHTML = _txQueue.map(function(item, i){
             var ap = 0;
             if (item.type==='travel'||item.type==='travel+hire'||item.type==='portal') {
@@ -3805,6 +3884,8 @@ function renderTxQueue() {
             var label = item.type==='travel'      ? 'TRAVEL  ('+item.x+', '+item.y+')'
                       : item.type==='hire'        ? 'HIRE'
                       : item.type==='portal'      ? 'PORTAL  '+_pFrom+' → '+_pTo
+                      : item.type==='levelup'     ? (item.name||'LEVEL UP')
+                      : item.type==='dungeon'     ? (item.name||'DUNGEON ('+item.x+', '+item.y+')')
                       : (item.name || 'TRAVEL + HIRE  ('+item.x+', '+item.y+')');
             return '<div class="txq-item" id="txq-item-'+i+'">'
                 + '<span class="txq-item-icon">' + (icons[item.type]||'→') + '</span>'
@@ -3918,6 +3999,12 @@ async function runTxQueue() {
                     actions: [{ account:'players.ale', name:'travel', authorization:[{actor:wallet,permission:'active'}], data:{wallet:wallet, x:item.x, y:item.y} }]
                 });
                 i++;
+            } else if (item.type === 'levelup') {
+                plan.push({ label: item.name||'LEVEL UP', qIdx: i, isLevelUp: true, levelupItem: item, actions: null });
+                i++;
+            } else if (item.type === 'dungeon') {
+                plan.push({ label: item.name||'DUNGEON ('+item.x+','+item.y+')', qIdx: i, isDungeon: true, dungeonItem: item, actions: null });
+                i++;
             } else { i++; }
         }
     } else {
@@ -3938,6 +4025,10 @@ async function runTxQueue() {
                 plan.push({ label: 'HIRE', qIdx: i, tavern: item.tavern || null,
                     isHire: true, objectives: item.objectives, actions: null
                 });
+            } else if (item.type === 'levelup') {
+                plan.push({ label: item.name||'LEVEL UP', qIdx: i, isLevelUp: true, levelupItem: item, actions: null });
+            } else if (item.type === 'dungeon') {
+                plan.push({ label: item.name||'DUNGEON ('+item.x+','+item.y+')', qIdx: i, isDungeon: true, dungeonItem: item, actions: null });
             }
         });
     }
@@ -3950,6 +4041,52 @@ async function runTxQueue() {
         if (itemEl) itemEl.style.background = 'rgba(192,144,96,0.08)';
         if (progLbl)  progLbl.textContent  = (j+1) + ' / ' + plan.length + '  ·  ' + step.label;
         if (progFill) progFill.style.width = (j / plan.length * 100).toFixed(0) + '%';
+
+        // Level-up: compute ready fighters at execution time, skip if none
+        if (step.isLevelUp) {
+            var lvFighters = (_myFighters||[]).filter(function(f){
+                var s = f.stats||{};
+                return (s.level||0) < 10 && Number(s.experience||0) >= Number(s.required_experience||1);
+            });
+            if (!lvFighters.length) {
+                if (itemEl) {
+                    itemEl.style.background = 'rgba(96,144,224,0.06)';
+                    var lbl = itemEl.querySelector('.txq-item-label');
+                    if (lbl) lbl.style.color = '#8090c0';
+                    lbl.textContent += ' — skipped (none ready)';
+                }
+                succeeded++;
+                continue;
+            }
+            var lvIds = lvFighters.map(function(f){ return Number(f.fighter_id); });
+            step.actions = [{ account:'fighters.ale', name:'levelup',
+                authorization:[{actor:wallet,permission:'active'}],
+                data:{ fighter_ids: lvIds, wallet: wallet, cost_gems: 0, cost_credits: 999 * lvIds.length } }];
+        }
+
+        // Dungeon fight: build action from current _bpFighters / _bpCrew / _bpWeapon
+        if (step.isDungeon) {
+            var d = step.dungeonItem;
+            var fids = (_bpFighters||[]).filter(Boolean).map(function(f){ return Number(f.fighter_id); });
+            if (fids.length < 5) {
+                if (itemEl) {
+                    itemEl.style.background = 'rgba(255,68,68,0.06)';
+                    var lbl = itemEl.querySelector('.txq-item-label');
+                    if (lbl) lbl.style.color = '#ff6688';
+                    if (lbl) lbl.textContent += ' — need 5 fighters selected in battle pane';
+                }
+                failed++;
+                continue;
+            }
+            step.actions = [{ account:'dungeons.ale', name:'playdungeon',
+                authorization:[{actor:wallet,permission:'active'}],
+                data:{ wallet:wallet, planet:d.planet, land_id:d.land_id,
+                       x:d.x, y:d.y, difficulty:d.difficulty||5,
+                       fighter_ids: fids,
+                       crew_asset_id: _bpCrew   ? Number(_bpCrew.asset_id)   : 0,
+                       weapon_asset_id: _bpWeapon ? Number(_bpWeapon.asset_id) : 0,
+                       use_gems: false, history_id: genHistoryId() } }];
+        }
 
         // Lazy hire: compute actions just before TX using only NFTs not yet deployed this run
         if (step.isTravelAndHire) {
@@ -3980,6 +4117,12 @@ async function runTxQueue() {
                 step.actions.forEach(function(a){
                     if (a.name === 'hire') (a.data.asset_ids || []).forEach(function(id){ _usedHireNFTs.add(id); });
                 });
+            }
+
+            // Track played dungeon so it shows as fought on the map
+            if (step.isDungeon && step.dungeonItem && step.dungeonItem.land_id) {
+                var dk = step.dungeonItem.planet + '.' + step.dungeonItem.land_id;
+                _playerPlayedDungeons.add(dk);
             }
 
             // Track used tavern
