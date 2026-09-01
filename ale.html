@@ -392,7 +392,7 @@
         <canvas id="splash-planet-canvas"></canvas>
         <div id="splash-atmo"></div>
         <div id="splash-logo"><img src="ALElogo.png" alt="Alien Legends"></div>
-        <div id="splash-skip" onclick="skipSplash()">[ SKIP ]</div>
+        <div id="splash-skip">[ CLICK TO INTERACT ]</div>
     </div>
 
     <div id="mobile-backdrop" onclick="closeDeckMobile()"></div>
@@ -678,12 +678,12 @@
 // ── ALE SPLASH SCREEN ────────────────────────────────────────────────────────
 (function() {
     var splash = document.getElementById('ale-splash');
-    // 1/20 chance: planet spins like crazy
-    var FAST_SPIN = Math.random() < 0.05;
+    var FAST_SPIN = false;
     document.body.style.overflowX = 'hidden';
     window.scrollTo(0, 0);
     splash.style.display = 'block';
     var ended = false;
+    var turboed = false;
 
     function endSplash() {
         if (ended) return;
@@ -694,10 +694,18 @@
         setTimeout(function() { splash.style.display = 'none'; }, 800);
     }
     window.skipSplash = endSplash;
-    // Allow click anywhere after logo appears to skip
-    setTimeout(function() {
-        splash.addEventListener('click', endSplash);
-    }, 4000);
+
+    // First click: turbo spin + warp blast. Second click: skip.
+    splash.addEventListener('click', function() {
+        if (!turboed) {
+            turboed = true;
+            FAST_SPIN = true;
+            warpSpeed = 14;
+            document.getElementById('splash-skip').textContent = '[ SKIP ]';
+        } else {
+            endSplash();
+        }
+    });
 
     // ── WARP STARS ───────────────────────────────────────────────────────────
     var sc = document.getElementById('splash-stars-canvas');
@@ -806,7 +814,7 @@
         function pframe(ts) {
             if (ended) { renderer.dispose(); return; }
             requestAnimationFrame(pframe);
-            planet.rotation.y += FAST_SPIN ? 0.12 : 0.00065;
+            planet.rotation.y += FAST_SPIN ? 0.28 : 0.00065;
 
             if (!tStart) tStart = ts;
             var t = Math.min(1, (ts - tStart) / DURATION);
