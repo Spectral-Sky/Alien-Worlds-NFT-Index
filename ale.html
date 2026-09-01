@@ -974,7 +974,7 @@
     }
 
     var ALE_ABILITY_MAP = {};
-    var ALE_ABILITY_MAP_KEY = 'ale_ability_map_v1';
+    var ALE_ABILITY_MAP_KEY = 'ale_ability_map_v2';
     var ALE_ABILITY_MAP_TTL = 24 * 60 * 60 * 1000;
     var WAX_NODES_ABI = ['https://wax.eosphere.io','https://wax.eosnation.io','https://wax.pink.gg','https://wax.cryptolions.io','https://wax.greymass.com'];
 
@@ -994,7 +994,10 @@
                 }
                 if (!d) break;
                 (d.rows || []).forEach(function(row) {
-                    if (row.template_id && row.ability && row.ability.length) map[row.template_id] = row.ability[0].bf_effects || [];
+                    if (row.template_id && row.ability && row.ability.length) {
+                        var ab = row.ability[0];
+                        map[row.template_id] = { bf: ab.bf_effects || [], if: ab.if_effects || [] };
+                    }
                 });
                 next = d.more ? d.next_key : null;
             } while (next);
@@ -1005,14 +1008,22 @@
 
     function resolveAbility(desc, templateId) {
         if (!desc) return desc;
-        var effects = ALE_ABILITY_MAP[templateId] || ALE_ABILITY_MAP[String(templateId)] || [];
-        return String(desc).replace(/\[bf:(\d+):([^\]]+)\]/g, function(_, idx, field) {
-            var ef = effects[parseInt(idx)];
-            if (!ef || ef[field] === undefined) return _;
-            var v = ef[field];
-            if ((field === 'value' || field === 'value_min' || field === 'value_max') && ef.percentflat === 'flat') v = v / 10;
-            return String(v);
-        });
+        var entry = ALE_ABILITY_MAP[templateId] || ALE_ABILITY_MAP[String(templateId)] || {};
+        // Support both new {bf,if} shape and old plain-array shape from stale cache
+        var bfEffects = Array.isArray(entry) ? entry : (entry.bf || []);
+        var ifEffects = Array.isArray(entry) ? [] : (entry.if || []);
+        function subst(effects) {
+            return function(_, idx, field) {
+                var ef = effects[parseInt(idx)];
+                if (!ef || ef[field] === undefined) return _;
+                var v = ef[field];
+                if ((field === 'value' || field === 'value_min' || field === 'value_max') && ef.percentflat === 'flat') v = v / 10;
+                return String(v);
+            };
+        }
+        return String(desc)
+            .replace(/\[bf:(\d+):([^\]]+)\]/g, subst(bfEffects))
+            .replace(/\[if:(\d+):([^\]]+)\]/g, subst(ifEffects));
     }
 
     function renderAbility(desc, templateId) {
