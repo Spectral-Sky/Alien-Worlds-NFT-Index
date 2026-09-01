@@ -949,6 +949,31 @@
 
     // ── IMAGE CACHE & LOADER ─────────────────────────────────────────────────────
     var ALE_IMG_CACHE = {};
+    var IPFS_GATEWAYS = [
+        h => `https://wsrv.nl/?url=${encodeURIComponent('ipfs.io/ipfs/'+h)}&w=40&h=60&output=webp&fit=cover`,
+        h => `https://ipfs.atomichub.io/ipfs/${h}`,
+        h => `https://cloudflare-ipfs.com/ipfs/${h}`,
+        h => `https://ipfs.io/ipfs/${h}`
+    ];
+    var IPFS_GATEWAYS_LG = [
+        h => `https://wsrv.nl/?url=${encodeURIComponent('ipfs.io/ipfs/'+h)}&w=250&h=350&output=webp&fit=contain`,
+        h => `https://ipfs.atomichub.io/ipfs/${h}`,
+        h => `https://cloudflare-ipfs.com/ipfs/${h}`,
+        h => `https://ipfs.io/ipfs/${h}`
+    ];
+    window._ipfsFallback = function(img, hash, gateways, idx) {
+        idx = (idx || 0) + 1;
+        if (idx >= gateways.length) {
+            var folder = img.dataset.folder, tid = img.dataset.tid;
+            if (folder && tid) {
+                img.onerror = function() { img.style.opacity = '0.15'; };
+                img.src = folder + '/' + tid + '.webp';
+            } else { img.style.opacity = '0.15'; }
+            return;
+        }
+        img.onerror = function() { window._ipfsFallback(img, hash, gateways, idx); };
+        img.src = gateways[idx](hash);
+    };
 
     async function loadTableImages() {
         const allIds = [...new Set([...ALE_ARMS.map(r=>r[0]), ...ALE_CREW.map(r=>r[0])])];
@@ -961,12 +986,20 @@
                     if (hash) {
                         ALE_IMG_CACHE[t.template_id] = hash;
                         document.querySelectorAll(`img[data-tid="${t.template_id}"]`).forEach(img => {
-                            img.src = `https://wsrv.nl/?url=${encodeURIComponent('ipfs.io/ipfs/'+hash)}&w=40&h=60&output=webp&fit=cover`;
+                            img.onerror = function() { window._ipfsFallback(img, hash, IPFS_GATEWAYS, 0); };
+                            img.src = IPFS_GATEWAYS[0](hash);
                         });
                     }
                 });
             }
         } catch(e) { console.log('ALE image fetch failed:', e); }
+        // local fallback for any img that still has no src (AtomicHub didn't return it)
+        document.querySelectorAll('img[data-tid][data-folder]').forEach(img => {
+            if (!img.src || img.src === window.location.href) {
+                img.onerror = function() { img.style.opacity = '0.15'; };
+                img.src = img.dataset.folder + '/' + img.dataset.tid + '.webp';
+            }
+        });
     }
 
     // ── TABLE RENDER (from ale_data.js arrays) ───────────────────────────────────
@@ -984,7 +1017,7 @@
             if (!row[0]) return;
             const tr = document.createElement('tr');
             const templateId = row[0];
-            let imgHtml = `<img data-tid="${templateId}" style="height:46px!important;width:auto!important;display:block;margin:0 auto;border-radius:4px;" loading="lazy">`;
+            let imgHtml = `<img data-tid="${templateId}" data-folder="${isCrew ? 'crew.worlds' : 'arms.worlds'}" style="height:46px!important;width:auto!important;display:block;margin:0 auto;border-radius:4px;" loading="lazy">`;
 
             tr.onclick = () => openDeck(templateId, row[1], row[2], row[3], row[17]);
 
@@ -1042,8 +1075,7 @@
             const tr = document.createElement('tr');
             const cid = row[4];
             if (cid) ALE_IMG_CACHE[row[0]] = cid;
-            const imgSrc = cid ? `https://wsrv.nl/?url=${encodeURIComponent('ipfs.io/ipfs/'+cid)}&w=40&h=60&output=webp&fit=cover` : '';
-            const imgHtml = imgSrc ? `<img src="${imgSrc}" style="height:46px!important;width:auto!important;display:block;margin:0 auto;border-radius:4px;" loading="lazy" onerror="this.onerror=null;this.src='https://ipfs.io/ipfs/${cid}';">` : '';
+            const imgHtml = cid ? `<img src="${IPFS_GATEWAYS[0](cid)}" data-tid="${row[0]}" data-folder="tool.worlds" style="height:46px!important;width:auto!important;display:block;margin:0 auto;border-radius:4px;" loading="lazy" onerror="window._ipfsFallback(this,'${cid}',IPFS_GATEWAYS,0);">` : '';
             tr.onclick = () => openDeck(row[0], row[1], row[2], row[3], null);
             tr.innerHTML = `
                 <td>${row[0]}</td>
@@ -1072,9 +1104,19 @@
         else { abilEl.style.display = 'none'; }
         // image from cache
         const imgHash = ALE_IMG_CACHE[id] || '';
-        let imgSrc = imgHash ? `https://wsrv.nl/?url=${encodeURIComponent('ipfs.io/ipfs/'+imgHash)}&w=250&h=350&output=webp&fit=contain` : '';
-        document.getElementById('preview-img').src = imgSrc;
-        document.getElementById('preview-img').style.display = imgSrc ? 'block' : 'none';
+        const previewImg = document.getElementById('preview-img');
+        const folder = ALE_CREW.some(r=>r[0]==id) ? 'crew.worlds' : ALE_ARMS.some(r=>r[0]==id) ? 'arms.worlds' : 'tool.worlds';
+        previewImg.dataset.folder = folder;
+        previewImg.dataset.tid = id;
+        if (imgHash) {
+            previewImg.onerror = function() { window._ipfsFallback(previewImg, imgHash, IPFS_GATEWAYS_LG, 0); };
+            previewImg.src = IPFS_GATEWAYS_LG[0](imgHash);
+            previewImg.style.display = 'block';
+        } else {
+            previewImg.onerror = function() { previewImg.style.display = 'none'; };
+            previewImg.src = folder + '/' + id + '.webp';
+            previewImg.style.display = 'block';
+        }
         document.getElementById('lnk-atomic').href = `https://wax.atomichub.io/market?collection_name=alien.worlds&order=asc&sort=price&symbol=WAX&template_id=${id}`;
         document.getElementById('lnk-hive').href   = `https://nfthive.io/market?collection=alien.worlds&order=asc&sort=price&template_id=${id}`;
         document.getElementById('lnk-f12').href    = `https://f12key.eu/collection/alien.worlds/templates/${id}`;
@@ -1376,7 +1418,7 @@
             if (!cells || cells.length < 10) continue;
             var type = cells[col['type']] || '';
             if (type !== 'arms.worlds' && type !== 'crew.worlds') continue;
-            if (!(cells[col['cardname']] || '').trim()) continue; // skip blank/unused templates
+            if (!(cells[col['ability_desc']] || '').trim()) continue; // skip templates with no ability text
             var d10 = function(k){ return Math.round((Number(cells[col[k]]) || 0) / 10 * 10) / 10; };
             // Build row matching renderTable format:
             // [0]=id [1]=name [2]=rarity [3]=shine [4]=race [5]=element
