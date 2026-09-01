@@ -1399,8 +1399,10 @@
         var result = [], cur = '', inQ = false;
         for (var i = 0; i < line.length; i++) {
             var c = line[i];
-            if (c === '"') { inQ = !inQ; }
-            else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+            if (c === '"') {
+                if (inQ && line[i + 1] === '"') { cur += '"'; i++; } // unescape "" → "
+                else { inQ = !inQ; }
+            } else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
             else { cur += c; }
         }
         result.push(cur.trim());
