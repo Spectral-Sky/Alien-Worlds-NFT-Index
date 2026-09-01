@@ -375,7 +375,9 @@
         <button class="ctrl-btn" onclick="loadFighters()" style="padding:5px 10px;">&#9654;</button>
     </div>
     <input id="fighter-search" type="text" placeholder="Filter class, element, race, marker…" oninput="renderTable()">
-    <button id="hide-lv1-btn" class="ctrl-btn" onclick="toggleHideLv1()" style="border-color:rgba(232,160,32,0.2);color:var(--muted);">HIDE LVL 1</button>
+    <button id="hide-lv1-btn"      class="ctrl-btn" onclick="toggleHideLv1()"      style="border-color:rgba(232,160,32,0.2);color:var(--muted);">HIDE LVL 1</button>
+    <button id="hide-marked-btn"   class="ctrl-btn" onclick="toggleHideMarked()"   style="border-color:rgba(232,160,32,0.2);color:var(--muted);">HIDE MARKED</button>
+    <button id="hide-unmarked-btn" class="ctrl-btn" onclick="toggleHideUnmarked()" style="border-color:rgba(232,160,32,0.2);color:var(--muted);">HIDE UNMARKED</button>
     <span id="count-display"></span>
 </div>
 
@@ -468,6 +470,8 @@ var _hiddenCols = {};
 var _selected   = new Set();
 
 var _hideLevel1   = false;
+var _hideMarked   = false;
+var _hideUnmarked = false;
 
 var _recapData    = null;
 var _recapTurn    = 0;
@@ -789,7 +793,10 @@ function cellContent(key, f) {
 function renderTable() {
     var q = (document.getElementById('fighter-search').value || '').toLowerCase().trim();
     _filtered = _fighters.filter(function(f) {
-        if (_hideLevel1 && Number((f.stats||{}).level||1) <= 1) return false;
+        if (_hideLevel1   && Number((f.stats||{}).level||1) <= 1) return false;
+        var hasMark = !!(f.marker && f.marker.trim());
+        if (_hideMarked   && hasMark)  return false;
+        if (_hideUnmarked && !hasMark) return false;
         if (!q) return true;
         var hay = [f.classname, f.element, f.racename, f.marker]
             .map(function(v){ return (v||'').toLowerCase(); }).join(' ');
@@ -925,13 +932,27 @@ function toggleCol(btn) {
     renderTable();
 }
 
+function _setFilterBtn(id, on) {
+    var btn = document.getElementById(id);
+    if (!btn) return;
+    btn.style.borderColor = on ? 'rgba(232,160,32,0.6)' : 'rgba(232,160,32,0.2)';
+    btn.style.color       = on ? 'var(--gold)' : 'var(--muted)';
+}
 function toggleHideLv1() {
     _hideLevel1 = !_hideLevel1;
-    var btn = document.getElementById('hide-lv1-btn');
-    if (btn) {
-        btn.style.borderColor = _hideLevel1 ? 'rgba(232,160,32,0.6)' : 'rgba(232,160,32,0.2)';
-        btn.style.color       = _hideLevel1 ? 'var(--gold)' : 'var(--muted)';
-    }
+    _setFilterBtn('hide-lv1-btn', _hideLevel1);
+    renderTable();
+}
+function toggleHideMarked() {
+    _hideMarked = !_hideMarked;
+    if (_hideMarked) { _hideUnmarked = false; _setFilterBtn('hide-unmarked-btn', false); }
+    _setFilterBtn('hide-marked-btn', _hideMarked);
+    renderTable();
+}
+function toggleHideUnmarked() {
+    _hideUnmarked = !_hideUnmarked;
+    if (_hideUnmarked) { _hideMarked = false; _setFilterBtn('hide-marked-btn', false); }
+    _setFilterBtn('hide-unmarked-btn', _hideUnmarked);
     renderTable();
 }
 
