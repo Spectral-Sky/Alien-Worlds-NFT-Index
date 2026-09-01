@@ -106,15 +106,15 @@
 
     /* TABLE */
     .table-wrap { overflow:auto; flex:1; min-height:0; }
-    .lb-table { border-collapse:separate; border-spacing:0; font-size:0.76em; width:100%; }
-    .lb-table th { position:sticky; top:0; z-index:2; background:#090912; border-bottom:2px solid var(--gold); padding:9px 12px; text-align:right; cursor:pointer; letter-spacing:1px; text-transform:uppercase; color:#667; font-weight:normal; white-space:nowrap; user-select:none; transition:color 0.15s; }
+    .lb-table { border-collapse:separate; border-spacing:0; font-size:0.84em; width:100%; }
+    .lb-table th { position:sticky; top:0; z-index:2; background:#090912; border-bottom:2px solid var(--gold); padding:7px 8px; text-align:right; cursor:pointer; letter-spacing:1px; text-transform:uppercase; color:#667; font-weight:normal; white-space:nowrap; user-select:none; transition:color 0.15s; }
     .lb-table th:first-child { text-align:left; }
     .lb-table th.left { text-align:left; }
     .lb-table th:hover { color:var(--gold); }
     .lb-table th.sort-asc::after  { content:' ▲'; color:var(--gold); }
     .lb-table th.sort-desc::after { content:' ▼'; color:var(--gold); }
     .lb-table th.sort-asc, .lb-table th.sort-desc { color:var(--gold); }
-    .lb-table td { padding:7px 12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.03); white-space:nowrap; color:#9098a8; }
+    .lb-table td { padding:6px 8px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.03); white-space:nowrap; color:#9098a8; }
     .lb-table td.left { text-align:left; }
     .lb-table tr:hover td { background:var(--hover); }
     .lb-table .zero { color:#2a3040; }
@@ -322,10 +322,10 @@
         <div class="nav-dropdown-wrap">
             <button class="nav-dropdown-btn">Aa &#9660;</button>
             <div class="nav-dropdown-menu" style="right:0;left:auto;min-width:170px;">
-                <a class="nav-dropdown-item font-opt" href="#" data-font="segoe"    onclick="ftSetFont(this.dataset.font);return false;">CLEAN<span class="font-preview" style="font-family:'Segoe UI',sans-serif;">Segoe UI</span></a>
+                <a class="nav-dropdown-item font-opt active" href="#" data-font="segoe"    onclick="ftSetFont(this.dataset.font);return false;">CLEAN<span class="font-preview" style="font-family:'Segoe UI',sans-serif;">Segoe UI</span></a>
                 <a class="nav-dropdown-item font-opt" href="#" data-font="calibri"  onclick="ftSetFont(this.dataset.font);return false;">SOFT<span class="font-preview" style="font-family:'Calibri',sans-serif;">Calibri</span></a>
                 <a class="nav-dropdown-item font-opt" href="#" data-font="georgia"  onclick="ftSetFont(this.dataset.font);return false;">CLASSIC<span class="font-preview" style="font-family:'Georgia',serif;">Georgia</span></a>
-                <a class="nav-dropdown-item font-opt active" href="#" data-font="terminal" onclick="ftSetFont(this.dataset.font);return false;">TERMINAL<span class="font-preview" style="font-family:'Courier New',monospace;">Courier New</span></a>
+                <a class="nav-dropdown-item font-opt" href="#" data-font="terminal" onclick="ftSetFont(this.dataset.font);return false;">TERMINAL<span class="font-preview" style="font-family:'Courier New',monospace;">Courier New</span></a>
             </div>
         </div>
         <button class="mode-toggle-btn" id="mode-toggle-btn" onclick="toggleDayMode()" title="Toggle day/night mode">&#9728;</button>
@@ -1175,7 +1175,9 @@ var _fontFamilies = {
 };
 
 function ftSetFont(name) {
-    document.documentElement.style.fontFamily = _fontFamilies[name] || _fontFamilies.terminal;
+    var f = _fontFamilies[name] || _fontFamilies.segoe;
+    document.documentElement.style.fontFamily = f;
+    document.body.style.fontFamily = f;
     localStorage.setItem('naron_font', name);
     document.querySelectorAll('.font-opt').forEach(function(a) {
         a.classList.toggle('active', a.dataset.font === name);
@@ -1193,8 +1195,8 @@ function toggleHamburger() {
 // ── INIT ─────────────────────────────────────────────────────────────────────
 (function init() {
     if (localStorage.getItem('naron_day') === '1') document.documentElement.classList.add('day');
-    var savedFont = localStorage.getItem('naron_font');
-    if (savedFont && _fontFamilies[savedFont]) ftSetFont(savedFont);
+    var savedFont = localStorage.getItem('naron_font') || 'segoe';
+    ftSetFont(savedFont);
     checkWalletState();
     if (getWallet()) loadFighters();
 })();
