@@ -509,12 +509,12 @@ async function loadFighters() {
     showEmpty('<span class="loading-pulse">LOADING FIGHTERS…</span>');
 
     try {
+        // No working secondary index on owner — fetch all fighters and filter client-side.
+        // Table has ~600 rows total so this is a single fast request.
         var all = [], more = true, lb = null;
         while (more) {
-            var p = {code:'fighters.ale', scope:'fighters.ale', table:'fighters',
-                     index_position:2, key_type:'name',
-                     lower_bound:wallet, upper_bound:wallet, limit:1000, json:true};
-            if (lb) { p.lower_bound = lb; p.upper_bound = wallet; }
+            var p = {code:'fighters.ale', scope:'fighters.ale', table:'fighters', limit:1000, json:true};
+            if (lb) p.lower_bound = lb;
             console.log('[fighters] fetch', JSON.stringify(p));
             var res = await fetchRows(p);
             console.log('[fighters] res', res ? ('rows:' + res.rows.length + ' more:' + res.more) : 'NULL — all RPCs failed');
@@ -527,6 +527,8 @@ async function loadFighters() {
             lb = (more && res.next_key) ? res.next_key : null;
             if (!lb) break;
         }
+        // Filter to this wallet's fighters
+        all = all.filter(function(f){ return f.owner === wallet; });
 
         if (!all.length && !document.getElementById('table-container').textContent.includes('RPC')) {
             showEmpty('No fighter rows returned for wallet: ' + wallet + '. Check that you are logged in with the correct account.');
