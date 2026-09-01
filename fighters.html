@@ -375,6 +375,7 @@
         <button class="ctrl-btn" onclick="loadFighters()" style="padding:5px 10px;">&#9654;</button>
     </div>
     <input id="fighter-search" type="text" placeholder="Filter class, element, race, marker…" oninput="renderTable()">
+    <button id="hide-lv1-btn" class="ctrl-btn" onclick="toggleHideLv1()" style="border-color:rgba(232,160,32,0.2);color:var(--muted);">HIDE LVL 1</button>
     <span id="count-display"></span>
 </div>
 
@@ -465,6 +466,8 @@ var _sortCol    = 'lv';
 var _sortDir    = -1;
 var _hiddenCols = {};
 var _selected   = new Set();
+
+var _hideLevel1   = false;
 
 var _recapData    = null;
 var _recapTurn    = 0;
@@ -592,7 +595,12 @@ var COL_DEFS = [
     { key:'xp',        label:'XP',         title:'XP progress to next level',   sortVal: function(f){ var s=f.stats||{}; return s.required_experience?Number(s.experience||0)/Number(s.required_experience):0; } },
     { key:'age',       label:'AGE',        title:'Days since creation',         sortVal: function(f){ return fighterAgeDays(f)||0; } },
     { key:'payday',    label:'PAYDAY',     title:'Next payday date — red = lapsed, cannot be used', defaultDir:1, sortVal: function(f){ return _paydayMs(f) || Infinity; } },
-    { key:'abilities', label:'ABILITIES',  title:'Unlocked abilities',          sortVal: function(f){ return (f.stats&&f.stats.abilities)?f.stats.abilities.length:0; } },
+    { key:'abilities', label:'ABILITIES',  title:'Unlocked abilities — sorted by rarity weight (ability 1+2 priority over 3)', sortVal: function(f){
+        var abls = (f.stats&&f.stats.abilities) ? f.stats.abilities : [];
+        var RARITY_W = {mythical:6,mythic:6,legendary:5,epic:4,rare:3,common:2,abundant:1};
+        function w(a){ var m=(a.displayname||a.name||'').match(/\[(\w+)\]$/); return m?RARITY_W[m[1].toLowerCase()]||0:0; }
+        return (w(abls[0]||{})*10000) + (w(abls[1]||{})*100) + (w(abls[2]||{}));
+    } },
     { key:'id',        label:'ID',         title:'Fighter asset ID',            sortVal: function(f){ return Number(f.fighter_id||0); } },
 ];
 
@@ -781,6 +789,7 @@ function cellContent(key, f) {
 function renderTable() {
     var q = (document.getElementById('fighter-search').value || '').toLowerCase().trim();
     _filtered = _fighters.filter(function(f) {
+        if (_hideLevel1 && Number((f.stats||{}).level||1) <= 1) return false;
         if (!q) return true;
         var hay = [f.classname, f.element, f.racename, f.marker]
             .map(function(v){ return (v||'').toLowerCase(); }).join(' ');
@@ -913,6 +922,16 @@ function toggleCol(btn) {
     var col = btn.dataset.col;
     _hiddenCols[col] = !_hiddenCols[col];
     btn.classList.toggle('on', !_hiddenCols[col]);
+    renderTable();
+}
+
+function toggleHideLv1() {
+    _hideLevel1 = !_hideLevel1;
+    var btn = document.getElementById('hide-lv1-btn');
+    if (btn) {
+        btn.style.borderColor = _hideLevel1 ? 'rgba(232,160,32,0.6)' : 'rgba(232,160,32,0.2)';
+        btn.style.color       = _hideLevel1 ? 'var(--gold)' : 'var(--muted)';
+    }
     renderTable();
 }
 
