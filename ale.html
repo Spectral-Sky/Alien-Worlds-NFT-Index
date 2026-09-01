@@ -1852,6 +1852,7 @@ var _liveOn        = false;   // LIVE toggle
 var _alphaOn       = false;   // ALPHA toggle
 var _liveCacheAgg  = null;    // aggregated live chain data
 var _alphaCacheAgg = null;    // aggregated alpha sheet data
+var _cmpCache      = null;    // whichever agg is in the compare column
 var _statsAlphaURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-hAPQk2ovvVSlVWR4UWEm91bF9yWem-bkSfteZyKmX8eO-cvUPJmJfeeJbpstKoOK6UWbURvphKq6/pub?gid=1102548676&single=true&output=csv';
 // compat shim so old references don't crash
 var _statsDataMode = 'beta';
@@ -2007,7 +2008,16 @@ function _showStatsHome() {
             '<button onclick="_showStatsSetup()" style="' + tfStyle + 'border:1px solid rgba(255,255,255,0.08);color:#506070;margin-left:6px;">⚙</button>' +
         '</div>' +
         '<div id="stats-msg" style="font-size:0.63em;color:#505060;letter-spacing:1px;min-height:1.2em;margin-bottom:8px;"></div>' +
-        '<div id="stats-results"></div>';
+        '<div id="stats-results" style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap;">' +
+          '<div id="stats-col-main" style="flex:1;min-width:280px;"></div>' +
+          '<div id="stats-col-cmp" style="flex:1;min-width:280px;display:none;">' +
+            '<div style="display:flex;align-items:center;gap:8px;font-size:0.55em;letter-spacing:2px;color:rgba(130,190,255,0.65);margin-bottom:14px;padding-bottom:6px;border-bottom:1px solid rgba(100,160,255,0.12);">' +
+              '<span id="stats-col-cmp-label">α ALPHA</span>' +
+              '<button onclick="_hideCmpCol()" style="background:transparent;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-family:inherit;font-size:1em;padding:0 0 0 6px;line-height:1;" title="Hide">✕</button>' +
+            '</div>' +
+            '<div id="stats-col-cmp-inner"></div>' +
+          '</div>' +
+        '</div>';
     runHistoricalScan();
 }
 
@@ -2046,7 +2056,7 @@ window.runRecentScan = async function() {
         _statsCache = agg;
         var skipNote = agg.total.skipped ? ' · ' + agg.total.skipped + ' unmatched skipped' : '';
         _setStatsMsg(fights.length + ' fights scanned · ' + agg.total.arena + ' arena · ' + agg.total.dungeon + ' dungeon' + skipNote);
-        _renderStats(agg);
+        _renderStats(agg, {});
     } catch(e) {
         _setStatsMsg('✗ ' + (e && e.message ? e.message.slice(0,80) : String(e)));
     }
@@ -2073,7 +2083,7 @@ window.runHistoricalScan = async function() {
         }
         _statsCache = agg;
         _setStatsMsg(agg.count + ' rows · ' + agg.total.arena + ' arena · ' + agg.total.dungeon + ' dungeon' + _fmtDateRange(agg.dateRange));
-        _renderStats(agg);
+        _renderStats(agg, {});
     } catch(e) {
         _setStatsMsg('✗ Sheet error: ' + (e && e.message ? e.message.slice(0,80) : String(e)));
     }
@@ -2232,12 +2242,15 @@ function _parseSheetCSV(csv, cutoffMs, myWallet) {
     return {arena:arena, arenaRace:arenaRace, arenaElement:arenaElement, dungeon:dungeon, dungeonRace:dungeonRace, dungeonElement:dungeonElement, crewNFTs:crewNFTs, weaponNFTs:weaponNFTs, total:total, count:counted, dateRange:dr, clsDR:clsDR, raceDR:raceDR, elemDR:elemDR, myCrewNFTs:myCrewNFTs, myWeaponNFTs:myWeaponNFTs, myArenaRace:myArenaRace, myArenaElement:myArenaElement, myFights:myFights, myWins:myWins};
 }
 
-function _renderStats(agg) {
-    var el = document.getElementById('stats-results');
+function _renderStats(agg, opts) {
+    opts = opts || {};
+    var p  = opts.prefix || '';
+    var el = opts.el || document.getElementById('stats-col-main') || document.getElementById('stats-results');
     if (!el) return;
     var diffs = Object.keys(agg.dungeon || {}).map(Number).sort(function(a,b){return a-b;});
     var sortLabel = _statsSortMode === 'wins' ? '# WINS' : 'WIN RATE';
-    var html = _barSection('ARENA — CLASS ' + sortLabel, agg.arena, agg.clsDR);
+    var html = opts.label ? '<div style="font-size:0.56em;letter-spacing:2px;color:rgba(232,160,32,0.45);margin-bottom:14px;padding-bottom:5px;border-bottom:1px solid rgba(232,160,32,0.08);">'+opts.label+'</div>' : '';
+    html += _barSection('ARENA — CLASS ' + sortLabel, agg.arena, agg.clsDR);
     if (Object.keys(agg.arenaRace || {}).length)
         html += _barSection('ARENA — RACE ' + sortLabel, agg.arenaRace, agg.raceDR);
     if (Object.keys(agg.arenaElement || {}).length)
@@ -2245,11 +2258,14 @@ function _renderStats(agg) {
     if (diffs.length > 0) {
         html += '<div style="margin-top:32px;">';
         html += '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ DUNGEON — CLASS USAGE &amp; WIN RATE</div>';
-        html += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">';
-        diffs.forEach(function(d) {
-            html += '<button id="ddb-'+d+'" onclick="selectDungDiff('+d+')" style="background:transparent;border:1px solid rgba(232,160,32,0.2);color:#808070;font-family:\'Courier New\',monospace;font-size:0.63em;padding:4px 10px;cursor:pointer;letter-spacing:1px;">LVL '+d+'</button>';
-        });
-        html += '</div><div id="dung-bars"></div><div id="dung-race-bars"></div><div id="dung-element-bars"></div></div>';
+        if (!p) {
+            html += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">';
+            diffs.forEach(function(d) {
+                html += '<button id="ddb-'+d+'" onclick="selectDungDiff('+d+')" style="background:transparent;border:1px solid rgba(232,160,32,0.2);color:#808070;font-family:\'Courier New\',monospace;font-size:0.63em;padding:4px 10px;cursor:pointer;letter-spacing:1px;">LVL '+d+'</button>';
+            });
+            html += '</div>';
+        }
+        html += '<div id="'+p+'dung-bars"></div><div id="'+p+'dung-race-bars"></div><div id="'+p+'dung-element-bars"></div></div>';
     }
     var nftLabel = _statsSortMode === 'wins' ? 'BY WINS' : 'BY USAGE';
     if (Object.keys(agg.crewNFTs || {}).length) {
@@ -2302,39 +2318,80 @@ function _renderStats(agg) {
     el.innerHTML = html;
     if (diffs.length > 0) {
         _activeDungDiff = diffs.includes(_activeDungDiff) ? _activeDungDiff : diffs[0];
-        selectDungDiff(_activeDungDiff);
+        if (!p) _syncDungButtons(_activeDungDiff);
+        _fillDungBars(_activeDungDiff, p, agg);
     }
 }
 
-window.selectDungDiff = function(diff) {
-    if (_liveOn && _alphaOn && _liveCacheAgg && _alphaCacheAgg) {
-        _selectDungDiffCompare(diff, _liveCacheAgg, _alphaCacheAgg);
-        return;
-    }
-    _activeDungDiff = diff;
+// ── DUNGEON HELPERS ──────────────────────────────────────────────────────────
+function _syncDungButtons(diff) {
     document.querySelectorAll('[id^="ddb-"]').forEach(function(b) {
         var d = Number(b.id.replace('ddb-',''));
         b.style.borderColor = d===diff ? 'rgba(232,160,32,0.6)' : 'rgba(232,160,32,0.2)';
         b.style.color = d===diff ? '#e8a020' : '#808070';
     });
-    var el = document.getElementById('dung-bars');
+}
+function _fillDungBars(diff, p, agg) {
+    if (!agg) return;
+    p = p || '';
+    var el = document.getElementById(p+'dung-bars');
     if (el) {
-        var data = _statsCache && _statsCache.dungeon && _statsCache.dungeon[diff];
+        var data = agg.dungeon && agg.dungeon[diff];
         el.innerHTML = data ? _buildUsageBars(data) : '<div style="font-size:0.6em;color:#404050;">No data for level '+diff+'</div>';
     }
-    var rel = document.getElementById('dung-race-bars');
+    var rel = document.getElementById(p+'dung-race-bars');
     if (rel) {
-        var rdata = _statsCache && _statsCache.dungeonRace && _statsCache.dungeonRace[diff];
+        var rdata = agg.dungeonRace && agg.dungeonRace[diff];
         rel.innerHTML = rdata && Object.keys(rdata).length
-            ? '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.4);margin:14px 0 8px;padding-top:10px;border-top:1px solid rgba(232,160,32,0.07);">RACE USAGE &amp; WIN RATE</div>' + _buildUsageBars(rdata)
-            : '';
+            ? '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.4);margin:14px 0 8px;padding-top:10px;border-top:1px solid rgba(232,160,32,0.07);">RACE USAGE &amp; WIN RATE</div>' + _buildUsageBars(rdata) : '';
     }
-    var eel = document.getElementById('dung-element-bars');
+    var eel = document.getElementById(p+'dung-element-bars');
     if (eel) {
-        var edata = _statsCache && _statsCache.dungeonElement && _statsCache.dungeonElement[diff];
+        var edata = agg.dungeonElement && agg.dungeonElement[diff];
         eel.innerHTML = edata && Object.keys(edata).length
-            ? '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.4);margin:14px 0 8px;padding-top:10px;border-top:1px solid rgba(232,160,32,0.07);">ELEMENT USAGE &amp; WIN RATE</div>' + _buildUsageBars(edata)
-            : '';
+            ? '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.4);margin:14px 0 8px;padding-top:10px;border-top:1px solid rgba(232,160,32,0.07);">ELEMENT USAGE &amp; WIN RATE</div>' + _buildUsageBars(edata) : '';
+    }
+}
+
+// ── COMPARE COLUMN HELPERS ───────────────────────────────────────────────────
+function _showCmpCol(agg, label) {
+    var cmpEl    = document.getElementById('stats-col-cmp');
+    var cmpInner = document.getElementById('stats-col-cmp-inner');
+    var cmpLabel = document.getElementById('stats-col-cmp-label');
+    if (!cmpEl || !cmpInner) return;
+    if (cmpLabel) cmpLabel.textContent = label;
+    cmpEl.style.display = '';
+    _cmpCache = agg;
+    _renderStats(agg, {el: cmpInner, prefix: 'cmp-'});
+}
+window._hideCmpCol = function() {
+    var cmpEl = document.getElementById('stats-col-cmp');
+    if (cmpEl) cmpEl.style.display = 'none';
+    _cmpCache = null;
+};
+function _rerenderAll() {
+    if (_liveOn && _alphaOn && _liveCacheAgg && _alphaCacheAgg) {
+        _renderStats(_liveCacheAgg, {label: '⚡ LIVE'});
+        _showCmpCol(_alphaCacheAgg, 'α ALPHA');
+    } else if (_liveOn && _liveCacheAgg) {
+        _renderStats(_statsCache || _liveCacheAgg, {});
+        if (_statsCache) _showCmpCol(_liveCacheAgg, '⚡ LIVE');
+    } else if (_alphaOn && _alphaCacheAgg) {
+        _renderStats(_statsCache || _alphaCacheAgg, {});
+        if (_statsCache) _showCmpCol(_alphaCacheAgg, 'α ALPHA');
+    } else if (_statsCache) {
+        _renderStats(_statsCache, {});
+    }
+}
+
+window.selectDungDiff = function(diff) {
+    _activeDungDiff = diff;
+    _syncDungButtons(diff);
+    var mainAgg = (_liveOn && _alphaOn && _liveCacheAgg) ? _liveCacheAgg : (_statsCache || _liveCacheAgg || _alphaCacheAgg);
+    _fillDungBars(diff, '', mainAgg);
+    var cmpEl = document.getElementById('stats-col-cmp');
+    if (cmpEl && cmpEl.style.display !== 'none' && _cmpCache) {
+        _fillDungBars(diff, 'cmp-', _cmpCache);
     }
 };
 
@@ -2390,23 +2447,30 @@ window.toggleSource = async function(src) {
     if (src === 'live')  _liveOn  = !_liveOn;
     if (src === 'alpha') _alphaOn = !_alphaOn;
     _syncToggleButtons();
-    document.getElementById('stats-results') && (document.getElementById('stats-results').innerHTML = '');
 
-    if (!_liveOn && !_alphaOn) { _setStatsMsg('Toggle ⚡ LIVE or α ALPHA to view data.'); return; }
+    if (!_liveOn && !_alphaOn) {
+        _hideCmpCol();
+        _setStatsMsg(_statsCache ? _statsCache.count + ' rows · ALL TIME' : '');
+        if (_statsCache) _renderStats(_statsCache, {});
+        return;
+    }
 
     if (_liveOn  && !await _ensureLive())  { _liveOn  = false; _syncToggleButtons(); return; }
     if (_alphaOn && !await _ensureAlpha()) { _alphaOn = false; _syncToggleButtons(); return; }
 
     if (_liveOn && _alphaOn) {
-        _setStatsMsg('Comparing ⚡ LIVE vs α ALPHA');
-        _renderCompare(_liveCacheAgg, _alphaCacheAgg);
+        _setStatsMsg('⚡ LIVE vs α ALPHA — side by side');
+        _renderStats(_liveCacheAgg, {label: '⚡ LIVE'});
+        _showCmpCol(_alphaCacheAgg, 'α ALPHA');
     } else if (_liveOn) {
-        var skipNote = _liveCacheAgg.total.skipped ? ' · ' + _liveCacheAgg.total.skipped + ' unmatched skipped' : '';
+        var skipNote = _liveCacheAgg.total.skipped ? ' · ' + _liveCacheAgg.total.skipped + ' skipped' : '';
         _setStatsMsg(_liveCacheAgg.count + ' live fights · ' + _liveCacheAgg.total.arena + ' arena · ' + _liveCacheAgg.total.dungeon + ' dungeon' + skipNote);
-        _renderStats(_liveCacheAgg);
+        if (_statsCache) { _renderStats(_statsCache, {}); _showCmpCol(_liveCacheAgg, '⚡ LIVE'); }
+        else { _renderStats(_liveCacheAgg, {}); _hideCmpCol(); }
     } else {
         _setStatsMsg(_alphaCacheAgg.count + ' α rows · ' + _alphaCacheAgg.total.arena + ' arena · ' + _alphaCacheAgg.total.dungeon + ' dungeon');
-        _renderStats(_alphaCacheAgg);
+        if (_statsCache) { _renderStats(_statsCache, {}); _showCmpCol(_alphaCacheAgg, 'α ALPHA'); }
+        else { _renderStats(_alphaCacheAgg, {}); _hideCmpCol(); }
     }
 };
 
@@ -2429,7 +2493,7 @@ window.selectTimeFilter = function(days) {
     }
     _statsCache = agg;
     _setStatsMsg(agg.count + ' rows · ' + agg.total.arena + ' arena · ' + agg.total.dungeon + ' dungeon');
-    _renderStats(agg);
+    _rerenderAll();
 };
 
 window.selectSortMode = function(mode) {
@@ -2439,10 +2503,7 @@ window.selectSortMode = function(mode) {
         b.style.borderColor = active ? 'rgba(232,160,32,0.6)' : 'rgba(232,160,32,0.2)';
         b.style.color = active ? '#e8a020' : '#808070';
     });
-    if (_liveOn && _alphaOn && _liveCacheAgg && _alphaCacheAgg) _renderCompare(_liveCacheAgg, _alphaCacheAgg);
-    else if (_liveOn  && _liveCacheAgg)  _renderStats(_liveCacheAgg);
-    else if (_alphaOn && _alphaCacheAgg) _renderStats(_alphaCacheAgg);
-    else if (_statsCache) _renderStats(_statsCache);
+    _rerenderAll();
 };
 
 // ── COMPARE RENDER ─────────────────────────────────────────────────────────
