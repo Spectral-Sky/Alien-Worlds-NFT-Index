@@ -911,7 +911,12 @@
         }
         return String(desc).replace(/\[bf:(\d+):([^\]]+)\]/g, function(_, idx, field) {
             var ef = effects[parseInt(idx)];
-            return (ef && ef[field] !== undefined) ? String(ef[field]) : '?';
+            if (!ef || ef[field] === undefined) return '?';
+            var v = ef[field];
+            if ((field === 'value' || field === 'value_min' || field === 'value_max') && ef.percentflat === 'flat') {
+                v = v / 10;
+            }
+            return String(v);
         });
     }
 
