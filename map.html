@@ -2543,6 +2543,28 @@
         return '<span style="color:#446;font-size:0.55em">'+String(m).slice(0,3).toUpperCase()+'</span>';
     }
 
+    async function _refreshBpFighters() {
+        // Re-fetch just the 5 battle-pane fighters by primary key so XP/level
+        // data is current before the next level-up step in a dungeon run.
+        for (var i = 0; i < _bpFighters.length; i++) {
+            var f = _bpFighters[i];
+            if (!f) continue;
+            try {
+                var res = await fetchRows({code:'fighters.ale', scope:'fighters.ale',
+                    table:'fighters', lower_bound:String(f.fighter_id), limit:1, json:true});
+                if (res && res.rows && res.rows[0] &&
+                    String(res.rows[0].fighter_id) === String(f.fighter_id)) {
+                    var fresh = res.rows[0];
+                    var mi = _myFighters.findIndex(function(mf){
+                        return String(mf.fighter_id) === String(f.fighter_id);
+                    });
+                    if (mi >= 0) _myFighters[mi] = fresh;
+                    _bpFighters[i] = fresh;
+                }
+            } catch(e) {}
+        }
+    }
+
     async function _fetchAllFighters(wallet) {
         // fighters table has no owner secondary index — scan all rows and filter client-side
         var all=[], more=true, lb=null;
@@ -4202,6 +4224,10 @@ async function runTxQueue() {
             if (step.isDungeon && step.dungeonItem && step.dungeonItem.land_id) {
                 var dk = step.dungeonItem.planet + '.' + step.dungeonItem.land_id;
                 _playerPlayedDungeons.add(dk);
+                // Re-fetch fighter stats so the next level-up step sees current XP/level
+                try { await _refreshBpFighters(); } catch(e) {}
+                // Rebuild map so the dungeon cell shows as played (greyed/locked)
+                buildMap(step.dungeonItem.planet || _activePlanet);
             }
 
             // Track used tavern
