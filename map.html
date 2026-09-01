@@ -315,12 +315,14 @@
             position:fixed; right:0; top:52px;
             width:200px; max-height:calc(100vh - 90px);
             background:rgba(3,6,15,0.97);
-            border-left:1px solid rgba(232,160,32,0.12);
-            border-bottom:1px solid rgba(232,160,32,0.08);
+            border:1px solid rgba(232,160,32,0.12);
+            border-right:none;
+            border-top:none;
             padding:10px 11px; z-index:601;
             overflow-y:auto; flex-direction:column; gap:5px;
             display:none;
-            box-shadow:-4px 0 20px rgba(0,0,0,0.7);
+            border-radius:0 0 0 10px;
+            box-shadow:-4px 4px 20px rgba(0,0,0,0.7);
         }
         #action-panel.open { display:flex; }
         #action-info { font-size:0.7em; color:#c8c0a0; line-height:1.5; word-break:break-word; }
@@ -1529,7 +1531,7 @@
                     icon='<span class="cell-icon"><img src="Ale%20images/portal.png" alt="portal" class="icon-portal"></span><span class="portal-label">'+_pname+'</span>';
                 } else if(dungeonMap[key]){
                     var dg=dungeonMap[key];
-                    var dgLocked=dg.land_id&&_playerPlayedDungeons.has(planet+'.'+dg.land_id);
+                    var dgLocked=dg.land_id&&(_playerPlayedDungeons.has(planet+'.'+dg.land_id)||_playerPlayedDungeons.has(dg.land_id));
                     cls+=' ale-dungeon'+(dgLocked?' ale-dg-locked':'');
                     sty=' style="border-color:'+(dgLocked?'#406040':'#508050')+'a0;box-shadow:inset 0 0 5px '+(dgLocked?'#406040':'#508050')+'60"';
                     icon=dgLocked
@@ -1662,7 +1664,7 @@
         var locs=ALE_LOCATIONS[_activePlanet]||{};
         var dungeonEntry=(locs.dungeons||[]).reduce(function(f,d){return f||(d.x===x&&d.y===y?d:null);},null);
         var isDungeon=!!dungeonEntry;
-        var isDungeonLocked=isDungeon&&dungeonEntry.land_id&&_playerPlayedDungeons.has(_activePlanet+'.'+dungeonEntry.land_id);
+        var isDungeonLocked=isDungeon&&dungeonEntry.land_id&&(_playerPlayedDungeons.has(_activePlanet+'.'+dungeonEntry.land_id)||_playerPlayedDungeons.has(dungeonEntry.land_id));
         var tavernEntry=(locs.taverns||[]).reduce(function(f,t){return f||(t.x===x&&t.y===y?t:null);},null);
         var isTavern=!!tavernEntry;
         var isArena=(locs.arenas||[]).some(function(a){return a.x===x&&a.y===y;});
@@ -1806,6 +1808,8 @@
             status.textContent='✓ ('+_sel.x+', '+_sel.y+')';
             status.className='ok';
             showToast('✓ TRAVEL COMPLETE');
+            // Refresh played dungeons from chain so lock state is current after travel
+            if(wallet){ fetchPlayerTaverns(wallet); }
             var destPlanet=_sel.portal?_sel.portal.to:_activePlanet;
             _playerPos={x:_sel.x,y:_sel.y,planet:destPlanet};
             applyMarker();
@@ -2931,7 +2935,7 @@
         if(mode==='dungeon'){
             _bpDungeonEntry=entry;
             var planet=entry.planet||_activePlanet;
-            _bpLocked=!!(entry.land_id&&_playerPlayedDungeons.has(planet+'.'+entry.land_id));
+            _bpLocked=!!(entry.land_id&&(_playerPlayedDungeons.has(planet+'.'+entry.land_id)||_playerPlayedDungeons.has(entry.land_id)));
         } else {
             _bpArenaEntry=entry;
             var arKey=(entry.planet||_activePlanet)+'.'+entry.x+'.'+entry.y;
