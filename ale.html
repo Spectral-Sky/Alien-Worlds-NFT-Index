@@ -1382,12 +1382,12 @@
                 d10('res_metal'),                  // 15 metal %
                 d10('res_neutral'),                // 16 neutral %
                 cells[col['ability_desc']] || '',  // 17 ability text
-                cells[col['ability'] !== undefined ? 'ability'
-                    : col['ability_json'] !== undefined ? 'ability_json'
-                    : col['bf_effects'] !== undefined ? 'bf_effects'
-                    : col['ability_effects'] !== undefined ? 'ability_effects'
-                    : col['specialAbility'] !== undefined ? 'specialAbility'
-                    : ''] || ''                    // 18 ability JSON (for bf: placeholder resolution)
+                cells[col['ability'] !== undefined ? col['ability']
+                    : col['ability_json'] !== undefined ? col['ability_json']
+                    : col['bf_effects'] !== undefined ? col['bf_effects']
+                    : col['ability_effects'] !== undefined ? col['ability_effects']
+                    : col['specialAbility'] !== undefined ? col['specialAbility']
+                    : -1] || ''                    // 18 ability JSON (for bf: placeholder resolution)
             ];
             if (type === 'arms.worlds') arms.push(row);
             else crew.push(row);
