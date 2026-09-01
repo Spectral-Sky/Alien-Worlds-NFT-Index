@@ -1018,7 +1018,7 @@
                 if (!ef || ef[field] === undefined) return _;
                 var v = ef[field];
                 if ((field === 'value' || field === 'value_min' || field === 'value_max') && ef.percentflat === 'flat') v = v / 10;
-                return String(v);
+                return String(typeof v === 'number' ? Math.abs(v) : v);
             };
         }
         return String(desc)
