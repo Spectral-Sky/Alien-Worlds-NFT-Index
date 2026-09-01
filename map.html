@@ -491,17 +491,27 @@
         /* ── DUNGEON RUN difficulty picker ───────────────────────────────── */
         #drun-picker { position:fixed; inset:0; z-index:730; display:none; align-items:center; justify-content:center; background:rgba(0,0,6,0.85); }
         #drun-picker.open { display:flex; }
-        #drun-picker-box { width:min(320px,92vw); background:rgba(3,6,18,0.99); border:1.5px solid rgba(232,160,32,0.3); border-radius:12px; padding:18px 16px 14px; box-shadow:0 0 40px rgba(0,0,0,0.9); }
+        #drun-picker-box { width:min(400px,95vw); background:rgba(3,6,18,0.99); border:1.5px solid rgba(232,160,32,0.3); border-radius:12px; padding:18px 16px 14px; box-shadow:0 0 40px rgba(0,0,0,0.9); }
         .drun-ph { font-size:0.68em; letter-spacing:3px; color:var(--gold); text-align:center; margin-bottom:3px; }
-        .drun-sub { font-size:0.55em; letter-spacing:2px; color:#556; text-align:center; margin-bottom:12px; }
+        .drun-sub { font-size:0.55em; letter-spacing:2px; color:#556; text-align:center; margin-bottom:10px; }
         #drun-diff-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:4px; margin-bottom:8px; }
         .drun-diff-btn { padding:7px 2px; font-size:0.62em; letter-spacing:1px; background:rgba(96,200,255,0.04); border:1px solid rgba(96,200,255,0.12); color:#446; cursor:crosshair; transition:all 0.12s; text-align:center; border-radius:6px; }
         .drun-diff-btn:hover { border-color:rgba(232,160,32,0.3); color:#887755; }
         .drun-diff-btn.on { background:rgba(232,160,32,0.14); border-color:rgba(232,160,32,0.55); color:var(--gold); font-weight:bold; }
-        #drun-hint { font-size:0.52em; letter-spacing:1px; color:#505840; text-align:center; margin-bottom:12px; min-height:1.4em; }
+        #drun-hint { font-size:0.52em; letter-spacing:1px; color:#505840; text-align:center; margin-bottom:8px; min-height:1.2em; }
+        #drun-team { border:1px solid rgba(96,200,255,0.1); border-radius:7px; padding:8px 10px; margin-bottom:10px; background:rgba(96,200,255,0.03); }
+        .drun-team-lbl { font-size:0.5em; letter-spacing:2px; color:#445; margin-bottom:5px; }
+        .drun-fighter-row { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:5px; }
+        .drun-fighter-chip { font-size:0.52em; letter-spacing:1px; color:#8898a8; padding:2px 6px; border:1px solid rgba(96,200,255,0.12); border-radius:4px; }
+        .drun-fighter-chip.empty { color:#333; border-color:rgba(255,80,80,0.2); }
+        .drun-nft-row { display:flex; gap:8px; }
+        .drun-nft-chip { flex:1; font-size:0.52em; letter-spacing:1px; color:#8898a8; padding:3px 6px; border:1px solid rgba(96,200,255,0.12); border-radius:4px; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .drun-nft-chip.missing { color:#e06060; border-color:rgba(255,80,80,0.3); background:rgba(255,60,60,0.05); }
+        #drun-warn { font-size:0.52em; letter-spacing:1px; color:#e06060; text-align:center; margin-bottom:8px; min-height:1.2em; }
         .drun-actions { display:flex; gap:8px; }
         .drun-go { flex:1; padding:7px; background:rgba(232,160,32,0.12); border:1px solid rgba(232,160,32,0.45); color:var(--gold); font-family:inherit; font-size:0.62em; letter-spacing:2px; cursor:pointer; transition:all 0.18s; border-radius:7px; }
-        .drun-go:hover { background:rgba(232,160,32,0.22); }
+        .drun-go:hover:not(:disabled) { background:rgba(232,160,32,0.22); }
+        .drun-go:disabled { opacity:0.35; cursor:default; }
         .drun-cancel { padding:7px 12px; background:transparent; border:1px solid rgba(255,255,255,0.08); color:#445; font-family:inherit; font-size:0.6em; letter-spacing:1px; cursor:pointer; transition:all 0.15s; border-radius:7px; }
         .drun-cancel:hover { color:#778; border-color:rgba(255,255,255,0.18); }
         #txq-retry-failed-btn:disabled { opacity:0.4; cursor:default; }
@@ -2543,6 +2553,20 @@
         return '<span style="color:#446;font-size:0.55em">'+String(m).slice(0,3).toUpperCase()+'</span>';
     }
 
+    async function _checkDungeonResult(historyId) {
+        if (!historyId) return null;
+        // Give the chain 2.5s to write the fight result
+        await new Promise(function(r){ setTimeout(r, 2500); });
+        try {
+            var res = await fetchRows({code:'battle.ale', scope:'battle.ale', table:'fights',
+                limit:20, json:true, reverse:true});
+            if (!res || !res.rows) return null;
+            var row = (res.rows||[]).find(function(r){ return r.history_id === historyId; });
+            if (!row) return null; // result not found — treat as inconclusive
+            return row.log === 'Team 1 wins' ? 'win' : 'loss';
+        } catch(e) { return null; }
+    }
+
     async function _refreshBpFighters() {
         // Re-fetch just the 5 battle-pane fighters by primary key so XP/level
         // data is current before the next level-up step in a dungeon run.
@@ -3457,8 +3481,17 @@
         <div class="drun-sub">SELECT DIFFICULTY</div>
         <div id="drun-diff-grid"></div>
         <div id="drun-hint"></div>
+        <div id="drun-team">
+            <div class="drun-team-lbl">TEAM</div>
+            <div class="drun-fighter-row" id="drun-fighters"></div>
+            <div class="drun-nft-row">
+                <div class="drun-nft-chip" id="drun-crew-chip">CREW: —</div>
+                <div class="drun-nft-chip" id="drun-weapon-chip">WEAPON: —</div>
+            </div>
+        </div>
+        <div id="drun-warn"></div>
         <div class="drun-actions">
-            <button class="drun-go" onclick="drunPickerConfirm()">▶ ADD TO QUEUE</button>
+            <button class="drun-go" id="drun-go-btn" onclick="drunPickerConfirm()">▶ ADD TO QUEUE</button>
             <button class="drun-cancel" onclick="drunPickerCancel()">CANCEL</button>
         </div>
     </div>
@@ -3823,31 +3856,86 @@ async function txqAddDungeonRun() {
         for (var si=0;si<5;si++) { if (!_bpFighters[si]&&avail.length) _bpFighters[si]=avail.shift(); }
     }
 
+    // Re-fetch played dungeons from chain so we don't queue already-beaten ones
+    try {
+        var _pdRes = await fetchRows({code:'players.ale', scope:'players.ale', table:'players',
+            lower_bound:wallet, upper_bound:wallet, limit:1, json:true});
+        if (_pdRes && _pdRes.rows && _pdRes.rows[0]) {
+            _playerPlayedDungeons = new Set(_pdRes.rows[0].played_dungeons || []);
+        }
+    } catch(e) {}
+
     if (btn) { btn.textContent = 'DUNGEON RUN'; btn.disabled = false; }
 
-    // Determine smart default difficulty:
-    // if all selected fighters are level < 6, recommend 4 (NFTs not yet activated on opponents)
+    // Ensure _bpCrew / _bpWeapon are loaded from defaults if not already set
+    if (!_bpCrew && _battleNFTDefaults.crewAssetId) {
+        _bpCrew = {asset_id:_battleNFTDefaults.crewAssetId, template_id:_battleNFTDefaults.crewTemplateId,
+            name:_battleNFTDefaults.crewName||'CREW NFT', schema:'crew.worlds'};
+    }
+    if (!_bpWeapon && _battleNFTDefaults.weaponAssetId) {
+        _bpWeapon = {asset_id:_battleNFTDefaults.weaponAssetId, template_id:_battleNFTDefaults.weaponTemplateId,
+            name:_battleNFTDefaults.weaponName||'WEAPON NFT', schema:'arms.worlds'};
+    }
+    // Fall back to localStorage if still missing
+    if (!_bpCrew || !_bpWeapon) {
+        try {
+            var _saved = JSON.parse(localStorage.getItem('naron_battle_nfts')||'{}');
+            if (!_bpCrew && _saved.crewAssetId)
+                _bpCrew = {asset_id:_saved.crewAssetId, template_id:_saved.crewTemplateId, name:_saved.crewName||'CREW NFT', schema:'crew.worlds'};
+            if (!_bpWeapon && _saved.weaponAssetId)
+                _bpWeapon = {asset_id:_saved.weaponAssetId, template_id:_saved.weaponTemplateId, name:_saved.weaponName||'WEAPON NFT', schema:'arms.worlds'};
+        } catch(e) {}
+    }
+
+    // Determine smart default difficulty
     var activeFighters = (_bpFighters||[]).filter(Boolean);
     var allLowLevel = activeFighters.length > 0 && activeFighters.every(function(f){
         return ((f.stats&&f.stats.level)||0) < 6;
     });
     _drunPickerDiff = allLowLevel ? 4 : (_bpDifficulty || 5);
 
-    // Build and show picker
+    // Build difficulty grid
     var grid = document.getElementById('drun-diff-grid');
     var hint = document.getElementById('drun-hint');
     if (grid) {
-        var html = '';
-        for (var d=1;d<=15;d++) {
-            html += '<button class="drun-diff-btn'+(d===_drunPickerDiff?' on':'')+'" onclick="setDrunDiff('+d+')">'+d+'</button>';
+        var _gh = '';
+        for (var _gd=1;_gd<=15;_gd++) {
+            _gh += '<button class="drun-diff-btn'+(_gd===_drunPickerDiff?' on':'')+'" onclick="setDrunDiff('+_gd+')">'+_gd+'</button>';
         }
-        grid.innerHTML = html;
+        grid.innerHTML = _gh;
     }
     if (hint) {
         hint.textContent = allLowLevel
             ? '⚡ Tip: Difficulty 4 skips opponent NFT bonuses for low-level fighters'
             : '';
     }
+
+    // Build team preview
+    var _fc = document.getElementById('drun-fighters');
+    if (_fc) {
+        var _fh = '';
+        for (var _fi=0;_fi<5;_fi++) {
+            var _ff = _bpFighters[_fi];
+            if (_ff) {
+                var _fcls = (_ff.classname||'').toLowerCase().replace(/[\s_-]/g,'');
+                var _fci = FIGHTER_CLASSES[_fcls]||{e:'⚔️'};
+                _fh += '<span class="drun-fighter-chip">'+_fci.e+' LV'+(((_ff.stats&&_ff.stats.level)||'?'))+'</span>';
+            } else {
+                _fh += '<span class="drun-fighter-chip empty">EMPTY</span>';
+            }
+        }
+        _fc.innerHTML = _fh;
+    }
+    var _crewChip   = document.getElementById('drun-crew-chip');
+    var _weapChip   = document.getElementById('drun-weapon-chip');
+    var _warnEl     = document.getElementById('drun-warn');
+    var _goBtn      = document.getElementById('drun-go-btn');
+    var _nftsMissing = !_bpCrew || !_bpWeapon;
+    if (_crewChip)   { _crewChip.textContent   = 'CREW: '+(_bpCrew   ? (_bpCrew.name  ||('#'+_bpCrew.asset_id))   : '⚠ NOT SET'); _crewChip.className   = 'drun-nft-chip'+(_bpCrew  ?'':' missing'); }
+    if (_weapChip)   { _weapChip.textContent   = 'WEAPON: '+(_bpWeapon ? (_bpWeapon.name||('#'+_bpWeapon.asset_id)) : '⚠ NOT SET'); _weapChip.className   = 'drun-nft-chip'+(_bpWeapon?'':' missing'); }
+    if (_warnEl)     { _warnEl.textContent     = _nftsMissing ? '⚠ Open the battle pane and select your NFTs first' : ''; }
+    if (_goBtn)      { _goBtn.disabled         = _nftsMissing || activeFighters.length < 5; }
+
     document.getElementById('drun-picker').classList.add('open');
 }
 
@@ -3870,7 +3958,7 @@ function drunPickerConfirm() {
         return (s.level||0) < 10 && Number(s.experience||0) >= Number(s.required_experience||1);
     });
 
-    // Gather all unfought dungeons across all planets
+    // Gather all unfought dungeons (played_dungeons was refreshed from chain on picker open)
     var allDungeons = [];
     Object.keys(ALE_LOCATIONS).forEach(function(planet){
         var dungeons = ALE_LOCATIONS[planet].dungeons || [];
@@ -3887,7 +3975,7 @@ function drunPickerConfirm() {
         return;
     }
 
-    // Sort: same planet first, then by Manhattan distance from current position
+    // Sort: same planet first, then Manhattan distance
     var px = _playerPos ? _playerPos.x : 1, py = _playerPos ? _playerPos.y : 1;
     var curPlanet = _activePlanet;
     allDungeons.sort(function(a, b){
@@ -3906,7 +3994,10 @@ function drunPickerConfirm() {
             if (portal) _txQueue.push({type:'portal', x:portal.x, y:portal.y, planet:fromPlanet, to:d.planet});
             fromPlanet = d.planet;
         }
-        _txQueue.push({type:'travel', x:d.x, y:d.y});
+        // Skip travel if already standing on this dungeon
+        var alreadyHere = _playerPos && d.planet === _activePlanet
+            && d.x === _playerPos.x && d.y === _playerPos.y;
+        if (!alreadyHere) _txQueue.push({type:'travel', x:d.x, y:d.y});
         if (readyIds.length) {
             _txQueue.push({type:'levelup', fighter_ids:readyIds.slice(), count:readyIds.length,
                 name:'LEVEL UP ('+readyIds.length+' fighter'+(readyIds.length>1?'s':'')+')'});
@@ -4179,6 +4270,8 @@ async function runTxQueue() {
                 failed++;
                 continue;
             }
+            var _dHid = genHistoryId();
+            step.dungeonHistoryId = _dHid;
             step.actions = [{ account:'dungeons.ale', name:'playdungeon',
                 authorization:[{actor:wallet,permission:'active'}],
                 data:{ wallet:wallet, planet:d.planet, land_id:d.land_id,
@@ -4186,7 +4279,7 @@ async function runTxQueue() {
                        fighter_ids: fids,
                        crew_asset_id: _bpCrew   ? Number(_bpCrew.asset_id)   : 0,
                        weapon_asset_id: _bpWeapon ? Number(_bpWeapon.asset_id) : 0,
-                       use_gems: false, history_id: genHistoryId() } }];
+                       use_gems: false, history_id: _dHid } }];
         }
 
         // Lazy hire: compute actions just before TX using only NFTs not yet deployed this run
@@ -4220,10 +4313,51 @@ async function runTxQueue() {
                 });
             }
 
-            // Track played dungeon so it shows as fought on the map
+            // Dungeon: check win/loss, retry once on loss, pause on double-loss
             if (step.isDungeon && step.dungeonItem && step.dungeonItem.land_id) {
-                var dk = step.dungeonItem.planet + '.' + step.dungeonItem.land_id;
-                _playerPlayedDungeons.add(dk);
+                var _dk = step.dungeonItem.planet + '.' + step.dungeonItem.land_id;
+                var _dResult = null;
+                if (progLbl) progLbl.textContent = 'Checking battle result…';
+                try { _dResult = await _checkDungeonResult(step.dungeonHistoryId); } catch(e) {}
+
+                if (_dResult === 'loss') {
+                    // First loss — retry once with new history_id
+                    if (itemEl) {
+                        itemEl.style.background = 'rgba(255,160,40,0.08)';
+                        var _rl = itemEl.querySelector('.txq-item-label');
+                        if (_rl) _rl.textContent += ' — LOSS · retrying…';
+                    }
+                    if (progLbl) progLbl.textContent = '⚠ Dungeon loss — retrying once…';
+                    await new Promise(function(r){ setTimeout(r, 1500); });
+                    try {
+                        var _rHid = genHistoryId();
+                        step.actions[0].data.history_id = _rHid;
+                        step.dungeonHistoryId = _rHid;
+                        if (window.walletSession) await window.walletSession.transact({actions: step.actions});
+                        else if (wax && wax.api) await wax.api.transact({actions: step.actions},{blocksBehind:3,expireSeconds:30});
+                        if (progLbl) progLbl.textContent = 'Checking retry result…';
+                        _dResult = null;
+                        try { _dResult = await _checkDungeonResult(_rHid); } catch(e) {}
+                    } catch(re) {
+                        _dResult = 'error';
+                    }
+                }
+
+                if (_dResult === 'loss' || _dResult === 'error') {
+                    // Double loss or retry TX failed — pause queue
+                    if (itemEl) {
+                        itemEl.style.background = 'rgba(255,68,68,0.06)';
+                        var _rl2 = itemEl.querySelector('.txq-item-label');
+                        if (_rl2) { _rl2.style.color = '#ff6644'; _rl2.textContent = (_rl2.textContent||'') + ' — LOSS ×2 · queue paused'; }
+                    }
+                    if (progLbl) progLbl.textContent = '⚠ Dungeon lost twice — check your team and retry.';
+                    _txQueueAbort = true;
+                    failed++;
+                    continue;
+                }
+
+                // Win (or inconclusive — proceed)
+                _playerPlayedDungeons.add(_dk);
                 // Re-fetch fighter stats so the next level-up step sees current XP/level
                 try { await _refreshBpFighters(); } catch(e) {}
                 // Rebuild map so the dungeon cell shows as played (greyed/locked)
