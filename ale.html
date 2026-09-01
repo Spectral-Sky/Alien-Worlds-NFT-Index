@@ -905,12 +905,19 @@
             }
         } catch(e) {}
         try {
+            var WAX_NODES = ['https://wax.eosphere.io','https://wax.eosnation.io','https://wax.pink.gg','https://wax.cryptolions.io','https://wax.greymass.com'];
             var map = {}, next = null;
             do {
                 var body = { code:'fighters.ale', table:'nftvalues', scope:'fighters.ale', limit:500, json:true };
                 if (next) body.lower_bound = next;
-                var r = await fetch('https://wax.greymass.com/v1/chain/get_table_rows', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-                var d = await r.json();
+                var d = null;
+                for (var ni = 0; ni < WAX_NODES.length; ni++) {
+                    try {
+                        var r = await fetch(WAX_NODES[ni] + '/v1/chain/get_table_rows', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+                        d = await r.json(); break;
+                    } catch(e) {}
+                }
+                if (!d) break;
                 (d.rows || []).forEach(function(row) {
                     if (row.template_id && row.ability && row.ability.length) map[row.template_id] = row.ability[0].bf_effects || [];
                 });
