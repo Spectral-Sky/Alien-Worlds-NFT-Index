@@ -1679,7 +1679,7 @@ var _liveOn        = false;   // LIVE toggle
 var _alphaOn       = false;   // ALPHA toggle
 var _liveCacheAgg  = null;    // aggregated live chain data
 var _alphaCacheAgg = null;    // aggregated alpha sheet data
-var _statsAlphaURL = localStorage.getItem('naron_stats_alpha_url') || '';
+var _statsAlphaURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-hAPQk2ovvVSlVWR4UWEm91bF9yWem-bkSfteZyKmX8eO-cvUPJmJfeeJbpstKoOK6UWbURvphKq6/pub?gid=1102548676&single=true&output=csv';
 // compat shim so old references don't crash
 var _statsDataMode = 'beta';
 
@@ -1846,30 +1846,12 @@ function _setStatsMsg(msg) {
 function _showStatsSetup() {
     var el = document.getElementById('stats-results');
     if (!el) return;
-    var inp = 'width:100%;background:#0a0c18;color:#c0c8e0;border:1px solid rgba(232,160,32,0.2);padding:7px 10px;font-family:\'Courier New\',monospace;font-size:0.68em;box-sizing:border-box;outline:none;margin-bottom:6px;';
-    var lbl = 'font-size:0.58em;letter-spacing:2px;color:#708090;margin-bottom:6px;margin-top:14px;display:block;';
-    var btn = 'background:transparent;border:1px solid rgba(232,160,32,0.3);color:#c09060;font-family:\'Courier New\',monospace;font-size:0.67em;padding:5px 14px;cursor:pointer;letter-spacing:1px;';
     el.innerHTML =
-        '<div style="margin-top:10px;max-width:560px;">' +
-            '<span style="' + lbl + '">β BETA — GOOGLE SHEET CSV URL (fights tab)</span>' +
-            '<input id="st-sheet-input" type="text" value="' + (_statsGSheetURL||'') + '" placeholder="Publish fights tab as CSV and paste link" style="' + inp + '">' +
-            '<span style="' + lbl + '">α ALPHA — GOOGLE SHEET CSV URL (fights_alpha tab)</span>' +
-            '<input id="st-alpha-input" type="text" value="' + (_statsAlphaURL||'') + '" placeholder="Publish fights_alpha tab as CSV and paste link" style="' + inp + '">' +
-            '<button onclick="_saveStatsSheet()" style="' + btn + '">SAVE BOTH</button>' +
-            '<div style="font-size:0.56em;color:#404858;margin-top:10px;line-height:1.8;">' +
-                'In Google Sheets → File → Share → Publish to web → select the tab → CSV → Copy link.' +
-            '</div>' +
+        '<div style="margin-top:10px;max-width:480px;font-size:0.62em;color:#506070;letter-spacing:1px;line-height:1.8;">' +
+            'Toggle <strong style="color:#50dc8c;">⚡ LIVE</strong> to scan live chain fights.<br>' +
+            'Toggle <strong style="color:#80c8ff;">α ALPHA</strong> to load ALE alpha fight history.<br>' +
+            'Enable both to compare alpha vs live side-by-side.' +
         '</div>';
-}
-
-function _saveStatsSheet() {
-    var inp = document.getElementById('st-sheet-input');
-    var alphaInp = document.getElementById('st-alpha-input');
-    if (inp) { _statsGSheetURL = inp.value.trim(); try { localStorage.setItem('naron_stats_sheet_url', _statsGSheetURL); } catch(e) {} }
-    if (alphaInp) { _statsAlphaURL = alphaInp.value.trim(); try { localStorage.setItem('naron_stats_alpha_url', _statsAlphaURL); } catch(e) {} }
-    _alphaCacheAgg = null; _alphaRawCSV = null; // force refetch
-    _setStatsMsg('URLs saved.');
-    runHistoricalScan();
 }
 
 window.runRecentScan = async function() {
