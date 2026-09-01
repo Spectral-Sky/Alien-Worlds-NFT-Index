@@ -1358,6 +1358,7 @@
         var hdr = lines[0].split(',').map(function(h){ return h.trim().replace(/^"|"$/g,''); });
         var col = {};
         hdr.forEach(function(h, i){ col[h] = i; });
+        console.log('[ALE CSV] headers:', hdr.join(', '));
         var arms = [], crew = [];
         for (var i = 1; i < lines.length; i++) {
             var cells = parseNftCsvRow_(lines[i]);
