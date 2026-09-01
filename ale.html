@@ -898,15 +898,16 @@
         if (abilityJson) {
             try {
                 var parsed = typeof abilityJson === 'string' ? JSON.parse(abilityJson) : abilityJson;
-                // parsed may be an array of ability objects, each with bf_effects
-                // or directly an array of effect objects
                 var first = Array.isArray(parsed) ? parsed[0] : parsed;
                 if (first && Array.isArray(first.bf_effects)) {
                     effects = first.bf_effects;
                 } else if (Array.isArray(parsed) && parsed[0] && parsed[0].value !== undefined) {
-                    effects = parsed; // already a flat effects array
+                    effects = parsed;
                 }
-            } catch(e) {}
+            } catch(e) { console.warn('[resolveAbility] JSON parse failed:', e.message, '| raw:', String(abilityJson).slice(0,120)); }
+        }
+        if (!effects.length && /\[bf:/.test(desc)) {
+            console.warn('[resolveAbility] no effects for desc:', desc.slice(0,80), '| abilityJson type:', typeof abilityJson, '| value:', String(abilityJson).slice(0,120));
         }
         return String(desc).replace(/\[bf:(\d+):([^\]]+)\]/g, function(_, idx, field) {
             var ef = effects[parseInt(idx)];
