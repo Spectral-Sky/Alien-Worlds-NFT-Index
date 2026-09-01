@@ -2830,6 +2830,7 @@
     }
 
     var _bpMode='dungeon';
+    var _bpLocked=false;
     var _bpFighters=[null,null,null,null,null];
     var _bpCrew=null;
     var _bpWeapon=null;
@@ -2919,8 +2920,15 @@
         _bpMode=mode;
         _bpFighters=[null,null,null,null,null];
         _bpUseGems=false;
-        if(mode==='dungeon'){_bpDungeonEntry=entry;}
-        else{_bpArenaEntry=entry;}
+        if(mode==='dungeon'){
+            _bpDungeonEntry=entry;
+            var planet=entry.planet||_activePlanet;
+            _bpLocked=!!(entry.land_id&&_playerPlayedDungeons.has(planet+'.'+entry.land_id));
+        } else {
+            _bpArenaEntry=entry;
+            var arKey=(entry.planet||_activePlanet)+'.'+entry.x+'.'+entry.y;
+            _bpLocked=_playerLockedArenas.has(arKey);
+        }
 
         // restore last-used fighters
         var lsKey=mode==='dungeon'?'naron_dg_fighters':'naron_ar_fighters';
@@ -3067,9 +3075,17 @@
         var lvBtn=document.getElementById('bp-lvup-btn');
         if(lvBtn) lvBtn.style.display=anyReady?'':'none';
 
-        // status reset
+        // locked state — grey out execute button
+        var execBtn=document.getElementById('bp-exec-btn');
         var stEl=document.getElementById('bp-status');
-        if(stEl){stEl.textContent='';stEl.className='';}
+        if(_bpLocked){
+            if(execBtn){execBtn.disabled=true;execBtn.style.opacity='0.35';execBtn.style.cursor='default';}
+            var lockMsg=_bpMode==='dungeon'?'✓ WON TODAY — RESETS AT 0 UTC':'✗ FIGHTER DEPLOYED HERE';
+            if(stEl){stEl.textContent=lockMsg;stEl.className='err';}
+        } else {
+            if(execBtn){execBtn.disabled=false;execBtn.style.opacity='';execBtn.style.cursor='';}
+            if(stEl){stEl.textContent='';stEl.className='';}
+        }
     }
 
     function clearBpSlot(i){
@@ -3188,6 +3204,7 @@
     }
 
     async function executeBattle() {
+        if(_bpLocked){_bpSetStatus(_bpMode==='dungeon'?'✓ WON TODAY — RESETS AT 0 UTC':'✗ FIGHTER DEPLOYED HERE','err');return;}
         var wallet=getWallet();
         if(!wallet){_bpSetStatus('⚠ PLEASE LOG IN','err');return;}
         var filled=_bpFighters.filter(function(f){return !!f;});
