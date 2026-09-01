@@ -891,6 +891,28 @@
             m => ELEMENT_EMOJI[m.toLowerCase()] + ' ' + m);
     }
 
+    // Resolve [bf:{index}:{field}] placeholders from the ability JSON (bf_effects array)
+    function resolveAbility(desc, abilityJson) {
+        if (!desc) return desc;
+        var effects = [];
+        if (abilityJson) {
+            try {
+                var parsed = typeof abilityJson === 'string' ? JSON.parse(abilityJson) : abilityJson;
+                // parsed is an array of ability objects; take the first one's bf_effects
+                var first = Array.isArray(parsed) ? parsed[0] : parsed;
+                if (first && Array.isArray(first.bf_effects)) effects = first.bf_effects;
+            } catch(e) {}
+        }
+        return String(desc).replace(/\[bf:(\d+):([^\]]+)\]/g, function(_, idx, field) {
+            var ef = effects[parseInt(idx)];
+            return (ef && ef[field] !== undefined) ? ef[field] : '[' + field + ']';
+        });
+    }
+
+    function renderAbility(desc, abilityJson) {
+        return emojifyAbility(resolveAbility(desc, abilityJson));
+    }
+
     // ── SORT WEIGHTS ─────────────────────────────────────────────────────────────
     const RARITY_ORDER = { Abundant:0, Common:1, Rare:2, Epic:3, Legendary:4, Mythical:5 };
     const SHINE_ORDER  = { Stone:0, Gold:1, Stardust:2, Antimatter:3, XDimension:4, Xdimension:4 };
@@ -940,7 +962,7 @@
             const templateId = row[0];
             let imgHtml = `<img data-tid="${templateId}" style="height:46px!important;width:auto!important;display:block;margin:0 auto;border-radius:4px;" loading="lazy">`;
 
-            tr.onclick = () => openDeck(templateId, row[1], row[2], row[3], row[17]);
+            tr.onclick = () => openDeck(templateId, row[1], row[2], row[3], row[17], row[18]);
 
             const tag = v => v ? `<span class="tag-${String(v).toLowerCase().replace(/[^a-z]/g,'')}">${v}</span>` : '-';
             const n = v => (v !== '' && v !== undefined) ? v : '-';
@@ -948,7 +970,7 @@
             // col indices: [0]=id [1]=name [2]=rarity [3]=shine [4]=race [5]=element [6]=hp [7]=dmg [8]=taunt [9]=windup [10]=cooldown [11-16]=res [17]=ability
             let html = `
                 <td>${row[0]}</td>
-                <td class="ability-td">${emojifyAbility(row[17]) || ''}</td>
+                <td class="ability-td">${renderAbility(row[17], row[18]) || ''}</td>
                 <td>${imgHtml}</td>
                 <td style="font-weight:bold;color:var(--theme-color);text-align:left;">${row[1]}</td>
                 <td>${tag(row[2])}</td>
@@ -1015,7 +1037,7 @@
     }
 
     // ── DECK & MARKET LOGIC ──────────────────────────────────────────────────────
-    window.openDeck = function(id, name, rarity, shine, ability) {
+    window.openDeck = function(id, name, rarity, shine, ability, abilityJson) {
         document.getElementById('preview-label').style.display = 'block';
         document.getElementById('label-id').textContent = '#' + id;
         document.getElementById('label-name').textContent = name;
@@ -1023,7 +1045,7 @@
         document.getElementById('label-shine').className = 'tag-' + (shine || '').toLowerCase().replace(/[^a-z]/g,'');
         // ability
         const abilEl = document.getElementById('preview-ability');
-        if (ability) { abilEl.textContent = emojifyAbility(ability); abilEl.style.display = 'block'; }
+        if (ability) { abilEl.textContent = renderAbility(ability, abilityJson); abilEl.style.display = 'block'; }
         else { abilEl.style.display = 'none'; }
         // image from cache
         const imgHash = ALE_IMG_CACHE[id] || '';
@@ -1314,7 +1336,7 @@
     // template_id(0) cardname(1) type(2) rarity(3) shine(4) classname(5) racename(6) element(7)
     // health(8) damage(9) taunt(10) initiative(11) attackspeed(12)
     // res_fire(13) res_nature(14) res_air(15) res_gem(16) res_metal(17) res_neutral(18)
-    // ability_name(19) ability_desc(20)
+    // ability_name(19) ability_desc(20) [ability_json(21) — optional, used to resolve bf: placeholders]
 
     function parseNftCsv_(text) {
         var lines = text.trim().split('\n');
@@ -1354,7 +1376,12 @@
                 d10('res_gem'),                    // 14 gem %
                 d10('res_metal'),                  // 15 metal %
                 d10('res_neutral'),                // 16 neutral %
-                cells[col['ability_desc']] || ''   // 17 ability text
+                cells[col['ability_desc']] || '',  // 17 ability text
+                cells[col['ability_json'] !== undefined ? 'ability_json'
+                    : col['bf_effects'] !== undefined ? 'bf_effects'
+                    : col['ability_effects'] !== undefined ? 'ability_effects'
+                    : col['specialAbility'] !== undefined ? 'specialAbility'
+                    : ''] || ''                    // 18 ability JSON (for bf: placeholder resolution)
             ];
             if (type === 'arms.worlds') arms.push(row);
             else crew.push(row);
