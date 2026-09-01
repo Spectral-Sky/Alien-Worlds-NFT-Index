@@ -1015,6 +1015,7 @@
         });
         sorted.forEach(row => {
             if (!row[0]) return;
+            if (!(row[17] || '').trim()) return; // skip rows with no ability text
             const tr = document.createElement('tr');
             const templateId = row[0];
             let imgHtml = `<img data-tid="${templateId}" data-folder="${isCrew ? 'crew.worlds' : 'arms.worlds'}" style="height:46px!important;width:auto!important;display:block;margin:0 auto;border-radius:4px;" loading="lazy">`;
