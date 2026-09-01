@@ -1376,6 +1376,7 @@
             if (!cells || cells.length < 10) continue;
             var type = cells[col['type']] || '';
             if (type !== 'arms.worlds' && type !== 'crew.worlds') continue;
+            if (!(cells[col['cardname']] || '').trim()) continue; // skip blank/unused templates
             var d10 = function(k){ return Math.round((Number(cells[col[k]]) || 0) / 10 * 10) / 10; };
             // Build row matching renderTable format:
             // [0]=id [1]=name [2]=rarity [3]=shine [4]=race [5]=element
