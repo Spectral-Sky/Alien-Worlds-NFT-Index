@@ -1677,9 +1677,13 @@ var _alphaRawCSV   = null;
 var _tplMapCache   = null;
 var _timeFilter    = 0;
 var _statsSortMode = 'winrate';
-var _statsDataMode = 'beta';  // 'beta' | 'alpha' | 'compare'
-var _alphaCacheAgg = null;
+var _liveOn        = false;   // LIVE toggle
+var _alphaOn       = false;   // ALPHA toggle
+var _liveCacheAgg  = null;    // aggregated live chain data
+var _alphaCacheAgg = null;    // aggregated alpha sheet data
 var _statsAlphaURL = localStorage.getItem('naron_stats_alpha_url') || '';
+// compat shim so old references don't crash
+var _statsDataMode = 'beta';
 
 var CLASS_META = {
     'arcanist':     {e:'✨', c:'rgba(210,80,240,0.85)'},
@@ -1827,9 +1831,8 @@ function _showStatsHome() {
             '<button id="sm-winrate" onclick="selectSortMode(\'winrate\')" style="' + tfStyle + 'border:1px solid rgba(232,160,32,0.6);color:#e8a020;">WIN RATE</button>' +
             '<button id="sm-wins" onclick="selectSortMode(\'wins\')" style="' + tfStyle + 'border:1px solid rgba(232,160,32,0.2);color:#808070;"># WINS</button>' +
             '<span style="width:1px;height:16px;background:rgba(255,255,255,0.08);display:inline-block;margin:0 4px;align-self:center;"></span>' +
-            '<button id="dm-beta"    onclick="selectDataMode(\'beta\')"    style="' + tfStyle + 'border:1px solid rgba(232,160,32,0.6);color:#e8a020;">β BETA</button>' +
-            '<button id="dm-alpha"   onclick="selectDataMode(\'alpha\')"   style="' + tfStyle + 'border:1px solid rgba(255,255,255,0.12);color:#606880;">α ALPHA</button>' +
-            '<button id="dm-compare" onclick="selectDataMode(\'compare\')" style="' + tfStyle + 'border:1px solid rgba(255,255,255,0.12);color:#606880;">Δ COMPARE</button>' +
+            '<button id="tog-live"  onclick="toggleSource(\'live\')"  style="' + tfStyle + 'border:1px solid rgba(255,255,255,0.12);color:#606880;">⚡ LIVE</button>' +
+            '<button id="tog-alpha" onclick="toggleSource(\'alpha\')" style="' + tfStyle + 'border:1px solid rgba(255,255,255,0.12);color:#606880;">α ALPHA</button>' +
             '<button onclick="_showStatsSetup()" style="' + tfStyle + 'border:1px solid rgba(255,255,255,0.08);color:#506070;margin-left:6px;">⚙</button>' +
         '</div>' +
         '<div id="stats-msg" style="font-size:0.63em;color:#505060;letter-spacing:1px;min-height:1.2em;margin-bottom:8px;"></div>' +
@@ -2151,8 +2154,8 @@ function _renderStats(agg) {
 }
 
 window.selectDungDiff = function(diff) {
-    if (_statsDataMode === 'compare' && _statsCache && _alphaCacheAgg) {
-        _selectDungDiffCompare(diff, _statsCache, _alphaCacheAgg);
+    if (_liveOn && _alphaOn && _liveCacheAgg && _alphaCacheAgg) {
+        _selectDungDiffCompare(diff, _liveCacheAgg, _alphaCacheAgg);
         return;
     }
     _activeDungDiff = diff;
@@ -2182,47 +2185,75 @@ window.selectDungDiff = function(diff) {
     }
 };
 
-function _dmBtnStyle(id, active) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    el.style.borderColor = active ? 'rgba(100,180,255,0.6)' : 'rgba(255,255,255,0.12)';
-    el.style.color = active ? '#80c8ff' : '#606880';
-}
-function _syncDmButtons() {
-    _dmBtnStyle('dm-beta',    _statsDataMode === 'beta');
-    _dmBtnStyle('dm-alpha',   _statsDataMode === 'alpha');
-    _dmBtnStyle('dm-compare', _statsDataMode === 'compare');
+function _syncToggleButtons() {
+    var lEl = document.getElementById('tog-live');
+    var aEl = document.getElementById('tog-alpha');
+    if (lEl) { lEl.style.borderColor = _liveOn  ? 'rgba(80,220,140,0.7)'  : 'rgba(255,255,255,0.12)'; lEl.style.color = _liveOn  ? '#50dc8c' : '#606880'; }
+    if (aEl) { aEl.style.borderColor = _alphaOn ? 'rgba(100,180,255,0.7)' : 'rgba(255,255,255,0.12)'; aEl.style.color = _alphaOn ? '#80c8ff' : '#606880'; }
 }
 
-window.selectDataMode = async function(mode) {
-    _statsDataMode = mode;
-    _syncDmButtons();
-    var cutoff = _timeFilter ? Date.now() - _timeFilter * 86400000 : 0;
-    var myWallet = localStorage.getItem('naron_wallet') || '';
-    if (mode === 'beta') {
-        if (_statsCache) _renderStats(_statsCache); else runHistoricalScan();
-        return;
-    }
-    // Need alpha data
-    if (!_alphaCacheAgg) {
-        if (!_statsAlphaURL) { _showStatsSetup(); _setStatsMsg('⚙ Paste your fights_alpha CSV URL above.'); return; }
-        _setStatsMsg('FETCHING α ALPHA DATA…');
-        try {
-            var ar = await fetch(_statsAlphaURL);
-            _alphaRawCSV = await ar.text();
-        } catch(e) { _setStatsMsg('✗ Alpha fetch failed: ' + e.message); return; }
+async function _ensureAlpha() {
+    if (_alphaCacheAgg) return true;
+    if (!_statsAlphaURL) { _showStatsSetup(); _setStatsMsg('⚙ Paste your fights_alpha CSV URL in settings above.'); return false; }
+    _setStatsMsg('FETCHING α ALPHA DATA…');
+    try {
+        var ar = await fetch(_statsAlphaURL);
+        _alphaRawCSV = await ar.text();
+        var myWallet = localStorage.getItem('naron_wallet') || '';
         var aagg = _parseSheetCSV(_alphaRawCSV, 0, myWallet);
         var aAssets = Object.keys(aagg.crewNFTs).concat(Object.keys(aagg.weaponNFTs));
-        if (aAssets.length) { if (!_tplMapCache) _tplMapCache = await _resolveTemplates(aAssets); aagg.crewNFTs = _mergeByTemplate(aagg.crewNFTs, _tplMapCache); aagg.weaponNFTs = _mergeByTemplate(aagg.weaponNFTs, _tplMapCache); }
+        if (aAssets.length) {
+            if (!_tplMapCache) _tplMapCache = await _resolveTemplates(aAssets);
+            aagg.crewNFTs   = _mergeByTemplate(aagg.crewNFTs,   _tplMapCache);
+            aagg.weaponNFTs = _mergeByTemplate(aagg.weaponNFTs, _tplMapCache);
+        }
         _alphaCacheAgg = aagg;
-    }
-    if (mode === 'alpha') {
-        var aagg2 = _parseSheetCSV(_alphaRawCSV, cutoff, myWallet);
+        return true;
+    } catch(e) { _setStatsMsg('✗ Alpha fetch failed: ' + e.message); return false; }
+}
+
+async function _ensureLive() {
+    if (_liveCacheAgg) return true;
+    _setStatsMsg('SCANNING battle.ale::fights…');
+    try {
+        var results = await Promise.allSettled([_scanFightsTable(), _buildEnrichMap()]);
+        var fights    = results[0].status === 'fulfilled' ? results[0].value : [];
+        var enrichMap = results[1].status === 'fulfilled' ? results[1].value : {};
+        _setStatsMsg('PROCESSING ' + fights.length + ' FIGHTS…');
+        var agg = _aggregateFights(fights, enrichMap);
+        var allAssets = Object.keys(agg.crewNFTs).concat(Object.keys(agg.weaponNFTs));
+        if (allAssets.length) {
+            _setStatsMsg('RESOLVING NFT TEMPLATES…');
+            if (!_tplMapCache) _tplMapCache = await _resolveTemplates(allAssets);
+            agg.crewNFTs   = _mergeByTemplate(agg.crewNFTs,   _tplMapCache);
+            agg.weaponNFTs = _mergeByTemplate(agg.weaponNFTs, _tplMapCache);
+        }
+        _liveCacheAgg = agg;
+        return true;
+    } catch(e) { _setStatsMsg('✗ Live scan failed: ' + e.message); return false; }
+}
+
+window.toggleSource = async function(src) {
+    if (src === 'live')  _liveOn  = !_liveOn;
+    if (src === 'alpha') _alphaOn = !_alphaOn;
+    _syncToggleButtons();
+    document.getElementById('stats-results') && (document.getElementById('stats-results').innerHTML = '');
+
+    if (!_liveOn && !_alphaOn) { _setStatsMsg('Toggle ⚡ LIVE or α ALPHA to view data.'); return; }
+
+    if (_liveOn  && !await _ensureLive())  { _liveOn  = false; _syncToggleButtons(); return; }
+    if (_alphaOn && !await _ensureAlpha()) { _alphaOn = false; _syncToggleButtons(); return; }
+
+    if (_liveOn && _alphaOn) {
+        _setStatsMsg('Comparing ⚡ LIVE vs α ALPHA');
+        _renderCompare(_liveCacheAgg, _alphaCacheAgg);
+    } else if (_liveOn) {
+        var skipNote = _liveCacheAgg.total.skipped ? ' · ' + _liveCacheAgg.total.skipped + ' unmatched skipped' : '';
+        _setStatsMsg(_liveCacheAgg.count + ' live fights · ' + _liveCacheAgg.total.arena + ' arena · ' + _liveCacheAgg.total.dungeon + ' dungeon' + skipNote);
+        _renderStats(_liveCacheAgg);
+    } else {
         _setStatsMsg(_alphaCacheAgg.count + ' α rows · ' + _alphaCacheAgg.total.arena + ' arena · ' + _alphaCacheAgg.total.dungeon + ' dungeon');
         _renderStats(_alphaCacheAgg);
-    } else if (mode === 'compare') {
-        if (!_statsCache) { _setStatsMsg('Load β BETA data first.'); return; }
-        _renderCompare(_statsCache, _alphaCacheAgg);
     }
 };
 
@@ -2245,8 +2276,7 @@ window.selectTimeFilter = function(days) {
     }
     _statsCache = agg;
     _setStatsMsg(agg.count + ' rows · ' + agg.total.arena + ' arena · ' + agg.total.dungeon + ' dungeon');
-    if (_statsDataMode === 'compare' && _alphaCacheAgg) _renderCompare(agg, _alphaCacheAgg);
-    else _renderStats(agg);
+    _renderStats(agg);
 };
 
 window.selectSortMode = function(mode) {
@@ -2256,7 +2286,9 @@ window.selectSortMode = function(mode) {
         b.style.borderColor = active ? 'rgba(232,160,32,0.6)' : 'rgba(232,160,32,0.2)';
         b.style.color = active ? '#e8a020' : '#808070';
     });
-    if (_statsDataMode === 'compare' && _statsCache && _alphaCacheAgg) _renderCompare(_statsCache, _alphaCacheAgg);
+    if (_liveOn && _alphaOn && _liveCacheAgg && _alphaCacheAgg) _renderCompare(_liveCacheAgg, _alphaCacheAgg);
+    else if (_liveOn  && _liveCacheAgg)  _renderStats(_liveCacheAgg);
+    else if (_alphaOn && _alphaCacheAgg) _renderStats(_alphaCacheAgg);
     else if (_statsCache) _renderStats(_statsCache);
 };
 
