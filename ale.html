@@ -891,8 +891,50 @@
             m => ELEMENT_EMOJI[m.toLowerCase()] + ' ' + m);
     }
 
-    function renderAbility(desc) {
-        return emojifyAbility(desc);
+    var ALE_ABILITY_MAP = {};
+    var ALE_ABILITY_MAP_KEY = 'ale_ability_map_v1';
+    var ALE_ABILITY_MAP_TTL = 24 * 60 * 60 * 1000;
+    var WAX_NODES_ABI = ['https://wax.eosphere.io','https://wax.eosnation.io','https://wax.pink.gg','https://wax.cryptolions.io','https://wax.greymass.com'];
+
+    async function loadAbilityMap() {
+        try {
+            var cached = localStorage.getItem(ALE_ABILITY_MAP_KEY);
+            if (cached) { var obj = JSON.parse(cached); if (Date.now() - obj.ts < ALE_ABILITY_MAP_TTL && obj.map) { ALE_ABILITY_MAP = obj.map; return; } }
+        } catch(e) {}
+        try {
+            var map = {}, next = null;
+            do {
+                var body = { code:'fighters.ale', table:'nftvalues', scope:'fighters.ale', limit:500, json:true };
+                if (next) body.lower_bound = next;
+                var d = null;
+                for (var ni = 0; ni < WAX_NODES_ABI.length; ni++) {
+                    try { var r = await fetch(WAX_NODES_ABI[ni] + '/v1/chain/get_table_rows', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) }); d = await r.json(); break; } catch(e) {}
+                }
+                if (!d) break;
+                (d.rows || []).forEach(function(row) {
+                    if (row.template_id && row.ability && row.ability.length) map[row.template_id] = row.ability[0].bf_effects || [];
+                });
+                next = d.more ? d.next_key : null;
+            } while (next);
+            ALE_ABILITY_MAP = map;
+            try { localStorage.setItem(ALE_ABILITY_MAP_KEY, JSON.stringify({ ts: Date.now(), map: map })); } catch(e) {}
+        } catch(e) { console.warn('[ALE] ability map fetch failed:', e); }
+    }
+
+    function resolveAbility(desc, templateId) {
+        if (!desc) return desc;
+        var effects = ALE_ABILITY_MAP[templateId] || ALE_ABILITY_MAP[String(templateId)] || [];
+        return String(desc).replace(/\[bf:(\d+):([^\]]+)\]/g, function(_, idx, field) {
+            var ef = effects[parseInt(idx)];
+            if (!ef || ef[field] === undefined) return _;
+            var v = ef[field];
+            if ((field === 'value' || field === 'value_min' || field === 'value_max') && ef.percentflat === 'flat') v = v / 10;
+            return String(v);
+        });
+    }
+
+    function renderAbility(desc, templateId) {
+        return emojifyAbility(resolveAbility(desc, templateId));
     }
 
     // ── SORT WEIGHTS ─────────────────────────────────────────────────────────────
@@ -952,7 +994,7 @@
             // col indices: [0]=id [1]=name [2]=rarity [3]=shine [4]=race [5]=element [6]=hp [7]=dmg [8]=taunt [9]=windup [10]=cooldown [11-16]=res [17]=ability
             let html = `
                 <td>${row[0]}</td>
-                <td class="ability-td">${renderAbility(row[17]) || ''}</td>
+                <td class="ability-td">${renderAbility(row[17], row[0]) || ''}</td>
                 <td>${imgHtml}</td>
                 <td style="font-weight:bold;color:var(--theme-color);text-align:left;">${row[1]}</td>
                 <td>${tag(row[2])}</td>
@@ -1026,7 +1068,7 @@
         document.getElementById('label-shine').textContent = shine;
         document.getElementById('label-shine').className = 'tag-' + (shine || '').toLowerCase().replace(/[^a-z]/g,'');
         const abilEl = document.getElementById('preview-ability');
-        if (ability) { abilEl.textContent = renderAbility(ability); abilEl.style.display = 'block'; }
+        if (ability) { abilEl.textContent = renderAbility(ability, id); abilEl.style.display = 'block'; }
         else { abilEl.style.display = 'none'; }
         // image from cache
         const imgHash = ALE_IMG_CACHE[id] || '';
@@ -1380,6 +1422,8 @@
     }
 
     async function loadLiveNftStats() {
+        var abilityMapReady = loadAbilityMap();
+
         // Check localStorage cache first
         try {
             var cached = localStorage.getItem(ALE_NFT_CACHE_KEY);
@@ -1388,6 +1432,7 @@
                 if (Date.now() - obj.ts < ALE_NFT_CACHE_TTL && obj.arms && obj.crew) {
                     ALE_ARMS = obj.arms;
                     ALE_CREW = obj.crew;
+                    await abilityMapReady;
                     buildTables();
                     loadTableImages();
                     return;
@@ -1404,13 +1449,10 @@
                 ALE_ARMS = data.arms;
                 ALE_CREW = data.crew;
                 try { localStorage.setItem(ALE_NFT_CACHE_KEY, JSON.stringify({ ts: Date.now(), arms: data.arms, crew: data.crew })); } catch(e) {}
-                buildTables();
-                loadTableImages();
-                return;
             }
         } catch(e) { console.log('[ALE] Live NFT stats fetch failed — using static fallback:', e); }
 
-        // Fallback: static ale_data.js
+        await abilityMapReady;
         buildTables();
         loadTableImages();
     }
