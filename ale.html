@@ -898,14 +898,19 @@
         if (abilityJson) {
             try {
                 var parsed = typeof abilityJson === 'string' ? JSON.parse(abilityJson) : abilityJson;
-                // parsed is an array of ability objects; take the first one's bf_effects
+                // parsed may be an array of ability objects, each with bf_effects
+                // or directly an array of effect objects
                 var first = Array.isArray(parsed) ? parsed[0] : parsed;
-                if (first && Array.isArray(first.bf_effects)) effects = first.bf_effects;
+                if (first && Array.isArray(first.bf_effects)) {
+                    effects = first.bf_effects;
+                } else if (Array.isArray(parsed) && parsed[0] && parsed[0].value !== undefined) {
+                    effects = parsed; // already a flat effects array
+                }
             } catch(e) {}
         }
         return String(desc).replace(/\[bf:(\d+):([^\]]+)\]/g, function(_, idx, field) {
             var ef = effects[parseInt(idx)];
-            return (ef && ef[field] !== undefined) ? ef[field] : '[' + field + ']';
+            return (ef && ef[field] !== undefined) ? String(ef[field]) : '?';
         });
     }
 
@@ -1377,7 +1382,8 @@
                 d10('res_metal'),                  // 15 metal %
                 d10('res_neutral'),                // 16 neutral %
                 cells[col['ability_desc']] || '',  // 17 ability text
-                cells[col['ability_json'] !== undefined ? 'ability_json'
+                cells[col['ability'] !== undefined ? 'ability'
+                    : col['ability_json'] !== undefined ? 'ability_json'
                     : col['bf_effects'] !== undefined ? 'bf_effects'
                     : col['ability_effects'] !== undefined ? 'ability_effects'
                     : col['specialAbility'] !== undefined ? 'specialAbility'
