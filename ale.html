@@ -1673,9 +1673,13 @@ var _statsUnlocked = true;
 var _statsKpBuf    = '';
 var _statsFetched  = false;
 var _rawCSV        = null;
+var _alphaRawCSV   = null;
 var _tplMapCache   = null;
 var _timeFilter    = 0;
 var _statsSortMode = 'winrate';
+var _statsDataMode = 'beta';  // 'beta' | 'alpha' | 'compare'
+var _alphaCacheAgg = null;
+var _statsAlphaURL = localStorage.getItem('naron_stats_alpha_url') || '';
 
 var CLASS_META = {
     'arcanist':     {e:'✨', c:'rgba(210,80,240,0.85)'},
@@ -1822,6 +1826,10 @@ function _showStatsHome() {
             '<span style="width:1px;height:16px;background:rgba(255,255,255,0.08);display:inline-block;margin:0 4px;align-self:center;"></span>' +
             '<button id="sm-winrate" onclick="selectSortMode(\'winrate\')" style="' + tfStyle + 'border:1px solid rgba(232,160,32,0.6);color:#e8a020;">WIN RATE</button>' +
             '<button id="sm-wins" onclick="selectSortMode(\'wins\')" style="' + tfStyle + 'border:1px solid rgba(232,160,32,0.2);color:#808070;"># WINS</button>' +
+            '<span style="width:1px;height:16px;background:rgba(255,255,255,0.08);display:inline-block;margin:0 4px;align-self:center;"></span>' +
+            '<button id="dm-beta"    onclick="selectDataMode(\'beta\')"    style="' + tfStyle + 'border:1px solid rgba(232,160,32,0.6);color:#e8a020;">β BETA</button>' +
+            '<button id="dm-alpha"   onclick="selectDataMode(\'alpha\')"   style="' + tfStyle + 'border:1px solid rgba(255,255,255,0.12);color:#606880;">α ALPHA</button>' +
+            '<button id="dm-compare" onclick="selectDataMode(\'compare\')" style="' + tfStyle + 'border:1px solid rgba(255,255,255,0.12);color:#606880;">Δ COMPARE</button>' +
             '<button onclick="_showStatsSetup()" style="' + tfStyle + 'border:1px solid rgba(255,255,255,0.08);color:#506070;margin-left:6px;">⚙</button>' +
         '</div>' +
         '<div id="stats-msg" style="font-size:0.63em;color:#505060;letter-spacing:1px;min-height:1.2em;margin-bottom:8px;"></div>' +
@@ -1837,24 +1845,29 @@ function _setStatsMsg(msg) {
 function _showStatsSetup() {
     var el = document.getElementById('stats-results');
     if (!el) return;
+    var inp = 'width:100%;background:#0a0c18;color:#c0c8e0;border:1px solid rgba(232,160,32,0.2);padding:7px 10px;font-family:\'Courier New\',monospace;font-size:0.68em;box-sizing:border-box;outline:none;margin-bottom:6px;';
+    var lbl = 'font-size:0.58em;letter-spacing:2px;color:#708090;margin-bottom:6px;margin-top:14px;display:block;';
+    var btn = 'background:transparent;border:1px solid rgba(232,160,32,0.3);color:#c09060;font-family:\'Courier New\',monospace;font-size:0.67em;padding:5px 14px;cursor:pointer;letter-spacing:1px;';
     el.innerHTML =
         '<div style="margin-top:10px;max-width:560px;">' +
-            '<div style="font-size:0.58em;letter-spacing:2px;color:#708090;margin-bottom:8px;">GOOGLE SHEET CSV URL</div>' +
-            '<input id="st-sheet-input" type="text" value="' + (_statsGSheetURL||'') + '" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv" style="width:100%;background:#0a0c18;color:#c0c8e0;border:1px solid rgba(232,160,32,0.2);padding:7px 10px;font-family:\'Courier New\',monospace;font-size:0.68em;box-sizing:border-box;outline:none;">' +
-            '<button onclick="_saveStatsSheet()" style="margin-top:6px;background:transparent;border:1px solid rgba(232,160,32,0.3);color:#c09060;font-family:\'Courier New\',monospace;font-size:0.67em;padding:5px 14px;cursor:pointer;letter-spacing:1px;">SAVE</button>' +
+            '<span style="' + lbl + '">β BETA — GOOGLE SHEET CSV URL (fights tab)</span>' +
+            '<input id="st-sheet-input" type="text" value="' + (_statsGSheetURL||'') + '" placeholder="Publish fights tab as CSV and paste link" style="' + inp + '">' +
+            '<span style="' + lbl + '">α ALPHA — GOOGLE SHEET CSV URL (fights_alpha tab)</span>' +
+            '<input id="st-alpha-input" type="text" value="' + (_statsAlphaURL||'') + '" placeholder="Publish fights_alpha tab as CSV and paste link" style="' + inp + '">' +
+            '<button onclick="_saveStatsSheet()" style="' + btn + '">SAVE BOTH</button>' +
             '<div style="font-size:0.56em;color:#404858;margin-top:10px;line-height:1.8;">' +
-                'Requires the Google Apps Script poller running on a time trigger.<br>' +
-                'In Google Sheets → File → Share → Publish to web → Sheet "fights" → CSV → Copy link.' +
+                'In Google Sheets → File → Share → Publish to web → select the tab → CSV → Copy link.' +
             '</div>' +
         '</div>';
 }
 
 function _saveStatsSheet() {
     var inp = document.getElementById('st-sheet-input');
-    if (!inp) return;
-    _statsGSheetURL = inp.value.trim();
-    try { localStorage.setItem('naron_stats_sheet_url', _statsGSheetURL); } catch(e) {}
-    _setStatsMsg('Sheet URL saved.');
+    var alphaInp = document.getElementById('st-alpha-input');
+    if (inp) { _statsGSheetURL = inp.value.trim(); try { localStorage.setItem('naron_stats_sheet_url', _statsGSheetURL); } catch(e) {} }
+    if (alphaInp) { _statsAlphaURL = alphaInp.value.trim(); try { localStorage.setItem('naron_stats_alpha_url', _statsAlphaURL); } catch(e) {} }
+    _alphaCacheAgg = null; _alphaRawCSV = null; // force refetch
+    _setStatsMsg('URLs saved.');
     runHistoricalScan();
 }
 
@@ -2138,6 +2151,10 @@ function _renderStats(agg) {
 }
 
 window.selectDungDiff = function(diff) {
+    if (_statsDataMode === 'compare' && _statsCache && _alphaCacheAgg) {
+        _selectDungDiffCompare(diff, _statsCache, _alphaCacheAgg);
+        return;
+    }
     _activeDungDiff = diff;
     document.querySelectorAll('[id^="ddb-"]').forEach(function(b) {
         var d = Number(b.id.replace('ddb-',''));
@@ -2165,6 +2182,50 @@ window.selectDungDiff = function(diff) {
     }
 };
 
+function _dmBtnStyle(id, active) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.style.borderColor = active ? 'rgba(100,180,255,0.6)' : 'rgba(255,255,255,0.12)';
+    el.style.color = active ? '#80c8ff' : '#606880';
+}
+function _syncDmButtons() {
+    _dmBtnStyle('dm-beta',    _statsDataMode === 'beta');
+    _dmBtnStyle('dm-alpha',   _statsDataMode === 'alpha');
+    _dmBtnStyle('dm-compare', _statsDataMode === 'compare');
+}
+
+window.selectDataMode = async function(mode) {
+    _statsDataMode = mode;
+    _syncDmButtons();
+    var cutoff = _timeFilter ? Date.now() - _timeFilter * 86400000 : 0;
+    var myWallet = localStorage.getItem('naron_wallet') || '';
+    if (mode === 'beta') {
+        if (_statsCache) _renderStats(_statsCache); else runHistoricalScan();
+        return;
+    }
+    // Need alpha data
+    if (!_alphaCacheAgg) {
+        if (!_statsAlphaURL) { _showStatsSetup(); _setStatsMsg('⚙ Paste your fights_alpha CSV URL above.'); return; }
+        _setStatsMsg('FETCHING α ALPHA DATA…');
+        try {
+            var ar = await fetch(_statsAlphaURL);
+            _alphaRawCSV = await ar.text();
+        } catch(e) { _setStatsMsg('✗ Alpha fetch failed: ' + e.message); return; }
+        var aagg = _parseSheetCSV(_alphaRawCSV, 0, myWallet);
+        var aAssets = Object.keys(aagg.crewNFTs).concat(Object.keys(aagg.weaponNFTs));
+        if (aAssets.length) { if (!_tplMapCache) _tplMapCache = await _resolveTemplates(aAssets); aagg.crewNFTs = _mergeByTemplate(aagg.crewNFTs, _tplMapCache); aagg.weaponNFTs = _mergeByTemplate(aagg.weaponNFTs, _tplMapCache); }
+        _alphaCacheAgg = aagg;
+    }
+    if (mode === 'alpha') {
+        var aagg2 = _parseSheetCSV(_alphaRawCSV, cutoff, myWallet);
+        _setStatsMsg(_alphaCacheAgg.count + ' α rows · ' + _alphaCacheAgg.total.arena + ' arena · ' + _alphaCacheAgg.total.dungeon + ' dungeon');
+        _renderStats(_alphaCacheAgg);
+    } else if (mode === 'compare') {
+        if (!_statsCache) { _setStatsMsg('Load β BETA data first.'); return; }
+        _renderCompare(_statsCache, _alphaCacheAgg);
+    }
+};
+
 window.selectTimeFilter = function(days) {
     _timeFilter = days;
     document.querySelectorAll('#stats-filter-bar button[id^="tf-"]').forEach(function(b) {
@@ -2184,7 +2245,8 @@ window.selectTimeFilter = function(days) {
     }
     _statsCache = agg;
     _setStatsMsg(agg.count + ' rows · ' + agg.total.arena + ' arena · ' + agg.total.dungeon + ' dungeon');
-    _renderStats(agg);
+    if (_statsDataMode === 'compare' && _alphaCacheAgg) _renderCompare(agg, _alphaCacheAgg);
+    else _renderStats(agg);
 };
 
 window.selectSortMode = function(mode) {
@@ -2194,8 +2256,109 @@ window.selectSortMode = function(mode) {
         b.style.borderColor = active ? 'rgba(232,160,32,0.6)' : 'rgba(232,160,32,0.2)';
         b.style.color = active ? '#e8a020' : '#808070';
     });
-    if (_statsCache) _renderStats(_statsCache);
+    if (_statsDataMode === 'compare' && _statsCache && _alphaCacheAgg) _renderCompare(_statsCache, _alphaCacheAgg);
+    else if (_statsCache) _renderStats(_statsCache);
 };
+
+// ── COMPARE RENDER ─────────────────────────────────────────────────────────
+function _renderCompare(beta, alpha) {
+    var el = document.getElementById('stats-results');
+    if (!el) return;
+    var legend = '<div style="display:flex;gap:16px;align-items:center;font-size:0.55em;letter-spacing:1px;color:#707080;margin-bottom:14px;flex-wrap:wrap;">' +
+        '<span>◉ Bar = β BETA win rate</span>' +
+        '<span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:2px;height:12px;background:rgba(255,255,255,0.45);"></span> Tick = α ALPHA</span>' +
+        '<span style="color:#50d890;">▲ = beta higher</span><span style="color:#e05050;">▼ = beta lower</span>' +
+        '</div>';
+    var diffs = Object.keys(beta.dungeon || {}).map(Number).sort(function(a,b){return a-b;});
+    var html = legend;
+    html += _barSectionCmp('ARENA — CLASS', beta.arena, alpha.arena);
+    if (Object.keys(beta.arenaRace || {}).length || Object.keys(alpha.arenaRace || {}).length)
+        html += _barSectionCmp('ARENA — RACE', beta.arenaRace, alpha.arenaRace);
+    if (Object.keys(beta.arenaElement || {}).length || Object.keys(alpha.arenaElement || {}).length)
+        html += _barSectionCmp('ARENA — ELEMENT', beta.arenaElement, alpha.arenaElement);
+    if (diffs.length) {
+        html += '<div style="margin-top:32px;"><div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ DUNGEON — CLASS β vs α</div>';
+        html += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">';
+        diffs.forEach(function(d) {
+            html += '<button id="ddb-'+d+'" onclick="selectDungDiff('+d+')" style="background:transparent;border:1px solid rgba(232,160,32,0.2);color:#808070;font-family:\'Courier New\',monospace;font-size:0.63em;padding:4px 10px;cursor:pointer;letter-spacing:1px;">LVL '+d+'</button>';
+        });
+        html += '</div><div id="dung-bars"></div><div id="dung-race-bars"></div><div id="dung-element-bars"></div></div>';
+    }
+    el.innerHTML = html;
+    // store alpha for dungeon diff picker
+    el._alphaDungeon = alpha.dungeon || {};
+    el._alphaRace    = alpha.dungeonRace || {};
+    el._alphaElem    = alpha.dungeonElement || {};
+    if (diffs.length) {
+        _activeDungDiff = diffs.includes(_activeDungDiff) ? _activeDungDiff : diffs[0];
+        _selectDungDiffCompare(_activeDungDiff, beta, alpha);
+    }
+}
+
+function _selectDungDiffCompare(diff, beta, alpha) {
+    _activeDungDiff = diff;
+    document.querySelectorAll('[id^="ddb-"]').forEach(function(b) {
+        var d = Number(b.id.replace('ddb-',''));
+        b.style.borderColor = d===diff ? 'rgba(232,160,32,0.6)' : 'rgba(232,160,32,0.2)';
+        b.style.color = d===diff ? '#e8a020' : '#808070';
+    });
+    var bD = beta  && beta.dungeon  && beta.dungeon[diff]  || {};
+    var aD = alpha && alpha.dungeon && alpha.dungeon[diff]  || {};
+    var bR = beta  && beta.dungeonRace  && beta.dungeonRace[diff]  || {};
+    var aR = alpha && alpha.dungeonRace && alpha.dungeonRace[diff] || {};
+    var bE = beta  && beta.dungeonElement  && beta.dungeonElement[diff]  || {};
+    var aE = alpha && alpha.dungeonElement && alpha.dungeonElement[diff] || {};
+    var el = document.getElementById('dung-bars');
+    if (el) el.innerHTML = Object.keys(bD).length || Object.keys(aD).length ? _buildBarsCmp(bD, aD) : '';
+    var rel = document.getElementById('dung-race-bars');
+    if (rel) rel.innerHTML = Object.keys(bR).length || Object.keys(aR).length
+        ? '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.4);margin:14px 0 8px;padding-top:10px;border-top:1px solid rgba(232,160,32,0.07);">RACE β vs α</div>' + _buildBarsCmp(bR, aR) : '';
+    var eel = document.getElementById('dung-element-bars');
+    if (eel) eel.innerHTML = Object.keys(bE).length || Object.keys(aE).length
+        ? '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.4);margin:14px 0 8px;padding-top:10px;border-top:1px solid rgba(232,160,32,0.07);">ELEMENT β vs α</div>' + _buildBarsCmp(bE, aE) : '';
+}
+
+function _barSectionCmp(title, betaData, alphaData) {
+    var inner = (Object.keys(betaData||{}).length || Object.keys(alphaData||{}).length)
+        ? _buildBarsCmp(betaData, alphaData)
+        : '<div style="font-size:0.6em;color:#404050;padding:8px 0;">No data</div>';
+    return '<div style="margin-bottom:4px;"><div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ '+title+' β vs α</div>'+inner+'</div>';
+}
+
+function _buildBarsCmp(betaStats, alphaStats) {
+    var allKeys = {};
+    Object.keys(betaStats  || {}).forEach(function(k){ allKeys[k] = true; });
+    Object.keys(alphaStats || {}).forEach(function(k){ allKeys[k] = true; });
+    var entries = Object.keys(allKeys).map(function(c) {
+        var b = betaStats[c]  || {wins:0, played:0};
+        var a = alphaStats[c] || {wins:0, played:0};
+        var bPct = b.played > 0 ? b.wins / b.played : null;
+        var aPct = a.played > 0 ? a.wins / a.played : null;
+        return {cls:c, bPct:bPct, aPct:aPct, bWins:b.wins, bPlayed:b.played, aPlayed:a.played};
+    }).sort(function(x,y) {
+        return _statsSortMode === 'wins' ? y.bWins - x.bWins : (y.bPct||0) - (x.bPct||0);
+    });
+    var html = '<div style="max-width:580px;">';
+    entries.forEach(function(e) {
+        var meta  = _getMeta(e.cls);
+        var bPct  = e.bPct !== null ? Math.round(e.bPct * 100) : null;
+        var aPct  = e.aPct !== null ? Math.round(e.aPct * 100) : null;
+        var delta = (bPct !== null && aPct !== null) ? bPct - aPct : null;
+        var deltaStr  = delta !== null ? (delta >= 0 ? '+' : '') + delta + '%' : '—';
+        var deltaCol  = delta === null ? '#505060' : delta > 0 ? '#50d890' : delta < 0 ? '#e05050' : '#707060';
+        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">' +
+            '<span style="font-size:1em;min-width:22px;text-align:center;line-height:1;">' + meta.e + '</span>' +
+            '<span style="font-size:0.56em;letter-spacing:1px;color:#b0a080;min-width:90px;text-transform:uppercase;">' + e.cls + '</span>' +
+            '<div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;height:13px;overflow:hidden;position:relative;">' +
+                (bPct !== null ? '<div style="height:100%;width:'+bPct+'%;background:'+meta.c+';border-radius:10px;transition:width 0.4s;"></div>' : '') +
+                (aPct !== null ? '<div style="position:absolute;top:0;bottom:0;left:'+aPct+'%;width:2px;background:rgba(255,255,255,0.45);border-radius:1px;"></div>' : '') +
+            '</div>' +
+            '<span style="font-size:0.53em;color:#707060;min-width:36px;text-align:right;">' + (bPct !== null ? bPct+'%' : '—') + '</span>' +
+            '<span style="font-size:0.52em;min-width:38px;text-align:right;color:'+deltaCol+';font-family:\'Courier New\',monospace;font-weight:bold;">' + deltaStr + '</span>' +
+        '</div>';
+    });
+    return html + '</div>';
+}
 
 function _fmtDR(dr) {
     if (!dr || !dr.min || !dr.max) return '';
