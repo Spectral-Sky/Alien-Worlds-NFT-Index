@@ -277,7 +277,9 @@
         .fp-sheet-stat-val { font-size:0.66em; }
         .fp-sheet-stat-var { font-size:0.6em; color:#403040; }
         .fp-sheet-target { font-size:0.6em; color:#605060; margin-top:8px; }
-        .fp-in-use { font-size:0.55em; color:#50a0e0; letter-spacing:1px; background:rgba(30,80,150,0.18); border:1px solid rgba(50,120,200,0.25); border-radius:2px; padding:1px 5px; margin-left:2px; }
+        .fp-in-use { font-size:0.55em; color:#50a0e0; letter-spacing:1px; background:rgba(30,80,150,0.18); border:1px solid rgba(50,120,200,0.25); border-radius:2px; padding:1px 5px; margin-left:2px; margin-right:4px; }
+        .fp-hide-dep { margin-left:auto; }
+        .fp-hide-dep.active { border-color:rgba(50,120,200,0.5); color:#60a8e0; background:rgba(30,80,150,0.14); }
         .fp-sheet-exp { font-size:0.6em; color:#505060; margin:6px 0 8px; display:flex; align-items:center; gap:6px; }
         .fp-sheet-exp-bar { flex:1; height:4px; background:rgba(255,255,255,0.06); border-radius:2px; overflow:hidden; display:inline-block; }
         .fp-sheet-exp-bar span { display:block; height:100%; background:#b07040; border-radius:2px; }
@@ -955,6 +957,7 @@
     var _fighterCache={};               // assetId -> fighter row cache
     var _myFighters=[];                  // loaded from fighters.ale for logged-in wallet
     var _fighterSort='level';             // current sort: 'level'|'class'|'element'|'marker'
+    var _fpHideDeployed=false;            // when true, deployed fighters are hidden in the list
 
     var LOCKED_SVG='<svg width="18" height="19" viewBox="0 0 18 19" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 1C12.1919 1 14.7246 3.66329 14.7246 6.87988V7.50488C15.2323 7.63 15.705 7.85309 16.1035 8.26465C16.622 8.80012 16.8245 9.45859 16.915 10.1543C17.0022 10.8244 17 11.6684 17 12.6631C17 13.6576 17.0022 14.5009 16.915 15.1709C16.8245 15.8666 16.622 16.5251 16.1035 17.0605C15.5807 17.6004 14.9308 17.8155 14.2422 17.9111C13.5856 18.0023 12.7606 18 11.7998 18H6.2002C5.23941 18 4.4144 18.0023 3.75781 17.9111C3.06921 17.8155 2.41926 17.6004 1.89648 17.0605C1.37801 16.5251 1.17553 15.8666 1.08496 15.1709C0.997791 14.5009 0.999999 13.6576 1 12.6631C1 11.6684 0.997765 10.8244 1.08496 10.1543C1.17553 9.45859 1.37798 8.80012 1.89648 8.26465C2.29498 7.85309 2.76766 7.63 3.27539 7.50488V6.87988C3.27539 3.66329 5.80808 1 9 1ZM9 4.08398C7.55273 4.08398 6.3252 5.30557 6.3252 6.87988V7.3252H11.6748V6.87988C11.6748 5.30557 10.4473 4.08398 9 4.08398Z" fill="#FFB800" stroke="#1C274C" stroke-width="2"/></svg>';
 
@@ -2597,6 +2600,7 @@
         var countEl=document.getElementById('fighters-count');
         if(!list) return;
         var sorted=_fightersSorted();
+        if(_fpHideDeployed) sorted=sorted.filter(function(f){ return !(f.in_use===1||f.in_use==='1'); });
         if(countEl) countEl.textContent=sorted.length+' FIGHTERS';
         if(!sorted.length){list.innerHTML='<div class="fp-empty">NO FIGHTERS FOUND</div>';return;}
         var html='';
@@ -2615,10 +2619,10 @@
                 +'<span class="fp-marker">'+msym+'</span>'
                 +'<span class="fp-class-e">'+ci.e+'</span>'
                 +'<span class="fp-name">'+ci.n+'</span>'
+                +(inUse?'<span class="fp-in-use">DEPLOYED</span>':'')
                 +'<span class="fp-race">'+race.toUpperCase()+'</span>'
                 +'<span class="fp-el-e">'+ee+'</span>'
                 +'<span class="fp-level">LV'+lvl+'</span>'
-                +(inUse?'<span class="fp-in-use">DEPLOYED</span>':'')
                 +'</div>';
         });
         list.innerHTML=html;
@@ -2682,6 +2686,13 @@
         document.querySelectorAll('.fp-sort-btn').forEach(function(b){
             b.classList.toggle('active',b.dataset.sort===s);
         });
+        renderFighterList();
+    }
+
+    function toggleFpDeployed() {
+        _fpHideDeployed=!_fpHideDeployed;
+        var btn=document.getElementById('fp-hide-deployed-btn');
+        if(btn) btn.classList.toggle('active',_fpHideDeployed);
         renderFighterList();
     }
 
@@ -3307,6 +3318,7 @@
             <button class="fp-sort-btn"        data-sort="class"   onclick="setFighterSort('class')">CLASS</button>
             <button class="fp-sort-btn"        data-sort="element" onclick="setFighterSort('element')">ELEMENT</button>
             <button class="fp-sort-btn"        data-sort="marker"  onclick="setFighterSort('marker')">MARKER</button>
+            <button class="fp-sort-btn fp-hide-dep" id="fp-hide-deployed-btn" onclick="toggleFpDeployed()">HIDE DEPLOYED</button>
         </div>
         <div class="fp-list" id="fighters-list-inner"></div>
     </div>
