@@ -547,11 +547,7 @@
         .bp-diff-btn.high.on { background:rgba(192,60,60,0.14); border-color:rgba(192,60,60,0.55); color:#e08080; }
         #bp-diff-toggle { width:100%; padding:4px; font-size:0.52em; letter-spacing:2px; background:transparent; border:1px dashed rgba(80,40,40,0.35); color:#503030; cursor:crosshair; border-radius:5px; text-align:center; margin-bottom:3px; transition:all 0.15s; }
         #bp-diff-toggle:hover { border-color:rgba(192,60,60,0.4); color:#804040; }
-        /* gems toggle */
-        #bp-gems-row { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
-        #bp-gems-lbl { font-size:0.58em; color:#446; flex:1; letter-spacing:1px; }
-        #bp-gems-btn { font-size:0.58em; letter-spacing:1px; background:transparent; border:1px solid rgba(96,200,255,0.15); color:#334; border-radius:6px; padding:4px 10px; cursor:crosshair; transition:all 0.15s; }
-        #bp-gems-btn.on { border-color:rgba(96,200,255,0.5); color:#60c8ff; background:rgba(96,200,255,0.1); }
+
         /* arena defender */
         #bp-defender { margin-bottom:4px; padding:7px 10px; background:rgba(192,60,60,0.06); border:1px solid rgba(192,60,60,0.18); border-radius:8px; }
         #bp-defender-lbl { font-size:0.52em; letter-spacing:2px; color:#604040; text-transform:uppercase; margin-bottom:4px; }
@@ -2775,7 +2771,6 @@
     var _bpCrew=null;
     var _bpWeapon=null;
     var _bpDifficulty=5;
-    var _bpUseGems=false;
     var _bpDungeonEntry=null;
     var _bpArenaEntry=null;
     var _bpPickerSlot=-1;
@@ -2859,7 +2854,6 @@
         if(!wallet){showToast('⚠ PLEASE LOG IN');return;}
         _bpMode=mode;
         _bpFighters=[null,null,null,null,null];
-        _bpUseGems=false;
         if(mode==='dungeon'){
             _bpDungeonEntry=entry;
             var planet=entry.planet||_activePlanet;
@@ -2870,18 +2864,37 @@
             _bpLocked=_playerLockedArenas.has(arKey);
         }
 
+        // load fighters if needed
+        if(!_myFighters.length){
+            try{
+                _myFighters=await _fetchAllFighters(wallet);
+                _myFighters.forEach(function(f){var fid=String(f.fighter_id!=null?f.fighter_id:'');if(fid)_fighterCache[fid]=f;});
+            }catch(e){}
+        }
+
         // restore last-used fighters
         var lsKey=mode==='dungeon'?'naron_dg_fighters':'naron_ar_fighters';
         try{
             var saved=JSON.parse(localStorage.getItem(lsKey)||'[]');
-            if(!_myFighters.length) _myFighters=await _fetchAllFighters(wallet);
-            _myFighters.forEach(function(f){var fid=String(f.fighter_id!=null?f.fighter_id:'');if(fid)_fighterCache[fid]=f;});
             for(var i=0;i<Math.min(saved.length,5);i++){
                 var fid=String(saved[i]);
-                var f=_myFighters.find(function(x){return String(x.fighter_id)===fid;});
-                if(f&&!(f.in_use===1||f.in_use==='1')) _bpFighters[i]=f;
+                var fi=_myFighters.find(function(x){return String(x.fighter_id)===fid;});
+                if(fi&&!(fi.in_use===1||fi.in_use==='1')) _bpFighters[i]=fi;
             }
         }catch(e){}
+
+        // fill remaining empty slots with highest-level available fighters
+        var available=_myFighters
+            .filter(function(f){ return !(f.in_use===1||f.in_use==='1'); })
+            .slice()
+            .sort(function(a,b){ return ((b.stats&&b.stats.level)||0)-((a.stats&&a.stats.level)||0); });
+        var usedIds=_bpFighters.filter(Boolean).map(function(f){return String(f.fighter_id);});
+        var pool=available.filter(function(f){ return usedIds.indexOf(String(f.fighter_id))<0; });
+        for(var si=0;si<5;si++){
+            if(!_bpFighters[si]&&pool.length){
+                _bpFighters[si]=pool.shift();
+            }
+        }
 
         _restoreBattleNFTs();
         var ov=document.getElementById('battle-overlay');
@@ -2938,9 +2951,6 @@
             }
         }
 
-        // gems toggle
-        var gb=document.getElementById('bp-gems-btn');
-        if(gb){gb.classList.toggle('on',_bpUseGems);gb.textContent=_bpUseGems?'ON':'OFF';}
 
         // arena defender
         var defDiv=document.getElementById('bp-defender');
@@ -3048,11 +3058,6 @@
         if(dt) dt.textContent=(isOpen?'▾':'▸')+' 16 – 20 (EXTREME)';
     }
 
-    function toggleBpGems(){
-        _bpUseGems=!_bpUseGems;
-        var gb=document.getElementById('bp-gems-btn');
-        if(gb){gb.classList.toggle('on',_bpUseGems);gb.textContent=_bpUseGems?'ON':'OFF';}
-    }
 
     function openFighterPicker(slotIdx){
         _bpPickerSlot=slotIdx;
@@ -3169,7 +3174,7 @@
                     data:{wallet:wallet,planet:de.planet||_activePlanet,land_id:de.land_id||'',
                         x:Number(de.x),y:Number(de.y),difficulty:_bpDifficulty,
                         fighter_ids:fighterIds,crew_asset_id:crewId,weapon_asset_id:weapId,
-                        use_gems:_bpUseGems,history_id:genHistoryId()}};
+                        use_gems:false,history_id:genHistoryId()}};
             } else {
                 var ae=_bpArenaEntry;
                 action={account:'arena.ale',name:'playarena',authorization:authz,
@@ -3323,10 +3328,6 @@
         <div id="bp-diff-grid"></div>
         <button id="bp-diff-toggle" onclick="toggleHighDiff()">▸ 16 – 20 (EXTREME)</button>
         <div id="bp-diff-high" class="hidden"></div>
-      </div>
-      <div id="bp-gems-row">
-        <span id="bp-gems-lbl">💎 USE GEMS</span>
-        <button id="bp-gems-btn" onclick="toggleBpGems()">OFF</button>
       </div>
       <div id="bp-defender" style="display:none">
         <div id="bp-defender-lbl">DEFENDING FIGHTER</div>
