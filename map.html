@@ -516,6 +516,93 @@
             background:rgba(96,200,255,0.1); border:1px solid rgba(96,200,255,0.35);
             color:#60c8ff; font-size:0.58em; letter-spacing:2px; padding:3px 12px;
             z-index:1400; display:none; pointer-events:none; border-radius:2px; }
+
+        /* ── BATTLE PANE ─────────────────────────────────────────────────── */
+        #battle-overlay { position:fixed; inset:0; z-index:700; display:none; align-items:center; justify-content:center; background:rgba(0,0,6,0.86); backdrop-filter:blur(4px); }
+        #battle-overlay.open { display:flex; }
+        #battle-pane { position:relative; width:min(460px,96vw); max-height:92vh; background:rgba(2,5,18,0.99); border:1.5px solid rgba(96,200,255,0.3); border-radius:12px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 0 50px rgba(96,200,255,0.08),0 0 120px rgba(0,0,0,0.95); }
+        #bp-header { display:flex; align-items:center; gap:8px; padding:11px 14px 9px; border-bottom:1px solid rgba(96,200,255,0.12); flex-shrink:0; }
+        #bp-mode-icon { font-size:1.1em; }
+        #bp-title { flex:1; font-size:0.72em; letter-spacing:3px; color:var(--gold); text-transform:uppercase; text-shadow:0 0 10px rgba(232,160,32,0.4); }
+        #bp-loc { font-size:0.58em; color:#446; letter-spacing:1px; }
+        #bp-close { background:transparent; border:none; color:#334; font-size:1.1em; cursor:crosshair; padding:2px 6px; margin-left:4px; transition:color 0.15s; }
+        #bp-close:hover { color:#c08080; }
+        #bp-body { flex:1; overflow-y:auto; padding:10px 12px 12px; }
+        .bp-section-lbl { font-size:0.55em; letter-spacing:2px; color:#446; text-transform:uppercase; margin:8px 0 5px; }
+        /* fighter slots */
+        .bp-slot { display:flex; align-items:center; gap:6px; padding:7px 10px; margin-bottom:4px; background:rgba(96,200,255,0.04); border:1px solid rgba(96,200,255,0.12); border-radius:8px; cursor:crosshair; transition:all 0.15s; min-height:34px; }
+        .bp-slot:hover { border-color:rgba(96,200,255,0.35); background:rgba(96,200,255,0.08); }
+        .bp-slot.filled { border-color:rgba(96,200,255,0.22); }
+        .bp-slot.filled:hover { border-color:rgba(232,160,32,0.45); }
+        .bp-slot-num { font-size:0.6em; color:#334; width:14px; flex-shrink:0; text-align:center; }
+        .bp-slot-cls { font-size:0.9em; flex-shrink:0; }
+        .bp-slot-name { flex:1; font-size:0.6em; color:#b0c8d0; letter-spacing:0.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .bp-slot-empty { flex:1; font-size:0.58em; color:#334; letter-spacing:1px; }
+        .bp-slot-lv { font-size:0.58em; color:#607080; flex-shrink:0; }
+        .bp-slot-xp { font-size:0.52em; color:#60d080; background:rgba(60,160,80,0.12); border:1px solid rgba(60,160,80,0.25); border-radius:3px; padding:1px 5px; flex-shrink:0; }
+        .bp-slot-inuse { font-size:0.52em; color:#5090c0; background:rgba(40,80,160,0.15); border:1px solid rgba(50,100,180,0.25); border-radius:3px; padding:1px 5px; flex-shrink:0; }
+        .bp-slot-clear { background:transparent; border:none; color:#334; font-size:0.85em; cursor:crosshair; padding:0 2px; flex-shrink:0; transition:color 0.15s; }
+        .bp-slot-clear:hover { color:#c06060; }
+        /* NFT slots */
+        .bp-nft-row { display:flex; gap:8px; margin-bottom:4px; }
+        .bp-nft-slot { flex:1; display:flex; align-items:center; gap:7px; padding:7px 9px; background:rgba(232,160,32,0.04); border:1px solid rgba(232,160,32,0.15); border-radius:8px; cursor:crosshair; transition:all 0.15s; }
+        .bp-nft-slot:hover { border-color:rgba(232,160,32,0.4); background:rgba(232,160,32,0.08); }
+        .bp-nft-img { width:30px; height:30px; object-fit:cover; border-radius:4px; flex-shrink:0; background:rgba(20,20,40,0.6); }
+        .bp-nft-info { flex:1; min-width:0; }
+        .bp-nft-type { font-size:0.5em; color:#446; letter-spacing:1px; text-transform:uppercase; }
+        .bp-nft-name { font-size:0.58em; color:#b0a080; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        /* difficulty bar */
+        #bp-diff-row { display:flex; align-items:center; gap:0; margin-bottom:4px; }
+        .bp-diff-btn { flex:1; padding:6px 2px; font-size:0.58em; letter-spacing:1px; background:rgba(96,200,255,0.04); border:1px solid rgba(96,200,255,0.1); color:#334; cursor:crosshair; transition:all 0.12s; text-align:center; }
+        .bp-diff-btn:first-child { border-radius:7px 0 0 7px; }
+        .bp-diff-btn:last-child  { border-radius:0 7px 7px 0; }
+        .bp-diff-btn.on { background:rgba(232,160,32,0.12); border-color:rgba(232,160,32,0.45); color:var(--gold); }
+        /* gems toggle */
+        #bp-gems-row { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+        #bp-gems-lbl { font-size:0.58em; color:#446; flex:1; letter-spacing:1px; }
+        #bp-gems-btn { font-size:0.58em; letter-spacing:1px; background:transparent; border:1px solid rgba(96,200,255,0.15); color:#334; border-radius:6px; padding:4px 10px; cursor:crosshair; transition:all 0.15s; }
+        #bp-gems-btn.on { border-color:rgba(96,200,255,0.5); color:#60c8ff; background:rgba(96,200,255,0.1); }
+        /* arena defender */
+        #bp-defender { margin-bottom:4px; padding:7px 10px; background:rgba(192,60,60,0.06); border:1px solid rgba(192,60,60,0.18); border-radius:8px; }
+        #bp-defender-lbl { font-size:0.52em; letter-spacing:2px; color:#604040; text-transform:uppercase; margin-bottom:4px; }
+        #bp-defender-info { font-size:0.62em; color:#b08080; }
+        /* footer actions */
+        #bp-footer { display:flex; align-items:center; gap:8px; padding:10px 12px; border-top:1px solid rgba(96,200,255,0.1); flex-shrink:0; }
+        #bp-status { flex:1; font-size:0.58em; letter-spacing:1px; }
+        #bp-status.ok  { color:#60d080; }
+        #bp-status.err { color:#d06060; }
+        .bp-btn { border-radius:10px; border:1.5px solid #60c8ff; background:linear-gradient(135deg,rgba(0,80,160,0.18),rgba(0,40,100,0.08)); color:var(--gold); text-shadow:0 1px 4px #000,0 0 8px rgba(232,160,32,0.4); box-shadow:0 0 8px rgba(96,200,255,0.18),inset 0 1px 0 rgba(96,200,255,0.12); font-family:inherit; font-size:0.62em; letter-spacing:2px; padding:8px 18px; cursor:crosshair; transition:all 0.18s; text-transform:uppercase; }
+        .bp-btn:hover { border-color:var(--gold); box-shadow:0 0 14px rgba(232,160,32,0.35); }
+        .bp-btn.execute { border-color:var(--gold); background:linear-gradient(135deg,rgba(232,160,32,0.15),rgba(200,120,0,0.07)); }
+        .bp-btn.execute:disabled { opacity:0.4; cursor:default; box-shadow:none; }
+        .bp-btn.cancel-bp { border-color:rgba(80,80,100,0.3); color:#446; text-shadow:none; background:transparent; box-shadow:none; }
+        .bp-btn.cancel-bp:hover { border-color:#664; color:#886; }
+        .bp-btn.lvup { border-color:#80e090; color:#60d080; text-shadow:0 1px 4px #000; }
+        #bp-lvup-btn { display:none; }
+        /* ── PICKER OVERLAY ──────────────────────────────────────── */
+        #bp-picker { position:fixed; inset:0; z-index:710; display:none; align-items:center; justify-content:center; background:rgba(0,0,6,0.88); }
+        #bp-picker.open { display:flex; }
+        #bp-picker-box { width:min(400px,94vw); max-height:80vh; background:rgba(3,6,18,0.99); border:1.5px solid rgba(96,200,255,0.25); border-radius:10px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 0 40px rgba(0,0,0,0.9); }
+        #bp-picker-header { display:flex; align-items:center; padding:9px 12px; border-bottom:1px solid rgba(96,200,255,0.1); flex-shrink:0; gap:8px; }
+        #bp-picker-title { flex:1; font-size:0.65em; letter-spacing:3px; color:var(--gold); }
+        #bp-picker-close { background:transparent; border:none; color:#334; font-size:1em; cursor:crosshair; padding:2px 6px; transition:color 0.15s; }
+        #bp-picker-close:hover { color:#c08080; }
+        #bp-picker-list { flex:1; overflow-y:auto; }
+        .bpp-row { display:flex; align-items:center; gap:7px; padding:8px 12px; border-bottom:1px solid rgba(96,200,255,0.06); cursor:crosshair; transition:background 0.12s; }
+        .bpp-row:hover { background:rgba(96,200,255,0.07); }
+        .bpp-row.disabled { opacity:0.35; cursor:default; pointer-events:none; }
+        .bpp-cls { font-size:0.9em; flex-shrink:0; }
+        .bpp-name { flex:1; font-size:0.62em; color:#b0c0d0; letter-spacing:0.5px; }
+        .bpp-lv { font-size:0.58em; color:#607080; flex-shrink:0; }
+        .bpp-badge { font-size:0.5em; border-radius:3px; padding:1px 5px; flex-shrink:0; }
+        .bpp-xp  { color:#60d080; background:rgba(60,160,80,0.12); border:1px solid rgba(60,160,80,0.25); }
+        .bpp-use { color:#5090c0; background:rgba(40,80,160,0.12); border:1px solid rgba(50,100,180,0.25); }
+        .bpp-sel { color:var(--gold); background:rgba(232,160,32,0.1); border:1px solid rgba(232,160,32,0.25); }
+        .bpp-img { width:36px; height:36px; object-fit:cover; border-radius:5px; background:rgba(20,20,40,0.6); flex-shrink:0; }
+        /* auto-battle toggle */
+        #ab-toggle { display:block; width:100%; padding:7px 6px; font-size:0.65em; letter-spacing:2px; background:transparent; border:1px dashed #334; color:#446; cursor:crosshair; transition:all 0.2s; text-align:center; text-transform:uppercase; flex-shrink:0; margin-top:4px; }
+        #ab-toggle.on { border-color:rgba(96,200,255,0.5); border-style:solid; color:#60c8ff; background:rgba(96,200,255,0.07); }
+        #ab-toggle.on::before { content:'⚡ '; }
     </style>
 </head>
 <body>
@@ -639,6 +726,7 @@
             <div class="lb-sep"></div>
             <div class="lb-controls">
                 <button id="qt-toggle" onclick="toggleQuickTravel()">QUICK TRAVEL</button>
+                <button id="ab-toggle" onclick="toggleAutoBattle()">OPEN ON ARRIVAL</button>
                 <button id="fighters-btn" onclick="loadMyFighters()">&#9876; MY FIGHTERS</button>
                 <button id="lb-cmds-btn" onclick="toggleCommandsPanel()" style="display:none">ALL COMMANDS &#9656;</button>
             </div>
@@ -654,8 +742,8 @@
             <button id="view-map-btn"        class="act-btn view-map" onclick="doViewPlanet()" style="display:none;">VIEW MAP</button>
             <button id="hire-btn"            class="act-btn hire"     onclick="doHire()"        style="display:none;">HIRE FIGHTER (100 AP)</button>
             <div id="hire-nft-list"></div>
-            <button id="dungeon-btn"         class="act-btn dungeon"  style="display:none;">&#9935; PLAY DUNGEON</button>
-            <button id="arena-btn"           class="act-btn arena"    style="display:none;">&#9876; FIGHT ARENA</button>
+            <button id="dungeon-btn"         class="act-btn dungeon"  style="display:none;" onclick="openBattlePane('dungeon',_sel&&_sel.dungeonEntry)">&#9935; PLAY DUNGEON</button>
+            <button id="arena-btn"           class="act-btn arena"    style="display:none;" onclick="openBattlePane('arena',_sel&&_sel.arenaEntry)">&#9876; FIGHT ARENA</button>
             <span id="action-status"></span>
             <button class="act-btn cancel" onclick="dismissStrip()">&#10005; CANCEL</button>
         </div>
@@ -960,7 +1048,7 @@
                 var bStr=JSON.stringify(buildings).toLowerCase();
                 if (bStr.indexOf('arena')>=0){
                     var dup2=ALE_LOCATIONS[rp].arenas.some(function(a){return a.x===x&&a.y===y;});
-                    if (!dup2){ALE_LOCATIONS[rp].arenas.push({x:x,y:y,owner:owner});added++;}
+                    if (!dup2){ALE_LOCATIONS[rp].arenas.push({x:x,y:y,owner:owner,land_id:row.land_id||null});added++;}
                 }
             });
         }
@@ -1562,7 +1650,8 @@
         var tavernEntry=(locs.taverns||[]).reduce(function(f,t){return f||(t.x===x&&t.y===y?t:null);},null);
         var isTavern=!!tavernEntry;
         var isArena=(locs.arenas||[]).some(function(a){return a.x===x&&a.y===y;});
-        _sel={x:x,y:y,planet:_activePlanet,portal:portal,isDungeon:isDungeon,isTavern:isTavern,tavernEntry:tavernEntry,isArena:isArena};
+        var _arKey=_activePlanet+'.'+x+'.'+y;
+        _sel={x:x,y:y,planet:_activePlanet,portal:portal,isDungeon:isDungeon,isTavern:isTavern,tavernEntry:tavernEntry,isArena:isArena,dungeonEntry:isDungeon?dungeonEntry:null,arenaEntry:isArena?{x:x,y:y,planet:_activePlanet,land_id:((locs.arenas||[]).find(function(a){return a.x===x&&a.y===y;})||{}).land_id||null,defender:_arenaDefenderIds[_arKey]||null}:null};
         document.querySelectorAll('.ale-cell.selected').forEach(function(el){el.classList.remove('selected');});
         var container=document.getElementById('map-'+_activePlanet);
         if(container){var cell=container.querySelector('[data-x="'+x+'"][data-y="'+y+'"]');if(cell)cell.classList.add('selected');}
@@ -1705,6 +1794,9 @@
             _playerPos={x:_sel.x,y:_sel.y,planet:destPlanet};
             applyMarker();
             var wasTavern=_sel&&_sel.isTavern;
+            var wasDungeon=_sel&&_sel.isDungeon;
+            var wasArena=_sel&&_sel.isArena;
+            var savedBattleEntry=_sel?{isDungeon:wasDungeon,isArena:wasArena,dungeonEntry:_sel.dungeonEntry,arenaEntry:_sel.arenaEntry}:null;
             var savedSel=_sel?{x:_sel.x,y:_sel.y}:null;
             if(_sel.portal){
                 var to=_sel.portal.to;
@@ -1712,6 +1804,13 @@
                 setTimeout(function(){dismissStrip();clearSelection();},3000);
             } else if(wasTavern&&savedSel){
                 setTimeout(function(){onCell(savedSel.x,savedSel.y);},1200);
+            } else if(_autoBattle&&savedBattleEntry&&(savedBattleEntry.isDungeon||savedBattleEntry.isArena)){
+                setTimeout(function(){
+                    dismissStrip();clearSelection();
+                    var mode=savedBattleEntry.isDungeon?'dungeon':'arena';
+                    var entry=savedBattleEntry.isDungeon?savedBattleEntry.dungeonEntry:savedBattleEntry.arenaEntry;
+                    openBattlePane(mode,entry);
+                },1200);
             } else {
                 setTimeout(function(){dismissStrip();clearSelection();},3000);
             }
@@ -2488,6 +2587,7 @@
             });
             renderMarkedPanel();
         } catch(e){ console.warn('[fighters] auto-load failed:',e); }
+        _fetchBattleNFTDefaults(wallet).catch(function(){});
     }
 
     function renderMarkedPanel() {
@@ -2713,6 +2813,467 @@
         if (data) showStatPane(data, evt);
     }
 
+    // ── BATTLE PANE ───────────────────────────────────────────────────────────
+
+    function genHistoryId() {
+        var s=''; for(var i=0;i<12;i++) s+=String.fromCharCode(97+Math.floor(Math.random()*26)); return s;
+    }
+
+    async function _signTx(actions) {
+        if(window.walletSession) return await window.walletSession.transact({actions});
+        if(wax&&wax.api) return await wax.api.transact({actions},{blocksBehind:3,expireSeconds:30});
+        throw new Error('No wallet session — please log in.');
+    }
+
+    var _bpMode='dungeon';
+    var _bpFighters=[null,null,null,null,null];
+    var _bpCrew=null;
+    var _bpWeapon=null;
+    var _bpDifficulty=5;
+    var _bpUseGems=false;
+    var _bpDungeonEntry=null;
+    var _bpArenaEntry=null;
+    var _bpPickerSlot=-1;
+    var _bpPickerType='';
+    var _bpNFTCache={crew:null,weapon:null};
+    var _autoBattle=false;
+    var _battleNFTDefaults={crewAssetId:null,weaponAssetId:null};
+
+    function toggleAutoBattle(){
+        _autoBattle=!_autoBattle;
+        document.getElementById('ab-toggle').classList.toggle('on',_autoBattle);
+        try{localStorage.setItem('naron_auto_battle',_autoBattle?'1':'');}catch(e){}
+    }
+    (function(){try{if(localStorage.getItem('naron_auto_battle')==='1'){_autoBattle=true;}}catch(e){}})();
+
+    function _nftImgSrc(schema,templateId) {
+        if(!templateId) return '';
+        var folder=schema==='crew.worlds'?'crew.worlds':'arms.worlds';
+        return folder+'/'+templateId+'.webp';
+    }
+
+    async function _fetchBattleNFTDefaults(wallet) {
+        if(!wallet) return;
+        try {
+            var res=await fetchRows({code:'players.ale',scope:'players.ale',table:'players',lower_bound:wallet,upper_bound:wallet,limit:1,json:true});
+            if(!res||!res.rows||!res.rows[0]||res.rows[0].wallet!==wallet) return;
+            var bnfts=res.rows[0].battle_nfts||[];
+            var crewTid=null,weaponTid=null;
+            bnfts.forEach(function(n){
+                if((n.first||'').indexOf('crew')>=0) crewTid=String(n.second||'');
+                if((n.first||'').indexOf('arms')>=0) weaponTid=String(n.second||'');
+            });
+            var base='https://wax.api.atomicassets.io/atomicassets/v1/assets?owner='+wallet+'&collection_name=alien.worlds&limit=1';
+            if(crewTid){
+                try{
+                    var r=await fetch(base+'&template_id='+crewTid);
+                    var j=await r.json();
+                    if(j.data&&j.data.length){
+                        _battleNFTDefaults.crewAssetId=String(j.data[0].asset_id);
+                        _battleNFTDefaults.crewTemplateId=crewTid;
+                        _battleNFTDefaults.crewName=(j.data[0].name||j.data[0].template&&j.data[0].template.immutable_data&&j.data[0].template.immutable_data.name||'CREW NFT');
+                        _battleNFTDefaults.crewSchema='crew.worlds';
+                    }
+                }catch(e){}
+            }
+            if(weaponTid){
+                try{
+                    var r2=await fetch(base+'&template_id='+weaponTid);
+                    var j2=await r2.json();
+                    if(j2.data&&j2.data.length){
+                        _battleNFTDefaults.weaponAssetId=String(j2.data[0].asset_id);
+                        _battleNFTDefaults.weaponTemplateId=weaponTid;
+                        _battleNFTDefaults.weaponName=(j2.data[0].name||j2.data[0].template&&j2.data[0].template.immutable_data&&j2.data[0].template.immutable_data.name||'WEAPON NFT');
+                        _battleNFTDefaults.weaponSchema='arms.worlds';
+                    }
+                }catch(e){}
+            }
+            try{localStorage.setItem('naron_battle_nfts',JSON.stringify(_battleNFTDefaults));}catch(e){}
+        }catch(e){}
+    }
+
+    function _restoreBattleNFTs() {
+        if(_battleNFTDefaults.crewAssetId){
+            _bpCrew={asset_id:_battleNFTDefaults.crewAssetId,template_id:_battleNFTDefaults.crewTemplateId,name:_battleNFTDefaults.crewName||'CREW NFT',schema:'crew.worlds'};
+        }
+        if(_battleNFTDefaults.weaponAssetId){
+            _bpWeapon={asset_id:_battleNFTDefaults.weaponAssetId,template_id:_battleNFTDefaults.weaponTemplateId,name:_battleNFTDefaults.weaponName||'WEAPON NFT',schema:'arms.worlds'};
+        }
+        if(!_bpCrew||!_bpWeapon){
+            try{
+                var saved=JSON.parse(localStorage.getItem('naron_battle_nfts')||'{}');
+                if(!_bpCrew&&saved.crewAssetId) _bpCrew={asset_id:saved.crewAssetId,template_id:saved.crewTemplateId,name:saved.crewName||'CREW NFT',schema:'crew.worlds'};
+                if(!_bpWeapon&&saved.weaponAssetId) _bpWeapon={asset_id:saved.weaponAssetId,template_id:saved.weaponTemplateId,name:saved.weaponName||'WEAPON NFT',schema:'arms.worlds'};
+            }catch(e){}
+        }
+    }
+
+    async function openBattlePane(mode, entry) {
+        if(!entry){showToast('⚠ LOCATION DATA NOT LOADED');return;}
+        var wallet=getWallet();
+        if(!wallet){showToast('⚠ PLEASE LOG IN');return;}
+        _bpMode=mode;
+        _bpFighters=[null,null,null,null,null];
+        _bpUseGems=false;
+        if(mode==='dungeon'){_bpDungeonEntry=entry;}
+        else{_bpArenaEntry=entry;}
+
+        // restore last-used fighters
+        var lsKey=mode==='dungeon'?'naron_dg_fighters':'naron_ar_fighters';
+        try{
+            var saved=JSON.parse(localStorage.getItem(lsKey)||'[]');
+            if(!_myFighters.length) _myFighters=await _fetchAllFighters(wallet);
+            _myFighters.forEach(function(f){var fid=String(f.fighter_id!=null?f.fighter_id:'');if(fid)_fighterCache[fid]=f;});
+            for(var i=0;i<Math.min(saved.length,5);i++){
+                var fid=String(saved[i]);
+                var f=_myFighters.find(function(x){return String(x.fighter_id)===fid;});
+                if(f&&!(f.in_use===1||f.in_use==='1')) _bpFighters[i]=f;
+            }
+        }catch(e){}
+
+        _restoreBattleNFTs();
+        var ov=document.getElementById('battle-overlay');
+        if(ov) ov.classList.add('open');
+        _renderBattlePane();
+
+        if(mode==='arena'&&entry.defender&&entry.defender.fid){
+            fetchFighterData(entry.defender.fid,entry.defender.wallet).then(function(def){
+                if(!def) return;
+                var defDiv=document.getElementById('bp-defender-info');
+                var cls=(def.classname||'').toLowerCase().replace(/[\s_-]/g,'');
+                var ci=FIGHTER_CLASSES[cls]||{e:'⚔️',n:def.classname||'Fighter'};
+                var lvl=(def.stats&&def.stats.level!=null)?def.stats.level:'?';
+                if(defDiv) defDiv.textContent=ci.e+' '+ci.n.toUpperCase()+' LV'+lvl+' ('+entry.defender.wallet+')';
+            }).catch(function(){});
+        }
+    }
+
+    function _renderBattlePane() {
+        var isDungeon=_bpMode==='dungeon';
+        var entry=isDungeon?_bpDungeonEntry:_bpArenaEntry;
+
+        document.getElementById('bp-mode-icon').textContent=isDungeon?'⚔️':'🏟️';
+        document.getElementById('bp-title').textContent=isDungeon?'PLAY DUNGEON':'FIGHT ARENA';
+        var locEl=document.getElementById('bp-loc');
+        if(entry) locEl.textContent='('+entry.x+', '+entry.y+')';
+
+        // difficulty
+        var diffSec=document.getElementById('bp-diff-section');
+        if(diffSec) diffSec.style.display=isDungeon?'':'none';
+        if(isDungeon){
+            var dr=document.getElementById('bp-diff-row');
+            var dHtml='';
+            [1,3,5,8,10,12,15,20].forEach(function(d){
+                dHtml+='<button class="bp-diff-btn'+(d===_bpDifficulty?' on':'')+'" onclick="setBpDiff('+d+')">'+d+'</button>';
+            });
+            if(dr) dr.innerHTML=dHtml;
+        }
+
+        // gems toggle
+        var gb=document.getElementById('bp-gems-btn');
+        if(gb){gb.classList.toggle('on',_bpUseGems);gb.textContent=_bpUseGems?'ON':'OFF';}
+
+        // arena defender
+        var defDiv=document.getElementById('bp-defender');
+        if(defDiv){
+            defDiv.style.display=(!isDungeon&&_bpArenaEntry&&_bpArenaEntry.defender)?'':'none';
+            if(!isDungeon&&_bpArenaEntry&&_bpArenaEntry.defender){
+                var defInfo=document.getElementById('bp-defender-info');
+                if(defInfo) defInfo.textContent='Loading…';
+            }
+        }
+
+        // fighter slots
+        var slotsEl=document.getElementById('bp-slots');
+        if(slotsEl){
+            var sHtml='';
+            for(var i=0;i<5;i++){
+                var f=_bpFighters[i];
+                if(f){
+                    var cls=(f.classname||'').toLowerCase().replace(/[\s_-]/g,'');
+                    var ci=FIGHTER_CLASSES[cls]||{e:'⚔️',n:f.classname||'Fighter'};
+                    var lvl=(f.stats&&f.stats.level!=null)?f.stats.level:'?';
+                    var s=f.stats||{};
+                    var xpReady=s.level<10&&s.experience!=null&&s.required_experience!=null&&Number(s.experience)>=Number(s.required_experience);
+                    var inUse=f.in_use===1||f.in_use==='1';
+                    sHtml+='<div class="bp-slot filled" onclick="openFighterPicker('+i+')">'
+                        +'<span class="bp-slot-num">'+(i+1)+'</span>'
+                        +'<span class="bp-slot-cls">'+ci.e+'</span>'
+                        +'<span class="bp-slot-name">'+ci.n.toUpperCase()+'</span>'
+                        +'<span class="bp-slot-lv">LV'+lvl+'</span>'
+                        +(xpReady?'<span class="bp-slot-xp">XP✓</span>':'')
+                        +(inUse?'<span class="bp-slot-inuse">DEPLOYED</span>':'')
+                        +'<button class="bp-slot-clear" onclick="event.stopPropagation();clearBpSlot('+i+')">×</button>'
+                        +'</div>';
+                } else {
+                    sHtml+='<div class="bp-slot" onclick="openFighterPicker('+i+')">'
+                        +'<span class="bp-slot-num">'+(i+1)+'</span>'
+                        +'<span class="bp-slot-empty">+ SELECT FIGHTER</span>'
+                        +'</div>';
+                }
+            }
+            slotsEl.innerHTML=sHtml;
+        }
+
+        // crew
+        var crewImg=document.getElementById('bp-crew-img');
+        var crewName=document.getElementById('bp-crew-name');
+        if(_bpCrew){
+            if(crewImg) crewImg.src=_nftImgSrc('crew.worlds',_bpCrew.template_id);
+            if(crewName) crewName.textContent=_bpCrew.name||'CREW NFT';
+        } else {
+            if(crewImg) crewImg.src='';
+            if(crewName) crewName.textContent='SELECT CREW NFT';
+        }
+
+        // weapon
+        var wpnImg=document.getElementById('bp-weapon-img');
+        var wpnName=document.getElementById('bp-weapon-name');
+        if(_bpWeapon){
+            if(wpnImg) wpnImg.src=_nftImgSrc('arms.worlds',_bpWeapon.template_id);
+            if(wpnName) wpnName.textContent=_bpWeapon.name||'WEAPON NFT';
+        } else {
+            if(wpnImg) wpnImg.src='';
+            if(wpnName) wpnName.textContent='SELECT WEAPON NFT';
+        }
+
+        // level-up button
+        var anyReady=_bpFighters.some(function(f){
+            if(!f) return false;
+            var s=f.stats||{};
+            return s.level<10&&s.experience!=null&&s.required_experience!=null&&Number(s.experience)>=Number(s.required_experience);
+        });
+        var lvBtn=document.getElementById('bp-lvup-btn');
+        if(lvBtn) lvBtn.style.display=anyReady?'':'none';
+
+        // status reset
+        var stEl=document.getElementById('bp-status');
+        if(stEl){stEl.textContent='';stEl.className='';}
+    }
+
+    function clearBpSlot(i){
+        _bpFighters[i]=null;
+        _renderBattlePane();
+    }
+
+    function setBpDiff(d){
+        _bpDifficulty=d;
+        _renderBattlePane();
+    }
+
+    function toggleBpGems(){
+        _bpUseGems=!_bpUseGems;
+        var gb=document.getElementById('bp-gems-btn');
+        if(gb){gb.classList.toggle('on',_bpUseGems);gb.textContent=_bpUseGems?'ON':'OFF';}
+    }
+
+    function openFighterPicker(slotIdx){
+        _bpPickerSlot=slotIdx;
+        _bpPickerType='fighter';
+        var titleEl=document.getElementById('bp-picker-title');
+        if(titleEl) titleEl.textContent='SELECT FIGHTER (SLOT '+(slotIdx+1)+')';
+        var listEl=document.getElementById('bp-picker-list');
+        if(!listEl) return;
+        var sorted=_myFighters.slice().sort(function(a,b){return ((b.stats&&b.stats.level)||0)-((a.stats&&a.stats.level)||0);});
+        var selectedIds=_bpFighters.map(function(f){return f?String(f.fighter_id):null;});
+        var html='';
+        sorted.forEach(function(f){
+            var fid=String(f.fighter_id);
+            var cls=(f.classname||'').toLowerCase().replace(/[\s_-]/g,'');
+            var ci=FIGHTER_CLASSES[cls]||{e:'⚔️',n:f.classname||'Fighter'};
+            var lvl=(f.stats&&f.stats.level!=null)?f.stats.level:'?';
+            var s=f.stats||{};
+            var xpReady=s.level<10&&s.experience!=null&&s.required_experience!=null&&Number(s.experience)>=Number(s.required_experience);
+            var inUse=f.in_use===1||f.in_use==='1';
+            var alreadySel=selectedIds.indexOf(fid)>=0&&selectedIds.indexOf(fid)!==slotIdx;
+            html+='<div class="bpp-row'+(alreadySel?' disabled':'')+'" onclick="selectBpFighter(\''+fid+'\')">'
+                +'<span class="bpp-cls">'+ci.e+'</span>'
+                +'<span class="bpp-name">'+ci.n.toUpperCase()+'</span>'
+                +'<span class="bpp-lv">LV'+lvl+'</span>'
+                +(xpReady?'<span class="bpp-badge bpp-xp">XP✓</span>':'')
+                +(inUse?'<span class="bpp-badge bpp-use">DEPLOYED</span>':'')
+                +(selectedIds[slotIdx]===fid?'<span class="bpp-badge bpp-sel">✓</span>':'')
+                +'</div>';
+        });
+        listEl.innerHTML=html||'<div style="padding:16px;font-size:0.62em;color:#446;text-align:center;">NO FIGHTERS LOADED</div>';
+        document.getElementById('bp-picker').classList.add('open');
+    }
+
+    function selectBpFighter(fid){
+        var f=_myFighters.find(function(x){return String(x.fighter_id)===String(fid);});
+        if(f&&_bpPickerSlot>=0) _bpFighters[_bpPickerSlot]=f;
+        closePicker();
+        _renderBattlePane();
+    }
+
+    async function openNFTPicker(type) {
+        _bpPickerType=type;
+        var wallet=getWallet();
+        if(!wallet){showToast('⚠ PLEASE LOG IN');return;}
+        var titleEl=document.getElementById('bp-picker-title');
+        if(titleEl) titleEl.textContent='SELECT '+(type==='crew'?'CREW NFT':'WEAPON NFT');
+        var listEl=document.getElementById('bp-picker-list');
+        if(listEl) listEl.innerHTML='<div style="padding:16px;font-size:0.62em;color:#446;text-align:center;">LOADING…</div>';
+        document.getElementById('bp-picker').classList.add('open');
+        try{
+            var schema=type==='crew'?'crew.worlds':'arms.worlds';
+            var url='https://wax.api.atomicassets.io/atomicassets/v1/assets?owner='+wallet+'&collection_name=alien.worlds&schema_name='+schema+'&limit=100&order=desc&sort=asset_id';
+            var res=await fetch(url);
+            var j=await res.json();
+            if(!j.data||!j.data.length){
+                if(listEl) listEl.innerHTML='<div style="padding:16px;font-size:0.62em;color:#446;text-align:center;">NO '+schema.toUpperCase()+' NFTS FOUND</div>';
+                return;
+            }
+            var html='';
+            j.data.forEach(function(asset){
+                var tid=(asset.template&&asset.template.template_id)||'';
+                var name=asset.name||(asset.template&&asset.template.immutable_data&&asset.template.immutable_data.name)||('Asset #'+asset.asset_id);
+                var imgSrc=_nftImgSrc(schema,tid);
+                var currentId=type==='crew'?(_bpCrew&&_bpCrew.asset_id):(_bpWeapon&&_bpWeapon.asset_id);
+                html+='<div class="bpp-row" onclick="selectBpNFT(\''+type+'\',\''+asset.asset_id+'\',\''+tid+'\',\''+name.replace(/'/g,'')+'\',\''+schema+'\')">'
+                    +'<img class="bpp-img" src="'+imgSrc+'" onerror="this.src=\'\'" alt="">'
+                    +'<span class="bpp-name">'+name+'</span>'
+                    +(String(currentId)===String(asset.asset_id)?'<span class="bpp-badge bpp-sel">✓</span>':'')
+                    +'</div>';
+            });
+            if(listEl) listEl.innerHTML=html;
+        }catch(e){
+            if(listEl) listEl.innerHTML='<div style="padding:16px;font-size:0.62em;color:#d06060;text-align:center;">ERROR: '+(e&&e.message||'Failed')+'</div>';
+        }
+    }
+
+    function selectBpNFT(type,assetId,templateId,name,schema){
+        var obj={asset_id:assetId,template_id:templateId,name:name,schema:schema};
+        if(type==='crew') _bpCrew=obj;
+        else _bpWeapon=obj;
+        closePicker();
+        _renderBattlePane();
+    }
+
+    function closePicker(){
+        document.getElementById('bp-picker').classList.remove('open');
+        _bpPickerSlot=-1;
+        _bpPickerType='';
+    }
+
+    async function executeBattle() {
+        var wallet=getWallet();
+        if(!wallet){_bpSetStatus('⚠ PLEASE LOG IN','err');return;}
+        var filled=_bpFighters.filter(function(f){return !!f;});
+        if(filled.length<5){_bpSetStatus('⚠ SELECT ALL 5 FIGHTERS','err');return;}
+        if(!_bpCrew){_bpSetStatus('⚠ SELECT CREW NFT','err');return;}
+        if(!_bpWeapon){_bpSetStatus('⚠ SELECT WEAPON NFT','err');return;}
+
+        var btn=document.getElementById('bp-exec-btn');
+        if(btn){btn.disabled=true;btn.textContent='SENDING…';}
+        _bpSetStatus('','');
+
+        try{
+            var fighterIds=_bpFighters.map(function(f){return Number(f.fighter_id);});
+            var crewId=Number(_bpCrew.asset_id);
+            var weapId=Number(_bpWeapon.asset_id);
+            var authz=[{actor:wallet,permission:'active'}];
+
+            var action;
+            if(_bpMode==='dungeon'){
+                var de=_bpDungeonEntry;
+                action={account:'dungeons.ale',name:'playdungeon',authorization:authz,
+                    data:{wallet:wallet,planet:de.planet||_activePlanet,land_id:de.land_id||'',
+                        x:Number(de.x),y:Number(de.y),difficulty:_bpDifficulty,
+                        fighter_ids:fighterIds,crew_asset_id:crewId,weapon_asset_id:weapId,
+                        use_gems:_bpUseGems,history_id:genHistoryId()}};
+            } else {
+                var ae=_bpArenaEntry;
+                action={account:'arena.ale',name:'playarena',authorization:authz,
+                    data:{wallet:wallet,planet:ae.planet||_activePlanet,land_id:ae.land_id||'',
+                        x:Number(ae.x),y:Number(ae.y),
+                        fighter_ids:fighterIds,crew_asset_id:crewId,weapon_asset_id:weapId,
+                        history_id:genHistoryId()}};
+            }
+
+            await _signTx([action]);
+
+            // persist fighter IDs
+            var lsKey=_bpMode==='dungeon'?'naron_dg_fighters':'naron_ar_fighters';
+            try{localStorage.setItem(lsKey,JSON.stringify(fighterIds));}catch(e){}
+
+            _bpSetStatus('✓ SUCCESS','ok');
+            if(btn){btn.disabled=false;btn.textContent='FIGHT ▶';}
+            setTimeout(function(){closeBattlePane();},2500);
+
+            // reload fighters to update in_use status
+            setTimeout(function(){
+                var w=getWallet();
+                if(w) _fetchAllFighters(w).then(function(fs){
+                    _myFighters=fs;
+                    fs.forEach(function(f){var fid=String(f.fighter_id!=null?f.fighter_id:'');if(fid)_fighterCache[fid]=f;});
+                    renderMarkedPanel();
+                }).catch(function(){});
+            },3000);
+        }catch(e){
+            _bpSetStatus('✗ '+((e&&e.message)||'Failed').substring(0,70),'err');
+            if(btn){btn.disabled=false;btn.textContent='FIGHT ▶';}
+        }
+    }
+
+    function _bpSetStatus(msg,cls){
+        var el=document.getElementById('bp-status');
+        if(el){el.textContent=msg;el.className=cls;}
+    }
+
+    async function _levelUpReady() {
+        var wallet=getWallet();
+        if(!wallet){_bpSetStatus('⚠ PLEASE LOG IN','err');return;}
+        var ready=_bpFighters.filter(function(f){
+            if(!f) return false;
+            var s=f.stats||{};
+            return s.level<10&&s.experience!=null&&s.required_experience!=null&&Number(s.experience)>=Number(s.required_experience);
+        });
+        if(!ready.length){showToast('NO FIGHTERS READY');return;}
+        var btn=document.getElementById('bp-lvup-btn');
+        if(btn){btn.disabled=true;btn.textContent='LEVELLING…';}
+        var authz=[{actor:wallet,permission:'active'}];
+        try{
+            var actions=ready.map(function(f){
+                return {account:'fighters.ale',name:'levelup',authorization:authz,
+                    data:{fighter_ids:[Number(f.fighter_id)],wallet:wallet,cost_gems:0,cost_credits:999}};
+            });
+            await _signTx(actions);
+            _bpSetStatus('✓ LEVELLED UP '+ready.length+' FIGHTER'+(ready.length>1?'S':''),'ok');
+            if(btn){btn.disabled=false;btn.textContent='LV↑ READY';}
+            // refresh fighters
+            setTimeout(function(){
+                var w=getWallet();
+                if(w) _fetchAllFighters(w).then(function(fs){
+                    _myFighters=fs;
+                    fs.forEach(function(f){var fid=String(f.fighter_id!=null?f.fighter_id:'');if(fid)_fighterCache[fid]=f;});
+                    _bpFighters=_bpFighters.map(function(bf){
+                        if(!bf) return null;
+                        return _myFighters.find(function(f){return String(f.fighter_id)===String(bf.fighter_id);})||bf;
+                    });
+                    _renderBattlePane();
+                }).catch(function(){});
+            },2000);
+        }catch(e){
+            _bpSetStatus('✗ '+((e&&e.message)||'Failed').substring(0,70),'err');
+            if(btn){btn.disabled=false;btn.textContent='LV↑ READY';}
+        }
+    }
+
+    function closeBattlePane() {
+        var ov=document.getElementById('battle-overlay');
+        if(ov) ov.classList.remove('open');
+        closePicker();
+    }
+
+    // restore auto-battle toggle after DOM ready
+    (function(){
+        if(_autoBattle){
+            var btn=document.getElementById('ab-toggle');
+            if(btn) btn.classList.add('on');
+        }
+    })();
+
     initStars();
     updateWalletBtn();
     if(localStorage.getItem('naron_wallet')) {
@@ -2745,6 +3306,67 @@
         <div class="fp-list" id="fighters-list-inner"></div>
     </div>
 </div>
+<!-- BATTLE PANE OVERLAY -->
+<div id="battle-overlay" onclick="if(event.target===this)closeBattlePane()">
+  <div id="battle-pane">
+    <div id="bp-header">
+      <span id="bp-mode-icon">⚔️</span>
+      <span id="bp-title">PLAY DUNGEON</span>
+      <span id="bp-loc"></span>
+      <button id="bp-close" onclick="closeBattlePane()">&#215;</button>
+    </div>
+    <div id="bp-body">
+      <div class="bp-section-lbl">FIGHTERS (SELECT 5)</div>
+      <div id="bp-slots"></div>
+      <div class="bp-section-lbl">NFTs</div>
+      <div class="bp-nft-row">
+        <div class="bp-nft-slot" id="bp-crew-slot" onclick="openNFTPicker('crew')">
+          <img class="bp-nft-img" id="bp-crew-img" src="" alt="">
+          <div class="bp-nft-info">
+            <div class="bp-nft-type">CREW</div>
+            <div class="bp-nft-name" id="bp-crew-name">SELECT CREW NFT</div>
+          </div>
+        </div>
+        <div class="bp-nft-slot" id="bp-weapon-slot" onclick="openNFTPicker('weapon')">
+          <img class="bp-nft-img" id="bp-weapon-img" src="" alt="">
+          <div class="bp-nft-info">
+            <div class="bp-nft-type">WEAPON</div>
+            <div class="bp-nft-name" id="bp-weapon-name">SELECT WEAPON NFT</div>
+          </div>
+        </div>
+      </div>
+      <div id="bp-diff-section">
+        <div class="bp-section-lbl">DIFFICULTY</div>
+        <div id="bp-diff-row"></div>
+      </div>
+      <div id="bp-gems-row">
+        <span id="bp-gems-lbl">💎 USE GEMS</span>
+        <button id="bp-gems-btn" onclick="toggleBpGems()">OFF</button>
+      </div>
+      <div id="bp-defender" style="display:none">
+        <div id="bp-defender-lbl">DEFENDING FIGHTER</div>
+        <div id="bp-defender-info">Loading…</div>
+      </div>
+    </div>
+    <div id="bp-footer">
+      <button id="bp-lvup-btn" class="bp-btn lvup" onclick="_levelUpReady()">LV↑ READY</button>
+      <span id="bp-status"></span>
+      <button class="bp-btn cancel-bp" onclick="closeBattlePane()">CANCEL</button>
+      <button id="bp-exec-btn" class="bp-btn execute" onclick="executeBattle()">FIGHT ▶</button>
+    </div>
+  </div>
+</div>
+<!-- PICKER OVERLAY -->
+<div id="bp-picker">
+  <div id="bp-picker-box">
+    <div id="bp-picker-header">
+      <span id="bp-picker-title">SELECT FIGHTER</span>
+      <button id="bp-picker-close" onclick="closePicker()">&#215;</button>
+    </div>
+    <div id="bp-picker-list"></div>
+  </div>
+</div>
+
 <div id="fighter-stat-pane"></div>
 <div id="cell-tip"></div>
 <div id="hire-nft-panel">
