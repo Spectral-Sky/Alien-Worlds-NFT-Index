@@ -356,7 +356,7 @@
         .hire-nft-empty { font-size:0.63em; color:#446; padding:6px 0; text-align:center; }
 
         /* ── QUICK TRAVEL TOGGLE ─────────────────────────────────────────── */
-        #qt-toggle { display:block; width:100%; padding:7px 6px; font-size:0.68em; letter-spacing:2px; background:transparent; border:1px dashed #334; color:#446; cursor:crosshair; transition:all 0.2s; text-align:center; text-transform:uppercase; flex-shrink:0; }
+        #qt-toggle { display:inline-block; padding:4px 8px; font-size:0.58em; letter-spacing:1px; background:transparent; border:1px dashed #334; color:#446; cursor:crosshair; transition:all 0.2s; text-align:center; text-transform:uppercase; flex-shrink:0; }
         #qt-toggle.on { border-color:var(--gold); border-style:solid; color:var(--gold); background:rgba(232,160,32,0.07); }
         #qt-toggle.on::before { content:'⚡ '; }
 
@@ -383,20 +383,6 @@
         .qo-empty { font-size:0.68em; color:#446; padding:10px 8px; text-align:center; }
         #qo-status { font-size:0.64em; color:#446; padding:0 8px 6px; min-height:1.1em; }
 
-        /* ── MARKED FIGHTERS PANEL ──────────────────────────────────────── */
-        #marked-panel { position:fixed; bottom:16px; left:16px; z-index:550; width:220px; }
-        #mp-toggle { display:block; width:100%; padding:7px 12px; background:rgba(4,8,20,0.82); backdrop-filter:blur(6px); border:1px solid rgba(192,96,96,0.22); color:#557; font-size:0.64em; letter-spacing:2px; text-transform:uppercase; cursor:crosshair; text-align:left; transition:all 0.2s; }
-        #mp-toggle:hover,#mp-toggle.open { color:#c08080; border-color:rgba(192,96,96,0.5); }
-        #mp-list { display:none; background:rgba(4,8,20,0.9); backdrop-filter:blur(8px); border:1px solid rgba(192,96,96,0.2); border-top:none; max-height:360px; overflow-y:auto; }
-        #mp-list.open { display:block; }
-        .mp-row { display:flex; align-items:center; gap:6px; padding:5px 10px; border-bottom:1px solid rgba(255,255,255,0.03); cursor:pointer; transition:background 0.1s; }
-        .mp-row:hover { background:rgba(192,96,96,0.07); }
-        .mp-marker { font-size:0.85em; width:16px; text-align:center; flex-shrink:0; }
-        .mp-cls { font-size:0.85em; flex-shrink:0; }
-        .mp-name { flex:1; font-size:0.6em; color:#b0a090; letter-spacing:0.5px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .mp-lv { font-size:0.6em; color:#806040; white-space:nowrap; flex-shrink:0; }
-        .mp-deployed { font-size:0.52em; color:#50a0e0; background:rgba(30,80,150,0.18); border:1px solid rgba(50,120,200,0.25); border-radius:2px; padding:1px 4px; flex-shrink:0; }
-        .mp-empty { font-size:0.62em; color:#334; padding:10px 12px; text-align:center; letter-spacing:1px; }
 
         /* ── MAP FOOTER — slim buffer at bottom ──────────────────────────── */
         .map-footer { height:5px; flex-shrink:0; background:rgba(0,0,0,0.35); border-top:1px solid rgba(232,160,32,0.07); }
@@ -815,7 +801,7 @@
         document.getElementById('login-gate').classList.add('gone');
         updateWalletBtn();
         if (!_sceneStarted) { _sceneStarted = true; startScene(); }
-        _autoLoadMarked();
+        _autoLoadFighters();
     }
     function updateWalletBtn() {
         var btn = document.getElementById('ph-wallet-btn');
@@ -2573,14 +2559,13 @@
             });
             console.log('[fighters] loaded',_myFighters.length,'active fighters for',wallet);
             renderFighterList();
-            renderMarkedPanel();
         } catch(e){
             console.error('[fighters] load error:',e);
             if(list) list.innerHTML='<div class="fp-empty">ERROR: '+(e&&e.message||'Failed')+'</div>';
         }
     }
 
-    async function _autoLoadMarked() {
+    async function _autoLoadFighters() {
         var wallet=getWallet();
         if(!wallet||_myFighters.length) return;
         try {
@@ -2589,56 +2574,11 @@
                 var fid=String(f.fighter_id!=null?f.fighter_id:'');
                 if(fid) _fighterCache[fid]=f;
             });
-            renderMarkedPanel();
         } catch(e){ console.warn('[fighters] auto-load failed:',e); }
         _fetchBattleNFTDefaults(wallet).catch(function(){});
     }
 
-    function renderMarkedPanel() {
-        var panel=document.getElementById('marked-panel');
-        var listEl=document.getElementById('mp-list');
-        var countEl=document.getElementById('mp-count');
-        if(!panel||!listEl) return;
-        var marked=_myFighters.filter(function(f){ return !!(f.marker&&f.marker.trim()); });
-        marked.sort(function(a,b){ return (a.marker||'').localeCompare(b.marker||''); });
-        if(countEl) countEl.textContent='('+marked.length+')';
-        panel.style.display='';
-        if(!marked.length){
-            listEl.innerHTML='<div class="mp-empty">NO MARKED FIGHTERS</div>';
-            return;
-        }
-        var html='';
-        marked.forEach(function(f){
-            var origIdx=_myFighters.indexOf(f);
-            var cls=(f.classname||'').toLowerCase().replace(/[\s_-]/g,'');
-            var ci=FIGHTER_CLASSES[cls]||{e:'⚔️',n:f.classname||'Fighter'};
-            var lvl=(f.stats&&f.stats.level!=null)?f.stats.level:'?';
-            var inUse=f.in_use===1||f.in_use==='1';
-            html+='<div class="mp-row" onclick="openFighterFromMarked('+origIdx+')">'
-                +'<span class="mp-marker">'+_markerSym(f.marker)+'</span>'
-                +'<span class="mp-cls">'+ci.e+'</span>'
-                +'<span class="mp-name">'+ci.n.toUpperCase()+'</span>'
-                +'<span class="mp-lv">LV'+lvl+'</span>'
-                +(inUse?'<span class="mp-deployed">ON</span>':'')
-                +'</div>';
-        });
-        listEl.innerHTML=html;
-    }
 
-    function toggleMarkedPanel() {
-        var btn=document.getElementById('mp-toggle');
-        var list=document.getElementById('mp-list');
-        if(!btn||!list) return;
-        var open=list.classList.toggle('open');
-        btn.classList.toggle('open',open);
-    }
-
-    function openFighterFromMarked(origIdx) {
-        var overlay=document.getElementById('fighters-overlay');
-        if(overlay) overlay.classList.add('open');
-        renderFighterList();
-        showFighterSheet(origIdx);
-    }
     function renderFighterList() {
         var list=document.getElementById('fighters-list-inner');
         var countEl=document.getElementById('fighters-count');
@@ -3331,11 +3271,6 @@
     }
 </script>
 
-<!-- MARKED FIGHTERS PANEL -->
-<div id="marked-panel" style="display:none;">
-    <button id="mp-toggle" onclick="toggleMarkedPanel()">&#9876; MARKED FIGHTERS <span id="mp-count"></span></button>
-    <div id="mp-list"></div>
-</div>
 
 <div id="fighters-overlay" onclick="if(event.target===this)closeFightersPanel()">
     <div id="fighters-panel">
