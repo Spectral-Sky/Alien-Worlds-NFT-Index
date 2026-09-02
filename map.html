@@ -504,8 +504,10 @@
         #drun-team { border:1px solid rgba(96,200,255,0.1); border-radius:7px; padding:8px 10px; margin-bottom:10px; background:rgba(96,200,255,0.03); }
         .drun-team-lbl { font-size:0.5em; letter-spacing:2px; color:#445; margin-bottom:5px; }
         .drun-fighter-row { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:5px; }
-        .drun-fighter-chip { font-size:0.52em; letter-spacing:1px; color:#8898a8; padding:2px 6px; border:1px solid rgba(96,200,255,0.12); border-radius:4px; }
-        .drun-fighter-chip.empty { color:#333; border-color:rgba(255,80,80,0.2); }
+        .drun-fighter-chip { font-size:0.52em; letter-spacing:1px; color:#8898a8; padding:2px 6px; border:1px solid rgba(96,200,255,0.12); border-radius:4px; background:transparent; cursor:pointer; font-family:inherit; transition:border-color 0.15s,color 0.15s; }
+        .drun-fighter-chip:hover { border-color:rgba(96,200,255,0.5); color:#b0c8e8; }
+        .drun-fighter-chip.empty { color:#554; border-color:rgba(255,80,80,0.2); }
+        .drun-fighter-chip.empty:hover { border-color:rgba(255,80,80,0.5); color:#cc8888; }
         .drun-nft-row { display:flex; gap:8px; }
         .drun-nft-chip { flex:1; font-size:0.52em; letter-spacing:1px; color:#8898a8; padding:3px 6px; border:1px solid rgba(96,200,255,0.12); border-radius:4px; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .drun-nft-chip.missing { color:#e06060; border-color:rgba(255,80,80,0.3); background:rgba(255,60,60,0.05); }
@@ -2853,6 +2855,7 @@
     var _bpArenaEntry=null;
     var _bpPickerSlot=-1;
     var _bpPickerType='';
+    var _bpPickerFromDrun=false;
     var _bpNFTCache={crew:null,weapon:null};
     var _autoBattle=false;
     var _battleNFTDefaults={crewAssetId:null,weaponAssetId:null};
@@ -3172,8 +3175,38 @@
     function selectBpFighter(fid){
         var f=_myFighters.find(function(x){return String(x.fighter_id)===String(fid);});
         if(f&&_bpPickerSlot>=0) _bpFighters[_bpPickerSlot]=f;
+        var fromDrun=_bpPickerFromDrun;
+        _bpPickerFromDrun=false;
         closePicker();
-        _renderBattlePane();
+        if(fromDrun) _refreshDrunTeam();
+        else _renderBattlePane();
+    }
+
+    function _refreshDrunTeam(){
+        var _fc=document.getElementById('drun-fighters');
+        if(!_fc) return;
+        var _fh='';
+        for(var _fi=0;_fi<5;_fi++){
+            var _ff=_bpFighters[_fi];
+            if(_ff){
+                var _fcls=(_ff.classname||'').toLowerCase().replace(/[\s_-]/g,'');
+                var _fci=FIGHTER_CLASSES[_fcls]||{e:'⚔️'};
+                _fh+='<button class="drun-fighter-chip" onclick="drunSelectFighter('+_fi+')" title="Change slot '+(_fi+1)+'">'+_fci.e+' LV'+((_ff.stats&&_ff.stats.level)||'?')+'</button>';
+            } else {
+                _fh+='<button class="drun-fighter-chip empty" onclick="drunSelectFighter('+_fi+')" title="Pick fighter for slot '+(_fi+1)+'">+ PICK</button>';
+            }
+        }
+        _fc.innerHTML=_fh;
+        var activeFighters=_bpFighters.filter(Boolean);
+        var goBtn=document.getElementById('drun-go-btn');
+        var nftsMissing=!_bpCrew||!_bpWeapon;
+        if(goBtn) goBtn.disabled=nftsMissing||activeFighters.length<5;
+    }
+
+    function drunSelectFighter(slotIdx){
+        if(!_myFighters||!_myFighters.length){showToast('⚠ FIGHTERS NOT LOADED');return;}
+        _bpPickerFromDrun=true;
+        openFighterPicker(slotIdx);
     }
 
     async function openNFTPicker(type) {
@@ -3914,22 +3947,8 @@ async function txqAddDungeonRun() {
             : '';
     }
 
-    // Build team preview
-    var _fc = document.getElementById('drun-fighters');
-    if (_fc) {
-        var _fh = '';
-        for (var _fi=0;_fi<5;_fi++) {
-            var _ff = _bpFighters[_fi];
-            if (_ff) {
-                var _fcls = (_ff.classname||'').toLowerCase().replace(/[\s_-]/g,'');
-                var _fci = FIGHTER_CLASSES[_fcls]||{e:'⚔️'};
-                _fh += '<span class="drun-fighter-chip">'+_fci.e+' LV'+(((_ff.stats&&_ff.stats.level)||'?'))+'</span>';
-            } else {
-                _fh += '<span class="drun-fighter-chip empty">EMPTY</span>';
-            }
-        }
-        _fc.innerHTML = _fh;
-    }
+    // Build team preview (chips are clickable to swap fighters)
+    _refreshDrunTeam();
     var _crewChip   = document.getElementById('drun-crew-chip');
     var _weapChip   = document.getElementById('drun-weapon-chip');
     var _warnEl     = document.getElementById('drun-warn');
@@ -3990,7 +4009,6 @@ function drunPickerConfirm() {
 
     var chosen = allDungeons.slice(0, 5);
     var fromPlanet = curPlanet;
-    var readyIds = readyFighters.map(function(f){ return Number(f.fighter_id); });
 
     chosen.forEach(function(d){
         if (d.planet !== fromPlanet) {
@@ -4002,12 +4020,10 @@ function drunPickerConfirm() {
         var alreadyHere = _playerPos && d.planet === _activePlanet
             && d.x === _playerPos.x && d.y === _playerPos.y;
         if (!alreadyHere) _txQueue.push({type:'travel', x:d.x, y:d.y});
-        if (readyIds.length) {
-            _txQueue.push({type:'levelup', fighter_ids:readyIds.slice(), count:readyIds.length,
-                name:'LEVEL UP ('+readyIds.length+' fighter'+(readyIds.length>1?'s':'')+')'});
-        }
         _txQueue.push({type:'dungeon', x:d.x, y:d.y, planet:d.planet, land_id:d.land_id,
             name:'DUNGEON ('+d.x+', '+d.y+') — LVL '+_drunPickerDiff, difficulty:_drunPickerDiff});
+        // Level-up step always follows each dungeon — checked at runtime against refreshed XP
+        _txQueue.push({type:'levelup', name:'LEVEL UP (if ready)'});
     });
 
     renderTxQueue();
