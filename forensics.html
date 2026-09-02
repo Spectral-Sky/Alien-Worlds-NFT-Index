@@ -340,6 +340,81 @@ html, body {
 
 /* ── NFT toggle active ───────────────────────────────────────────────────── */
 .bar-btn.nft-active { border-color: #FF9A00; color: #FF9A00; background: rgba(255,154,0,0.12); }
+.bar-btn.filter-active { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-d); }
+
+/* ── Filter panel ────────────────────────────────────────────────────────── */
+#filter-panel {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    height: 44px;
+    background: #090e16;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+#filter-panel::-webkit-scrollbar { height: 3px; }
+#filter-panel::-webkit-scrollbar-thumb { background: var(--border); }
+.fp-sep { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+.fp-label { font-size: 10px; letter-spacing: 2px; color: var(--faint); white-space: nowrap; flex-shrink: 0; }
+.fp-tabs { display: flex; gap: 3px; flex-shrink: 0; }
+.fp-tab {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--dim);
+    font-family: var(--font);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    padding: 3px 9px;
+    cursor: pointer;
+    transition: all 0.12s;
+    white-space: nowrap;
+}
+.fp-tab:hover { border-color: var(--cyan-b); color: var(--cyan); }
+.fp-tab.active { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-d); }
+.fp-num {
+    width: 72px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 3px 7px;
+    outline: none;
+    flex-shrink: 0;
+}
+.fp-num:focus { border-color: var(--cyan); }
+.fp-checks { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.fp-chk {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--dim);
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+}
+.fp-chk input[type=checkbox] { accent-color: var(--cyan); width: 12px; height: 12px; cursor: pointer; }
+.fp-reset {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--faint);
+    font-family: var(--font);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    padding: 3px 9px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.12s;
+}
+.fp-reset:hover { border-color: var(--gold-b); color: var(--gold); }
 
 /* ── Drill overlay ───────────────────────────────────────────────────────── */
 #drill-overlay {
@@ -380,8 +455,10 @@ html, body {
 </div>
 
 <div id="search-bar">
-    <input type="text" id="wallet-input" placeholder="enter WAX wallet address…" autocomplete="off" spellcheck="false">
+    <input type="text" id="wallet-input" list="wallet-ac" placeholder="enter WAX wallet address…" spellcheck="false" autocomplete="off">
+    <datalist id="wallet-ac"></datalist>
     <button class="bar-btn primary" onclick="analyseWallet()">ANALYSE</button>
+    <button class="bar-btn" id="filter-btn" onclick="toggleFilter()" style="display:none" title="Filter graph by direction, amount or node type">FILTER</button>
     <button class="bar-btn" id="back-btn" onclick="goBack()" style="display:none">← BACK</button>
     <span id="status-msg">Enter a WAX wallet to map its transfer network.</span>
     <button class="bar-btn" id="nft-btn" onclick="toggleNft()" style="display:none" title="Overlay NFT transfers as dashed lines">NFT TRANSFERS</button>
@@ -391,6 +468,28 @@ html, body {
         <div class="chip"><div class="dot" style="background:#C080FF"></div>BOTH</div>
     </div>
     <button class="bar-btn" id="clear-btn" onclick="clearGraph()" style="display:none">CLEAR</button>
+</div>
+
+<div id="filter-panel">
+    <span class="fp-label">DIRECTION</span>
+    <div class="fp-tabs">
+        <button class="fp-tab active" id="fpt-both"     onclick="setFilterDir('both')">ALL</button>
+        <button class="fp-tab"        id="fpt-sent"     onclick="setFilterDir('sent')">SENT ↑</button>
+        <button class="fp-tab"        id="fpt-received" onclick="setFilterDir('received')">RECEIVED ↓</button>
+    </div>
+    <div class="fp-sep"></div>
+    <span class="fp-label">MIN WAX</span>
+    <input class="fp-num" type="number" id="fp-minwax" value="0" min="0" step="10" oninput="applyFilter()">
+    <div class="fp-sep"></div>
+    <span class="fp-label">SHOW</span>
+    <div class="fp-checks">
+        <label class="fp-chk"><input type="checkbox" class="fp-check" checked onchange="setFilterType('ale',this.checked)"> ALE</label>
+        <label class="fp-chk"><input type="checkbox" class="fp-check" checked onchange="setFilterType('exchange',this.checked)"> EXCHANGE</label>
+        <label class="fp-chk"><input type="checkbox" class="fp-check" checked onchange="setFilterType('mc',this.checked)"> .MC</label>
+        <label class="fp-chk"><input type="checkbox" class="fp-check" checked onchange="setFilterType('wallet',this.checked)"> WALLETS</label>
+    </div>
+    <div class="fp-sep"></div>
+    <button class="fp-reset" onclick="resetFilter()">RESET</button>
 </div>
 
 <div id="main">
@@ -481,6 +580,10 @@ let _mouse  = { down: false, drag: false, sx: 0, sy: 0, lx: 0, ly: 0, nid: null 
 let _sim    = false, _raf = null;
 let _nftEnabled = false;
 let _history    = []; // stack of wallet addresses for drill-down back navigation
+let _filterOpen = false;
+let _filter = { dir: 'both', minWax: 0, types: { ale: true, exchange: true, mc: true, wallet: true } };
+
+const LS_AC = 'naron_forensics_history';
 
 /* ── HYPERION API ───────────────────────────────────────────────────────────── */
 async function hGet(path, params) {
@@ -781,8 +884,10 @@ function render() {
 
     // Edges
     for (const e of Object.values(_graph.edges)) {
+        if (!isEdgeVisible(e)) continue;
         const a = ns[e.a], b = ns[e.b];
         if (!a || !b) continue;
+        if (!isNodeVisible(a) || !isNodeVisible(b)) continue;
         if (e.isNft) {
             _ctx.setLineDash([5 * iz, 4 * iz]);
             _ctx.strokeStyle = 'rgba(255,154,0,0.6)';
@@ -825,6 +930,7 @@ function render() {
 
     // Nodes
     for (const n of Object.values(ns)) {
+        if (!isNodeVisible(n)) continue;
         const r   = nodeR(n) * iz;
         const isSel = _sel === n.id;
         const isHov = _hov === n.id;
@@ -860,6 +966,7 @@ function render() {
     _ctx.font = LFS + 'px "Share Tech Mono", monospace';
     _ctx.textAlign = 'center';
     for (const n of Object.values(ns)) {
+        if (!isNodeVisible(n)) continue;
         const { sx, sy } = w2s(n.x, n.y);
         const rSc = nodeR(n) * _zoom;
         const isSel = _sel === n.id;
@@ -999,6 +1106,84 @@ function onDB(e) {
     const { x, y } = cxy(e);
     const hit = hitNode(x, y);
     if (hit) drillInto(hit.id);
+}
+
+/* ── AUTOCOMPLETE ────────────────────────────────────────────────────────────── */
+function loadAcHistory() {
+    try { return JSON.parse(localStorage.getItem(LS_AC) || '[]'); } catch(_) { return []; }
+}
+function saveAcWallet(w) {
+    try {
+        const h = [w, ...loadAcHistory().filter(x => x !== w)].slice(0, 30);
+        localStorage.setItem(LS_AC, JSON.stringify(h));
+    } catch(_) {}
+}
+function updateAcList() {
+    const dl = document.getElementById('wallet-ac');
+    if (!dl) return;
+    const hist  = loadAcHistory();
+    const graph = Object.keys(_graph.nodes).filter(id => id !== _center);
+    const all   = [...new Set([...hist, ...graph])].slice(0, 60);
+    dl.innerHTML = all.map(w => `<option value="${w}"></option>`).join('');
+}
+
+/* ── FILTER ──────────────────────────────────────────────────────────────────── */
+function nodeType(id) {
+    if (KNOWN[id] && KNOWN[id].ale) return 'ale';
+    if (KNOWN[id]) return 'exchange';
+    if (id.endsWith('.mc')) return 'mc';
+    return 'wallet';
+}
+
+function isEdgeVisible(e) {
+    if (e.isNft) return _nftEnabled;
+    const { dir, minWax } = _filter;
+    if (dir === 'sent'     && e.sent <= 0) return false;
+    if (dir === 'received' && e.recv <= 0) return false;
+    if ((e.sent + e.recv) < minWax) return false;
+    return true;
+}
+
+function isNodeVisible(n) {
+    if (n.isCenter) return true;
+    return _filter.types[nodeType(n.id)] !== false;
+}
+
+function toggleFilter() {
+    _filterOpen = !_filterOpen;
+    const fp = document.getElementById('filter-panel');
+    fp.style.display = _filterOpen ? 'flex' : 'none';
+    document.getElementById('filter-btn').classList.toggle('filter-active', _filterOpen);
+}
+
+function setFilterDir(dir) {
+    _filter.dir = dir;
+    document.querySelectorAll('.fp-tab').forEach(b => b.classList.remove('active'));
+    const t = document.getElementById('fpt-' + dir);
+    if (t) t.classList.add('active');
+    if (!_sim) render();
+}
+
+function setFilterType(type, val) {
+    _filter.types[type] = val;
+    if (!_sim) render();
+}
+
+function applyFilter() {
+    const el = document.getElementById('fp-minwax');
+    if (el) _filter.minWax = parseFloat(el.value) || 0;
+    if (!_sim) render();
+}
+
+function resetFilter() {
+    _filter = { dir: 'both', minWax: 0, types: { ale: true, exchange: true, mc: true, wallet: true } };
+    const el = document.getElementById('fp-minwax');
+    if (el) el.value = '0';
+    document.querySelectorAll('.fp-check').forEach(cb => { cb.checked = true; });
+    document.querySelectorAll('.fp-tab').forEach(b => b.classList.remove('active'));
+    const t = document.getElementById('fpt-both');
+    if (t) t.classList.add('active');
+    if (!_sim) render();
 }
 
 /* ── NFT TOGGLE ─────────────────────────────────────────────────────────────── */
@@ -1290,7 +1475,10 @@ async function analyseWallet() {
         nc + ' nodes  ·  double-click any node to drill in',
         'ok'
     );
+    saveAcWallet(wallet);
+    updateAcList();
     document.getElementById('nft-btn').style.display = '';
+    document.getElementById('filter-btn').style.display = '';
 
     startSim();
     _sel = wallet;
@@ -1321,6 +1509,12 @@ function clearGraph() {
     if (legEl) legEl.style.display = 'none';
     const bc = document.getElementById('breadcrumb');
     if (bc) bc.textContent = '';
+    _filterOpen = false;
+    _filter = { dir: 'both', minWax: 0, types: { ale: true, exchange: true, mc: true, wallet: true } };
+    const fbtn = document.getElementById('filter-btn');
+    if (fbtn) { fbtn.style.display = 'none'; fbtn.classList.remove('filter-active'); }
+    const fp = document.getElementById('filter-panel');
+    if (fp) fp.style.display = 'none';
     document.getElementById('wallet-input').value = '';
     setStatus('Enter a WAX wallet to map its transfer network.');
     renderPanel();
@@ -1344,6 +1538,7 @@ window.addEventListener('DOMContentLoaded', () => {
     resize();
     window.addEventListener('resize', resize);
     initEvents();
+    updateAcList(); // populate datalist from localStorage history
     render();
 });
 </script>
