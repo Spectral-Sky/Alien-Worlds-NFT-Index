@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wallet Forensics // Naron Codex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg:      #080c10;
+    --bg2:     #0b1018;
+    --bg3:     #111820;
+    --gold:    #E8A020;
+    --gold-d:  rgba(232,160,32,0.15);
+    --gold-b:  rgba(232,160,32,0.28);
+    --cyan:    #60C8FF;
+    --cyan-d:  rgba(96,200,255,0.1);
+    --cyan-b:  rgba(96,200,255,0.25);
+    --purple:  #C080FF;
+    --green:   #40D080;
+    --red:     #FF6060;
+    --text:    #B0C8E8;
+    --dim:     rgba(176,200,232,0.5);
+    --faint:   rgba(176,200,232,0.22);
+    --border:  rgba(176,200,232,0.1);
+    --font:    'Share Tech Mono', 'Courier New', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+}
+
+/* ── HEADER ─────────────────────────────────────────────────────────────── */
+#header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+    height: 44px;
+    background: rgba(4,8,14,0.97);
+    border-bottom: 1px solid var(--gold-b);
+    flex-shrink: 0;
+}
+#header a {
+    color: var(--gold);
+    text-decoration: none;
+    font-size: 11px;
+    letter-spacing: 3px;
+    opacity: 0.65;
+    transition: opacity 0.15s;
+}
+#header a:hover { opacity: 1; }
+#header-sep { color: var(--faint); font-size: 14px; }
+#header-title { color: var(--cyan); font-size: 11px; letter-spacing: 3px; }
+#header-spacer { flex: 1; }
+#header-sub { color: var(--faint); font-size: 9px; letter-spacing: 1.5px; }
+
+/* ── SEARCH BAR ─────────────────────────────────────────────────────────── */
+#search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    height: 46px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+#wallet-input {
+    width: 320px;
+    background: var(--bg3);
+    border: 1px solid var(--gold-b);
+    border-radius: 2px;
+    color: var(--gold);
+    font-family: var(--font);
+    font-size: 13px;
+    padding: 6px 10px;
+    letter-spacing: 0.5px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+#wallet-input:focus { border-color: var(--gold); }
+#wallet-input::placeholder { color: var(--faint); letter-spacing: 0; }
+
+.bar-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--dim);
+    font-family: var(--font);
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.bar-btn.primary { border-color: var(--gold-b); color: var(--gold); }
+.bar-btn.primary:hover { background: var(--gold-d); border-color: var(--gold); }
+.bar-btn:hover { border-color: var(--cyan-b); color: var(--cyan); background: var(--cyan-d); }
+
+#status-msg {
+    flex: 1;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: var(--dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+#status-msg.ok  { color: var(--green); }
+#status-msg.err { color: var(--red); }
+
+.bar-chips {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--faint);
+    white-space: nowrap;
+}
+.chip .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── MAIN ───────────────────────────────────────────────────────────────── */
+#main {
+    display: flex;
+    height: calc(100vh - 44px - 46px);
+    overflow: hidden;
+}
+
+/* ── GRAPH ──────────────────────────────────────────────────────────────── */
+#graph-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+#graph-canvas {
+    display: block;
+    cursor: grab;
+    width: 100%;
+    height: 100%;
+}
+#graph-canvas.dragging { cursor: grabbing; }
+#graph-canvas.node-hover { cursor: pointer; }
+
+#graph-legend {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    pointer-events: none;
+}
+.leg {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--faint);
+}
+.leg-line { width: 20px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+.leg-node { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid currentColor; flex-shrink: 0; }
+
+#graph-hint {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--faint);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+#graph-loading {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(4,8,14,0.6);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--gold);
+}
+#graph-loading.visible { display: flex; }
+
+/* ── INFO PANEL ─────────────────────────────────────────────────────────── */
+#info-panel {
+    width: 272px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.ps { border-bottom: 1px solid var(--border); padding: 11px 13px; flex-shrink: 0; }
+.pl { font-size: 9px; letter-spacing: 2.5px; color: var(--faint); margin-bottom: 7px; }
+
+#info-empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: var(--faint);
+    line-height: 2;
+}
+
+#info-wallet {
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.5px;
+    word-break: break-all;
+    margin-bottom: 3px;
+}
+#info-creator {
+    font-size: 10px;
+    color: var(--faint);
+    letter-spacing: 0.3px;
+    min-height: 14px;
+}
+
+.sg {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.sc { display: flex; flex-direction: column; gap: 2px; }
+.sk { font-size: 9px; letter-spacing: 1.5px; color: var(--faint); }
+.sv { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text); }
+.sv.gold { color: var(--gold); }
+.sv.cyan { color: var(--cyan); }
+.sv.green { color: var(--green); }
+.sv.red { color: var(--red); }
+.sv.purple { color: var(--purple); }
+
+#date-range {
+    margin-top: 8px;
+    font-size: 9px;
+    color: var(--faint);
+    letter-spacing: 0.3px;
+}
+
+.conn-header {
+    padding: 8px 13px 4px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--faint);
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+}
+#conn-list {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+#conn-list::-webkit-scrollbar { width: 3px; }
+#conn-list::-webkit-scrollbar-track { background: transparent; }
+#conn-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+.cr {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 13px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(176,200,232,0.04);
+    transition: background 0.1s;
+}
+.cr:hover { background: var(--cyan-d); }
+.cr .cd { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.cr .cn {
+    flex: 1;
+    font-size: 11px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.cr .ca {
+    font-size: 10px;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+#info-btns {
+    padding: 9px 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-shrink: 0;
+    border-top: 1px solid var(--border);
+}
+.ib {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--dim);
+    font-family: var(--font);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    padding: 5px 9px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: all 0.12s;
+}
+.ib:hover { border-color: var(--cyan-b); color: var(--cyan); background: var(--cyan-d); }
+.ib.expand { border-color: var(--gold-b); color: var(--gold); }
+.ib.expand:hover { background: var(--gold-d); border-color: var(--gold); }
+.ib:disabled { opacity: 0.35; cursor: default; }
+.ib:disabled:hover { border-color: var(--border); color: var(--dim); background: transparent; }
+</style>
+</head>
+<body>
+
+<div id="header">
+    <a href="index.html">NARON CODEX</a>
+    <span id="header-sep">//</span>
+    <span id="header-title">WALLET FORENSICS</span>
+    <div id="header-spacer"></div>
+    <span id="header-sub">WAX BLOCKCHAIN · TRANSFER NETWORK ANALYSIS</span>
+</div>
+
+<div id="search-bar">
+    <input type="text" id="wallet-input" placeholder="enter WAX wallet address…" autocomplete="off" spellcheck="false">
+    <button class="bar-btn primary" onclick="analyseWallet()">ANALYSE</button>
+    <span id="status-msg">Enter a WAX wallet to map its transfer network.</span>
+    <div class="bar-chips">
+        <div class="chip"><div class="dot" style="background:#E8A020"></div>SENT</div>
+        <div class="chip"><div class="dot" style="background:#60C8FF"></div>RECEIVED</div>
+        <div class="chip"><div class="dot" style="background:#C080FF"></div>BOTH</div>
+    </div>
+    <button class="bar-btn" id="clear-btn" onclick="clearGraph()" style="display:none">CLEAR</button>
+</div>
+
+<div id="main">
+    <div id="graph-wrap">
+        <canvas id="graph-canvas"></canvas>
+        <div id="graph-legend">
+            <div class="leg"><div class="leg-node" style="color:#E8A020"></div>QUERIED WALLET</div>
+            <div class="leg"><div class="leg-node" style="color:#40D080"></div>ALE CONTRACT</div>
+            <div class="leg"><div class="leg-node" style="color:#FF9050"></div>EXCHANGE / SERVICE</div>
+            <div class="leg"><div class="leg-node" style="color:#60C8FF"></div>WAX WALLET</div>
+        </div>
+        <div id="graph-hint">SCROLL TO ZOOM · DRAG TO PAN · CLICK TO SELECT · DOUBLE-CLICK TO EXPAND</div>
+        <div id="graph-loading">FETCHING TRANSFERS…</div>
+    </div>
+
+    <div id="info-panel">
+        <div id="info-empty">
+            Analyse a wallet to map<br>its transfer network.<br><br>
+            Click any node to inspect<br>connections and expand<br>the forensics web.
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+/* ── CONSTANTS ──────────────────────────────────────────────────────────────── */
+const HYPERION = [
+    'https://wax.eosusa.io',
+    'https://api.waxsweden.org',
+    'https://wax.cryptolions.io',
+];
+const MAX_ACTIONS  = 1000;
+const MAX_PEERS    = 55;
+const MAX_EXPAND   = 25;
+
+const KNOWN = {
+    'waxio':         { label:'WAX.IO',       col:'#FF9050' },
+    'wax.io':        { label:'WAX.IO',       col:'#FF9050' },
+    'binancewax11':  { label:'BINANCE',      col:'#F0B90B' },
+    'huobiwax1234':  { label:'HUOBI',        col:'#27AED9' },
+    'okexwax12345':  { label:'OKX',          col:'#3B3B3B' },
+    'eosio':         { label:'EOSIO SYS',    col:'#708090' },
+    'eosio.token':   { label:'TOKEN',        col:'#708090' },
+    'eosio.ram':     { label:'RAM',          col:'#708090' },
+    'atomicmarket':  { label:'ATOMIC MKT',   col:'#A060FF' },
+    'atomicassets':  { label:'ATOMIC',       col:'#A060FF' },
+    'neftyblocksd':  { label:'NEFTY',        col:'#A060FF' },
+    'alcordexmain':  { label:'ALCOR DEX',    col:'#80C080' },
+    'simpleassets':  { label:'SIMPLEASSETS', col:'#A060FF' },
+    'waxdaobp1111':  { label:'WAXDAO',       col:'#FF9050' },
+    // ALE
+    'players.ale':   { label:'ALE·PLAYERS',  col:'#40D080', ale:true },
+    'fighters.ale':  { label:'ALE·FIGHTERS', col:'#40D080', ale:true },
+    'dungeons.ale':  { label:'ALE·DUNGEONS', col:'#40D080', ale:true },
+    'battle.ale':    { label:'ALE·BATTLE',   col:'#40D080', ale:true },
+    'arena.ale':     { label:'ALE·ARENA',    col:'#40D080', ale:true },
+    'farm.ale':      { label:'ALE·FARM',     col:'#40D080', ale:true },
+    'tavern.ale':    { label:'ALE·TAVERN',   col:'#40D080', ale:true },
+    'market.ale':    { label:'ALE·MARKET',   col:'#40D080', ale:true },
+    'shop.ale':      { label:'ALE·SHOP',     col:'#40D080', ale:true },
+    'creation.ale':  { label:'ALE·CREATE',   col:'#40D080', ale:true },
+    'rewards.ale':   { label:'ALE·REWARDS',  col:'#40D080', ale:true },
+    'pools.ale':     { label:'ALE·POOLS',    col:'#40D080', ale:true },
+    'collect.ale':   { label:'ALE·COLLECT',  col:'#40D080', ale:true },
+    'quests.ale':    { label:'ALE·QUESTS',   col:'#40D080', ale:true },
+    'recovery.ale':  { label:'ALE·RECOVERY', col:'#40D080', ale:true },
+    'ascend.ale':    { label:'ALE·ASCEND',   col:'#40D080', ale:true },
+    'nfts.ale':      { label:'ALE·NFTS',     col:'#40D080', ale:true },
+    'cpu.ale':       { label:'ALE·CPU',      col:'#40D080', ale:true },
+};
+
+/* ── STATE ──────────────────────────────────────────────────────────────────── */
+let _canvas, _ctx, _lw = 0, _lh = 0;
+let _graph  = { nodes: {}, edges: {} };
+let _center = null;
+let _sel    = null;
+let _hov    = null;
+let _pan    = { x: 0, y: 0 };
+let _zoom   = 1.0;
+let _mouse  = { down: false, drag: false, sx: 0, sy: 0, lx: 0, ly: 0, nid: null };
+let _sim    = false, _raf = null;
+
+/* ── HYPERION API ───────────────────────────────────────────────────────────── */
+async function hGet(path, params) {
+    const qs = new URLSearchParams(params).toString();
+    for (const base of HYPERION) {
+        try {
+            const ctrl = new AbortController();
+            const tid = setTimeout(() => ctrl.abort(), 9000);
+            const r = await fetch(base + path + (qs ? '?' + qs : ''), { signal: ctrl.signal });
+            clearTimeout(tid);
+            if (!r.ok) continue;
+            return await r.json();
+        } catch (_) { /* next */ }
+    }
+    return null;
+}
+
+async function fetchTransfers(wallet, limit) {
+    return hGet('/v2/history/get_actions', {
+        account: wallet, filter: 'eosio.token:transfer',
+        sort: 'desc', limit: limit || MAX_ACTIONS, skip: 0,
+    });
+}
+async function fetchCreator(wallet) {
+    return hGet('/v2/history/get_creator', { account: wallet });
+}
+
+/* ── UTILS ──────────────────────────────────────────────────────────────────── */
+function parseWax(q)  { return parseFloat(q) || 0; }
+function fmtWax(n) {
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return n.toFixed(1);
+}
+function fmtDate(ts) {
+    if (!ts) return '—';
+    return String(ts).slice(0, 10);
+}
+function nodeCol(id, isCenter) {
+    if (isCenter) return '#E8A020';
+    return (KNOWN[id] && KNOWN[id].col) || '#60C8FF';
+}
+function nodeLabel(id) {
+    return (KNOWN[id] && KNOWN[id].label) || id;
+}
+
+/* ── GRAPH DATA ─────────────────────────────────────────────────────────────── */
+function mkNode(id, isCenter, stats) {
+    const ang = Math.random() * Math.PI * 2;
+    const rd  = isCenter ? 0 : 180 + Math.random() * 80;
+    return {
+        id, isCenter,
+        label: nodeLabel(id),
+        col: nodeCol(id, isCenter),
+        x: Math.cos(ang) * rd, y: Math.sin(ang) * rd,
+        vx: 0, vy: 0, fx: 0, fy: 0,
+        inAmt:   (stats && stats.inAmt)   || 0,
+        outAmt:  (stats && stats.outAmt)  || 0,
+        txCount: (stats && stats.txCount) || 0,
+        first:   (stats && stats.first)   || null,
+        last:    (stats && stats.last)    || null,
+        creator: null, _crFetched: false,
+        expanded: !!isCenter,
+    };
+}
+
+function buildGraph(wallet, actions) {
+    const peers = Object.create(null);
+    for (const act of actions) {
+        const d = act.act && act.act.data;
+        if (!d || !d.from || !d.to) continue;
+        const peer = d.from === wallet ? d.to : d.from;
+        const dir  = d.from === wallet ? 'out' : 'in';
+        const amt  = parseWax(d.quantity);
+        const ts   = act['@timestamp'] || '';
+        if (!peers[peer]) peers[peer] = { inAmt: 0, outAmt: 0, txCount: 0, first: ts, last: ts };
+        const p = peers[peer];
+        if (dir === 'out') p.outAmt += amt; else p.inAmt += amt;
+        p.txCount++;
+        if (ts && ts < p.first) p.first = ts;
+        if (ts && ts > p.last)  p.last  = ts;
+    }
+
+    const sorted = Object.entries(peers)
+        .map(([id, p]) => ({ id, ...p, total: p.inAmt + p.outAmt }))
+        .sort((a, b) => b.total - a.total)
+        .slice(0, MAX_PEERS);
+
+    const totIn  = sorted.reduce((s, p) => s + p.inAmt,  0);
+    const totOut = sorted.reduce((s, p) => s + p.outAmt, 0);
+    const totTx  = sorted.reduce((s, p) => s + p.txCount, 0);
+
+    _graph.nodes[wallet] = mkNode(wallet, true, { inAmt: totIn, outAmt: totOut, txCount: totTx });
+
+    for (const p of sorted) {
+        if (!_graph.nodes[p.id]) _graph.nodes[p.id] = mkNode(p.id, false, p);
+        const k = [wallet, p.id].sort().join('↔');
+        _graph.edges[k] = {
+            key: k, a: wallet, b: p.id,
+            // from a→b and b→a perspective (a is always the wallet here initially)
+            sent: p.outAmt,   // wallet sent to peer
+            recv: p.inAmt,    // peer sent to wallet
+            txCount: p.txCount,
+        };
+    }
+    return sorted;
+}
+
+async function doExpand(nodeId) {
+    const n = _graph.nodes[nodeId];
+    if (!n) return;
+    setStatus('Fetching connections for ' + nodeId + '…');
+    setLoading(true);
+    const data = await fetchTransfers(nodeId, 500);
+    setLoading(false);
+
+    if (!data || !data.actions || !data.actions.length) {
+        setStatus('No transfers found for ' + nodeId + '.', 'err');
+        return;
+    }
+
+    const peers = Object.create(null);
+    for (const act of data.actions) {
+        const d = act.act && act.act.data;
+        if (!d || !d.from || !d.to) continue;
+        const peer = d.from === nodeId ? d.to : d.from;
+        const dir  = d.from === nodeId ? 'out' : 'in';
+        const amt  = parseWax(d.quantity);
+        if (!peers[peer]) peers[peer] = { inAmt: 0, outAmt: 0, txCount: 0 };
+        const p = peers[peer];
+        if (dir === 'out') p.outAmt += amt; else p.inAmt += amt;
+        p.txCount++;
+    }
+
+    const sorted = Object.entries(peers)
+        .map(([id, p]) => ({ id, ...p, total: p.inAmt + p.outAmt }))
+        .sort((a, b) => b.total - a.total)
+        .slice(0, MAX_EXPAND);
+
+    let added = 0;
+    for (const p of sorted) {
+        const k = [nodeId, p.id].sort().join('↔');
+        if (!_graph.nodes[p.id]) {
+            const ang = Math.random() * Math.PI * 2;
+            const r   = 130 + Math.random() * 60;
+            _graph.nodes[p.id] = mkNode(p.id, false, p);
+            _graph.nodes[p.id].x = n.x + Math.cos(ang) * r;
+            _graph.nodes[p.id].y = n.y + Math.sin(ang) * r;
+            added++;
+        }
+        if (!_graph.edges[k]) {
+            _graph.edges[k] = {
+                key: k, a: nodeId, b: p.id,
+                sent: p.outAmt, recv: p.inAmt, txCount: p.txCount,
+            };
+        }
+    }
+    n.expanded = true;
+    setStatus('Expanded ' + nodeId + ' — +' + added + ' new nodes · ' + Object.keys(_graph.nodes).length + ' total', 'ok');
+    startSim();
+    renderPanel();
+}
+
+/* ── FORCE SIMULATION ───────────────────────────────────────────────────────── */
+const SIM_REP  = 10000;
+const SIM_SLEN = 200;
+const SIM_SK   = 0.032;
+const SIM_GRAV = 0.014;
+const SIM_DAMP = 0.84;
+
+function startSim() {
+    _sim = true;
+    if (_raf) cancelAnimationFrame(_raf);
+    _raf = requestAnimationFrame(tick);
+}
+
+function tick() {
+    const ns = Object.values(_graph.nodes);
+    const es = Object.values(_graph.edges);
+    if (!ns.length) { _sim = false; return; }
+
+    for (const n of ns) { n.fx = 0; n.fy = 0; }
+
+    // Repulsion
+    for (let i = 0; i < ns.length; i++) {
+        for (let j = i + 1; j < ns.length; j++) {
+            const a = ns[i], b = ns[j];
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const d2 = Math.max(dx * dx + dy * dy, 100);
+            const d  = Math.sqrt(d2);
+            const f  = SIM_REP / d2;
+            a.fx -= f * dx / d; a.fy -= f * dy / d;
+            b.fx += f * dx / d; b.fy += f * dy / d;
+        }
+    }
+
+    // Spring
+    for (const e of es) {
+        const a = _graph.nodes[e.a], b = _graph.nodes[e.b];
+        if (!a || !b) continue;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const d  = Math.max(Math.sqrt(dx * dx + dy * dy), 1);
+        const f  = SIM_SK * (d - SIM_SLEN);
+        a.fx += f * dx / d; a.fy += f * dy / d;
+        b.fx -= f * dx / d; b.fy -= f * dy / d;
+    }
+
+    // Gravity toward origin
+    const cn = _graph.nodes[_center];
+    if (cn) { cn.fx += -cn.x * 0.06; cn.fy += -cn.y * 0.06; }
+    for (const n of ns) {
+        if (n.isCenter) continue;
+        n.fx += -n.x * SIM_GRAV;
+        n.fy += -n.y * SIM_GRAV;
+    }
+
+    // Integrate
+    let maxV = 0;
+    for (const n of ns) {
+        n.vx = (n.vx + n.fx) * SIM_DAMP;
+        n.vy = (n.vy + n.fy) * SIM_DAMP;
+        n.x += n.vx; n.y += n.vy;
+        maxV = Math.max(maxV, Math.abs(n.vx) + Math.abs(n.vy));
+    }
+
+    render();
+    if (maxV > 0.25 && _sim) _raf = requestAnimationFrame(tick);
+    else { _sim = false; render(); }
+}
+
+/* ── RENDERING ──────────────────────────────────────────────────────────────── */
+function nodeR(n) {
+    if (n.isCenter) return 20;
+    const v = n.inAmt + n.outAmt;
+    return Math.max(7, Math.min(20, 7 + Math.log10(Math.max(v, 1)) * 3));
+}
+
+function edgeStroke(e) {
+    if (e.sent > 0 && e.recv > 0) return 'rgba(192,128,255,0.65)';
+    if (e.sent > 0) return 'rgba(232,160,32,0.68)';
+    if (e.recv > 0) return 'rgba(96,200,255,0.68)';
+    return 'rgba(176,200,232,0.25)';
+}
+
+function w2s(wx, wy) {
+    return { sx: wx * _zoom + _pan.x + _lw / 2, sy: wy * _zoom + _pan.y + _lh / 2 };
+}
+function s2w(sx, sy) {
+    return { x: (sx - _lw / 2 - _pan.x) / _zoom, y: (sy - _lh / 2 - _pan.y) / _zoom };
+}
+function hitNode(sx, sy) {
+    const { x, y } = s2w(sx, sy);
+    let best = null, bd = Infinity;
+    for (const n of Object.values(_graph.nodes)) {
+        const dx = n.x - x, dy = n.y - y;
+        const d  = Math.sqrt(dx * dx + dy * dy);
+        const r  = nodeR(n) / _zoom + 6 / _zoom;
+        if (d <= r && d < bd) { best = n; bd = d; }
+    }
+    return best;
+}
+
+function render() {
+    if (!_canvas || !_lw) return;
+    const dpr = window.devicePixelRatio || 1;
+
+    _ctx.save();
+    _ctx.scale(dpr, dpr);
+
+    const W = _lw, H = _lh;
+    _ctx.clearRect(0, 0, W, H);
+    _ctx.fillStyle = '#040810';
+    _ctx.fillRect(0, 0, W, H);
+
+    // Grid
+    _ctx.strokeStyle = 'rgba(96,200,255,0.04)';
+    _ctx.lineWidth = 1;
+    const gs = Math.max(30, 60 * _zoom);
+    const ox = (((_pan.x + W / 2) % gs) + gs) % gs;
+    const oy = (((_pan.y + H / 2) % gs) + gs) % gs;
+    for (let x = ox; x < W; x += gs) { _ctx.beginPath(); _ctx.moveTo(x, 0); _ctx.lineTo(x, H); _ctx.stroke(); }
+    for (let y = oy; y < H; y += gs) { _ctx.beginPath(); _ctx.moveTo(0, y); _ctx.lineTo(W, y); _ctx.stroke(); }
+
+    // World transform
+    _ctx.save();
+    _ctx.translate(_pan.x + W / 2, _pan.y + H / 2);
+    _ctx.scale(_zoom, _zoom);
+
+    const ns = _graph.nodes;
+    const iz = 1 / _zoom;
+
+    // Edges
+    for (const e of Object.values(_graph.edges)) {
+        const a = ns[e.a], b = ns[e.b];
+        if (!a || !b) continue;
+        const vol = e.sent + e.recv;
+        const lw  = Math.max(0.8, Math.min(3.2, 0.8 + Math.log10(Math.max(vol, 1)) * 0.65)) * iz;
+        _ctx.strokeStyle = edgeStroke(e);
+        _ctx.lineWidth = lw;
+        _ctx.beginPath();
+        _ctx.moveTo(a.x, a.y);
+        _ctx.lineTo(b.x, b.y);
+        _ctx.stroke();
+
+        // Arrow at midpoint
+        if (e.sent !== e.recv) {
+            const fromNode = e.sent > e.recv ? a : b;
+            const toNode   = e.sent > e.recv ? b : a;
+            const mx = (fromNode.x + toNode.x) / 2;
+            const my = (fromNode.y + toNode.y) / 2;
+            const dx = toNode.x - fromNode.x, dy = toNode.y - fromNode.y;
+            const ld = Math.sqrt(dx * dx + dy * dy);
+            if (ld > 0) {
+                const nx = dx / ld, ny = dy / ld;
+                const as = 6 * iz;
+                _ctx.fillStyle = edgeStroke(e);
+                _ctx.beginPath();
+                _ctx.moveTo(mx + nx * as, my + ny * as);
+                _ctx.lineTo(mx - nx * as - ny * as * 0.5, my - ny * as + nx * as * 0.5);
+                _ctx.lineTo(mx - nx * as + ny * as * 0.5, my - ny * as - nx * as * 0.5);
+                _ctx.closePath();
+                _ctx.fill();
+            }
+        }
+    }
+
+    // Nodes
+    for (const n of Object.values(ns)) {
+        const r   = nodeR(n) * iz;
+        const isSel = _sel === n.id;
+        const isHov = _hov === n.id;
+
+        if (n.isCenter || isSel) {
+            _ctx.shadowColor = n.col;
+            _ctx.shadowBlur  = (isSel ? 20 : 13) * iz;
+        }
+
+        _ctx.beginPath();
+        _ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+        _ctx.fillStyle = n.isCenter ? 'rgba(18,12,0,0.96)' : 'rgba(4,8,16,0.93)';
+        _ctx.fill();
+        _ctx.strokeStyle = isSel ? '#FFFFFF' : n.col;
+        _ctx.lineWidth   = (n.isCenter || isSel ? 2.2 : 1.5) * iz;
+        _ctx.stroke();
+        _ctx.shadowBlur = 0;
+
+        // Expanded dot
+        if (n.expanded && !n.isCenter) {
+            _ctx.beginPath();
+            _ctx.arc(n.x, n.y, 2.5 * iz, 0, Math.PI * 2);
+            _ctx.fillStyle = n.col;
+            _ctx.fill();
+        }
+
+        // Label
+        const fs = Math.max(8, Math.min(12, 10)) * iz;
+        _ctx.font = fs + 'px "Share Tech Mono", monospace';
+        _ctx.textAlign = 'center';
+        _ctx.fillStyle = isSel ? '#FFFFFF' : n.isCenter ? '#E8A020' : 'rgba(176,200,232,0.78)';
+        const short = n.id.length > 13 ? n.id.slice(0, 12) + '…' : n.id;
+        _ctx.fillText(short, n.x, n.y + r + (fs + 2) * iz);
+    }
+
+    _ctx.restore(); // world
+
+    // Tooltip (screen space, already in DPR scale)
+    if (_hov && _graph.nodes[_hov]) drawTooltip(_graph.nodes[_hov]);
+
+    _ctx.restore(); // dpr
+}
+
+function drawTooltip(n) {
+    const { sx, sy } = w2s(n.x, n.y);
+    const W = _lw, H = _lh;
+    const lines = [
+        n.id,
+        'OUT  ' + fmtWax(n.outAmt) + ' WAX',
+        'IN   ' + fmtWax(n.inAmt)  + ' WAX',
+        'TX   ' + n.txCount,
+    ];
+    const fs = 11, pad = 9, lh = 15;
+    const bw = 158, bh = lines.length * lh + pad * 2;
+    let bx = sx + 14, by = sy - bh / 2;
+    if (bx + bw > W - 4) bx = sx - bw - 14;
+    if (by < 4)          by = 4;
+    if (by + bh > H - 4) by = H - bh - 4;
+
+    _ctx.fillStyle   = 'rgba(4,8,16,0.93)';
+    _ctx.strokeStyle = 'rgba(176,200,232,0.2)';
+    _ctx.lineWidth   = 1;
+    _ctx.beginPath();
+    if (_ctx.roundRect) _ctx.roundRect(bx, by, bw, bh, 2);
+    else _ctx.rect(bx, by, bw, bh);
+    _ctx.fill(); _ctx.stroke();
+
+    _ctx.font = fs + 'px "Share Tech Mono", monospace';
+    _ctx.textAlign = 'left';
+    for (let i = 0; i < lines.length; i++) {
+        _ctx.fillStyle = i === 0 ? '#E8A020' : 'rgba(176,200,232,0.82)';
+        _ctx.fillText(lines[i], bx + pad, by + pad + i * lh + fs * 0.8);
+    }
+}
+
+/* ── INTERACTION ────────────────────────────────────────────────────────────── */
+function initEvents() {
+    _canvas.addEventListener('mousedown',  onMD);
+    _canvas.addEventListener('mousemove',  onMM);
+    _canvas.addEventListener('mouseup',    onMU);
+    _canvas.addEventListener('mouseleave', onML);
+    _canvas.addEventListener('wheel',      onWH, { passive: false });
+    _canvas.addEventListener('dblclick',   onDB);
+    _canvas.addEventListener('contextmenu', e => e.preventDefault());
+    document.getElementById('wallet-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') analyseWallet();
+    });
+}
+
+function cxy(e) {
+    const r = _canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+function onMD(e) {
+    if (e.button !== 0) return;
+    const { x, y } = cxy(e);
+    _mouse.down = true; _mouse.drag = false;
+    _mouse.sx = x; _mouse.sy = y;
+    _mouse.lx = x; _mouse.ly = y;
+    const hit = hitNode(x, y);
+    _mouse.nid = hit ? hit.id : null;
+    _canvas.classList.add('dragging');
+}
+
+function onMM(e) {
+    const { x, y } = cxy(e);
+    if (_mouse.down) {
+        const dx = x - _mouse.lx, dy = y - _mouse.ly;
+        if (Math.abs(x - _mouse.sx) + Math.abs(y - _mouse.sy) > 3) _mouse.drag = true;
+        if (_mouse.drag) {
+            if (_mouse.nid && _graph.nodes[_mouse.nid]) {
+                const n = _graph.nodes[_mouse.nid];
+                n.x += dx / _zoom; n.y += dy / _zoom;
+                n.vx = 0; n.vy = 0;
+            } else {
+                _pan.x += dx; _pan.y += dy;
+            }
+            if (!_sim) render();
+        }
+        _mouse.lx = x; _mouse.ly = y;
+    } else {
+        const hit = hitNode(x, y);
+        const hid = hit ? hit.id : null;
+        if (hid !== _hov) {
+            _hov = hid;
+            _canvas.className = hid ? 'node-hover' : '';
+            if (!_sim) render();
+        }
+    }
+}
+
+function onMU(e) {
+    if (e.button !== 0) return;
+    if (!_mouse.drag) {
+        const { x, y } = cxy(e);
+        const hit = hitNode(x, y);
+        _sel = hit ? (hit.id === _sel ? null : hit.id) : null;
+        renderPanel();
+        if (!_sim) render();
+    }
+    _mouse.down = false; _mouse.drag = false; _mouse.nid = null;
+    _canvas.classList.remove('dragging');
+}
+
+function onML() {
+    _hov = null; _mouse.down = false; _mouse.nid = null;
+    _canvas.className = '';
+    if (!_sim) render();
+}
+
+function onWH(e) {
+    e.preventDefault();
+    const { x, y } = cxy(e);
+    const fac = e.deltaY < 0 ? 1.12 : 0.89;
+    const nz  = Math.max(0.12, Math.min(5, _zoom * fac));
+    const wx  = x - _lw / 2 - _pan.x;
+    const wy  = y - _lh / 2 - _pan.y;
+    _pan.x = x - _lw / 2 - wx * nz / _zoom;
+    _pan.y = y - _lh / 2 - wy * nz / _zoom;
+    _zoom = nz;
+    if (!_sim) render();
+}
+
+function onDB(e) {
+    const { x, y } = cxy(e);
+    const hit = hitNode(x, y);
+    if (hit && !hit.expanded) doExpand(hit.id);
+}
+
+/* ── PANEL ──────────────────────────────────────────────────────────────────── */
+function renderPanel() {
+    const panel = document.getElementById('info-panel');
+    const n = _sel ? _graph.nodes[_sel] : null;
+
+    if (!n) {
+        panel.innerHTML = '<div id="info-empty">Click a node to inspect<br>its connections and stats.</div>';
+        return;
+    }
+
+    const net = n.inAmt - n.outAmt;
+    const netCls = net >= 0 ? 'green' : 'red';
+    const netLbl = net >= 0 ? '▲ NET IN' : '▼ NET OUT';
+
+    const conns = [];
+    for (const e of Object.values(_graph.edges)) {
+        if (e.a !== n.id && e.b !== n.id) continue;
+        const pid   = e.a === n.id ? e.b : e.a;
+        // From selected node's perspective:
+        const sentP = e.a === n.id ? e.sent : e.recv;
+        const recvP = e.a === n.id ? e.recv : e.sent;
+        conns.push({ id: pid, sent: sentP, recv: recvP, total: sentP + recvP, tx: e.txCount });
+    }
+    conns.sort((a, b) => b.total - a.total);
+
+    const connRows = conns.map(c => {
+        const dc  = c.sent > 0 && c.recv > 0 ? '#C080FF' : c.sent > 0 ? '#E8A020' : '#60C8FF';
+        const amt = c.sent > 0 && c.recv > 0
+            ? fmtWax(c.sent) + '↑ ' + fmtWax(c.recv) + '↓'
+            : c.sent > 0 ? fmtWax(c.sent) + ' ↑' : fmtWax(c.recv) + ' ↓';
+        const lbl = c.id.length > 15 ? c.id.slice(0, 14) + '…' : c.id;
+        return `<div class="cr" onclick="jumpTo('${c.id}')">
+            <div class="cd" style="background:${dc}"></div>
+            <div class="cn">${lbl}</div>
+            <div class="ca">${amt}</div>
+        </div>`;
+    }).join('') || '<div style="padding:12px 13px;color:var(--faint);font-size:11px;">No mapped connections.</div>';
+
+    const wb = 'https://waxblock.io/account/' + encodeURIComponent(n.id);
+
+    panel.innerHTML = `
+        <div class="ps">
+            <div class="pl">SELECTED WALLET</div>
+            <div id="info-wallet">${n.id}</div>
+            <div id="info-creator">${n.creator ? 'Created by: ' + n.creator : '&nbsp;'}</div>
+        </div>
+        <div class="ps">
+            <div class="pl">TRANSFER STATS</div>
+            <div class="sg">
+                <div class="sc"><div class="sk">RECEIVED</div><div class="sv cyan">${fmtWax(n.inAmt)} WAX</div></div>
+                <div class="sc"><div class="sk">SENT</div><div class="sv gold">${fmtWax(n.outAmt)} WAX</div></div>
+                <div class="sc"><div class="sk">${netLbl}</div><div class="sv ${netCls}">${fmtWax(Math.abs(net))} WAX</div></div>
+                <div class="sc"><div class="sk">TRANSACTIONS</div><div class="sv">${n.txCount}</div></div>
+            </div>
+            <div id="date-range">${n.first ? fmtDate(n.first) + '  →  ' + fmtDate(n.last) : ''}</div>
+        </div>
+        <div class="conn-header">CONNECTIONS (${conns.length})</div>
+        <div id="conn-list">${connRows}</div>
+        <div id="info-btns">
+            ${!n.isCenter ? `<button class="ib expand" onclick="doExpand('${n.id}')" ${n.expanded ? 'disabled' : ''}>
+                ${n.expanded ? '✓ EXPANDED' : '⊕  EXPAND NODE'}
+            </button>` : ''}
+            <button class="ib" onclick="window.open('${wb}','_blank')">⎋  VIEW ON WAXBLOCK</button>
+            <button class="ib" onclick="copyTo('${n.id}')">⎘  COPY ADDRESS</button>
+        </div>`;
+
+    // Lazy-fetch creator
+    if (!n._crFetched) {
+        n._crFetched = true;
+        fetchCreator(n.id).then(d => {
+            if (d && d.creator) {
+                n.creator = d.creator + (d.timestamp ? '  ·  ' + fmtDate(d.timestamp) : '');
+                const el = document.getElementById('info-creator');
+                if (el && _sel === n.id) el.textContent = 'Created by: ' + n.creator;
+            }
+        }).catch(() => {});
+    }
+}
+
+function jumpTo(id) {
+    _sel = id;
+    const n = _graph.nodes[id];
+    if (n) { _pan.x = -n.x * _zoom; _pan.y = -n.y * _zoom; }
+    renderPanel();
+    if (!_sim) render();
+}
+
+function copyTo(addr) {
+    navigator.clipboard.writeText(addr).catch(() => {});
+    setStatus('Copied: ' + addr, 'ok');
+    setTimeout(() => setStatus('Enter a WAX wallet to map its transfer network.'), 2200);
+}
+
+/* ── MAIN FLOW ──────────────────────────────────────────────────────────────── */
+function setStatus(msg, cls) {
+    const el = document.getElementById('status-msg');
+    el.textContent = msg;
+    el.className = cls || '';
+}
+function setLoading(on) {
+    document.getElementById('graph-loading').className = on ? 'visible' : '';
+}
+
+async function analyseWallet() {
+    const input  = document.getElementById('wallet-input');
+    const wallet = input.value.trim().toLowerCase();
+    if (!wallet) return;
+
+    _graph  = { nodes: {}, edges: {} };
+    _center = wallet;
+    _sel    = null;
+    _hov    = null;
+    _pan    = { x: 0, y: 0 };
+    _zoom   = 1.0;
+    _sim    = false;
+
+    document.getElementById('clear-btn').style.display = '';
+    setStatus('Fetching transfers for ' + wallet + '…');
+    setLoading(true);
+    renderPanel();
+    render();
+
+    const data = await fetchTransfers(wallet);
+    setLoading(false);
+
+    if (!data) {
+        setStatus('All Hyperion nodes unreachable. Check connection and try again.', 'err');
+        return;
+    }
+    if (!data.actions || !data.actions.length) {
+        setStatus('No WAX transfers found for "' + wallet + '". Check the address.', 'err');
+        return;
+    }
+
+    const peers   = buildGraph(wallet, data.actions);
+    const total   = (data.total && data.total.value) || data.actions.length;
+    const nc      = Object.keys(_graph.nodes).length;
+
+    setStatus(
+        'Mapped ' + peers.length + ' counterparties from ' + total + ' transfers · ' +
+        nc + ' nodes  ·  double-click any node to expand',
+        'ok'
+    );
+
+    startSim();
+    _sel = wallet;
+
+    // Fetch center creator
+    fetchCreator(wallet).then(d => {
+        const n = _graph.nodes[wallet];
+        if (n && d && d.creator) {
+            n.creator = d.creator + (d.timestamp ? '  ·  ' + fmtDate(d.timestamp) : '');
+            n._crFetched = true;
+            if (_sel === wallet) renderPanel();
+        }
+    }).catch(() => {});
+
+    renderPanel();
+}
+
+function clearGraph() {
+    _graph  = { nodes: {}, edges: {} };
+    _center = null; _sel = null; _hov = null;
+    _pan    = { x: 0, y: 0 }; _zoom = 1.0; _sim = false;
+    document.getElementById('clear-btn').style.display = 'none';
+    document.getElementById('wallet-input').value = '';
+    setStatus('Enter a WAX wallet to map its transfer network.');
+    renderPanel();
+    render();
+}
+
+/* ── INIT ───────────────────────────────────────────────────────────────────── */
+function resize() {
+    const wrap = document.getElementById('graph-wrap');
+    _lw = wrap.clientWidth;
+    _lh = wrap.clientHeight;
+    const dpr = window.devicePixelRatio || 1;
+    _canvas.width  = _lw * dpr;
+    _canvas.height = _lh * dpr;
+    render();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    _canvas = document.getElementById('graph-canvas');
+    _ctx    = _canvas.getContext('2d');
+    resize();
+    window.addEventListener('resize', resize);
+    initEvents();
+    render();
+});
+</script>
+</body>
+</html>
