@@ -176,6 +176,46 @@ html, body {
     font-size: 12px;
     letter-spacing: 1px;
     color: var(--faint);
+    cursor: pointer;
+    transition: color 0.12s, opacity 0.12s;
+    user-select: none;
+}
+.leg:hover { color: var(--text); }
+.leg.leg-off { opacity: 0.3; }
+.leg.leg-off .leg-node { border-color: currentColor !important; }
+
+/* ── Font size control ───────────────────────────────────────────────────── */
+#fs-ctrl {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(4,8,14,0.8);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 3px 5px;
+    pointer-events: all;
+}
+.fs-btn {
+    background: transparent;
+    border: none;
+    color: var(--dim);
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 2px 5px;
+    cursor: pointer;
+    transition: color 0.12s;
+    line-height: 1;
+}
+.fs-btn:hover { color: var(--cyan); }
+#fs-val {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--faint);
+    min-width: 20px;
+    text-align: center;
 }
 .leg-line { width: 20px; height: 2px; border-radius: 1px; flex-shrink: 0; }
 .leg-node { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid currentColor; flex-shrink: 0; }
@@ -483,10 +523,10 @@ html, body {
     <div class="fp-sep"></div>
     <span class="fp-label">SHOW</span>
     <div class="fp-checks">
-        <label class="fp-chk"><input type="checkbox" class="fp-check" checked onchange="setFilterType('ale',this.checked)"> ALE</label>
-        <label class="fp-chk"><input type="checkbox" class="fp-check" checked onchange="setFilterType('exchange',this.checked)"> EXCHANGE</label>
-        <label class="fp-chk"><input type="checkbox" class="fp-check" checked onchange="setFilterType('mc',this.checked)"> .MC</label>
-        <label class="fp-chk"><input type="checkbox" class="fp-check" checked onchange="setFilterType('wallet',this.checked)"> WALLETS</label>
+        <label class="fp-chk"><input id="ft-ale"      type="checkbox" class="fp-check" checked onchange="setFilterType('ale',this.checked)"> ALE</label>
+        <label class="fp-chk"><input id="ft-exchange" type="checkbox" class="fp-check" checked onchange="setFilterType('exchange',this.checked)"> EXCHANGE</label>
+        <label class="fp-chk"><input id="ft-mc"       type="checkbox" class="fp-check" checked onchange="setFilterType('mc',this.checked)"> .MC</label>
+        <label class="fp-chk"><input id="ft-wallet"   type="checkbox" class="fp-check" checked onchange="setFilterType('wallet',this.checked)"> WALLETS</label>
     </div>
     <div class="fp-sep"></div>
     <button class="fp-reset" onclick="resetFilter()">RESET</button>
@@ -496,17 +536,22 @@ html, body {
     <div id="graph-wrap">
         <canvas id="graph-canvas"></canvas>
         <div id="graph-legend">
-            <div class="leg"><div class="leg-node" style="color:#E8A020"></div>QUERIED WALLET</div>
-            <div class="leg"><div class="leg-node" style="color:#40D080"></div>ALE CONTRACT</div>
-            <div class="leg"><div class="leg-node" style="color:#FF9050"></div>EXCHANGE / SERVICE</div>
-            <div class="leg"><div class="leg-node" style="color:#FF60C0"></div>MANGO CREEK (.mc)</div>
-            <div class="leg"><div class="leg-node" style="color:#60C8FF"></div>WAX WALLET</div>
-            <div class="leg" id="nft-legend" style="display:none">
+            <div class="leg" style="cursor:default;pointer-events:none"><div class="leg-node" style="color:#E8A020"></div>QUERIED WALLET</div>
+            <div class="leg" id="leg-ale"      onclick="toggleLegendType('ale')"     title="Click to toggle ALE contracts"><div class="leg-node" style="color:#40D080"></div>ALE CONTRACT</div>
+            <div class="leg" id="leg-exchange" onclick="toggleLegendType('exchange')" title="Click to toggle exchanges"><div class="leg-node" style="color:#FF9050"></div>EXCHANGE / SERVICE</div>
+            <div class="leg" id="leg-mc"       onclick="toggleLegendType('mc')"      title="Click to toggle .mc wallets"><div class="leg-node" style="color:#FF60C0"></div>MANGO CREEK (.mc)</div>
+            <div class="leg" id="leg-wallet"   onclick="toggleLegendType('wallet')"  title="Click to toggle regular wallets"><div class="leg-node" style="color:#60C8FF"></div>WAX WALLET</div>
+            <div class="leg" id="nft-legend" style="display:none;cursor:default;pointer-events:none">
                 <div style="width:20px;height:2px;border-bottom:2px dashed rgba(255,154,0,0.7);flex-shrink:0"></div>
                 NFT TRANSFER
             </div>
         </div>
-        <div id="graph-hint">SCROLL TO ZOOM · DRAG TO PAN · CLICK TO SELECT · DOUBLE-CLICK TO DRILL IN</div>
+        <div id="fs-ctrl">
+            <button class="fs-btn" onclick="changeLabelFS(-1)" title="Smaller labels">A−</button>
+            <span id="fs-val">13</span>
+            <button class="fs-btn" onclick="changeLabelFS(1)"  title="Larger labels">A+</button>
+        </div>
+        <div id="graph-hint">SCROLL ZOOM · DRAG PAN · CLICK SELECT · DBL-CLICK EXPAND</div>
         <div id="graph-loading">FETCHING TRANSFERS…</div>
         <div id="drill-overlay"></div>
     </div>
@@ -582,6 +627,7 @@ let _nftEnabled = false;
 let _history    = []; // stack of wallet addresses for drill-down back navigation
 let _filterOpen = false;
 let _filter = { dir: 'both', minWax: 0, types: { ale: true, exchange: true, mc: true, wallet: true } };
+let _labelFS = 13; // cycling sizes: 13 14 15 16
 
 const LS_AC = 'naron_forensics_history';
 
@@ -940,11 +986,12 @@ function render() {
             _ctx.shadowBlur  = (isSel ? 20 : 13) * iz;
         }
 
+        const isExpDim = n.expanded && !n.isCenter && !isSel;
         _ctx.beginPath();
         _ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
         _ctx.fillStyle = n.isCenter ? 'rgba(18,12,0,0.96)' : 'rgba(4,8,16,0.93)';
         _ctx.fill();
-        _ctx.strokeStyle = isSel ? '#FFFFFF' : n.col;
+        _ctx.strokeStyle = isSel ? '#FFFFFF' : isExpDim ? 'rgba(100,120,140,0.45)' : n.col;
         _ctx.lineWidth   = (n.isCenter || isSel ? 2.2 : 1.5) * iz;
         _ctx.stroke();
         _ctx.shadowBlur = 0;
@@ -961,18 +1008,22 @@ function render() {
 
     _ctx.restore(); // world
 
-    // Node labels — screen space, fixed 13px so they're always readable
-    const LFS = 13;
-    _ctx.font = LFS + 'px "Share Tech Mono", monospace';
+    // Node labels — screen space, fixed size so they're always readable regardless of zoom
+    _ctx.font = _labelFS + 'px "Share Tech Mono", monospace';
     _ctx.textAlign = 'center';
+    _ctx.lineWidth = 3;
+    _ctx.strokeStyle = 'rgba(2,4,10,0.9)';
     for (const n of Object.values(ns)) {
         if (!isNodeVisible(n)) continue;
         const { sx, sy } = w2s(n.x, n.y);
         const rSc = nodeR(n) * _zoom;
         const isSel = _sel === n.id;
-        _ctx.fillStyle = isSel ? '#FFFFFF' : n.isCenter ? '#E8A020' : 'rgba(176,200,232,0.88)';
+        const isExpDim = n.expanded && !n.isCenter && !isSel;
+        const lx = Math.round(sx), ly = Math.round(sy + rSc + _labelFS + 3);
         const short = n.id.length > 14 ? n.id.slice(0, 13) + '…' : n.id;
-        _ctx.fillText(short, sx, sy + rSc + LFS + 3);
+        _ctx.strokeText(short, lx, ly);
+        _ctx.fillStyle = isSel ? '#FFFFFF' : isExpDim ? 'rgba(100,120,140,0.5)' : n.isCenter ? '#E8A020' : 'rgba(176,200,232,0.92)';
+        _ctx.fillText(short, lx, ly);
     }
 
     // Tooltip (screen space)
@@ -1105,7 +1156,7 @@ function onWH(e) {
 function onDB(e) {
     const { x, y } = cxy(e);
     const hit = hitNode(x, y);
-    if (hit) drillInto(hit.id);
+    if (hit && !hit.isCenter) doExpand(hit.id);
 }
 
 /* ── AUTOCOMPLETE ────────────────────────────────────────────────────────────── */
@@ -1166,6 +1217,8 @@ function setFilterDir(dir) {
 
 function setFilterType(type, val) {
     _filter.types[type] = val;
+    const leg = document.getElementById('leg-' + type);
+    if (leg) leg.classList.toggle('leg-off', !val);
     if (!_sim) render();
 }
 
@@ -1494,6 +1547,28 @@ async function analyseWallet() {
     }).catch(() => {});
 
     renderPanel();
+}
+
+/* ── LABEL FONT SIZE CONTROL ─────────────────────────────────────────────── */
+function changeLabelFS(delta) {
+    const sizes = [13, 14, 15, 16];
+    const idx   = sizes.indexOf(_labelFS);
+    const next  = Math.max(0, Math.min(sizes.length - 1, idx + delta));
+    _labelFS = sizes[next];
+    const el = document.getElementById('fs-val');
+    if (el) el.textContent = _labelFS;
+    if (!_sim) render();
+}
+
+/* ── LEGEND TYPE TOGGLES ─────────────────────────────────────────────────── */
+function toggleLegendType(type) {
+    _filter.types[type] = !_filter.types[type];
+    const leg = document.getElementById('leg-' + type);
+    if (leg) leg.classList.toggle('leg-off', !_filter.types[type]);
+    // keep filter panel checkbox in sync
+    const cb = document.getElementById('ft-' + type);
+    if (cb) cb.checked = !!_filter.types[type];
+    if (!_sim) render();
 }
 
 function clearGraph() {
