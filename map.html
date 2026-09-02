@@ -3987,7 +3987,7 @@ function drunPickerConfirm() {
         var dungeons = ALE_LOCATIONS[planet].dungeons || [];
         dungeons.forEach(function(d){
             var key = planet+'.'+d.land_id;
-            if (!_playerPlayedDungeons.has(key)) {
+            if (!_playerPlayedDungeons.has(key) && !_playerPlayedDungeons.has(String(d.land_id))) {
                 allDungeons.push({planet:planet, x:d.x, y:d.y, land_id:d.land_id});
             }
         });
