@@ -337,6 +337,35 @@ html, body {
 .ib.expand:hover { background: var(--gold-d); border-color: var(--gold); }
 .ib:disabled { opacity: 0.35; cursor: default; }
 .ib:disabled:hover { border-color: var(--border); color: var(--dim); background: transparent; }
+
+/* ── NFT toggle active ───────────────────────────────────────────────────── */
+.bar-btn.nft-active { border-color: #FF9A00; color: #FF9A00; background: rgba(255,154,0,0.12); }
+
+/* ── Drill overlay ───────────────────────────────────────────────────────── */
+#drill-overlay {
+    position: absolute;
+    inset: 0;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 10;
+    transition: opacity 0.28s;
+}
+
+/* ── Back button ─────────────────────────────────────────────────────────── */
+#back-btn { border-color: rgba(96,200,255,0.35); color: var(--cyan); }
+#back-btn:hover { background: var(--cyan-d); border-color: var(--cyan); }
+
+/* ── Breadcrumb ──────────────────────────────────────────────────────────── */
+#breadcrumb {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--faint);
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 </style>
 </head>
 <body>
@@ -347,12 +376,15 @@ html, body {
     <span id="header-title">WALLET FORENSICS</span>
     <div id="header-spacer"></div>
     <span id="header-sub">WAX BLOCKCHAIN · TRANSFER NETWORK ANALYSIS</span>
+    <span id="breadcrumb"></span>
 </div>
 
 <div id="search-bar">
     <input type="text" id="wallet-input" placeholder="enter WAX wallet address…" autocomplete="off" spellcheck="false">
     <button class="bar-btn primary" onclick="analyseWallet()">ANALYSE</button>
+    <button class="bar-btn" id="back-btn" onclick="goBack()" style="display:none">← BACK</button>
     <span id="status-msg">Enter a WAX wallet to map its transfer network.</span>
+    <button class="bar-btn" id="nft-btn" onclick="toggleNft()" style="display:none" title="Overlay NFT transfers as dashed lines">NFT TRANSFERS</button>
     <div class="bar-chips">
         <div class="chip"><div class="dot" style="background:#E8A020"></div>SENT</div>
         <div class="chip"><div class="dot" style="background:#60C8FF"></div>RECEIVED</div>
@@ -368,10 +400,16 @@ html, body {
             <div class="leg"><div class="leg-node" style="color:#E8A020"></div>QUERIED WALLET</div>
             <div class="leg"><div class="leg-node" style="color:#40D080"></div>ALE CONTRACT</div>
             <div class="leg"><div class="leg-node" style="color:#FF9050"></div>EXCHANGE / SERVICE</div>
+            <div class="leg"><div class="leg-node" style="color:#FF60C0"></div>MANGO CREEK (.mc)</div>
             <div class="leg"><div class="leg-node" style="color:#60C8FF"></div>WAX WALLET</div>
+            <div class="leg" id="nft-legend" style="display:none">
+                <div style="width:20px;height:2px;border-bottom:2px dashed rgba(255,154,0,0.7);flex-shrink:0"></div>
+                NFT TRANSFER
+            </div>
         </div>
-        <div id="graph-hint">SCROLL TO ZOOM · DRAG TO PAN · CLICK TO SELECT · DOUBLE-CLICK TO EXPAND</div>
+        <div id="graph-hint">SCROLL TO ZOOM · DRAG TO PAN · CLICK TO SELECT · DOUBLE-CLICK TO DRILL IN</div>
         <div id="graph-loading">FETCHING TRANSFERS…</div>
+        <div id="drill-overlay"></div>
     </div>
 
     <div id="info-panel">
@@ -441,6 +479,8 @@ let _pan    = { x: 0, y: 0 };
 let _zoom   = 1.0;
 let _mouse  = { down: false, drag: false, sx: 0, sy: 0, lx: 0, ly: 0, nid: null };
 let _sim    = false, _raf = null;
+let _nftEnabled = false;
+let _history    = []; // stack of wallet addresses for drill-down back navigation
 
 /* ── HYPERION API ───────────────────────────────────────────────────────────── */
 async function hGet(path, params) {
@@ -467,6 +507,12 @@ async function fetchTransfers(wallet, limit) {
 async function fetchCreator(wallet) {
     return hGet('/v2/history/get_creator', { account: wallet });
 }
+async function fetchNftTransfers(wallet) {
+    return hGet('/v2/history/get_actions', {
+        account: wallet, filter: 'atomicassets:transfer',
+        sort: 'desc', limit: 500, skip: 0,
+    });
+}
 
 /* ── UTILS ──────────────────────────────────────────────────────────────────── */
 function parseWax(q)  { return parseFloat(q) || 0; }
@@ -481,6 +527,7 @@ function fmtDate(ts) {
 }
 function nodeCol(id, isCenter) {
     if (isCenter) return '#E8A020';
+    if (id.endsWith('.mc')) return '#FF60C0';
     return (KNOWN[id] && KNOWN[id].col) || '#60C8FF';
 }
 function nodeLabel(id) {
@@ -736,10 +783,17 @@ function render() {
     for (const e of Object.values(_graph.edges)) {
         const a = ns[e.a], b = ns[e.b];
         if (!a || !b) continue;
-        const vol = e.sent + e.recv;
-        const lw  = Math.max(0.8, Math.min(3.2, 0.8 + Math.log10(Math.max(vol, 1)) * 0.65)) * iz;
-        _ctx.strokeStyle = edgeStroke(e);
-        _ctx.lineWidth = lw;
+        if (e.isNft) {
+            _ctx.setLineDash([5 * iz, 4 * iz]);
+            _ctx.strokeStyle = 'rgba(255,154,0,0.6)';
+            _ctx.lineWidth = 1.5 * iz;
+        } else {
+            _ctx.setLineDash([]);
+            const vol = e.sent + e.recv;
+            const lw  = Math.max(0.8, Math.min(3.2, 0.8 + Math.log10(Math.max(vol, 1)) * 0.65)) * iz;
+            _ctx.strokeStyle = edgeStroke(e);
+            _ctx.lineWidth = lw;
+        }
         _ctx.beginPath();
         _ctx.moveTo(a.x, a.y);
         _ctx.lineTo(b.x, b.y);
@@ -766,6 +820,8 @@ function render() {
             }
         }
     }
+
+    _ctx.setLineDash([]);
 
     // Nodes
     for (const n of Object.values(ns)) {
@@ -942,7 +998,152 @@ function onWH(e) {
 function onDB(e) {
     const { x, y } = cxy(e);
     const hit = hitNode(x, y);
-    if (hit && !hit.expanded) doExpand(hit.id);
+    if (hit) drillInto(hit.id);
+}
+
+/* ── NFT TOGGLE ─────────────────────────────────────────────────────────────── */
+function addNftEdges(wallet, actions) {
+    const peers = Object.create(null);
+    for (const act of actions) {
+        const d = act.act && act.act.data;
+        if (!d || !d.from || !d.to) continue;
+        const peer = d.from === wallet ? d.to : d.from;
+        const dir  = d.from === wallet ? 'out' : 'in';
+        const cnt  = (d.asset_ids && d.asset_ids.length) || 1;
+        if (!peers[peer]) peers[peer] = { out: 0, inn: 0 };
+        peers[peer][dir === 'out' ? 'out' : 'inn'] += cnt;
+    }
+    const cn = _graph.nodes[wallet];
+    for (const [pid, p] of Object.entries(peers)) {
+        if (!_graph.nodes[pid]) {
+            _graph.nodes[pid] = mkNode(pid, false, { inAmt: 0, outAmt: 0, txCount: p.out + p.inn });
+            if (cn) {
+                const ang = Math.random() * Math.PI * 2;
+                _graph.nodes[pid].x = cn.x + Math.cos(ang) * 220;
+                _graph.nodes[pid].y = cn.y + Math.sin(ang) * 220;
+            }
+        }
+        const k = 'nft:' + [wallet, pid].sort().join('↔');
+        _graph.edges[k] = { key: k, a: wallet, b: pid, sent: p.out, recv: p.inn, txCount: p.out + p.inn, isNft: true };
+    }
+}
+
+async function toggleNft() {
+    _nftEnabled = !_nftEnabled;
+    const btn = document.getElementById('nft-btn');
+    const leg = document.getElementById('nft-legend');
+    btn.classList.toggle('nft-active', _nftEnabled);
+    if (leg) leg.style.display = _nftEnabled ? '' : 'none';
+
+    // Remove old NFT edges
+    for (const k of Object.keys(_graph.edges)) {
+        if (k.startsWith('nft:')) delete _graph.edges[k];
+    }
+
+    if (_nftEnabled && _center) {
+        setStatus('Fetching NFT transfers…');
+        const data = await fetchNftTransfers(_center);
+        if (data && data.actions && data.actions.length) {
+            addNftEdges(_center, data.actions);
+            setStatus('NFT transfers overlaid (' + data.actions.length + ' actions)', 'ok');
+        } else {
+            setStatus('No NFT transfers found for this wallet.', 'err');
+            _nftEnabled = false;
+            btn.classList.remove('nft-active');
+            if (leg) leg.style.display = 'none';
+        }
+        startSim();
+    } else {
+        if (!_sim) render();
+    }
+}
+
+/* ── DRILL-DOWN ──────────────────────────────────────────────────────────────── */
+function updateBreadcrumb() {
+    const el = document.getElementById('breadcrumb');
+    if (!el) return;
+    if (!_history.length) { el.textContent = ''; return; }
+    el.textContent = '→ ' + _history.map((w, i) => (i === _history.length - 1 ? w : '…')).join(' → ') + ' → ' + (_center || '');
+}
+
+async function animateZoomTo(wx, wy, targetZoom, duration) {
+    const sz = _zoom, spx = _pan.x, spy = _pan.y;
+    const tz = targetZoom;
+    const tpx = -wx * tz, tpy = -wy * tz;
+    const t0  = performance.now();
+    return new Promise(resolve => {
+        function frame(now) {
+            const t    = Math.min((now - t0) / duration, 1);
+            const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+            _zoom  = sz  + (tz  - sz)  * ease;
+            _pan.x = spx + (tpx - spx) * ease;
+            _pan.y = spy + (tpy - spy) * ease;
+            render();
+            if (t < 1) requestAnimationFrame(frame);
+            else resolve();
+        }
+        requestAnimationFrame(frame);
+    });
+}
+
+async function drillInto(nodeId) {
+    if (!nodeId || !_center) return;
+    const n = _graph.nodes[nodeId];
+
+    // Zoom toward the node
+    if (n) await animateZoomTo(n.x, n.y, 3.5, 420);
+
+    // Fade to black
+    const ov = document.getElementById('drill-overlay');
+    ov.style.opacity = '1';
+    ov.style.pointerEvents = 'auto';
+    await new Promise(r => setTimeout(r, 290));
+
+    // Save history
+    _history.push(_center);
+    _nftEnabled = false;
+    const nbtEl = document.getElementById('nft-btn');
+    if (nbtEl) { nbtEl.classList.remove('nft-active'); nbtEl.style.display = 'none'; }
+    const legEl = document.getElementById('nft-legend');
+    if (legEl) legEl.style.display = 'none';
+
+    // Load new graph
+    document.getElementById('wallet-input').value = nodeId;
+    await analyseWallet();
+
+    document.getElementById('back-btn').style.display = '';
+    updateBreadcrumb();
+
+    // Fade back in
+    ov.style.opacity = '0';
+    ov.style.pointerEvents = 'none';
+}
+
+async function goBack() {
+    if (!_history.length) return;
+
+    // Fade to black
+    const ov = document.getElementById('drill-overlay');
+    ov.style.opacity = '1';
+    ov.style.pointerEvents = 'auto';
+    await new Promise(r => setTimeout(r, 290));
+
+    // Reset NFT state
+    _nftEnabled = false;
+    const nbtEl = document.getElementById('nft-btn');
+    if (nbtEl) { nbtEl.classList.remove('nft-active'); nbtEl.style.display = 'none'; }
+    const legEl = document.getElementById('nft-legend');
+    if (legEl) legEl.style.display = 'none';
+
+    const prev = _history.pop();
+    document.getElementById('wallet-input').value = prev;
+    await analyseWallet();
+
+    if (!_history.length) document.getElementById('back-btn').style.display = 'none';
+    updateBreadcrumb();
+
+    ov.style.opacity = '0';
+    ov.style.pointerEvents = 'none';
 }
 
 /* ── PANEL ──────────────────────────────────────────────────────────────────── */
@@ -1004,7 +1205,8 @@ function renderPanel() {
         <div class="conn-header">CONNECTIONS (${conns.length})</div>
         <div id="conn-list">${connRows}</div>
         <div id="info-btns">
-            ${!n.isCenter ? `<button class="ib expand" onclick="doExpand('${n.id}')" ${n.expanded ? 'disabled' : ''}>
+            ${!n.isCenter ? `<button class="ib expand" onclick="drillInto('${n.id}')">⊙  DRILL INTO WALLET</button>` : ''}
+            ${!n.isCenter ? `<button class="ib" onclick="doExpand('${n.id}')" ${n.expanded ? 'disabled' : ''}>
                 ${n.expanded ? '✓ EXPANDED' : '⊕  EXPAND NODE'}
             </button>` : ''}
             <button class="ib" onclick="window.open('${wb}','_blank')">⎋  VIEW ON WAXBLOCK</button>
@@ -1085,9 +1287,10 @@ async function analyseWallet() {
 
     setStatus(
         'Mapped ' + peers.length + ' counterparties from ' + total + ' transfers · ' +
-        nc + ' nodes  ·  double-click any node to expand',
+        nc + ' nodes  ·  double-click any node to drill in',
         'ok'
     );
+    document.getElementById('nft-btn').style.display = '';
 
     startSim();
     _sel = wallet;
@@ -1109,7 +1312,15 @@ function clearGraph() {
     _graph  = { nodes: {}, edges: {} };
     _center = null; _sel = null; _hov = null;
     _pan    = { x: 0, y: 0 }; _zoom = 1.0; _sim = false;
+    _history = []; _nftEnabled = false;
     document.getElementById('clear-btn').style.display = 'none';
+    document.getElementById('back-btn').style.display = 'none';
+    const nbtEl = document.getElementById('nft-btn');
+    if (nbtEl) { nbtEl.style.display = 'none'; nbtEl.classList.remove('nft-active'); }
+    const legEl = document.getElementById('nft-legend');
+    if (legEl) legEl.style.display = 'none';
+    const bc = document.getElementById('breadcrumb');
+    if (bc) bc.textContent = '';
     document.getElementById('wallet-input').value = '';
     setStatus('Enter a WAX wallet to map its transfer network.');
     renderPanel();
