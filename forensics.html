@@ -34,7 +34,7 @@ html, body {
     background: var(--bg);
     color: var(--text);
     font-family: var(--font);
-    font-size: 13px;
+    font-size: 15px;
 }
 
 /* ── HEADER ─────────────────────────────────────────────────────────────── */
@@ -51,16 +51,16 @@ html, body {
 #header a {
     color: var(--gold);
     text-decoration: none;
-    font-size: 11px;
+    font-size: 13px;
     letter-spacing: 3px;
     opacity: 0.65;
     transition: opacity 0.15s;
 }
 #header a:hover { opacity: 1; }
-#header-sep { color: var(--faint); font-size: 14px; }
-#header-title { color: var(--cyan); font-size: 11px; letter-spacing: 3px; }
+#header-sep { color: var(--faint); font-size: 15px; }
+#header-title { color: var(--cyan); font-size: 13px; letter-spacing: 3px; }
 #header-spacer { flex: 1; }
-#header-sub { color: var(--faint); font-size: 9px; letter-spacing: 1.5px; }
+#header-sub { color: var(--faint); font-size: 11px; letter-spacing: 1.5px; }
 
 /* ── SEARCH BAR ─────────────────────────────────────────────────────────── */
 #search-bar {
@@ -80,7 +80,7 @@ html, body {
     border-radius: 2px;
     color: var(--gold);
     font-family: var(--font);
-    font-size: 13px;
+    font-size: 15px;
     padding: 6px 10px;
     letter-spacing: 0.5px;
     outline: none;
@@ -95,7 +95,7 @@ html, body {
     border-radius: 2px;
     color: var(--dim);
     font-family: var(--font);
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 2px;
     padding: 6px 14px;
     cursor: pointer;
@@ -108,7 +108,7 @@ html, body {
 
 #status-msg {
     flex: 1;
-    font-size: 11px;
+    font-size: 13px;
     letter-spacing: 0.5px;
     color: var(--dim);
     overflow: hidden;
@@ -131,7 +131,7 @@ html, body {
     padding: 3px 8px;
     border: 1px solid var(--border);
     border-radius: 2px;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.5px;
     color: var(--faint);
     white-space: nowrap;
@@ -173,7 +173,7 @@ html, body {
     display: flex;
     align-items: center;
     gap: 7px;
-    font-size: 9px;
+    font-size: 12px;
     letter-spacing: 1px;
     color: var(--faint);
 }
@@ -185,7 +185,7 @@ html, body {
     bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.5px;
     color: var(--faint);
     pointer-events: none;
@@ -199,7 +199,7 @@ html, body {
     align-items: center;
     justify-content: center;
     background: rgba(4,8,14,0.6);
-    font-size: 11px;
+    font-size: 14px;
     letter-spacing: 2px;
     color: var(--gold);
 }
@@ -207,7 +207,7 @@ html, body {
 
 /* ── INFO PANEL ─────────────────────────────────────────────────────────── */
 #info-panel {
-    width: 272px;
+    width: 295px;
     flex-shrink: 0;
     background: var(--bg2);
     border-left: 1px solid var(--border);
@@ -217,7 +217,7 @@ html, body {
 }
 
 .ps { border-bottom: 1px solid var(--border); padding: 11px 13px; flex-shrink: 0; }
-.pl { font-size: 9px; letter-spacing: 2.5px; color: var(--faint); margin-bottom: 7px; }
+.pl { font-size: 11px; letter-spacing: 2.5px; color: var(--faint); margin-bottom: 7px; }
 
 #info-empty {
     flex: 1;
@@ -226,21 +226,21 @@ html, body {
     justify-content: center;
     padding: 20px;
     text-align: center;
-    font-size: 11px;
+    font-size: 13px;
     letter-spacing: 0.5px;
     color: var(--faint);
     line-height: 2;
 }
 
 #info-wallet {
-    font-size: 13px;
+    font-size: 15px;
     color: var(--gold);
     letter-spacing: 0.5px;
     word-break: break-all;
     margin-bottom: 3px;
 }
 #info-creator {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--faint);
     letter-spacing: 0.3px;
     min-height: 14px;
@@ -252,8 +252,8 @@ html, body {
     gap: 10px;
 }
 .sc { display: flex; flex-direction: column; gap: 2px; }
-.sk { font-size: 9px; letter-spacing: 1.5px; color: var(--faint); }
-.sv { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text); }
+.sk { font-size: 11px; letter-spacing: 1.5px; color: var(--faint); }
+.sv { font-size: 15px; font-variant-numeric: tabular-nums; color: var(--text); }
 .sv.gold { color: var(--gold); }
 .sv.cyan { color: var(--cyan); }
 .sv.green { color: var(--green); }
@@ -262,14 +262,14 @@ html, body {
 
 #date-range {
     margin-top: 8px;
-    font-size: 9px;
+    font-size: 11px;
     color: var(--faint);
     letter-spacing: 0.3px;
 }
 
 .conn-header {
     padding: 8px 13px 4px;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 2px;
     color: var(--faint);
     flex-shrink: 0;
@@ -288,7 +288,7 @@ html, body {
     display: flex;
     align-items: center;
     gap: 7px;
-    padding: 5px 13px;
+    padding: 7px 13px;
     cursor: pointer;
     border-bottom: 1px solid rgba(176,200,232,0.04);
     transition: background 0.1s;
@@ -297,14 +297,14 @@ html, body {
 .cr .cd { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 .cr .cn {
     flex: 1;
-    font-size: 11px;
+    font-size: 13px;
     color: var(--text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 .cr .ca {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--dim);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
@@ -324,9 +324,9 @@ html, body {
     border-radius: 2px;
     color: var(--dim);
     font-family: var(--font);
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.5px;
-    padding: 5px 9px;
+    padding: 6px 9px;
     cursor: pointer;
     text-align: left;
     width: 100%;
@@ -795,18 +795,24 @@ function render() {
             _ctx.fill();
         }
 
-        // Label
-        const fs = Math.max(8, Math.min(12, 10)) * iz;
-        _ctx.font = fs + 'px "Share Tech Mono", monospace';
-        _ctx.textAlign = 'center';
-        _ctx.fillStyle = isSel ? '#FFFFFF' : n.isCenter ? '#E8A020' : 'rgba(176,200,232,0.78)';
-        const short = n.id.length > 13 ? n.id.slice(0, 12) + '…' : n.id;
-        _ctx.fillText(short, n.x, n.y + r + (fs + 2) * iz);
     }
 
     _ctx.restore(); // world
 
-    // Tooltip (screen space, already in DPR scale)
+    // Node labels — screen space, fixed 13px so they're always readable
+    const LFS = 13;
+    _ctx.font = LFS + 'px "Share Tech Mono", monospace';
+    _ctx.textAlign = 'center';
+    for (const n of Object.values(ns)) {
+        const { sx, sy } = w2s(n.x, n.y);
+        const rSc = nodeR(n) * _zoom;
+        const isSel = _sel === n.id;
+        _ctx.fillStyle = isSel ? '#FFFFFF' : n.isCenter ? '#E8A020' : 'rgba(176,200,232,0.88)';
+        const short = n.id.length > 14 ? n.id.slice(0, 13) + '…' : n.id;
+        _ctx.fillText(short, sx, sy + rSc + LFS + 3);
+    }
+
+    // Tooltip (screen space)
     if (_hov && _graph.nodes[_hov]) drawTooltip(_graph.nodes[_hov]);
 
     _ctx.restore(); // dpr
@@ -821,8 +827,8 @@ function drawTooltip(n) {
         'IN   ' + fmtWax(n.inAmt)  + ' WAX',
         'TX   ' + n.txCount,
     ];
-    const fs = 11, pad = 9, lh = 15;
-    const bw = 158, bh = lines.length * lh + pad * 2;
+    const fs = 13, pad = 10, lh = 18;
+    const bw = 178, bh = lines.length * lh + pad * 2;
     let bx = sx + 14, by = sy - bh / 2;
     if (bx + bw > W - 4) bx = sx - bw - 14;
     if (by < 4)          by = 4;
@@ -975,7 +981,7 @@ function renderPanel() {
             <div class="cn">${lbl}</div>
             <div class="ca">${amt}</div>
         </div>`;
-    }).join('') || '<div style="padding:12px 13px;color:var(--faint);font-size:11px;">No mapped connections.</div>';
+    }).join('') || '<div style="padding:12px 13px;color:var(--faint);font-size:13px;">No mapped connections.</div>';
 
     const wb = 'https://waxblock.io/account/' + encodeURIComponent(n.id);
 
