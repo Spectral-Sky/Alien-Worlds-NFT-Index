@@ -2445,7 +2445,9 @@ window._hideCmpCol = function() {
 };
 function _rerenderAll() {
     if (_liveOn && _alphaOn && _liveCacheAgg && _alphaCacheAgg) {
-        _renderCompare(_liveCacheAgg, _alphaCacheAgg);
+        _renderCompare(_liveCacheAgg, _alphaCacheAgg, {betaLabel:'⚡ LIVE', alphaLabel:'α ALPHA'});
+    } else if (_liveOn && _liveCacheAgg && _statsCache) {
+        _renderCompare(_statsCache, _liveCacheAgg, {betaLabel:'ALL TIME', alphaLabel:'⚡ LIVE'});
     } else if (_liveOn && _liveCacheAgg) {
         _renderStats(_liveCacheAgg, {});
     } else if (_alphaOn && _alphaCacheAgg) {
@@ -2460,6 +2462,8 @@ window.selectDungDiff = function(diff) {
     _syncDungButtons(diff);
     if (_liveOn && _alphaOn && _liveCacheAgg && _alphaCacheAgg) {
         _selectDungDiffCompare(diff, _liveCacheAgg, _alphaCacheAgg);
+    } else if (_liveOn && _liveCacheAgg && _statsCache) {
+        _selectDungDiffCompare(diff, _statsCache, _liveCacheAgg);
     } else {
         var mainAgg = (_liveOn && _liveCacheAgg) ? _liveCacheAgg : (_alphaOn && _alphaCacheAgg) ? _alphaCacheAgg : _statsCache;
         _fillDungBars(diff, '', mainAgg);
@@ -2530,11 +2534,15 @@ window.toggleSource = async function(src) {
 
     if (_liveOn && _alphaOn) {
         _setStatsMsg('Comparing ⚡ LIVE vs α ALPHA');
-        _renderCompare(_liveCacheAgg, _alphaCacheAgg);
+        _renderCompare(_liveCacheAgg, _alphaCacheAgg, {betaLabel:'⚡ LIVE', alphaLabel:'α ALPHA'});
     } else if (_liveOn) {
         var skipNote = _liveCacheAgg.total.skipped ? ' · ' + _liveCacheAgg.total.skipped + ' unmatched skipped' : '';
-        _setStatsMsg(_liveCacheAgg.count + ' live fights · ' + _liveCacheAgg.total.arena + ' arena · ' + _liveCacheAgg.total.dungeon + ' dungeon' + skipNote);
-        _renderStats(_liveCacheAgg, {});
+        _setStatsMsg('ALL TIME vs ⚡ LIVE · ' + _liveCacheAgg.count + ' live fights · ' + _liveCacheAgg.total.arena + ' arena · ' + _liveCacheAgg.total.dungeon + ' dungeon' + skipNote);
+        if (_statsCache) {
+            _renderCompare(_statsCache, _liveCacheAgg, {betaLabel:'ALL TIME', alphaLabel:'⚡ LIVE'});
+        } else {
+            _renderStats(_liveCacheAgg, {});
+        }
     } else {
         _setStatsMsg(_alphaCacheAgg.count + ' α rows · ' + _alphaCacheAgg.total.arena + ' arena · ' + _alphaCacheAgg.total.dungeon + ' dungeon');
         _renderStats(_alphaCacheAgg, {});
@@ -2574,23 +2582,25 @@ window.selectSortMode = function(mode) {
 };
 
 // ── COMPARE RENDER ─────────────────────────────────────────────────────────
-function _renderCompare(beta, alpha) {
+function _renderCompare(beta, alpha, labels) {
+    var bLabel = (labels && labels.betaLabel)  || 'ALL TIME';
+    var aLabel = (labels && labels.alphaLabel) || '⚡ LIVE';
     var el = document.getElementById('stats-results');
     if (!el) return;
     var legend = '<div style="display:flex;gap:16px;align-items:center;font-size:0.55em;letter-spacing:1px;color:#707080;margin-bottom:14px;flex-wrap:wrap;">' +
-        '<span>◉ Bar = β BETA win rate</span>' +
-        '<span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:2px;height:12px;background:rgba(255,255,255,0.45);"></span> Tick = α ALPHA</span>' +
-        '<span style="color:#50d890;">▲ = beta higher</span><span style="color:#e05050;">▼ = beta lower</span>' +
+        '<span>◉ Bar = ' + bLabel + ' win rate</span>' +
+        '<span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:2px;height:12px;background:rgba(255,255,255,0.45);"></span> Tick = ' + aLabel + '</span>' +
+        '<span style="color:#50d890;">▲ = ' + bLabel + ' higher</span><span style="color:#e05050;">▼ = ' + bLabel + ' lower</span>' +
         '</div>';
     var diffs = Object.keys(beta.dungeon || {}).map(Number).sort(function(a,b){return a-b;});
     var html = legend;
-    html += _barSectionCmp('ARENA — CLASS', beta.arena, alpha.arena);
+    html += _barSectionCmp('ARENA — CLASS', beta.arena, alpha.arena, bLabel, aLabel);
     if (Object.keys(beta.arenaRace || {}).length || Object.keys(alpha.arenaRace || {}).length)
-        html += _barSectionCmp('ARENA — RACE', beta.arenaRace, alpha.arenaRace);
+        html += _barSectionCmp('ARENA — RACE', beta.arenaRace, alpha.arenaRace, bLabel, aLabel);
     if (Object.keys(beta.arenaElement || {}).length || Object.keys(alpha.arenaElement || {}).length)
-        html += _barSectionCmp('ARENA — ELEMENT', beta.arenaElement, alpha.arenaElement);
+        html += _barSectionCmp('ARENA — ELEMENT', beta.arenaElement, alpha.arenaElement, bLabel, aLabel);
     if (diffs.length) {
-        html += '<div style="margin-top:32px;"><div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ DUNGEON — CLASS β vs α</div>';
+        html += '<div style="margin-top:32px;"><div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ DUNGEON — CLASS ' + bLabel + ' vs ' + aLabel + '</div>';
         html += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">';
         diffs.forEach(function(d) {
             html += '<button id="ddb-'+d+'" onclick="selectDungDiff('+d+')" style="background:transparent;border:1px solid rgba(232,160,32,0.2);color:#808070;font-family:\'Courier New\',monospace;font-size:0.63em;padding:4px 10px;cursor:pointer;letter-spacing:1px;">LVL '+d+'</button>';
@@ -2631,11 +2641,12 @@ function _selectDungDiffCompare(diff, beta, alpha) {
         ? '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.4);margin:14px 0 8px;padding-top:10px;border-top:1px solid rgba(232,160,32,0.07);">ELEMENT β vs α</div>' + _buildBarsCmp(bE, aE) : '';
 }
 
-function _barSectionCmp(title, betaData, alphaData) {
+function _barSectionCmp(title, betaData, alphaData, bLabel, aLabel) {
+    var bl = bLabel || 'ALL TIME', al = aLabel || '⚡ LIVE';
     var inner = (Object.keys(betaData||{}).length || Object.keys(alphaData||{}).length)
         ? _buildBarsCmp(betaData, alphaData)
         : '<div style="font-size:0.6em;color:#404050;padding:8px 0;">No data</div>';
-    return '<div style="margin-bottom:4px;"><div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ '+title+' β vs α</div>'+inner+'</div>';
+    return '<div style="margin-bottom:4px;"><div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ '+title+' — '+bl+' vs '+al+'</div>'+inner+'</div>';
 }
 
 function _buildBarsCmp(betaStats, alphaStats) {
