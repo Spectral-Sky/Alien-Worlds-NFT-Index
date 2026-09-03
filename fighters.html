@@ -259,9 +259,15 @@
     html.day .xp-bar-inner { background:rgba(154,104,0,0.22); }
     html.day .xp-bar-text  { color:rgba(60,80,140,0.9); }
     html.day .cls-name { color:var(--gold); }
+    #abl-tip { position:fixed; pointer-events:none; display:none; z-index:9000;
+        background:#080e18; border:1px solid rgba(96,200,255,0.3);
+        color:#b0c8e0; font-size:0.72em; letter-spacing:0.5px; line-height:1.5;
+        padding:6px 10px; border-radius:3px; max-width:240px; white-space:normal;
+        box-shadow:0 4px 18px rgba(0,0,0,0.8); }
     </style>
 </head>
 <body>
+<div id="abl-tip"></div>
 
 <header class="global-header">
     <div class="logo-section">
@@ -462,6 +468,43 @@ function _elImg(name) {
 }
 
 // ── STATE ────────────────────────────────────────────────────────────────────
+var _abilityDesc = {}; // displayname (lowercase) → description
+fetch('ale_abilities.json').then(function(r){return r.json();}).then(function(data){
+    Object.values(data).forEach(function(levels){
+        Object.values(levels).forEach(function(abilities){
+            Object.values(abilities).forEach(function(a){
+                if(a.displayname && a.description)
+                    _abilityDesc[a.displayname.toLowerCase()] = a.description;
+            });
+        });
+    });
+}).catch(function(){});
+
+(function(){
+    var tip = document.getElementById('abl-tip');
+    document.addEventListener('mouseover', function(e){
+        var el = e.target.closest('[data-abtip]');
+        if(!el || !tip) return;
+        var desc = el.getAttribute('data-abtip');
+        if(!desc) return;
+        tip.textContent = desc;
+        tip.style.display = 'block';
+    });
+    document.addEventListener('mousemove', function(e){
+        if(tip.style.display !== 'block') return;
+        var x = e.clientX + 14, y = e.clientY + 14;
+        if(x + 250 > window.innerWidth) x = e.clientX - 254;
+        if(y + 80 > window.innerHeight) y = e.clientY - 50;
+        tip.style.left = x + 'px';
+        tip.style.top = y + 'px';
+    });
+    document.addEventListener('mouseout', function(e){
+        if(!e.target.closest('[data-abtip]')) return;
+        if(!e.relatedTarget || !e.relatedTarget.closest('[data-abtip]'))
+            tip.style.display = 'none';
+    });
+})();
+
 var _fighters   = [];
 var _filtered   = [];
 var _sortCol    = 'lv';
@@ -765,10 +808,12 @@ function cellContent(key, f) {
                     var r = m ? m[1].toLowerCase() : '';
                     var st = r ? (AW_RARITY[r] || { col:'#666', dg:'none', tg:'none' }) : NO_RARITY;
                     var name = m ? raw.slice(0, raw.lastIndexOf('[')).trim() : raw;
+                    var desc = _abilityDesc[name.toLowerCase()] || '';
+                    var tipAttr = desc ? ' data-abtip="' + desc.replace(/"/g,'&quot;') + '"' : '';
                     return '<div style="display:flex;align-items:center;gap:5px;white-space:nowrap;">'
                         + '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'
                         + st.col + ';flex-shrink:0;box-shadow:' + st.dg + ';"></span>'
-                        + '<span style="color:' + st.col + ';font-size:0.85em;text-shadow:' + st.tg + ';">' + name + '</span>'
+                        + '<span' + tipAttr + ' style="color:' + st.col + ';font-size:0.85em;text-shadow:' + st.tg + ';cursor:' + (desc?'help':'default') + ';">' + name + '</span>'
                         + '</div>';
                 }).join('') + '</div>';
         }
