@@ -501,8 +501,17 @@
         .drun-diff-btn:hover { border-color:rgba(232,160,32,0.3); color:#887755; }
         .drun-diff-btn.on { background:rgba(232,160,32,0.14); border-color:rgba(232,160,32,0.55); color:var(--gold); font-weight:bold; }
         #drun-hint { font-size:0.52em; letter-spacing:1px; color:#505840; text-align:center; margin-bottom:8px; min-height:1.2em; }
+        #drun-presets { display:flex; gap:5px; margin-bottom:10px; }
+        .drun-preset-btn { flex:1; padding:5px 2px; font-size:0.52em; letter-spacing:1px; background:rgba(96,200,255,0.04); border:1px solid rgba(96,200,255,0.15); color:#5a7a9a; cursor:pointer; border-radius:5px; font-family:inherit; transition:all 0.15s; text-align:center; line-height:1.5; }
+        .drun-preset-btn:hover { border-color:rgba(232,160,32,0.4); color:#b09070; background:rgba(232,160,32,0.06); }
+        .drun-preset-btn.active { border-color:rgba(232,160,32,0.6); color:var(--gold); background:rgba(232,160,32,0.1); }
         #drun-team { border:1px solid rgba(96,200,255,0.1); border-radius:7px; padding:8px 10px; margin-bottom:10px; background:rgba(96,200,255,0.03); }
         .drun-team-lbl { font-size:0.5em; letter-spacing:2px; color:#445; margin-bottom:5px; }
+        .fm-badge { display:inline-block; font-size:0.75em; padding:0 3px; border-radius:3px; margin-left:3px; vertical-align:middle; cursor:pointer; user-select:none; }
+        .fm-tank { background:rgba(96,160,255,0.18); color:#70a8ff; border:1px solid rgba(96,160,255,0.3); }
+        .fm-dps  { background:rgba(255,130,60,0.18);  color:#ff9955; border:1px solid rgba(255,130,60,0.3); }
+        .fm-util { background:rgba(160,96,255,0.18);  color:#c080ff; border:1px solid rgba(160,96,255,0.3); }
+        .bpp-row .fm-badge { float:right; margin-top:1px; }
         .drun-fighter-row { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:5px; }
         .drun-fighter-chip { font-size:0.52em; letter-spacing:1px; color:#8898a8; padding:2px 6px; border:1px solid rgba(96,200,255,0.12); border-radius:4px; background:transparent; cursor:pointer; font-family:inherit; transition:border-color 0.15s,color 0.15s; }
         .drun-fighter-chip:hover { border-color:rgba(96,200,255,0.5); color:#b0c8e8; }
@@ -2856,6 +2865,62 @@
     var _bpPickerSlot=-1;
     var _bpPickerType='';
     var _bpPickerFromDrun=false;
+
+    // Fighter role markers — stored in localStorage by fighter_id
+    // Roles: 'tank' | 'dps' | 'util'  (fire/sacrifice reserved for later)
+    var LS_FM = 'naron_fighter_marks';
+    var TANK_CLASSES = ['voidwarden','astralknight','juggernaut'];
+    var _fmCycle = ['tank','dps','util',null]; // null = clear
+    function _fmLoad(){ try{ return JSON.parse(localStorage.getItem(LS_FM)||'{}'); }catch(_){ return {}; } }
+    function _fmSave(m){ try{ localStorage.setItem(LS_FM,JSON.stringify(m)); }catch(_){} }
+    function _fmGet(fid){ return _fmLoad()[String(fid)]||null; }
+    function _fmSet(fid,role){ var m=_fmLoad(); if(role) m[String(fid)]=role; else delete m[String(fid)]; _fmSave(m); }
+    function _fmCycleNext(fid){
+        var cur=_fmGet(fid);
+        var idx=_fmCycle.indexOf(cur);
+        var next=_fmCycle[(idx+1)%_fmCycle.length];
+        _fmSet(fid,next);
+        return next;
+    }
+    function _fmBadgeHtml(fid,fighterId){
+        var role=_fmGet(fighterId||fid);
+        if(!role) return '';
+        var label=role==='tank'?'🛡 TANK':role==='dps'?'⚔ DPS':'✦ UTIL';
+        var cls='fm-badge fm-'+role;
+        return '<span class="'+cls+'" onclick="event.stopPropagation();_fmToggleBadge(\''+String(fighterId||fid)+'\',this)" title="Click to change role">'+label+'</span>';
+    }
+    function _fmToggleBadge(fid,el){
+        var next=_fmCycleNext(fid);
+        if(!next){ el.remove(); return; }
+        var label=next==='tank'?'🛡 TANK':next==='dps'?'⚔ DPS':'✦ UTIL';
+        el.className='fm-badge fm-'+next;
+        el.textContent=label;
+        _refreshDrunTeam();
+    }
+    function _fmCycleInPicker(fid,el){
+        // Cycle role on a fighter picker row without closing the picker
+        var next=_fmCycleNext(fid);
+        if(!next){
+            el.className='fm-badge';
+            el.style.cssText='color:#333;border:1px solid #333;background:transparent;font-size:0.82em';
+            el.textContent='+ ROLE';
+        } else {
+            el.style.cssText='';
+            el.className='fm-badge fm-'+next;
+            el.textContent=next==='tank'?'🛡 TANK':next==='dps'?'⚔ DPS':'✦ UTIL';
+        }
+    }
+
+    // Auto-detect tank class if no manual mark
+    function _fmEffective(f){
+        var manual=_fmGet(f.fighter_id);
+        if(manual) return manual;
+        var cls=(f.classname||'').toLowerCase().replace(/[\s_-]/g,'');
+        if(TANK_CLASSES.indexOf(cls)>=0) return 'tank';
+        return null;
+    }
+
+    var _drunLastPreset=null;
     var _bpNFTCache={crew:null,weapon:null};
     var _autoBattle=false;
     var _battleNFTDefaults={crewAssetId:null,weaponAssetId:null};
@@ -3159,10 +3224,13 @@
             var xpReady=s.level<10&&s.experience!=null&&s.required_experience!=null&&Number(s.experience)>=Number(s.required_experience);
             var inUse=f.in_use===1||f.in_use==='1';
             var alreadySel=selectedIds.indexOf(fid)>=0&&selectedIds.indexOf(fid)!==slotIdx;
+            var role=_fmEffective(f);
+            var roleLabel=role==='tank'?'🛡 TANK':role==='dps'?'⚔ DPS':role==='util'?'✦ UTIL':'';
             html+='<div class="bpp-row'+(alreadySel?' disabled':'')+'" onclick="selectBpFighter(\''+fid+'\')">'
                 +'<span class="bpp-cls">'+ci.e+'</span>'
                 +'<span class="bpp-name">'+ci.n.toUpperCase()+'</span>'
                 +'<span class="bpp-lv">LV'+lvl+'</span>'
+                +(role?'<span class="fm-badge fm-'+role+'" onclick="event.stopPropagation();_fmCycleInPicker(\''+fid+'\',this)" title="Click to change role">'+roleLabel+'</span>':'<span class="fm-badge" style="color:#333;border:1px solid #333;background:transparent;font-size:0.82em" onclick="event.stopPropagation();_fmCycleInPicker(\''+fid+'\',this)" title="Click to set role">+ ROLE</span>')
                 +(xpReady?'<span class="bpp-badge bpp-xp">XP✓</span>':'')
                 +(inUse?'<span class="bpp-badge bpp-use">DEPLOYED</span>':'')
                 +(selectedIds[slotIdx]===fid?'<span class="bpp-badge bpp-sel">✓</span>':'')
@@ -3191,16 +3259,67 @@
             if(_ff){
                 var _fcls=(_ff.classname||'').toLowerCase().replace(/[\s_-]/g,'');
                 var _fci=FIGHTER_CLASSES[_fcls]||{e:'⚔️'};
-                _fh+='<button class="drun-fighter-chip" onclick="drunSelectFighter('+_fi+')" title="Change slot '+(_fi+1)+'">'+_fci.e+' LV'+((_ff.stats&&_ff.stats.level)||'?')+'</button>';
+                var _role=_fmEffective(_ff);
+                var _badge=_role?'<span class="fm-badge fm-'+_role+'" onclick="event.stopPropagation();_fmToggleBadge(\''+_ff.fighter_id+'\',this)" title="Click to change role">'+(_role==='tank'?'🛡 TANK':_role==='dps'?'⚔ DPS':'✦ UTIL')+'</span>':'';
+                _fh+='<button class="drun-fighter-chip" onclick="drunSelectFighter('+_fi+')" title="Change slot '+(_fi+1)+'">'+_fci.e+' LV'+((_ff.stats&&_ff.stats.level)||'?')+_badge+'</button>';
             } else {
                 _fh+='<button class="drun-fighter-chip empty" onclick="drunSelectFighter('+_fi+')" title="Pick fighter for slot '+(_fi+1)+'">+ PICK</button>';
             }
         }
         _fc.innerHTML=_fh;
+        // Highlight active preset button
+        ['elite','grind','top5'].forEach(function(p){
+            var b=document.getElementById('dpp-'+p);
+            if(b) b.classList.toggle('active', p===_drunLastPreset);
+        });
         var activeFighters=_bpFighters.filter(Boolean);
         var goBtn=document.getElementById('drun-go-btn');
         var nftsMissing=!_bpCrew||!_bpWeapon;
         if(goBtn) goBtn.disabled=nftsMissing||activeFighters.length<5;
+    }
+
+    function _drunApplyPreset(preset){
+        _drunLastPreset=preset;
+        var avail=(_myFighters||[]).filter(function(f){ return !(f.in_use===1||f.in_use==='1'); });
+        var byLevel=function(a,b){ return ((b.stats&&b.stats.level)||0)-((a.stats&&a.stats.level)||0); };
+        var tanks=avail.filter(function(f){ return _fmEffective(f)==='tank'; })
+                       .slice().sort(byLevel);
+        var nonTank=avail.filter(function(f){ return _fmEffective(f)!=='tank'; })
+                         .slice().sort(byLevel);
+
+        var team=[null,null,null,null,null];
+
+        if(preset==='top5'){
+            avail.slice().sort(byLevel).slice(0,5).forEach(function(f,i){ team[i]=f; });
+
+        } else if(preset==='elite'){
+            // Slot 0: best tank preferring lvl 9-10
+            var eliteTank=tanks.find(function(f){ return ((f.stats&&f.stats.level)||0)>=9; })||tanks[0]||null;
+            team[0]=eliteTank;
+            // Slots 1-4: highest level non-tank in range 5-8, fallback to any high level
+            var highLvl=nonTank.filter(function(f){ var lv=(f.stats&&f.stats.level)||0; return lv>=5&&lv<=8; });
+            if(highLvl.length<4) highLvl=nonTank; // fallback
+            var used=new Set(eliteTank?[String(eliteTank.fighter_id)]:[]);
+            for(var i=1;i<5;i++){
+                var pick=highLvl.find(function(f){ return !used.has(String(f.fighter_id)); });
+                if(pick){ team[i]=pick; used.add(String(pick.fighter_id)); }
+            }
+
+        } else if(preset==='grind'){
+            // Slot 0: best tank (any level)
+            var grindTank=tanks[0]||null;
+            team[0]=grindTank;
+            // Slots 1-4: LOWEST level non-tank (not sacrificial-marked)
+            var lowLvl=nonTank.slice().reverse(); // ascending level
+            var used2=new Set(grindTank?[String(grindTank.fighter_id)]:[]);
+            for(var i=1;i<5;i++){
+                var pick=lowLvl.find(function(f){ return !used2.has(String(f.fighter_id)); });
+                if(pick){ team[i]=pick; used2.add(String(pick.fighter_id)); }
+            }
+        }
+
+        _bpFighters=team;
+        _refreshDrunTeam();
     }
 
     function drunSelectFighter(slotIdx){
@@ -3518,6 +3637,11 @@
         <div class="drun-sub">SELECT DIFFICULTY</div>
         <div id="drun-diff-grid"></div>
         <div id="drun-hint"></div>
+        <div id="drun-presets">
+            <button class="drun-preset-btn" id="dpp-elite" onclick="_drunApplyPreset('elite')" title="1 tank (lvl 9-10) + 4 high-level fighters">⚡ ELITE<br>1 TANK + 4 HIGH</button>
+            <button class="drun-preset-btn" id="dpp-grind" onclick="_drunApplyPreset('grind')" title="1 tank + 4 lowest-level fighters for XP">📈 GRIND<br>1 TANK + 4 LOW</button>
+            <button class="drun-preset-btn" id="dpp-top5" onclick="_drunApplyPreset('top5')" title="Top 5 fighters by level">🏆 TOP 5<br>BY LEVEL</button>
+        </div>
         <div id="drun-team">
             <div class="drun-team-lbl">TEAM</div>
             <div class="drun-fighter-row" id="drun-fighters"></div>
@@ -3886,11 +4010,9 @@ async function txqAddDungeonRun() {
         try { await _fetchAllFighters(wallet); } catch(e){}
     }
 
-    // Ensure _bpFighters is populated (auto-fill with highest-level available if empty)
+    // Ensure _bpFighters is populated — default to ELITE preset (1 tank + 4 high-level)
     if (!_bpFighters.some(Boolean)) {
-        var avail = (_myFighters||[]).filter(function(f){ return !(f.in_use===1||f.in_use==='1'); })
-            .slice().sort(function(a,b){ return ((b.stats&&b.stats.level)||0)-((a.stats&&a.stats.level)||0); });
-        for (var si=0;si<5;si++) { if (!_bpFighters[si]&&avail.length) _bpFighters[si]=avail.shift(); }
+        _drunApplyPreset('elite');
     }
 
     // Re-fetch played dungeons from chain so we don't queue already-beaten ones
