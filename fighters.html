@@ -116,7 +116,7 @@
     .lb-table th.sort-asc, .lb-table th.sort-desc { color:var(--gold); }
     .lb-table td { padding:6px 8px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.03); white-space:nowrap; color:#9098a8; }
     .lb-table td.left { text-align:left; }
-    .lb-table tr:hover td { background:inherit; }
+    .lb-table tr:hover td { background:var(--hover); }
     .lb-table .zero { color:#2a3040; }
     .lb-table .deployed-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:#40c070; margin-right:4px; vertical-align:middle; }
 
@@ -234,7 +234,7 @@
     html.day .col-toggles { background:rgba(220,232,255,0.5); }
     html.day .lb-table th { background:#d4e0f4; color:#4060a0; }
     html.day .lb-table td { color:#2a3860; border-bottom-color:rgba(0,60,140,0.05); }
-    html.day .lb-table tr:hover td { background:inherit; }
+    html.day .lb-table tr:hover td { background:var(--hover); }
     html.day .lb-table td:nth-child(1), html.day .lb-table th:nth-child(1),
     html.day .lb-table td:nth-child(2), html.day .lb-table th:nth-child(2),
     html.day .lb-table td:nth-child(3), html.day .lb-table th:nth-child(3),
@@ -259,15 +259,9 @@
     html.day .xp-bar-inner { background:rgba(154,104,0,0.22); }
     html.day .xp-bar-text  { color:rgba(60,80,140,0.9); }
     html.day .cls-name { color:var(--gold); }
-    #abl-tip { position:fixed; pointer-events:none; display:none; z-index:9000;
-        background:#080e18; border:1px solid rgba(96,200,255,0.3);
-        color:#b0c8e0; font-size:0.72em; letter-spacing:0.5px; line-height:1.5;
-        padding:6px 10px; border-radius:3px; max-width:240px; white-space:normal;
-        box-shadow:0 4px 18px rgba(0,0,0,0.8); }
     </style>
 </head>
 <body>
-<div id="abl-tip"></div>
 
 <header class="global-header">
     <div class="logo-section">
@@ -411,6 +405,7 @@
     <button class="col-toggle on" data-col="xp"  onclick="toggleCol(this)">XP</button>
     <button class="col-toggle on" data-col="age" onclick="toggleCol(this)">AGE</button>
     <button class="col-toggle" data-col="abilities" onclick="toggleCol(this)">ABILITIES</button>
+    <button class="col-toggle" data-col="abldesc"   onclick="toggleCol(this)">ABILITY DESC</button>
     <button class="col-toggle" data-col="id"        onclick="toggleCol(this)">FIGHTER ID</button>
     <button class="col-toggle" data-col="payday"    onclick="toggleCol(this)">PAYDAY</button>
 </div>
@@ -480,25 +475,6 @@ fetch('ale_abilities.json').then(function(r){return r.json();}).then(function(da
     });
 }).catch(function(){});
 
-function showAbilityTip(e, el) {
-    e.stopPropagation();
-    var tip = document.getElementById('abl-tip');
-    if(!tip) return;
-    var desc = el.getAttribute('data-abtip');
-    if(!desc) return;
-    tip.textContent = desc;
-    var r = el.getBoundingClientRect();
-    var x = r.left, y = r.bottom + 6;
-    if(x + 250 > window.innerWidth) x = window.innerWidth - 258;
-    if(y + 60 > window.innerHeight) y = r.top - 44;
-    tip.style.left = x + 'px';
-    tip.style.top = y + 'px';
-    tip.style.display = 'block';
-}
-document.addEventListener('click', function(e){
-    if(!e.target.closest('[data-abtip]'))
-        document.getElementById('abl-tip').style.display='none';
-});
 
 var _fighters   = [];
 var _filtered   = [];
@@ -643,6 +619,7 @@ var COL_DEFS = [
         function w(a){ var m=(a.displayname||a.name||'').match(/\[(\w+)\]$/); return m?RARITY_W[m[1].toLowerCase()]||0:0; }
         return (w(abls[0]||{})*10000) + (w(abls[1]||{})*100) + (w(abls[2]||{}));
     } },
+    { key:'abldesc',   label:'ABILITY DESC', title:'Ability descriptions',       sortVal: function(f){ return 0; } },
     { key:'id',        label:'ID',         title:'Fighter asset ID',            sortVal: function(f){ return Number(f.fighter_id||0); } },
 ];
 
@@ -803,13 +780,27 @@ function cellContent(key, f) {
                     var r = m ? m[1].toLowerCase() : '';
                     var st = r ? (AW_RARITY[r] || { col:'#666', dg:'none', tg:'none' }) : NO_RARITY;
                     var name = m ? raw.slice(0, raw.lastIndexOf('[')).trim() : raw;
-                    var desc = _abilityDesc[name.toLowerCase()] || '';
-                    var tipAttr = desc ? ' data-abtip="' + desc.replace(/"/g,'&quot;') + '"' : '';
                     return '<div style="display:flex;align-items:center;gap:5px;white-space:nowrap;">'
                         + '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'
                         + st.col + ';flex-shrink:0;box-shadow:' + st.dg + ';"></span>'
-                        + '<span' + tipAttr + (desc?' onclick="showAbilityTip(event,this)"':'') + ' style="color:' + st.col + ';font-size:0.85em;text-shadow:' + st.tg + ';cursor:' + (desc?'pointer':'default') + ';">' + name + '</span>'
+                        + '<span style="color:' + st.col + ';font-size:0.85em;text-shadow:' + st.tg + ';">' + name + '</span>'
                         + '</div>';
+                }).join('') + '</div>';
+        }
+        case 'abldesc': {
+            var abls2 = (f.stats&&f.stats.abilities) ? f.stats.abilities : [];
+            if (!abls2.length) return '<span class="zero">—</span>';
+            var AW_RARITY2 = { abundant:{col:'#777777'}, common:{col:'#aaaaaa'}, rare:{col:'#4488ff'}, epic:{col:'#aa44ff'}, legendary:{col:'#ff8800'}, mythic:{col:'#ff3060'}, mythical:{col:'#ff3060'} };
+            var NO_RARITY2 = { col:'#60c890' };
+            return '<div style="display:flex;flex-direction:column;gap:3px;">' +
+                abls2.map(function(a) {
+                    var raw2 = a.displayname || a.name || '?';
+                    var m2 = raw2.match(/\[(\w+)\]$/);
+                    var r2 = m2 ? m2[1].toLowerCase() : '';
+                    var st2 = r2 ? (AW_RARITY2[r2] || {col:'#666'}) : NO_RARITY2;
+                    var nm2 = m2 ? raw2.slice(0, raw2.lastIndexOf('[')).trim() : raw2;
+                    var desc2 = _abilityDesc[nm2.toLowerCase()] || '—';
+                    return '<div style="color:' + st2.col + ';font-size:0.78em;white-space:nowrap;opacity:0.85;">' + desc2 + '</div>';
                 }).join('') + '</div>';
         }
         case 'id': return '<span style="font-size:0.85em;color:var(--muted);">' + (f.fighter_id || '—') + '</span>';
@@ -944,7 +935,7 @@ function renderTable() {
             + '<td class="left">' + cellContent('marker', f) + '</td>';
 
         visibleCols.forEach(function(d) {
-            var left = (d.key === 'abilities') ? ' class="left"' : '';
+            var left = (d.key === 'abilities' || d.key === 'abldesc') ? ' class="left"' : '';
             tbody += '<td' + left + '>' + cellContent(d.key, f) + '</td>';
         });
         tbody += '</tr>';
