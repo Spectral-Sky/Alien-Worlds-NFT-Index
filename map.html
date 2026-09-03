@@ -611,6 +611,10 @@
         #bp-picker { position:fixed; inset:0; z-index:710; display:none; align-items:center; justify-content:center; background:rgba(0,0,6,0.88); }
         #bp-picker.open { display:flex; }
         #bp-picker-box { width:min(400px,94vw); max-height:80vh; background:rgba(3,6,18,0.99); border:1.5px solid rgba(96,200,255,0.25); border-radius:10px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 0 40px rgba(0,0,0,0.9); }
+        /* Sidebar mode — used when picker is opened from the dungeon picker */
+        #bp-picker.drun-sidebar { background:transparent; pointer-events:none; justify-content:flex-end; align-items:stretch; }
+        #bp-picker.drun-sidebar #bp-picker-box { pointer-events:all; width:260px; max-height:100vh; border-radius:0; border-right:none; border-top:none; border-bottom:none; border-left:1.5px solid rgba(96,200,255,0.22); box-shadow:-6px 0 30px rgba(0,0,0,0.85); }
+        .drun-fighter-chip.slot-active { border-color:rgba(232,160,32,0.7) !important; color:var(--gold) !important; background:rgba(232,160,32,0.1) !important; }
         #bp-picker-header { display:flex; align-items:center; padding:9px 12px; border-bottom:1px solid rgba(96,200,255,0.1); flex-shrink:0; gap:8px; }
         #bp-picker-title { flex:1; font-size:0.65em; letter-spacing:3px; color:var(--gold); }
         #bp-picker-close { background:transparent; border:none; color:#334; font-size:1em; cursor:crosshair; padding:2px 6px; transition:color 0.15s; }
@@ -3209,9 +3213,41 @@
         _bpPickerSlot=slotIdx;
         _bpPickerType='fighter';
         var titleEl=document.getElementById('bp-picker-title');
-        if(titleEl) titleEl.textContent='SELECT FIGHTER (SLOT '+(slotIdx+1)+')';
+        if(titleEl) titleEl.textContent='SLOT '+(slotIdx+1)+' — PICK FIGHTER';
+        var picker=document.getElementById('bp-picker');
+        if(_bpPickerFromDrun) picker.classList.add('drun-sidebar');
+        else picker.classList.remove('drun-sidebar');
+        _refreshFighterPickerList();
+        document.getElementById('bp-picker').classList.add('open');
+    }
+
+    function selectBpFighter(fid){
+        var f=_myFighters.find(function(x){return String(x.fighter_id)===String(fid);});
+        if(f&&_bpPickerSlot>=0) _bpFighters[_bpPickerSlot]=f;
+
+        if(_bpPickerFromDrun){
+            // Stay open as sidebar — advance to next empty slot automatically
+            var nextEmpty=-1;
+            for(var ni=0;ni<5;ni++){
+                var idx=((_bpPickerSlot+1+ni)%5);
+                if(!_bpFighters[idx]){ nextEmpty=idx; break; }
+            }
+            _bpPickerSlot = nextEmpty>=0 ? nextEmpty : _bpPickerSlot;
+            var titleEl=document.getElementById('bp-picker-title');
+            if(titleEl) titleEl.textContent='SLOT '+(_bpPickerSlot+1)+' — PICK FIGHTER';
+            _refreshDrunTeam();           // update chips + slot-active highlight
+            _refreshFighterPickerList();  // refresh list with new checkmarks
+        } else {
+            _bpPickerFromDrun=false;
+            closePicker();
+            _renderBattlePane();
+        }
+    }
+
+    function _refreshFighterPickerList(){
         var listEl=document.getElementById('bp-picker-list');
         if(!listEl) return;
+        var slotIdx=_bpPickerSlot;
         var sorted=_myFighters.slice().sort(function(a,b){return ((b.stats&&b.stats.level)||0)-((a.stats&&a.stats.level)||0);});
         var selectedIds=_bpFighters.map(function(f){return f?String(f.fighter_id):null;});
         var html='';
@@ -3223,31 +3259,20 @@
             var s=f.stats||{};
             var xpReady=s.level<10&&s.experience!=null&&s.required_experience!=null&&Number(s.experience)>=Number(s.required_experience);
             var inUse=f.in_use===1||f.in_use==='1';
-            var alreadySel=selectedIds.indexOf(fid)>=0&&selectedIds.indexOf(fid)!==slotIdx;
+            var usedInOtherSlot=selectedIds.some(function(id,i){return i!==slotIdx&&id===fid;});
             var role=_fmEffective(f);
-            var roleLabel=role==='tank'?'🛡 TANK':role==='dps'?'⚔ DPS':role==='util'?'✦ UTIL':'';
-            html+='<div class="bpp-row'+(alreadySel?' disabled':'')+'" onclick="selectBpFighter(\''+fid+'\')">'
+            var roleLabel=role==='tank'?'🛡':role==='dps'?'⚔':role==='util'?'✦':'';
+            html+='<div class="bpp-row'+(usedInOtherSlot?' disabled':'')+'" onclick="selectBpFighter(\''+fid+'\')">'
                 +'<span class="bpp-cls">'+ci.e+'</span>'
                 +'<span class="bpp-name">'+ci.n.toUpperCase()+'</span>'
                 +'<span class="bpp-lv">LV'+lvl+'</span>'
-                +(role?'<span class="fm-badge fm-'+role+'" onclick="event.stopPropagation();_fmCycleInPicker(\''+fid+'\',this)" title="Click to change role">'+roleLabel+'</span>':'<span class="fm-badge" style="color:#333;border:1px solid #333;background:transparent;font-size:0.82em" onclick="event.stopPropagation();_fmCycleInPicker(\''+fid+'\',this)" title="Click to set role">+ ROLE</span>')
+                +(role?'<span class="fm-badge fm-'+role+'" onclick="event.stopPropagation();_fmCycleInPicker(\''+fid+'\',this)" title="Change role">'+roleLabel+'</span>':'')
                 +(xpReady?'<span class="bpp-badge bpp-xp">XP✓</span>':'')
-                +(inUse?'<span class="bpp-badge bpp-use">DEPLOYED</span>':'')
+                +(inUse?'<span class="bpp-badge bpp-use">IN USE</span>':'')
                 +(selectedIds[slotIdx]===fid?'<span class="bpp-badge bpp-sel">✓</span>':'')
                 +'</div>';
         });
         listEl.innerHTML=html||'<div style="padding:16px;font-size:0.62em;color:#446;text-align:center;">NO FIGHTERS LOADED</div>';
-        document.getElementById('bp-picker').classList.add('open');
-    }
-
-    function selectBpFighter(fid){
-        var f=_myFighters.find(function(x){return String(x.fighter_id)===String(fid);});
-        if(f&&_bpPickerSlot>=0) _bpFighters[_bpPickerSlot]=f;
-        var fromDrun=_bpPickerFromDrun;
-        _bpPickerFromDrun=false;
-        closePicker();
-        if(fromDrun) _refreshDrunTeam();
-        else _renderBattlePane();
     }
 
     function _refreshDrunTeam(){
@@ -3261,9 +3286,11 @@
                 var _fci=FIGHTER_CLASSES[_fcls]||{e:'⚔️'};
                 var _role=_fmEffective(_ff);
                 var _badge=_role?'<span class="fm-badge fm-'+_role+'" onclick="event.stopPropagation();_fmToggleBadge(\''+_ff.fighter_id+'\',this)" title="Click to change role">'+(_role==='tank'?'🛡 TANK':_role==='dps'?'⚔ DPS':'✦ UTIL')+'</span>':'';
-                _fh+='<button class="drun-fighter-chip" onclick="drunSelectFighter('+_fi+')" title="Change slot '+(_fi+1)+'">'+_fci.e+' LV'+((_ff.stats&&_ff.stats.level)||'?')+_badge+'</button>';
+                var isActive=(_bpPickerFromDrun&&_bpPickerSlot===_fi);
+                _fh+='<button class="drun-fighter-chip'+(isActive?' slot-active':'')+'" onclick="drunSelectFighter('+_fi+')" title="Slot '+(_fi+1)+' — click to select">'+_fci.e+' LV'+((_ff.stats&&_ff.stats.level)||'?')+_badge+'</button>';
             } else {
-                _fh+='<button class="drun-fighter-chip empty" onclick="drunSelectFighter('+_fi+')" title="Pick fighter for slot '+(_fi+1)+'">+ PICK</button>';
+                var isActive=(_bpPickerFromDrun&&_bpPickerSlot===_fi);
+                _fh+='<button class="drun-fighter-chip empty'+(isActive?' slot-active':'')+'" onclick="drunSelectFighter('+_fi+')" title="Slot '+(_fi+1)+' — click to pick">+ PICK</button>';
             }
         }
         _fc.innerHTML=_fh;
@@ -3324,8 +3351,17 @@
 
     function drunSelectFighter(slotIdx){
         if(!_myFighters||!_myFighters.length){showToast('⚠ FIGHTERS NOT LOADED');return;}
-        _bpPickerFromDrun=true;
-        openFighterPicker(slotIdx);
+        if(_bpPickerFromDrun && document.getElementById('bp-picker').classList.contains('open')){
+            // Sidebar already open — just switch the active slot in-place
+            _bpPickerSlot=slotIdx;
+            var titleEl=document.getElementById('bp-picker-title');
+            if(titleEl) titleEl.textContent='SLOT '+(slotIdx+1)+' — PICK FIGHTER';
+            _refreshDrunTeam();
+            _refreshFighterPickerList();
+        } else {
+            _bpPickerFromDrun=true;
+            openFighterPicker(slotIdx);
+        }
     }
 
     async function openNFTPicker(type) {
@@ -3373,9 +3409,12 @@
     }
 
     function closePicker(){
-        document.getElementById('bp-picker').classList.remove('open');
+        var p=document.getElementById('bp-picker');
+        p.classList.remove('open','drun-sidebar');
         _bpPickerSlot=-1;
         _bpPickerType='';
+        _bpPickerFromDrun=false;
+        _refreshDrunTeam(); // clear slot-active highlights
     }
 
     async function executeBattle() {
