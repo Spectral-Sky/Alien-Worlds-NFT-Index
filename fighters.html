@@ -35,7 +35,7 @@
         --hover:rgba(232,160,32,0.06);
     }
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-    html, body { min-height:100vh; background:var(--bg); color:var(--text); font-family:'Courier New',Courier,monospace; }
+    html, body { min-height:100vh; background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; font-size:17px; }
     html { height:100%; }
     body { display:flex; flex-direction:column; height:100%; }
     ::-webkit-scrollbar { height:8px; width:8px; }
@@ -47,16 +47,16 @@
     .logo-section { display:flex; align-items:center; gap:8px; text-decoration:none; }
     .logo-section h1 { color:var(--gold); font-size:1.5em; letter-spacing:4px; text-transform:uppercase; text-shadow:0 0 10px rgba(232,160,32,0.5); font-weight:normal; }
     .nav-links { display:flex; gap:6px; flex-wrap:wrap; }
-    .nav-btn { background:transparent; color:#555; border:1px solid transparent; padding:7px 13px; font-family:'Courier New',monospace; font-size:0.78em; text-decoration:none; cursor:pointer; transition:all 0.2s; text-transform:uppercase; border-radius:3px; letter-spacing:1px; }
+    .nav-btn { background:transparent; color:#555; border:1px solid transparent; padding:7px 13px; font-family:'Segoe UI',system-ui,sans-serif; font-size:0.78em; text-decoration:none; cursor:pointer; transition:all 0.2s; text-transform:uppercase; border-radius:3px; letter-spacing:1px; }
     .nav-btn:hover { color:var(--gold); border-color:var(--border); }
     .nav-btn.active { color:#000; background:var(--gold); border-color:var(--gold); }
     .nav-dropdown-wrap { position:relative; }
-    .nav-dropdown-btn { background:transparent; color:#555; border:1px solid transparent; padding:7px 13px; font-family:'Courier New',monospace; font-size:0.78em; cursor:pointer; transition:all 0.2s; text-transform:uppercase; border-radius:3px; letter-spacing:1px; }
+    .nav-dropdown-btn { background:transparent; color:#555; border:1px solid transparent; padding:7px 13px; font-family:'Segoe UI',system-ui,sans-serif; font-size:0.78em; cursor:pointer; transition:all 0.2s; text-transform:uppercase; border-radius:3px; letter-spacing:1px; }
     .nav-dropdown-btn:hover { color:var(--gold); border-color:var(--border); }
     .nav-dropdown-btn.active { color:#000; background:var(--gold); border-color:var(--gold); }
     .nav-dropdown-menu { display:none; position:absolute; top:100%; left:0; background:rgba(2,6,20,0.98); border:1px solid var(--border); min-width:160px; z-index:300; padding:4px 0; }
     .nav-dropdown-wrap:hover .nav-dropdown-menu { display:block; }
-    .nav-dropdown-item { display:block; padding:8px 14px; color:#555; text-decoration:none; font-family:'Courier New',monospace; font-size:0.78em; transition:all 0.15s; text-transform:uppercase; letter-spacing:1px; }
+    .nav-dropdown-item { display:block; padding:8px 14px; color:#555; text-decoration:none; font-family:'Segoe UI',system-ui,sans-serif; font-size:0.78em; transition:all 0.15s; text-transform:uppercase; letter-spacing:1px; }
     .nav-dropdown-item:hover { color:var(--gold); background:var(--hover); }
     .nav-dropdown-item.active { color:var(--gold); font-weight:bold; }
     #hamburger-btn { display:none; background:transparent; border:1px solid #333; color:#888; font-size:1.1em; padding:6px 10px; cursor:pointer; border-radius:3px; }
@@ -66,7 +66,7 @@
 
     /* WALLET */
     .wallet-section { display:flex; gap:6px; align-items:center; }
-    .wallet-btn { background:#111; color:var(--gold); border:1px dashed var(--border); padding:7px 13px; font-family:'Courier New',monospace; font-size:0.74em; font-weight:bold; cursor:pointer; transition:all 0.2s; letter-spacing:1px; border-radius:3px; }
+    .wallet-btn { background:#111; color:var(--gold); border:1px dashed var(--border); padding:7px 13px; font-family:'Segoe UI',system-ui,sans-serif; font-size:0.74em; font-weight:bold; cursor:pointer; transition:all 0.2s; letter-spacing:1px; border-radius:3px; }
     .wallet-btn:hover { background:var(--hover); border-color:var(--gold); }
     .wallet-btn.logged-in { background:rgba(232,160,32,0.12); color:var(--gold); border:1px solid var(--gold); }
     .font-preview { display:block; font-size:0.85em; color:var(--muted); margin-top:1px; }
@@ -80,18 +80,20 @@
 
     /* CONTROLS */
     .controls-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:10px 28px; border-bottom:1px solid rgba(232,160,32,0.07); background:rgba(3,6,15,0.6); }
-    .ctrl-btn { background:transparent; border:1px solid rgba(232,160,32,0.35); color:var(--gold); padding:6px 14px; font-family:'Courier New',monospace; font-size:0.74em; letter-spacing:1px; cursor:pointer; border-radius:2px; transition:all 0.2s; }
+    .ctrl-btn { background:transparent; border:1px solid rgba(232,160,32,0.35); color:var(--gold); padding:6px 14px; font-family:'Segoe UI',system-ui,sans-serif; font-size:0.74em; letter-spacing:1px; cursor:pointer; border-radius:2px; transition:all 0.2s; }
     .ctrl-btn:hover { background:rgba(232,160,32,0.08); }
     .ctrl-btn:disabled { opacity:0.35; cursor:not-allowed; }
-    #fighter-search { background:rgba(3,6,15,0.9); border:1px solid rgba(232,160,32,0.2); color:var(--gold); font-family:'Courier New',monospace; font-size:0.76em; padding:6px 12px; outline:none; border-radius:2px; width:180px; }
+    #fighter-search { background:rgba(3,6,15,0.9); border:1px solid rgba(232,160,32,0.2); color:var(--gold); font-family:'Segoe UI',system-ui,sans-serif; font-size:0.76em; padding:6px 12px; outline:none; border-radius:2px; width:180px; }
     #fighter-search::placeholder { color:#444; }
     #fighter-search:focus { border-color:var(--gold); }
+    #class-filter { background:rgba(3,6,15,0.9); border:1px solid rgba(232,160,32,0.2); color:var(--gold); font-family:'Segoe UI',system-ui,sans-serif; font-size:0.76em; padding:6px 10px; outline:none; border-radius:2px; cursor:pointer; }
+    #class-filter:focus { border-color:var(--gold); }
     #count-display { font-size:0.65em; color:var(--muted); margin-left:auto; letter-spacing:1px; }
 
     /* COLUMN TOGGLES */
     .col-toggles { padding:8px 28px; border-bottom:1px solid rgba(232,160,32,0.06); background:rgba(3,6,15,0.4); display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
     .col-toggle-label { font-size:0.58em; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-right:4px; }
-    .col-toggle { background:transparent; border:1px solid rgba(232,160,32,0.18); color:#445; font-family:'Courier New',monospace; font-size:0.65em; letter-spacing:1px; padding:3px 9px; cursor:pointer; border-radius:2px; transition:all 0.15s; }
+    .col-toggle { background:transparent; border:1px solid rgba(232,160,32,0.18); color:#445; font-family:'Segoe UI',system-ui,sans-serif; font-size:0.65em; letter-spacing:1px; padding:3px 9px; cursor:pointer; border-radius:2px; transition:all 0.15s; }
     .col-toggle:hover { border-color:rgba(232,160,32,0.4); color:#778; }
     .col-toggle.on { border-color:var(--gold); color:var(--gold); background:rgba(232,160,32,0.06); }
     .col-toggle-blue   { border-color:rgba(60,180,255,0.4); color:#50a0e0; }
@@ -186,7 +188,7 @@
     .marker-drop { position:relative; display:inline-block; }
     .marker-drop-menu { display:none; position:absolute; top:100%; left:0; background:rgba(2,6,20,0.98); border:1px solid var(--border); min-width:160px; z-index:300; padding:4px 0; max-height:340px; overflow-y:auto; }
     .marker-drop:hover .marker-drop-menu { display:block; }
-    .marker-drop-item { display:flex; align-items:center; gap:7px; padding:5px 12px; color:#999; font-family:'Courier New',monospace; font-size:0.78em; letter-spacing:1px; cursor:pointer; white-space:nowrap; }
+    .marker-drop-item { display:flex; align-items:center; gap:7px; padding:5px 12px; color:#999; font-family:'Segoe UI',system-ui,sans-serif; font-size:0.78em; letter-spacing:1px; cursor:pointer; white-space:nowrap; }
     .marker-drop-item:hover { color:var(--gold); background:var(--hover); }
     .marker-drop-item img { width:14px; height:14px; object-fit:contain; opacity:0.8; flex-shrink:0; }
     .marker-badge img { width:13px; height:13px; object-fit:contain; vertical-align:middle; margin-right:3px; opacity:0.85; }
@@ -197,7 +199,7 @@
     .loading-pulse { animation:fade-pulse 1.2s infinite; }
 
     /* RECAP TAB */
-    .ftab-btn { background:transparent; border:none; border-bottom:3px solid transparent; color:#556; font-family:'Courier New',monospace; font-size:0.72em; letter-spacing:2px; padding:10px 18px; cursor:pointer; transition:all 0.2s; text-transform:uppercase; margin-bottom:-2px; }
+    .ftab-btn { background:transparent; border:none; border-bottom:3px solid transparent; color:#556; font-family:'Segoe UI',system-ui,sans-serif; font-size:0.72em; letter-spacing:2px; padding:10px 18px; cursor:pointer; transition:all 0.2s; text-transform:uppercase; margin-bottom:-2px; }
     .ftab-btn:hover { color:var(--gold); }
     .ftab-btn.ftab-active { color:var(--gold); border-bottom-color:var(--gold); }
     .rc-team { display:flex; flex-direction:column; flex:1; gap:6px; min-width:160px; }
@@ -374,7 +376,8 @@
             onkeydown="if(event.key==='Enter')loadFighters()">
         <button class="ctrl-btn" onclick="loadFighters()" style="padding:5px 10px;">&#9654;</button>
     </div>
-    <input id="fighter-search" type="text" placeholder="Filter class, element, race, marker, ability…" oninput="renderTable()">
+    <select id="class-filter" onchange="renderTable()"><option value="">ALL CLASSES</option></select>
+    <input id="fighter-search" type="text" placeholder="Filter element, race, marker, ability…" oninput="renderTable()">
     <button id="hide-lv1-btn"      class="ctrl-btn" onclick="toggleHideLv1()"      style="border-color:rgba(232,160,32,0.2);color:var(--muted);">HIDE LVL 1</button>
     <button id="hide-marked-btn"   class="ctrl-btn" onclick="toggleHideMarked()"   style="border-color:rgba(232,160,32,0.2);color:var(--muted);">HIDE MARKED</button>
     <button id="hide-unmarked-btn" class="ctrl-btn" onclick="toggleHideUnmarked()" style="border-color:rgba(232,160,32,0.2);color:var(--muted);">HIDE UNMARKED</button>
@@ -498,6 +501,7 @@ var _sortCol    = 'lv';
 var _sortDir    = -1;
 var _hiddenCols = {};
 var _selected   = new Set();
+var _filterClass = '';
 
 var _hideLevel1   = false;
 var _hideMarked   = false;
@@ -605,6 +609,7 @@ async function loadFighters() {
         if (sub) sub.textContent = label + '  ·  ' + _fighters.length + ' ACTIVE FIGHTERS  ·  SOURCE: FIGHTERS.ALE';
         var sn = document.getElementById('stats-notice');
         if (sn) sn.style.display = '';
+        _populateClassFilter();
         renderTable();
         fetchCredits(wallet);
     } catch(e) {
@@ -835,9 +840,21 @@ function cellContent(key, f) {
     return '';
 }
 
+function _populateClassFilter() {
+    var sel = document.getElementById('class-filter');
+    if (!sel) return;
+    var classes = [];
+    _fighters.forEach(function(f) { if (f.classname && classes.indexOf(f.classname) === -1) classes.push(f.classname); });
+    classes.sort();
+    while (sel.options.length > 1) sel.remove(1);
+    classes.forEach(function(c) { var o = document.createElement('option'); o.value = c.toLowerCase(); o.textContent = c.toUpperCase(); sel.appendChild(o); });
+}
+
 function renderTable() {
+    _filterClass = (document.getElementById('class-filter').value || '').toLowerCase().trim();
     var q = (document.getElementById('fighter-search').value || '').toLowerCase().trim();
     _filtered = _fighters.filter(function(f) {
+        if (_filterClass && (f.classname||'').toLowerCase() !== _filterClass) return false;
         if (_hideLevel1   && Number((f.stats||{}).level||1) <= 1) return false;
         var hasMark = !!(f.marker && f.marker.trim());
         if (_hideMarked   && hasMark)  return false;
