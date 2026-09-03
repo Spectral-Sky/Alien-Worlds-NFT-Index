@@ -463,17 +463,19 @@ function _elImg(name) {
 }
 
 // ── STATE ────────────────────────────────────────────────────────────────────
-var _abilityDesc = {}; // displayname (lowercase) → description
-fetch('ale_abilities.json').then(function(r){return r.json();}).then(function(data){
-    Object.values(data).forEach(function(levels){
-        Object.values(levels).forEach(function(abilities){
-            Object.values(abilities).forEach(function(a){
-                if(a.displayname && a.description)
-                    _abilityDesc[a.displayname.toLowerCase()] = a.description;
-            });
-        });
-    });
-}).catch(function(){});
+function _resolveAbilityDesc(a) {
+    var desc = a.description || '';
+    if (!desc) return '—';
+    var sub = function(match, n, effects) {
+        var eff = effects && effects[parseInt(n)];
+        if (!eff) return '?';
+        return eff.value + (eff.percentflat === 'percent' ? '%' : '');
+    };
+    desc = desc.replace(/\[bf:(\d+):value\]/g,  function(_, n){ return sub(_, n, a.bf_effects);  });
+    desc = desc.replace(/\[if:(\d+):value\]/g,   function(_, n){ return sub(_, n, a.if_effects);   });
+    desc = desc.replace(/\[eof:(\d+):value\]/g,  function(_, n){ return sub(_, n, a.eof_effects);  });
+    return desc;
+}
 
 
 var _fighters   = [];
@@ -798,9 +800,7 @@ function cellContent(key, f) {
                     var m2 = raw2.match(/\[(\w+)\]$/);
                     var r2 = m2 ? m2[1].toLowerCase() : '';
                     var st2 = r2 ? (AW_RARITY2[r2] || {col:'#666'}) : NO_RARITY2;
-                    var nm2 = m2 ? raw2.slice(0, raw2.lastIndexOf('[')).trim() : raw2;
-                    var desc2 = _abilityDesc[nm2.toLowerCase()] || '—';
-                    return '<div style="color:' + st2.col + ';font-size:0.78em;white-space:nowrap;opacity:0.85;">' + desc2 + '</div>';
+                    return '<div style="color:' + st2.col + ';font-size:0.78em;white-space:nowrap;opacity:0.85;">' + _resolveAbilityDesc(a) + '</div>';
                 }).join('') + '</div>';
         }
         case 'id': return '<span style="font-size:0.85em;color:var(--muted);">' + (f.fighter_id || '—') + '</span>';
