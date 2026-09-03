@@ -948,6 +948,14 @@
         return {x:cx,y:cy};
     }
 
+    function encodeLandId(x,y) {
+        var enc=function(n){if(n===0)return 'a';var s='';while(n>0){s=String.fromCharCode(97+(n%10))+s;n=Math.floor(n/10);}return s;};
+        return enc(x)+'x'+enc(y);
+    }
+    function dgPlayedKey(planet,dg) {
+        return planet+'.'+(dg.land_id||encodeLandId(dg.x,dg.y));
+    }
+
     function _addDungeonCoord(planet,x,y,owner,land_id,boost) {
         if (!planet||!x||!y||!ALE_LOCATIONS[planet]) return false;
         var dup=ALE_LOCATIONS[planet].dungeons.some(function(d){return d.x===x&&d.y===y;});
@@ -1549,7 +1557,7 @@
                     icon='<span class="cell-icon"><img src="Ale%20images/portal.png" alt="portal" class="icon-portal"></span><span class="portal-label">'+_pname+'</span>';
                 } else if(dungeonMap[key]){
                     var dg=dungeonMap[key];
-                    var dgLocked=dg.land_id&&(_playerPlayedDungeons.has(planet+'.'+dg.land_id)||_playerPlayedDungeons.has(String(dg.land_id)));
+                    var dgLocked=_playerPlayedDungeons.has(dgPlayedKey(planet,dg));
                     cls+=' ale-dungeon'+(dgLocked?' ale-dg-locked':'');
                     sty=' style="border-color:'+(dgLocked?'#406040':'#508050')+'a0;box-shadow:inset 0 0 5px '+(dgLocked?'#406040':'#508050')+'60"';
                     icon=dgLocked
@@ -1640,7 +1648,7 @@
             var tv=(locs.taverns||[]).find(function(t){return t.x===x&&t.y===y;});
             var ar=(locs.arenas||[]).some(function(a){return a.x===x&&a.y===y;});
             if(dg){
-                var dgLk=dg.land_id&&(_playerPlayedDungeons.has(_activePlanet+'.'+dg.land_id)||_playerPlayedDungeons.has(String(dg.land_id)));
+                var dgLk=_playerPlayedDungeons.has(dgPlayedKey(_activePlanet,dg));
                 var dgBoostTip=(dg.boost||0)>0?' · ⚡ +'+dg.boost+'%':'';
                 lines.push('DUNGEON'+dgBoostTip+(dgLk?' · ✓ COMPLETED TODAY':''));
             } else if(tv){
@@ -1682,7 +1690,7 @@
         var locs=ALE_LOCATIONS[_activePlanet]||{};
         var dungeonEntry=(locs.dungeons||[]).reduce(function(f,d){return f||(d.x===x&&d.y===y?d:null);},null);
         var isDungeon=!!dungeonEntry;
-        var isDungeonLocked=isDungeon&&dungeonEntry.land_id&&(_playerPlayedDungeons.has(_activePlanet+'.'+dungeonEntry.land_id)||_playerPlayedDungeons.has(String(dungeonEntry.land_id)));
+        var isDungeonLocked=isDungeon&&_playerPlayedDungeons.has(dgPlayedKey(_activePlanet,dungeonEntry));
         var tavernEntry=(locs.taverns||[]).reduce(function(f,t){return f||(t.x===x&&t.y===y?t:null);},null);
         var isTavern=!!tavernEntry;
         var isArena=(locs.arenas||[]).some(function(a){return a.x===x&&a.y===y;});
@@ -1909,7 +1917,7 @@
             var ar=(locs.arenas||[]).length;
             var dg=locs.dungeons||[];
             var boostedDg=dg.filter(function(d){return (d.boost||0)>0;});
-            var availBoostedDg=boostedDg.filter(function(d){return d.land_id&&!_playerPlayedDungeons.has(p+'.'+d.land_id)&&!_playerPlayedDungeons.has(String(d.land_id));});
+            var availBoostedDg=boostedDg.filter(function(d){return !_playerPlayedDungeons.has(dgPlayedKey(p,d));});
             var parts=[];
             var tvIcon='<img src="Ale%20images/tavern.svg" style="width:10px;height:10px;vertical-align:middle;display:inline-block;opacity:0.85;filter:sepia(1) saturate(2) hue-rotate(10deg) brightness(0.85);">';
             var arIcon='<img src="Ale%20images/Arena.svg" style="width:10px;height:10px;vertical-align:middle;display:inline-block;opacity:0.85;filter:sepia(1) saturate(3) hue-rotate(300deg) brightness(0.7);">';
@@ -3010,7 +3018,7 @@
         if(mode==='dungeon'){
             _bpDungeonEntry=entry;
             var planet=entry.planet||_activePlanet;
-            _bpLocked=!!(entry.land_id&&(_playerPlayedDungeons.has(planet+'.'+entry.land_id)||_playerPlayedDungeons.has(entry.land_id)));
+            _bpLocked=!!_playerPlayedDungeons.has(dgPlayedKey(planet,entry));
         } else {
             _bpArenaEntry=entry;
             var arKey=(entry.planet||_activePlanet)+'.'+entry.x+'.'+entry.y;
@@ -4150,8 +4158,7 @@ function drunPickerConfirm() {
     Object.keys(ALE_LOCATIONS).forEach(function(planet){
         var dungeons = ALE_LOCATIONS[planet].dungeons || [];
         dungeons.forEach(function(d){
-            var key = planet+'.'+d.land_id;
-            if (!_playerPlayedDungeons.has(key) && !_playerPlayedDungeons.has(String(d.land_id))) {
+            if (!_playerPlayedDungeons.has(dgPlayedKey(planet,d))) {
                 allDungeons.push({planet:planet, x:d.x, y:d.y, land_id:d.land_id});
             }
         });
@@ -4498,8 +4505,8 @@ async function runTxQueue() {
             }
 
             // Dungeon: check win/loss, retry once on loss, pause on double-loss
-            if (step.isDungeon && step.dungeonItem && step.dungeonItem.land_id) {
-                var _dk = step.dungeonItem.planet + '.' + step.dungeonItem.land_id;
+            if (step.isDungeon && step.dungeonItem && (step.dungeonItem.x || step.dungeonItem.land_id)) {
+                var _dk = dgPlayedKey(step.dungeonItem.planet || _activePlanet, step.dungeonItem);
                 var _dResult = null;
                 if (progLbl) progLbl.textContent = 'Checking battle result…';
                 try { _dResult = await _checkDungeonResult(step.dungeonHistoryId); } catch(e) {}
