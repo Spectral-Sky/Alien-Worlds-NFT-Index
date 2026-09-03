@@ -482,26 +482,20 @@ fetch('ale_abilities.json').then(function(r){return r.json();}).then(function(da
 
 (function(){
     var tip = document.getElementById('abl-tip');
-    document.addEventListener('mouseover', function(e){
+    document.addEventListener('click', function(e){
         var el = e.target.closest('[data-abtip]');
-        if(!el || !tip) return;
+        if(!el || !tip){ tip.style.display='none'; return; }
         var desc = el.getAttribute('data-abtip');
-        if(!desc) return;
+        if(!desc){ tip.style.display='none'; return; }
         tip.textContent = desc;
-        tip.style.display = 'block';
-    });
-    document.addEventListener('mousemove', function(e){
-        if(tip.style.display !== 'block') return;
-        var x = e.clientX + 14, y = e.clientY + 14;
-        if(x + 250 > window.innerWidth) x = e.clientX - 254;
-        if(y + 80 > window.innerHeight) y = e.clientY - 50;
+        var r = el.getBoundingClientRect();
+        var x = r.left, y = r.bottom + 6;
+        if(x + 250 > window.innerWidth) x = window.innerWidth - 258;
+        if(y + 80 > window.innerHeight) y = r.top - 50;
         tip.style.left = x + 'px';
         tip.style.top = y + 'px';
-    });
-    document.addEventListener('mouseout', function(e){
-        if(!e.target.closest('[data-abtip]')) return;
-        if(!e.relatedTarget || !e.relatedTarget.closest('[data-abtip]'))
-            tip.style.display = 'none';
+        tip.style.display = 'block';
+        e.stopPropagation();
     });
 })();
 
@@ -813,7 +807,7 @@ function cellContent(key, f) {
                     return '<div style="display:flex;align-items:center;gap:5px;white-space:nowrap;">'
                         + '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'
                         + st.col + ';flex-shrink:0;box-shadow:' + st.dg + ';"></span>'
-                        + '<span' + tipAttr + ' style="color:' + st.col + ';font-size:0.85em;text-shadow:' + st.tg + ';cursor:' + (desc?'help':'default') + ';">' + name + '</span>'
+                        + '<span' + tipAttr + ' style="color:' + st.col + ';font-size:0.85em;text-shadow:' + st.tg + ';cursor:' + (desc?'pointer':'default') + ';">' + name + '</span>'
                         + '</div>';
                 }).join('') + '</div>';
         }
