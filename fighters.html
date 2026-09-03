@@ -480,24 +480,25 @@ fetch('ale_abilities.json').then(function(r){return r.json();}).then(function(da
     });
 }).catch(function(){});
 
-(function(){
+function showAbilityTip(e, el) {
+    e.stopPropagation();
     var tip = document.getElementById('abl-tip');
-    document.addEventListener('click', function(e){
-        var el = e.target.closest('[data-abtip]');
-        if(!el || !tip){ tip.style.display='none'; return; }
-        var desc = el.getAttribute('data-abtip');
-        if(!desc){ tip.style.display='none'; return; }
-        tip.textContent = desc;
-        var r = el.getBoundingClientRect();
-        var x = r.left, y = r.bottom + 6;
-        if(x + 250 > window.innerWidth) x = window.innerWidth - 258;
-        if(y + 80 > window.innerHeight) y = r.top - 50;
-        tip.style.left = x + 'px';
-        tip.style.top = y + 'px';
-        tip.style.display = 'block';
-        e.stopPropagation();
-    });
-})();
+    if(!tip) return;
+    var desc = el.getAttribute('data-abtip');
+    if(!desc) return;
+    tip.textContent = desc;
+    var r = el.getBoundingClientRect();
+    var x = r.left, y = r.bottom + 6;
+    if(x + 250 > window.innerWidth) x = window.innerWidth - 258;
+    if(y + 60 > window.innerHeight) y = r.top - 44;
+    tip.style.left = x + 'px';
+    tip.style.top = y + 'px';
+    tip.style.display = 'block';
+}
+document.addEventListener('click', function(e){
+    if(!e.target.closest('[data-abtip]'))
+        document.getElementById('abl-tip').style.display='none';
+});
 
 var _fighters   = [];
 var _filtered   = [];
@@ -807,7 +808,7 @@ function cellContent(key, f) {
                     return '<div style="display:flex;align-items:center;gap:5px;white-space:nowrap;">'
                         + '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'
                         + st.col + ';flex-shrink:0;box-shadow:' + st.dg + ';"></span>'
-                        + '<span' + tipAttr + ' style="color:' + st.col + ';font-size:0.85em;text-shadow:' + st.tg + ';cursor:' + (desc?'pointer':'default') + ';">' + name + '</span>'
+                        + '<span' + tipAttr + (desc?' onclick="showAbilityTip(event,this)"':'') + ' style="color:' + st.col + ';font-size:0.85em;text-shadow:' + st.tg + ';cursor:' + (desc?'pointer':'default') + ';">' + name + '</span>'
                         + '</div>';
                 }).join('') + '</div>';
         }
