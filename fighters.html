@@ -106,7 +106,7 @@
 
     /* TABLE */
     .table-wrap { overflow:auto; flex:1; min-height:0; }
-    .lb-table { border-collapse:separate; border-spacing:0; font-size:0.84em; width:100%; }
+    .lb-table { border-collapse:separate; border-spacing:0; font-size:0.92em; width:100%; }
     .lb-table th { position:sticky; top:0; z-index:2; background:#090912; border-bottom:2px solid var(--gold); padding:7px 8px; text-align:right; cursor:pointer; letter-spacing:1px; text-transform:uppercase; color:#667; font-weight:normal; white-space:nowrap; user-select:none; transition:color 0.15s; }
     .lb-table th:first-child { text-align:left; }
     .lb-table th.left { text-align:left; }
@@ -408,6 +408,9 @@
     <button class="col-toggle" data-col="abldesc"   onclick="toggleCol(this)">ABILITY DESC</button>
     <button class="col-toggle" data-col="id"        onclick="toggleCol(this)">FIGHTER ID</button>
     <button class="col-toggle" data-col="payday"    onclick="toggleCol(this)">PAYDAY</button>
+    <div class="col-toggles-sep"></div>
+    <button class="col-toggle" onclick="changeTblFS(-1)" title="Decrease font size">A−</button>
+    <button class="col-toggle" onclick="changeTblFS(1)"  title="Increase font size">A+</button>
 </div>
 
 <div id="stats-notice" style="display:none;padding:5px 28px;font-size:0.58em;color:#485060;letter-spacing:1px;background:rgba(5,8,20,0.4);border-bottom:1px solid rgba(232,160,32,0.04);">
@@ -463,6 +466,17 @@ function _elImg(name) {
 }
 
 // ── STATE ────────────────────────────────────────────────────────────────────
+var _tblFS = 0.92;
+function changeTblFS(dir) {
+    var sizes = [0.72, 0.78, 0.84, 0.92, 1.0, 1.08, 1.16];
+    var idx = sizes.indexOf(_tblFS);
+    if (idx < 0) idx = 3;
+    idx = Math.max(0, Math.min(sizes.length - 1, idx + dir));
+    _tblFS = sizes[idx];
+    var tbl = document.querySelector('.lb-table');
+    if (tbl) tbl.style.fontSize = _tblFS + 'em';
+}
+
 function _resolveAbilityDesc(a) {
     var desc = a.description || '';
     if (!desc) return '—';
