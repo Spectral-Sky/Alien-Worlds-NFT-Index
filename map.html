@@ -997,7 +997,7 @@
             var res=await fetchRows({code:'players.ale',scope:'players.ale',table:'players',lower_bound:wallet,upper_bound:wallet,limit:1,json:true});
             if(!res||!res.rows||!res.rows[0]||res.rows[0].wallet!==wallet)return;
             // Dungeons beaten today
-            _playerPlayedDungeons=new Set(res.rows[0].played_dungeons||[]);
+            _playerPlayedDungeons=new Set((res.rows[0].played_dungeons||[]).map(String));
             // Build new tavern list atomically to avoid a gap where onCell sees empty taverns
             var newTaverns={};
             Object.keys(ALE_LOCATIONS).forEach(function(p){newTaverns[p]=[];});
@@ -1411,7 +1411,7 @@
                 _playerPos={planet:playerPlanet,x:row.x||1,y:row.y||1};
                 _playerAP=parseAP(row.activestats&&row.activestats.action_points);
                 // Pre-load taverns so they're ready when the map builds
-                _playerPlayedDungeons=new Set(row.played_dungeons||[]);
+                _playerPlayedDungeons=new Set((row.played_dungeons||[]).map(String));
                 Object.keys(ALE_LOCATIONS).forEach(function(p){ALE_LOCATIONS[p].taverns=[];});
                 (row.active_taverns||[]).forEach(function(t){
                     var planet=normalizePlanet(t.planet);
@@ -1549,7 +1549,7 @@
                     icon='<span class="cell-icon"><img src="Ale%20images/portal.png" alt="portal" class="icon-portal"></span><span class="portal-label">'+_pname+'</span>';
                 } else if(dungeonMap[key]){
                     var dg=dungeonMap[key];
-                    var dgLocked=dg.land_id&&(_playerPlayedDungeons.has(planet+'.'+dg.land_id)||_playerPlayedDungeons.has(dg.land_id));
+                    var dgLocked=dg.land_id&&(_playerPlayedDungeons.has(planet+'.'+dg.land_id)||_playerPlayedDungeons.has(String(dg.land_id)));
                     cls+=' ale-dungeon'+(dgLocked?' ale-dg-locked':'');
                     sty=' style="border-color:'+(dgLocked?'#406040':'#508050')+'a0;box-shadow:inset 0 0 5px '+(dgLocked?'#406040':'#508050')+'60"';
                     icon=dgLocked
@@ -1640,7 +1640,7 @@
             var tv=(locs.taverns||[]).find(function(t){return t.x===x&&t.y===y;});
             var ar=(locs.arenas||[]).some(function(a){return a.x===x&&a.y===y;});
             if(dg){
-                var dgLk=dg.land_id&&_playerPlayedDungeons.has(_activePlanet+'.'+dg.land_id);
+                var dgLk=dg.land_id&&(_playerPlayedDungeons.has(_activePlanet+'.'+dg.land_id)||_playerPlayedDungeons.has(String(dg.land_id)));
                 var dgBoostTip=(dg.boost||0)>0?' · ⚡ +'+dg.boost+'%':'';
                 lines.push('DUNGEON'+dgBoostTip+(dgLk?' · ✓ COMPLETED TODAY':''));
             } else if(tv){
@@ -1682,7 +1682,7 @@
         var locs=ALE_LOCATIONS[_activePlanet]||{};
         var dungeonEntry=(locs.dungeons||[]).reduce(function(f,d){return f||(d.x===x&&d.y===y?d:null);},null);
         var isDungeon=!!dungeonEntry;
-        var isDungeonLocked=isDungeon&&dungeonEntry.land_id&&(_playerPlayedDungeons.has(_activePlanet+'.'+dungeonEntry.land_id)||_playerPlayedDungeons.has(dungeonEntry.land_id));
+        var isDungeonLocked=isDungeon&&dungeonEntry.land_id&&(_playerPlayedDungeons.has(_activePlanet+'.'+dungeonEntry.land_id)||_playerPlayedDungeons.has(String(dungeonEntry.land_id)));
         var tavernEntry=(locs.taverns||[]).reduce(function(f,t){return f||(t.x===x&&t.y===y?t:null);},null);
         var isTavern=!!tavernEntry;
         var isArena=(locs.arenas||[]).some(function(a){return a.x===x&&a.y===y;});
@@ -1909,7 +1909,7 @@
             var ar=(locs.arenas||[]).length;
             var dg=locs.dungeons||[];
             var boostedDg=dg.filter(function(d){return (d.boost||0)>0;});
-            var availBoostedDg=boostedDg.filter(function(d){return d.land_id&&!_playerPlayedDungeons.has(p+'.'+d.land_id);});
+            var availBoostedDg=boostedDg.filter(function(d){return d.land_id&&!_playerPlayedDungeons.has(p+'.'+d.land_id)&&!_playerPlayedDungeons.has(String(d.land_id));});
             var parts=[];
             var tvIcon='<img src="Ale%20images/tavern.svg" style="width:10px;height:10px;vertical-align:middle;display:inline-block;opacity:0.85;filter:sepia(1) saturate(2) hue-rotate(10deg) brightness(0.85);">';
             var arIcon='<img src="Ale%20images/Arena.svg" style="width:10px;height:10px;vertical-align:middle;display:inline-block;opacity:0.85;filter:sepia(1) saturate(3) hue-rotate(300deg) brightness(0.7);">';
@@ -2405,7 +2405,7 @@
                     _playerPos={planet:pn,x:row.x||1,y:row.y||1};
                     _playerAP=parseAP(row.activestats&&row.activestats.action_points);
                     // Refresh dungeons beaten today
-                    _playerPlayedDungeons=new Set(row.played_dungeons||[]);
+                    _playerPlayedDungeons=new Set((row.played_dungeons||[]).map(String));
                     // Refresh active taverns across all planets
                     var newTaverns={};
                     Object.keys(ALE_LOCATIONS).forEach(function(p){newTaverns[p]=[];});
