@@ -140,7 +140,7 @@
         #preview-ability { display: none; margin-top: 8px; padding: 6px 8px; border-top: 1px dashed #333; font-size: 0.75em; color: #c8b880; white-space: normal; text-align: left; line-height: 1.4; font-weight: normal; width: 90%; }
 
         /* ── NFT Stats Preview (Live Stats tab only) ──────────────────────── */
-        #nft-stats-preview { display:none; position:fixed; top:120px; right:28px; width:210px; background:rgba(4,8,20,0.97); border:1px solid rgba(232,160,32,0.3); border-radius:4px; padding:14px; z-index:150; text-align:center; box-shadow:0 0 28px rgba(0,0,0,0.9),0 0 14px rgba(232,160,32,0.07); pointer-events:none; }
+        #nft-stats-preview { display:none; position:fixed; top:140px; right:28px; width:210px; background:rgba(4,8,20,0.97); border:1px solid rgba(232,160,32,0.3); border-radius:4px; padding:14px; z-index:150; text-align:center; box-shadow:0 0 28px rgba(0,0,0,0.9),0 0 14px rgba(232,160,32,0.07); pointer-events:none; }
         #nft-stats-preview.nsp-visible { display:block; }
         #nsp-img { width:178px; height:178px; object-fit:contain; border-radius:5px; border:1px solid rgba(232,160,32,0.18); display:block; margin:0 auto; }
         #nsp-id  { font-size:0.5em; color:rgba(232,160,32,0.45); letter-spacing:2px; margin-top:8px; font-family:'Courier New',monospace; }
@@ -538,15 +538,15 @@
     </div>
 
     <div class="tab-bar">
-        <button class="tab-btn" onclick="showTab('crew')">CREW</button>
+        <button class="tab-btn active" id="tab-btn-crew" onclick="showTab('crew')">CREW</button>
         <button class="tab-btn" onclick="showTab('arms')">ARMS</button>
         <button class="tab-btn" onclick="showTab('tools')">TOOLS</button>
-        <button class="tab-btn active" id="tab-btn-stats" onclick="showTab('stats'); loadStatsIfNeeded()">LIVE STATS</button>
+        <button class="tab-btn" id="tab-btn-stats" onclick="showTab('stats'); loadStatsIfNeeded()">LIVE STATS</button>
         <button class="tab-btn" onclick="showTab('farming')">FARMING</button>
         <button class="tab-btn" onclick="showTab('settings')">SETTINGS</button>
     </div>
 
-    <div id="tab-crew" class="tab-content">
+    <div id="tab-crew" class="tab-content active">
         <div class="grid-container">
             <table class="waffle" id="crew-table">
                 <thead>
@@ -663,7 +663,7 @@
         </div>
     </div>
 
-    <div id="tab-stats" class="tab-content active">
+    <div id="tab-stats" class="tab-content">
         <div style="padding:30px 40px;">
             <div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.5);margin-bottom:20px;">◈ USAGE STATISTICS</div>
             <div id="stats-loading" style="color:#666;font-size:0.7em;letter-spacing:2px;display:none;">LOADING DATA…</div>
@@ -925,6 +925,70 @@
         bgW = bgC.width = window.innerWidth; bgH = bgC.height = window.innerHeight;
         bgCx = bgW/2; bgCy = bgH/2;
     });
+
+    // ── SHOOTING STARS ───────────────────────────────────────────────────────
+    var _ssList = [];
+    function _ssSpawn() {
+        var angle = Math.random() * Math.PI * 2;
+        var speed = 9 + Math.random() * 8;
+        // start at a random edge position
+        var edge  = Math.floor(Math.random() * 4);
+        var sx, sy;
+        if (edge === 0) { sx = Math.random() * bgW; sy = 0; }
+        else if (edge === 1) { sx = bgW; sy = Math.random() * bgH; }
+        else if (edge === 2) { sx = Math.random() * bgW; sy = bgH; }
+        else { sx = 0; sy = Math.random() * bgH; }
+        // bias direction roughly across the screen
+        var tx = bgW * 0.2 + Math.random() * bgW * 0.6;
+        var ty = bgH * 0.2 + Math.random() * bgH * 0.6;
+        var dx = tx - sx, dy = ty - sy, dl = Math.sqrt(dx*dx+dy*dy);
+        _ssList.push({ x:sx, y:sy, vx:dx/dl*speed, vy:dy/dl*speed,
+                       hue:Math.random()*360, life:1, tailX:[sx], tailY:[sy] });
+    }
+    function _ssTick() {
+        for (var i = _ssList.length - 1; i >= 0; i--) {
+            var s = _ssList[i];
+            s.x += s.vx; s.y += s.vy;
+            s.hue = (s.hue + 4) % 360;
+            s.life -= 0.016;
+            s.tailX.push(s.x); s.tailY.push(s.y);
+            var maxTail = 28;
+            if (s.tailX.length > maxTail) { s.tailX.shift(); s.tailY.shift(); }
+            if (s.life <= 0 || s.x < -60 || s.x > bgW+60 || s.y < -60 || s.y > bgH+60)
+                { _ssList.splice(i, 1); continue; }
+            // Draw tail
+            for (var t = 1; t < s.tailX.length; t++) {
+                var prog  = t / s.tailX.length;
+                var alpha = prog * s.life * 0.85;
+                var hShift = (s.hue + t * 8) % 360;
+                bgCtx.strokeStyle = 'hsla('+hShift+',100%,75%,'+alpha+')';
+                bgCtx.lineWidth   = prog * 2.4;
+                bgCtx.beginPath();
+                bgCtx.moveTo(s.tailX[t-1], s.tailY[t-1]);
+                bgCtx.lineTo(s.tailX[t],   s.tailY[t]);
+                bgCtx.stroke();
+            }
+            // Head glow
+            bgCtx.beginPath();
+            bgCtx.arc(s.x, s.y, 2.2, 0, Math.PI*2);
+            bgCtx.fillStyle = 'hsla('+s.hue+',100%,95%,'+(s.life*0.95)+')';
+            bgCtx.fill();
+        }
+    }
+    // Draw shooting stars in their own rAF loop on the same canvas
+    (function ssLoop() {
+        requestAnimationFrame(ssLoop);
+        if (bgRunning && _ssList.length) _ssTick();
+    })();
+    // Schedule spawns every 20–60 seconds
+    function _ssSchedule() {
+        var delay = 20000 + Math.random() * 40000;
+        setTimeout(function() {
+            if (bgRunning) _ssSpawn();
+            _ssSchedule();
+        }, delay);
+    }
+    _ssSchedule();
 })();
 </script>
 
@@ -2672,6 +2736,9 @@ window.nftStatsHover = function(img) {
     document.getElementById('nsp-img').src = src;
     document.getElementById('nsp-id').textContent = '#' + id;
     document.getElementById('nsp-pin').textContent = window._nspPinned === img ? '◈ PINNED — click to unpin' : 'CLICK TO PIN';
+    // Position below the sticky header dynamically
+    var tb = document.querySelector('.top-bar');
+    nsp.style.top = (tb ? tb.getBoundingClientRect().bottom + 12 : 140) + 'px';
     nsp.classList.add('nsp-visible');
 };
 window.nftStatsUnhover = function() {
