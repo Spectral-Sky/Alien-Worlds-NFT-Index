@@ -486,7 +486,7 @@ function _resolveAbilityDesc(a) {
     var sub = function(match, n, effects) {
         var eff = effects && effects[parseInt(n)];
         if (!eff) return '?';
-        return eff.value + (eff.percentflat === 'percent' ? '%' : '');
+        return String(eff.value);
     };
     desc = desc.replace(/\[bf:(\d+):value\]/g,  function(_, n){ return sub(_, n, a.bf_effects);  });
     desc = desc.replace(/\[if:(\d+):value\]/g,   function(_, n){ return sub(_, n, a.if_effects);   });
