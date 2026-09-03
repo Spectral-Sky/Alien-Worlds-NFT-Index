@@ -566,7 +566,7 @@
     </div>
 
     <div id="wl-panel">
-        <div class="wl-req">1,500+ WAX spent on gems<br>— or — gems in candle &gt; 0</div>
+        <div class="wl-req">25+ dungeons won<br>— or — gems in candle &gt; 0</div>
         <button class="wl-btn" id="wl-anchor-btn" onclick="wlLogin('anchor')">⚡ ANCHOR</button>
         <button class="wl-btn" id="wl-wcc-btn"    onclick="wlLogin('wcc')">☁ CLOUD WALLET</button>
         <div id="wl-status"></div>
@@ -1766,7 +1766,7 @@
     if (sessionStorage.getItem('rcv_unlocked') === '1') { refreshAll(); checkWalletState(); initShardValuator(); }
 
     // ── WHITELIST ─────────────────────────────────────────────────────────────
-    var WL_THRESHOLD = 1500;
+    var WL_DUNGEONS_MIN = 25;
     var WL_NODES = ['https://wax.eosusa.io','https://wax.eosphere.io','https://api.waxsweden.org'];
 
     function wlSetStatus(msg, cls) {
@@ -1797,53 +1797,34 @@
         wlSetBtns(true);
         wlSetStatus(wallet.length > 14 ? wallet.slice(0,12) + '…' : wallet);
 
-        // Step 1 — WAX spent on gems via Hyperion
-        wlSetStatus('Checking gem spend…');
-        var gemWax = 0;
+        // Check players.ale for dungeons_won and gems_in_candle
+        wlSetStatus('Checking player stats…');
         for (var ni = 0; ni < WL_NODES.length; ni++) {
             try {
-                var skip = 0, done = false;
-                while (!done) {
-                    var r = await fetch(WL_NODES[ni] + '/v2/history/get_actions?account=' + wallet
-                        + '&filter=eosio.token%3Atransfer&limit=100&skip=' + skip + '&sort=asc');
-                    if (!r.ok) throw new Error('http');
-                    var d = await r.json();
-                    (d.actions || []).forEach(function(a) {
-                        var ad = a.act && a.act.data;
-                        if (ad && ad.to === 'shop.ale' && ad.memo && ad.memo.indexOf('purchase,gem.') === 0)
-                            gemWax += parseFloat(ad.quantity) || 0;
-                    });
-                    var total = (d.total && d.total.value) || 0;
-                    skip += (d.actions || []).length;
-                    done = !d.actions || d.actions.length < 100 || skip >= total;
-                }
-                break;
-            } catch(e) { continue; }
-        }
-        if (gemWax >= WL_THRESHOLD) { wlUnlock(gemWax.toFixed(2) + ' WAX spent on gems'); return; }
-
-        // Step 2 — gems_in_candle > 0 via players.ale
-        wlSetStatus('Checking candle activity…');
-        for (var ni2 = 0; ni2 < WL_NODES.length; ni2++) {
-            try {
-                var r2 = await fetch(WL_NODES[ni2] + '/v1/chain/get_table_rows', {
+                var r = await fetch(WL_NODES[ni] + '/v1/chain/get_table_rows', {
                     method: 'POST', headers: {'Content-Type':'application/json'},
                     body: JSON.stringify({code:'players.ale',scope:'players.ale',table:'players',lower_bound:wallet,limit:1,json:true})
                 });
-                if (!r2.ok) throw new Error('http');
-                var d2 = await r2.json();
-                if (d2.rows && d2.rows[0] && d2.rows[0].wallet === wallet) {
-                    var perm2 = {};
-                    (d2.rows[0].permstats || []).forEach(function(s) { perm2[s.first] = Number(s.second) || 0; });
-                    var gic = perm2['gems_in_candle'] || 0;
-                    if (gic > 0) { wlUnlock(gic + ' gems in candle'); return; }
+                if (!r.ok) throw new Error('http');
+                var d = await r.json();
+                if (d.rows && d.rows[0] && d.rows[0].wallet === wallet) {
+                    var perm = {};
+                    (d.rows[0].permstats || []).forEach(function(s) { perm[s.first] = Number(s.second) || 0; });
+                    var dw  = perm['dungeons_won'] || 0;
+                    var gic = perm['gems_in_candle'] || 0;
+                    if (dw >= WL_DUNGEONS_MIN) { wlUnlock(dw + ' dungeons won'); return; }
+                    if (gic > 0)              { wlUnlock(gic + ' gems in candle'); return; }
+                    wlSetStatus('✗ NOT ELIGIBLE — ' + dw + ' / ' + WL_DUNGEONS_MIN + ' dungeons won, ' + gic + ' gems in candle', 'err');
+                } else {
+                    wlSetStatus('✗ NOT ELIGIBLE — player record not found', 'err');
                 }
-                break;
+                wlSetBtns(false);
+                return;
             } catch(e) { continue; }
         }
 
-        // Fail
-        wlSetStatus('✗ NOT ELIGIBLE — ' + gemWax.toFixed(0) + ' / ' + WL_THRESHOLD + ' WAX spent', 'err');
+        // All nodes failed
+        wlSetStatus('✗ Could not reach chain — try again', 'err');
         wlSetBtns(false);
     }
 
