@@ -188,6 +188,8 @@
         .ale-me::after { content:'📍'; position:absolute; top:50%; left:50%; transform:translate(-50%,-52%); font-size:22px; pointer-events:none; z-index:5; filter:drop-shadow(0 0 4px rgba(232,160,32,0.8)); }
         .cell-icon { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; display:flex; align-items:center; justify-content:center; width:32px; height:32px; z-index:2; }
         .cell-icon img { width:32px; height:32px; opacity:0.95; filter:drop-shadow(0 0 3px rgba(0,0,0,0.9)); }
+        .dg-played-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.55); border-radius:2px; pointer-events:none; z-index:3; }
+        .dg-played-badge { position:absolute; top:1px; right:2px; font-size:9px; font-weight:bold; color:#60d080; line-height:1; pointer-events:none; z-index:4; text-shadow:0 0 4px #000; }
         .cell-icon img.icon-portal { width:40px; height:40px; }
         .portal-label { position:absolute; bottom:1px; left:50%; transform:translateX(-50%); font-size:6px; font-weight:700; color:#000; letter-spacing:0.3px; white-space:nowrap; pointer-events:none; z-index:3; text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff; line-height:1; }
         .ale-player-dot { position:absolute; bottom:3px; right:3px; width:7px; height:7px; border-radius:50%; background:#60c8ff; box-shadow:0 0 4px #60c8ff99; z-index:3; cursor:help; pointer-events:all; border:1.5px solid rgba(0,0,0,0.8); }
@@ -749,6 +751,7 @@
             <div class="lb-items">
                 <span class="legend-row"><img src="Ale%20images/portal.png" alt="portal"><span>Portal</span></span>
                 <span class="legend-row"><img src="Ale%20images/dungeon.svg" alt="dungeon"><span>Dungeon</span></span>
+                <span class="legend-row"><span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;position:relative;border:1px solid #406040a0;box-shadow:inset 0 0 5px #40604060;border-radius:2px;"><span style="font-size:9px;font-weight:bold;color:#60d080;line-height:1;">&#10003;</span></span><span>Played today</span></span>
                 <span class="legend-row"><img src="Ale%20images/tavern.svg" alt="tavern"><span>Tavern</span></span>
                 <span class="legend-row"><img src="Ale%20images/Arena.svg" alt="arena"><span>Arena</span></span>
                 <span class="legend-row"><span style="font-size:14px;line-height:1;width:16px;text-align:center;">📍</span><span>You</span></span>
@@ -1550,7 +1553,7 @@
                     cls+=' ale-dungeon'+(dgLocked?' ale-dg-locked':'');
                     sty=' style="border-color:'+(dgLocked?'#406040':'#508050')+'a0;box-shadow:inset 0 0 5px '+(dgLocked?'#406040':'#508050')+'60"';
                     icon=dgLocked
-                        ?'<span class="cell-icon" style="opacity:0.45;filter:grayscale(0.5)">'+LOCKED_SVG+'</span>'
+                        ?'<span class="cell-icon" style="opacity:0.3;filter:grayscale(1)"><img src="Ale%20images/dungeon.svg" alt="dungeon"></span><div class="dg-played-overlay"></div><span class="dg-played-badge">&#10003;</span>'
                         :'<span class="cell-icon"><img src="Ale%20images/dungeon.svg" alt="dungeon"></span>';
                 } else if(tavernMap[key]){
                     cls+=' ale-tavern';
@@ -4541,7 +4544,8 @@ async function runTxQueue() {
                 _playerPlayedDungeons.add(_dk);
                 // Re-fetch fighter stats so the next level-up step sees current XP/level
                 try { await _refreshBpFighters(); } catch(e) {}
-                // Rebuild map so the dungeon cell shows as played (greyed/locked)
+                // Rebuild map so the dungeon cell shows as played (dark overlay + ✓ badge)
+                delete _rendered[step.dungeonItem.planet || _activePlanet];
                 buildMap(step.dungeonItem.planet || _activePlanet);
             }
 
