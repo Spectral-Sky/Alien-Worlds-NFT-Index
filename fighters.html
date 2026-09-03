@@ -374,7 +374,7 @@
             onkeydown="if(event.key==='Enter')loadFighters()">
         <button class="ctrl-btn" onclick="loadFighters()" style="padding:5px 10px;">&#9654;</button>
     </div>
-    <input id="fighter-search" type="text" placeholder="Filter class, element, race, marker…" oninput="renderTable()">
+    <input id="fighter-search" type="text" placeholder="Filter class, element, race, marker, ability…" oninput="renderTable()">
     <button id="hide-lv1-btn"      class="ctrl-btn" onclick="toggleHideLv1()"      style="border-color:rgba(232,160,32,0.2);color:var(--muted);">HIDE LVL 1</button>
     <button id="hide-marked-btn"   class="ctrl-btn" onclick="toggleHideMarked()"   style="border-color:rgba(232,160,32,0.2);color:var(--muted);">HIDE MARKED</button>
     <button id="hide-unmarked-btn" class="ctrl-btn" onclick="toggleHideUnmarked()" style="border-color:rgba(232,160,32,0.2);color:var(--muted);">HIDE UNMARKED</button>
@@ -845,7 +845,12 @@ function renderTable() {
         if (!q) return true;
         var hay = [f.classname, f.element, f.racename, f.marker]
             .map(function(v){ return (v||'').toLowerCase(); }).join(' ');
-        return hay.indexOf(q) !== -1;
+        var ablHay = ((f.stats&&f.stats.abilities)||[]).map(function(a){
+            var raw = a.displayname || a.name || '';
+            var m = raw.match(/\[(\w+)\]$/);
+            return (m ? raw.slice(0, raw.lastIndexOf('[')).trim() : raw).toLowerCase();
+        }).join(' ');
+        return hay.indexOf(q) !== -1 || ablHay.indexOf(q) !== -1;
     });
 
     // Sort
