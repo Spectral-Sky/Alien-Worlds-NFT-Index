@@ -429,8 +429,10 @@
         .sv-tier-btn.legendary.sv-active { background:rgba(255,170,0,0.1); border-color:#ffaa00; color:#ffaa00; }
         .sv-tier-btn.mythical  { border-color:rgba(255,0,85,0.35); color:rgba(255,0,85,0.5); }
         .sv-tier-btn.mythical.sv-active  { background:rgba(255,0,85,0.1); border-color:#ff0055; color:#ff0055; }
-        .sv-scan-btn { background:transparent; border:1px solid rgba(255,68,204,0.3); color:rgba(255,68,204,0.5); font-family:inherit; font-size:0.62em; letter-spacing:2px; padding:3px 11px; cursor:pointer; transition:all 0.2s; text-transform:uppercase; flex-shrink:0; }
-        .sv-scan-btn:hover { border-color:var(--pink); color:var(--pink); }
+        @keyframes sv-flash { 0%,100% { border-color:var(--pink); color:var(--pink); box-shadow:0 0 10px rgba(255,68,204,0.5); } 50% { border-color:rgba(255,68,204,0.25); color:rgba(255,68,204,0.4); box-shadow:none; } }
+        .sv-scan-btn { background:transparent; border:1px solid rgba(255,68,204,0.3); color:rgba(255,68,204,0.5); font-family:inherit; font-size:1.24em; letter-spacing:2px; padding:8px 22px; cursor:pointer; transition:all 0.2s; text-transform:uppercase; flex-shrink:0; animation:sv-flash 1.4s ease-in-out infinite; }
+        .sv-scan-btn:hover { border-color:var(--pink); color:var(--pink); animation:none; }
+        .sv-scan-btn:disabled { animation:none; opacity:0.5; cursor:not-allowed; }
         .sv-body { padding:10px 16px; }
         .sv-table { width:100%; border-collapse:collapse; font-size:0.68em; }
         .sv-table thead th { color:var(--muted); font-size:0.85em; letter-spacing:2px; text-transform:uppercase; padding:5px 10px; text-align:left; border-bottom:1px solid var(--border); }
