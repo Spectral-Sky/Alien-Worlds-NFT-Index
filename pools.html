@@ -192,14 +192,8 @@
         <div class="chart-wrap"><canvas id="chart-shard-fill"></canvas></div>
     </div>
     <div class="chart-card">
-        <div class="chart-card-title">rewards.ale — TLM Reserve (live, session)</div>
-        <div style="font-size:0.58em;color:var(--muted);letter-spacing:1px;margin-bottom:10px;">Fetched from chain · accumulates readings each refresh</div>
-        <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:14px;">
-            <span id="reserve-live" style="font-size:1.6em;color:var(--gold);letter-spacing:2px;font-weight:bold;">—</span>
-            <span style="font-size:0.6em;color:var(--muted);letter-spacing:1px;">TLM</span>
-            <span id="reserve-status" style="font-size:0.58em;color:var(--muted);letter-spacing:1px;margin-left:6px;"></span>
-        </div>
-        <div class="chart-wrap" style="height:200px;"><canvas id="chart-reserve"></canvas></div>
+        <div class="chart-card-title">TLM Pools: Reserve (Max Capacity)</div>
+        <div class="chart-wrap"><canvas id="chart-reserve"></canvas></div>
     </div>
 </div>
 
@@ -214,13 +208,6 @@ var _rawShard   = [];
 var _activeTlm  = new Set();
 var _activeShard = new Set();
 var _charts     = {};
-var _reservePts = []; // session-local {x:ms, y:tlm} readings
-
-var WAX_NODES = [
-    'https://wax.eosusa.io',
-    'https://api.wax.alohaeos.com',
-    'https://wax.cryptolions.io',
-];
 
 // ── Deterministic Color Mapping ──────────────────────────────────────────────
 var BASE_COLORS = {
@@ -307,7 +294,6 @@ function fetchData() {
 
         buildFilters();
         renderCharts();
-        fetchReserve();
         document.getElementById('status-txt').textContent = 'Updated ' + new Date().toLocaleTimeString();
         overlay.classList.remove('show');
     }).catch(function(err) {
@@ -505,14 +491,17 @@ function initCharts() {
         _charts[k].options.plugins.tooltip.itemSort = _sortByValue;
     });
 
-    initReserveChart();
-    fetchReserve();
+    _charts.reserve = new Chart(document.getElementById('chart-reserve'), {
+        type: 'line', data: { datasets: [] },
+        options: JSON.parse(JSON.stringify(baseOpts))
+    });
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
 function renderCharts() {
     var fillData      = rollup(_rawTlm,   'fill_pct',      _activeTlm);
     var tlmData       = rollup(_rawTlm,   'tlm_current',   _activeTlm);
+    var reserveData   = rollupReserve(_rawTlm, _activeTlm);
     var shardData     = rollup(_rawShard, 'shard_current', _activeShard);
     var shardFillData = rollup(_rawShard, 'shard_fillrate', _activeShard);
 
@@ -532,81 +521,46 @@ function renderCharts() {
 
     _charts.fillPct.data.datasets   = toDatasets(fillData);
     _charts.tlmCur.data.datasets    = toDatasets(tlmData);
+    _charts.reserve.data.datasets   = toDatasets(reserveData);
     _charts.shardCur.data.datasets  = toDatasets(shardData);
     _charts.shardFill.data.datasets = toDatasets(shardFillData);
 
     _charts.fillPct.update();
     _charts.tlmCur.update();
+    _charts.reserve.update();
     _charts.shardCur.update();
     _charts.shardFill.update();
 }
 
-// ── rewards.ale reserve (chain) ──────────────────────────────────────────────
-async function fetchReserve() {
-    var statusEl = document.getElementById('reserve-status');
-    var liveEl   = document.getElementById('reserve-live');
-    if (statusEl) statusEl.textContent = 'fetching…';
-    for (var i = 0; i < WAX_NODES.length; i++) {
-        try {
-            var r = await fetch(WAX_NODES[i] + '/v1/chain/get_table_rows', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    code: 'eosio.token', scope: 'rewards.ale',
-                    table: 'accounts', json: true, limit: 10
-                })
-            });
-            if (!r.ok) throw new Error('http');
-            var d = await r.json();
-            var row = (d.rows || []).find(function(rw) {
-                return rw.balance && rw.balance.indexOf('TLM') !== -1;
-            });
-            if (!row) { if (statusEl) statusEl.textContent = 'no TLM row found'; return; }
-            var bal = parseFloat(row.balance);
-            if (isNaN(bal)) return;
-            _reservePts.push({ x: Date.now(), y: bal });
-            if (liveEl) liveEl.textContent = bal.toLocaleString(undefined, { maximumFractionDigits: 4 });
-            if (statusEl) statusEl.textContent = new Date().toLocaleTimeString();
-            updateReserveChart();
-            return;
-        } catch(e) { continue; }
-    }
-    if (statusEl) statusEl.textContent = 'chain unavailable';
-}
-
-function initReserveChart() {
-    var baseOpts = {
-        responsive: true, maintainAspectRatio: false,
-        animation: { duration: 300 },
-        elements: { point: { radius: 3, hitRadius: 8 }, line: { borderWidth: 1.5 } },
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                backgroundColor: 'rgba(3,6,18,0.95)',
-                borderColor: 'rgba(232,160,32,0.3)', borderWidth: 1,
-                titleColor: '#e8a020', bodyColor: '#a0b8d0', padding: 10,
-                titleFont: { family: "'Courier New',monospace" },
-                bodyFont:  { family: "'Courier New',monospace" },
-                callbacks: { label: function(ctx){ return ctx.parsed.y.toLocaleString(undefined,{maximumFractionDigits:4}) + ' TLM'; } }
-            }
-        },
-        scales: {
-            x: { type: 'time', time: { tooltipFormat: 'HH:mm' }, ticks: { maxTicksLimit: 8, color: '#506070' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-            y: { ticks: { color: '#506070', callback: function(v){ return v.toLocaleString(); } }, grid: { color: 'rgba(255,255,255,0.05)' } }
-        }
-    };
-    _charts.reserve = new Chart(document.getElementById('chart-reserve'), {
-        type: 'line',
-        data: { datasets: [{ label: 'rewards.ale TLM', data: _reservePts, borderColor: '#40c8a0', backgroundColor: 'rgba(64,200,160,0.08)', fill: true, tension: 0.3 }] },
-        options: baseOpts
+// ── Derived reserve rollup (tlm_current ÷ fill_pct × 100) ────────────────────
+function rollupReserve(rows, activeSet) {
+    var byPool = {};
+    rows.forEach(function(r) {
+        if (!activeSet.has(r.pool)) return;
+        if (!r.fill_pct || r.fill_pct <= 0) return; // can't derive reserve from 0
+        var reserve = r.tlm_current / (r.fill_pct / 100);
+        if (!byPool[r.pool]) byPool[r.pool] = [];
+        byPool[r.pool].push({ ts: r.ts, reserve: reserve });
     });
-}
-
-function updateReserveChart() {
-    if (!_charts.reserve) return;
-    _charts.reserve.data.datasets[0].data = _reservePts;
-    _charts.reserve.update();
+    var result = {};
+    Object.keys(byPool).forEach(function(pool) {
+        var pts = byPool[pool];
+        if (_days < 30) {
+            result[pool] = pts.map(function(p){ return { x: p.ts, y: p.reserve }; });
+        } else {
+            var buckets = {};
+            pts.forEach(function(p) {
+                var h = Math.floor(p.ts / 3600000) * 3600000;
+                if (!buckets[h]) buckets[h] = { sum: 0, n: 0 };
+                buckets[h].sum += p.reserve;
+                buckets[h].n++;
+            });
+            result[pool] = Object.keys(buckets).sort(function(a,b){ return a-b; }).map(function(h) {
+                return { x: +h, y: buckets[h].sum / buckets[h].n };
+            });
+        }
+    });
+    return result;
 }
 </script>
 </body>
