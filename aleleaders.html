@@ -1406,12 +1406,23 @@
 
     // ── LIVE PRICES ──────────────────────────────────────────────────────────
     async function fetchLbPrices() {
+        // DeFiLlama — CORS-open, no key required
         try {
-            var r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=wax,alien-worlds&vs_currencies=usd', { cache:'no-store' });
-            if (!r.ok) return;
+            var r = await fetch('https://coins.llama.fi/prices/current/coingecko:wax,coingecko:alien-worlds', { cache:'no-store' });
+            if (!r.ok) throw new Error('llama');
             var d = await r.json();
-            if (d['wax']) _lbWaxUsd = d['wax'].usd || null;
-            if (d['alien-worlds']) _lbTlmUsd = d['alien-worlds'].usd || null;
+            var coins = d.coins || {};
+            if (coins['coingecko:wax'])          _lbWaxUsd = coins['coingecko:wax'].price          || null;
+            if (coins['coingecko:alien-worlds'])  _lbTlmUsd = coins['coingecko:alien-worlds'].price  || null;
+            if (_allPlayers.length) renderTable();
+            return;
+        } catch(e) {}
+        // CoinPaprika fallback — also CORS-open
+        try {
+            var rw = await fetch('https://api.coinpaprika.com/v1/tickers/waxp-wax?quotes=USD',       { cache:'no-store' });
+            var rt = await fetch('https://api.coinpaprika.com/v1/tickers/tlm-alien-worlds?quotes=USD', { cache:'no-store' });
+            if (rw.ok) { var dw = await rw.json(); _lbWaxUsd = dw.quotes && dw.quotes.USD && dw.quotes.USD.price || null; }
+            if (rt.ok) { var dt = await rt.json(); _lbTlmUsd = dt.quotes && dt.quotes.USD && dt.quotes.USD.price || null; }
             if (_allPlayers.length) renderTable();
         } catch(e) {}
     }
