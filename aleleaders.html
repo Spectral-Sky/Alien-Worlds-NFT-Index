@@ -180,6 +180,16 @@
     .snap-neg { color:#e05858; }
     .snap-new { color:#5898e8; letter-spacing:1px; }
 
+    /* ALE STATS PANEL */
+    .ale-stats-panel { display:none; padding:10px 28px; border-bottom:1px solid rgba(232,160,32,0.07); background:rgba(3,6,15,0.5); flex-wrap:wrap; gap:0; }
+    .ale-stats-panel.visible { display:flex; }
+    .ale-stat-block { flex:1 1 140px; padding:8px 16px 8px 0; border-right:1px solid rgba(232,160,32,0.08); }
+    .ale-stat-block:last-child { border-right:none; }
+    .ale-stat-label { font-size:0.54em; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:3px; }
+    .ale-stat-value { font-size:1.05em; color:var(--gold); font-weight:bold; letter-spacing:1px; }
+    .ale-stat-sub { font-size:0.55em; color:var(--muted); letter-spacing:1px; margin-top:2px; }
+    html.day .ale-stats-panel { background:rgba(215,228,255,0.5); }
+
     /* EMPTY / ERROR */
     .lb-empty { padding:40px 28px; text-align:center; font-size:0.75em; color:var(--muted); letter-spacing:2px; }
 
@@ -426,6 +436,15 @@
 <div class="progress-wrap" id="progress-wrap">
     <div class="progress-bar-outer"><div class="progress-bar-inner" id="progress-bar" style="width:0%"></div></div>
     <div class="progress-label" id="progress-label">Loading players...</div>
+</div>
+
+<div class="ale-stats-panel" id="ale-stats-panel">
+    <div class="ale-stat-block"><div class="ale-stat-label">Active Players</div><div class="ale-stat-value" id="astat-count">—</div><div class="ale-stat-sub">≥25 dungeons won</div></div>
+    <div class="ale-stat-block"><div class="ale-stat-label">Avg Gems Owned</div><div class="ale-stat-value" id="astat-gems">—</div><div class="ale-stat-sub">current balance</div></div>
+    <div class="ale-stat-block"><div class="ale-stat-label">Avg Gems Gained</div><div class="ale-stat-value" id="astat-gems-gained">—</div><div class="ale-stat-sub">all-time total</div></div>
+    <div class="ale-stat-block"><div class="ale-stat-label">Avg Gems in Candle</div><div class="ale-stat-value" id="astat-gems-candle">—</div><div class="ale-stat-sub">currently deposited</div></div>
+    <div class="ale-stat-block"><div class="ale-stat-label">Avg Dungeons Won</div><div class="ale-stat-value" id="astat-dw">—</div><div class="ale-stat-sub">per active player</div></div>
+    <div class="ale-stat-block"><div class="ale-stat-label">Avg Win Rate</div><div class="ale-stat-value" id="astat-wr">—</div><div class="ale-stat-sub">dungeons won / played</div></div>
 </div>
 
 <div class="table-wrap">
@@ -1094,6 +1113,29 @@
         document.getElementById('dl-csv-btn').disabled = false;
         document.getElementById('dl-xlsx-btn').disabled = false;
         document.getElementById('dl-json-btn').disabled = false;
+        renderStats();
+    }
+
+    function renderStats() {
+        var ACTIVE_MIN = 25;
+        var active = _allPlayers.filter(function(fp) { return (fp.dungeons_won || 0) >= ACTIVE_MIN; });
+        var n = active.length;
+        if (!n) return;
+        var sum = function(key) { return active.reduce(function(s, fp) { return s + (fp[key] || 0); }, 0); };
+        var avg = function(key) { return (sum(key) / n).toFixed(1); };
+        var avgInt = function(key) { return Math.round(sum(key) / n); };
+        var avgWr = (active.reduce(function(s, fp) {
+            var played = fp.dungeons_played || 0;
+            return s + (played > 0 ? (fp.dungeons_won || 0) / played : 0);
+        }, 0) / n * 100).toFixed(1);
+
+        document.getElementById('astat-count').textContent        = n.toLocaleString();
+        document.getElementById('astat-gems').textContent         = avgInt('gems').toLocaleString();
+        document.getElementById('astat-gems-gained').textContent  = avgInt('gems_gained').toLocaleString();
+        document.getElementById('astat-gems-candle').textContent  = avg('gems_in_candle');
+        document.getElementById('astat-dw').textContent           = avgInt('dungeons_won').toLocaleString();
+        document.getElementById('astat-wr').textContent           = avgWr + '%';
+        document.getElementById('ale-stats-panel').classList.add('visible');
     }
 
     function sortClass(key) {
