@@ -2349,7 +2349,7 @@ function _renderStats(agg, opts) {
         }
         html += '<div id="'+p+'dung-bars"></div><div id="'+p+'dung-race-bars"></div><div id="'+p+'dung-element-bars"></div></div>';
     }
-    var nftLabel = _statsSortMode === 'wins' ? 'BY WINS' : 'BY USAGE';
+    var nftLabel = _statsSortMode === 'wins' ? 'BY WINS' : _statsSortMode === 'winrate' ? 'BY WIN RATE' : 'BY USAGE';
     if (Object.keys(agg.crewNFTs || {}).length) {
         html += '<div style="margin-top:36px;">';
         html += '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ TOP CREW NFTs — ' + nftLabel + '</div>';
@@ -2789,7 +2789,7 @@ function _buildNftBars(nftStats, topN, folder) {
     var entries = Object.keys(nftStats).map(function(id) {
         var s = nftStats[id];
         return {id:id, wins:s.wins, played:s.played, pct: s.played>0 ? s.wins/s.played : 0};
-    }).sort(function(a,b){ return _statsSortMode === 'wins' ? b.wins - a.wins : b.played - a.played; }).slice(0, topN || 20);
+    }).sort(function(a,b){ return _statsSortMode === 'wins' ? b.wins - a.wins : _statsSortMode === 'winrate' ? b.pct - a.pct : b.played - a.played; }).slice(0, topN || 20);
     if (!entries.length) return '<div style="font-size:0.6em;color:#404050;padding:8px 0;">No data</div>';
     var maxPlayed = entries.reduce(function(m, e){ return Math.max(m, e.played); }, 1);
     var html = '<div style="max-width:620px;">';
