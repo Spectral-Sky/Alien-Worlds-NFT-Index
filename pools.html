@@ -76,7 +76,7 @@
     .charts-wrap { padding:20px 28px; display:flex; flex-direction:column; gap:24px; }
     .chart-card { background:rgba(5,8,20,0.7); border:1px solid rgba(232,160,32,0.12); border-radius:3px; padding:18px 20px 14px; }
     .chart-card-title { font-size:0.68em; letter-spacing:3px; color:var(--gold); text-transform:uppercase; margin-bottom:12px; }
-    .chart-wrap { position:relative; height:280px; }
+    .chart-wrap { position:relative; height:360px; }
 
     /* LOADING */
     #loading-overlay { display:none; position:fixed; inset:0; background:rgba(3,6,15,0.7); z-index:500; align-items:center; justify-content:center; font-size:0.8em; letter-spacing:3px; color:var(--gold); }
@@ -434,32 +434,33 @@ function renderFilterGroup(containerId, poolSet, activeSet, onChange) {
 
 // ── Chart init ───────────────────────────────────────────────────────────────
 function initCharts() {
+    var SANS = "'Segoe UI',system-ui,sans-serif";
     var timeOpts = {
         type: 'time',
         time: { tooltipFormat: 'MMM d, HH:mm' },
-        ticks: { maxTicksLimit: 8, color: '#506070' },
-        grid: { color: 'rgba(255,255,255,0.05)' }
+        ticks: { maxTicksLimit: 8, color: '#7090a8', font: { family: SANS, size: 13 } },
+        grid: { color: 'rgba(255,255,255,0.07)' }
     };
     var yOpts = {
-        ticks: { color: '#506070' },
-        grid: { color: 'rgba(255,255,255,0.05)' }
+        ticks: { color: '#7090a8', font: { family: SANS, size: 13 } },
+        grid: { color: 'rgba(255,255,255,0.07)' }
     };
     var baseOpts = {
         responsive: true, maintainAspectRatio: false,
         animation: { duration: 300 },
-        elements: { point: { radius: 0, hitRadius: 8 }, line: { borderWidth: 1.5 } },
+        elements: { point: { radius: 0, hitRadius: 10 }, line: { borderWidth: 2.5 } },
         interaction: { mode: 'index', intersect: false },
         plugins: {
-            legend: { labels: { color: '#708090', boxWidth: 12, padding: 14, font: { family: "'Courier New',monospace", size: 11 } } },
+            legend: { labels: { color: '#90a8c0', boxWidth: 14, padding: 18, font: { family: SANS, size: 13 } } },
             tooltip: {
-                backgroundColor: 'rgba(3,6,18,0.95)',
-                borderColor: 'rgba(232,160,32,0.3)',
+                backgroundColor: 'rgba(3,6,18,0.97)',
+                borderColor: 'rgba(232,160,32,0.35)',
                 borderWidth: 1,
                 titleColor: '#e8a020',
-                bodyColor: '#a0b8d0',
-                padding: 10,
-                titleFont: { family: "'Courier New',monospace" },
-                bodyFont:  { family: "'Courier New',monospace" }
+                bodyColor: '#b0c8e0',
+                padding: 12,
+                titleFont: { family: SANS, size: 13 },
+                bodyFont:  { family: SANS, size: 13 }
             }
         },
         scales: { x: timeOpts, y: yOpts }
