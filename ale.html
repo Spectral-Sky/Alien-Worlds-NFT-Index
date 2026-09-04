@@ -570,6 +570,8 @@
                         <th class="live-header" onclick="sortTable('crew-table',16)">GEM</th>
                         <th class="live-header" onclick="sortTable('crew-table',17)">METAL</th>
                         <th class="live-header" onclick="sortTable('crew-table',18)">NEUTRAL</th>
+                        <th class="live-header" onclick="sortTable('crew-table',19)" title="Total times used in battles">USES</th>
+                        <th class="live-header" onclick="sortTable('crew-table',20)" title="Win rate across all battles">WIN %</th>
                     </tr>
                 </thead>
                 <tbody id="crew-tbody"></tbody>
@@ -600,6 +602,8 @@
                         <th class="live-header" onclick="sortTable('arms-table',15)">GEM</th>
                         <th class="live-header" onclick="sortTable('arms-table',16)">METAL</th>
                         <th class="live-header" onclick="sortTable('arms-table',17)">NEUTRAL</th>
+                        <th class="live-header" onclick="sortTable('arms-table',18)" title="Total times used in battles">USES</th>
+                        <th class="live-header" onclick="sortTable('arms-table',19)" title="Win rate across all battles">WIN %</th>
                     </tr>
                 </thead>
                 <tbody id="arms-tbody"></tbody>
@@ -1182,6 +1186,7 @@
             if (!(row[17] || '').trim()) return; // skip rows with no ability text
             const tr = document.createElement('tr');
             const templateId = row[0];
+            tr.dataset.tid = String(templateId);
             let imgHtml = `<img data-tid="${templateId}" data-folder="${isCrew ? 'crew.worlds' : 'arms.worlds'}" style="height:46px!important;width:auto!important;display:block;margin:0 auto;border-radius:4px;" loading="lazy">`;
 
             tr.dataset.ability = row[17] || '';
@@ -1211,6 +1216,8 @@
                 <td class="stat-res" style="color:#cc99ff">${n(row[14])}</td>
                 <td class="stat-res" style="color:#a0a0a0">${n(row[15])}</td>
                 <td class="stat-res" style="color:#4169e1">${n(row[16])}</td>
+                <td class="nft-stat-uses">—</td>
+                <td class="nft-stat-wr">—</td>
             `;
             tr.innerHTML = html;
             tbody.appendChild(tr);
@@ -1928,7 +1935,8 @@ var _statsKpBuf    = '';
 var _statsFetched  = false;
 var _rawCSV        = null;
 var _alphaRawCSV   = null;
-var _tplMapCache   = null;
+var _tplMapCache          = null;
+var _nftStatsByTemplate   = { crew: {}, weapon: {} };
 var _timeFilter    = 0;
 var _statsSortMode = 'winrate';
 var _liveOn        = false;   // LIVE toggle
@@ -2353,6 +2361,11 @@ function _renderStats(agg, opts) {
         html += '<div style="font-size:0.6em;letter-spacing:3px;color:rgba(232,160,32,0.55);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid rgba(232,160,32,0.1);">◈ TOP ARMS NFTs — ' + nftLabel + '</div>';
         html += _buildNftBars(agg.weaponNFTs, 20, 'arms.worlds');
         html += '</div>';
+    }
+    if (!opts.prefix) {
+        if (Object.keys(agg.crewNFTs   || {}).length) _nftStatsByTemplate.crew   = agg.crewNFTs;
+        if (Object.keys(agg.weaponNFTs || {}).length) _nftStatsByTemplate.weapon = agg.weaponNFTs;
+        applyNftStatsToTables();
     }
     var myWallet = localStorage.getItem('naron_wallet');
     if (myWallet && agg.myFights > 0) {
@@ -2826,6 +2839,31 @@ function _mergeByTemplate(nftStats, tplMap) {
         merged[key].played += s.played;
     });
     return merged;
+}
+
+function applyNftStatsToTables() {
+    function applyToTbody(tbodyId, statsMap) {
+        var tbody = document.getElementById(tbodyId);
+        if (!tbody) return;
+        tbody.querySelectorAll('tr[data-tid]').forEach(function(tr) {
+            var s = statsMap[tr.dataset.tid];
+            var usesCell = tr.querySelector('.nft-stat-uses');
+            var wrCell   = tr.querySelector('.nft-stat-wr');
+            if (!usesCell || !wrCell) return;
+            if (s && s.played > 0) {
+                usesCell.textContent = s.played;
+                var wr = s.wins / s.played;
+                wrCell.textContent   = (wr * 100).toFixed(1) + '%';
+                wrCell.style.color   = wr >= 0.6 ? '#66ff99' : wr <= 0.4 ? '#ff6666' : '';
+            } else {
+                usesCell.textContent = '—';
+                wrCell.textContent   = '—';
+                wrCell.style.color   = '';
+            }
+        });
+    }
+    applyToTbody('crew-tbody', _nftStatsByTemplate.crew);
+    applyToTbody('arms-tbody', _nftStatsByTemplate.weapon);
 }
 
 // Stats tab is public — auto-load on page open
