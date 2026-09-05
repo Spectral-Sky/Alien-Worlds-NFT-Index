@@ -1396,6 +1396,15 @@ function parseRecapCSV(text) {
     for (var ri = 0; ri < required.length; ri++) {
         if (col[required[ri]] === undefined) return null;
     }
+    // Detect optional columns by flexible substring match
+    function _optCol(substr) {
+        var k = Object.keys(col).find(function(h){ return h.toLowerCase().indexOf(substr.toLowerCase()) !== -1; });
+        return k !== undefined ? col[k] : -1;
+    }
+    var colPostAtkTeam = _optCol('post turn attacker') !== -1 ? _optCol('post turn attacker') : _optCol('post turn team 1') !== -1 ? _optCol('post turn team 1') : _optCol('post turn 1');
+    var colPostDfTeam  = _optCol('post turn defender') !== -1 ? _optCol('post turn defender') : _optCol('post turn team 2') !== -1 ? _optCol('post turn team 2') : _optCol('post turn 2');
+    var colIfEffects   = _optCol('if effect');
+
     var turns = [];
     var team1fighters = {}, team2fighters = {};
     var team1id = null, team2id = null;
@@ -1403,9 +1412,12 @@ function parseRecapCSV(text) {
     for (var i = 1; i < lines.length; i++) {
         if (!lines[i].trim()) continue;
         var row = parseCSVRow(lines[i]);
-        var atTeam, dfTeam;
+        var atTeam, dfTeam, postAtkTeam, postDfTeam, ifEffects;
         try { atTeam = JSON.parse(row[col['Attacker Team JSON']]); } catch(e) { atTeam = []; }
         try { dfTeam = JSON.parse(row[col['Defender Team JSON']]); } catch(e) { dfTeam = []; }
+        try { postAtkTeam = colPostAtkTeam >= 0 ? JSON.parse(row[colPostAtkTeam]) : null; } catch(e) { postAtkTeam = null; }
+        try { postDfTeam  = colPostDfTeam  >= 0 ? JSON.parse(row[colPostDfTeam])  : null; } catch(e) { postDfTeam  = null; }
+        try { ifEffects   = colIfEffects   >= 0 ? JSON.parse(row[colIfEffects])   : null; } catch(e) { ifEffects   = null; }
         var attackerTeamId = Number(_stripQStr(row[col['Attacker Team ID']]));
         var defenderTeamId = Number(_stripQStr(row[col['Defender Team ID']]));
         if (team1id === null) {
@@ -1442,6 +1454,9 @@ function parseRecapCSV(text) {
             defenderTeam:      dfTeam,
             attackValue:       Number(_stripQStr(row[col['Attack Value']])),
             effectiveness:     Number(_stripQStr(row[col['Effectiveness']])),
+            postAtkTeam:       postAtkTeam,
+            postDfTeam:        postDfTeam,
+            ifEffects:         ifEffects,
         };
         var aFid = t.attackerFighterId;
         if (aFid) {
@@ -1506,10 +1521,38 @@ function buildHpState(turnIdx) {
         (t1.defenderTeam || []).forEach(function(f){ state[String(f.fighter_id)] = f.max_health; });
     } else {
         var t = _recapData.turns[turnIdx - 1];
-        (t.attackerTeam || []).forEach(function(f){ state[String(f.fighter_id)] = f.health; });
-        (t.defenderTeam || []).forEach(function(f){ state[String(f.fighter_id)] = f.health; });
+        // Use post-turn snapshots (after all effects resolve) when available; fall back to mid-turn health
+        var atkSnap = t.postAtkTeam || t.attackerTeam || [];
+        var dfSnap  = t.postDfTeam  || t.defenderTeam  || [];
+        atkSnap.forEach(function(f){ state[String(f.fighter_id)] = f.health; });
+        dfSnap.forEach(function(f){ state[String(f.fighter_id)] = f.health; });
     }
     return state;
+}
+
+function _renderIfEffects(effects) {
+    if (!effects || (Array.isArray(effects) && !effects.length)) return '';
+    var items = Array.isArray(effects) ? effects : (typeof effects === 'object' ? [effects] : []);
+    var parts = items.map(function(eff) {
+        if (!eff || typeof eff !== 'object') return '<span style="color:#506070;font-size:0.82em;">' + String(eff) + '</span>';
+        var type   = eff.type || eff.effect_type || eff.name || '';
+        var val    = eff.value != null ? eff.value : (eff.damage != null ? eff.damage : (eff.heal != null ? eff.heal : null));
+        var valDisp = val != null ? Math.round(Number(val) / 9.10) : null;
+        var src    = eff.source_fighter_id || eff.source || eff.caster || '';
+        var tgt    = eff.target_fighter_id || eff.target || '';
+        var typeColor = /heal|regen|restore/i.test(type) ? '#60e090'
+                      : /thorn|poison|burn|bleed|dot/i.test(type) ? '#e06060'
+                      : /shield|barrier|block/i.test(type) ? '#60a0e0'
+                      : /buff|boost|enhance/i.test(type) ? '#e0c060'
+                      : '#a090b0';
+        var label = type ? '<span style="color:' + typeColor + ';text-transform:uppercase;letter-spacing:1px;font-size:0.78em;">' + type + '</span>' : '';
+        var valStr = valDisp != null ? ' <span style="color:#c0a060;font-size:0.82em;">' + (val < 0 ? '' : ((/heal|regen/i.test(type)) ? '+' : '')) + valDisp + '</span>' : '';
+        var tgtStr = tgt ? ' <span style="color:#405060;font-size:0.75em;">→' + tgt + '</span>' : '';
+        return label + valStr + tgtStr;
+    });
+    return '<div style="padding:2px 10px 4px 56px;font-size:0.82em;display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid rgba(255,255,255,0.015);">'
+        + parts.join(' <span style="color:#303840;">·</span> ')
+        + '</div>';
 }
 
 function _recapClsEmoji(cls) {
@@ -1595,7 +1638,9 @@ function renderRecapContent() {
         var resRaw  = t.effectiveness > 0 ? t.attackValue / (t.effectiveness / 100) - t.attackValue : 0;
         var resDisp = Math.round(resRaw / 9.10);
         var resColor = resPct >= 40 ? '#60c0a0' : (resPct >= 20 ? '#a0a060' : '#506070');
-        return '<div class="rc-log-row" id="rc-log-row-'+idx+'" style="display:flex;gap:6px;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.02);align-items:center;flex-wrap:wrap;">'
+        var effHtml = _renderIfEffects(t.ifEffects);
+        return '<div class="rc-log-row" id="rc-log-row-'+idx+'" style="border-bottom:1px solid rgba(255,255,255,0.02);">'
+            + '<div style="display:flex;gap:6px;padding:5px 10px;align-items:center;flex-wrap:wrap;">'
             + '<span style="min-width:46px;color:#354050;font-size:0.9em;flex-shrink:0;">T'+t.turnNum+'</span>'
             + '<span style="flex:1;display:flex;align-items:center;gap:3px;flex-wrap:wrap;">'
             +   atEl+' '+atEm+' <span style="color:#a09070;text-transform:uppercase;">'+atCls+'</span>'
@@ -1605,6 +1650,8 @@ function renderRecapContent() {
             + '<span style="color:#e8a020;min-width:68px;text-align:right;flex-shrink:0;">'+dmgDisp+'</span>'
             + '<span style="color:'+resColor+';min-width:90px;text-align:right;flex-shrink:0;font-size:0.88em;">&#8722;'+resDisp+' ('+resPct+'%)</span>'
             + '<span style="color:#354058;font-size:0.85em;min-width:100px;text-align:right;flex-shrink:0;">'+tgt+'</span>'
+            + '</div>'
+            + (effHtml || '')
             + '</div>';
     }).join('');
 
