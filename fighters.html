@@ -500,6 +500,16 @@ function _resolveAbilityDesc(a) {
     desc = desc.replace(/\[bf:(\d+):value\]/g,  function(_, n){ return sub(_, n, a.bf_effects);  });
     desc = desc.replace(/\[if:(\d+):value\]/g,   function(_, n){ return sub(_, n, a.if_effects);   });
     desc = desc.replace(/\[eof:(\d+):value\]/g,  function(_, n){ return sub(_, n, a.eof_effects);  });
+    // [resignore:value] — named stat token not handled by the game engine (known bug).
+    // Resolve by searching all effect arrays for the resistance-ignore stat.
+    desc = desc.replace(/\[resignore:value\]/g, function() {
+        var all = (a.bf_effects || []).concat(a.if_effects || []).concat(a.eof_effects || []);
+        var eff = all.find(function(e){
+            var sn = (e.statName || e.stat_name || e.key || e.name || '').toLowerCase();
+            return sn === 'resignore' || sn === 'res_ignore' || (sn.indexOf('res') !== -1 && sn.indexOf('ignore') !== -1);
+        });
+        return eff ? String(eff.value) : '?';
+    });
     return desc;
 }
 
