@@ -420,6 +420,7 @@
     <button class="col-toggle" data-col="abldesc"   onclick="toggleCol(this)">ABILITY DESC</button>
     <button class="col-toggle" data-col="id"        onclick="toggleCol(this)">FIGHTER ID</button>
     <button class="col-toggle" data-col="payday"    onclick="toggleCol(this)">PAYDAY</button>
+    <button class="col-toggle" data-col="deletion"  onclick="toggleCol(this)">DELETION</button>
     <div class="col-toggles-sep"></div>
     <button class="col-toggle" onclick="changeTblFS(-1)" title="Decrease font size">A−</button>
     <button class="col-toggle" onclick="changeTblFS(1)"  title="Increase font size">A+</button>
@@ -653,6 +654,7 @@ var COL_DEFS = [
     { key:'xp',        label:'XP',         title:'XP progress to next level',   sortVal: function(f){ var s=f.stats||{}; return s.required_experience?Number(s.experience||0)/Number(s.required_experience):0; } },
     { key:'age',       label:'AGE',        title:'Days since creation',         sortVal: function(f){ return fighterAgeDays(f)||0; } },
     { key:'payday',    label:'PAYDAY',     title:'Next payday date — red = lapsed, cannot be used', defaultDir:1, sortVal: function(f){ return _paydayMs(f) || Infinity; } },
+    { key:'deletion',  label:'DELETION',   title:'Final deletion date — fighter walks away permanently if still unpaid', defaultDir:1, sortVal: function(f){ return _deletionMs(f) || Infinity; } },
     { key:'abilities', label:'ABILITIES',  title:'Unlocked abilities — sorted by rarity weight (ability 1+2 priority over 3)', sortVal: function(f){
         var abls = (f.stats&&f.stats.abilities) ? f.stats.abilities : [];
         var RARITY_W = {mythical:6,mythic:6,legendary:5,epic:4,rare:3,common:2,abundant:1};
@@ -688,6 +690,23 @@ function _paydayColor(tsMs) {
     if (days <= 3)  return '#e8b030';
     if (days <= 7)  return '#c8c040';
     return '#60c080';
+}
+
+function _deletionMs(f) {
+    var fd = f.final_deletion_date;
+    if (!fd) return null;
+    if (typeof fd === 'number') return fd * 1000;
+    var s = String(fd).replace(' ', 'T');
+    if (!s.includes('Z')) s += 'Z';
+    var t = new Date(s).getTime();
+    return isNaN(t) ? null : t;
+}
+function _deletionColor(tsMs) {
+    var days = (tsMs - Date.now()) / 86400000;
+    if (days <= 3)  return '#e83030';
+    if (days <= 7)  return '#e87030';
+    if (days <= 14) return '#e8b030';
+    return '#8090a0';
 }
 
 function meanRange(mn, mx) {
@@ -854,6 +873,18 @@ function cellContent(key, f) {
                 return '<span style="color:#e83030;font-weight:bold;letter-spacing:0.5px;" title="' + tip + '">&#9760; ' + dateStr + '</span>';
             }
             return '<span style="color:' + _paydayColor(pdMs) + ';font-size:0.9em;" title="' + Math.ceil((pdMs-now)/86400000) + 'd until payday">' + dateStr + '</span>';
+        }
+        case 'deletion': {
+            var dlMs = _deletionMs(f);
+            if (!dlMs) return '<span class="zero">—</span>';
+            var nowD = Date.now();
+            var dd = new Date(dlMs);
+            var dlStr = (dd.getMonth()+1)+'/'+dd.getDate()+'/'+String(dd.getFullYear()).slice(2);
+            if (dlMs <= nowD) {
+                return '<span style="color:#e83030;font-weight:bold;letter-spacing:0.5px;" title="Gone">&#128128; ' + dlStr + '</span>';
+            }
+            var daysLeft = Math.ceil((dlMs - nowD) / 86400000);
+            return '<span style="color:' + _deletionColor(dlMs) + ';font-size:0.9em;" title="' + daysLeft + 'd until deletion">&#9888; ' + dlStr + '</span>';
         }
     }
     return '';
