@@ -210,6 +210,15 @@
     .rc-card.rc-attacker { border-color:rgba(232,160,32,0.7); background:rgba(232,160,32,0.07); }
     .rc-card.rc-defender { border-color:rgba(220,80,80,0.7); background:rgba(220,80,80,0.07); }
     .rc-card.rc-dead { opacity:0.35; border-color:rgba(100,100,100,0.3) !important; background:rgba(5,8,20,0.3) !important; }
+
+    @keyframes rc-fx-damage { 0%{box-shadow:0 0 0 0 rgba(220,80,80,0);background:rgba(220,80,80,0.35);} 40%{box-shadow:0 0 14px 4px rgba(220,80,80,0.6);} 100%{box-shadow:0 0 0 0 rgba(220,80,80,0);background:rgba(220,80,80,0);} }
+    @keyframes rc-fx-heal    { 0%{box-shadow:0 0 0 0 rgba(80,220,120,0);background:rgba(80,220,120,0.28);} 40%{box-shadow:0 0 14px 4px rgba(80,220,120,0.5);} 100%{box-shadow:0 0 0 0 rgba(80,220,120,0);background:rgba(80,220,120,0);} }
+    @keyframes rc-fx-aoe     { 0%{box-shadow:0 0 0 0 rgba(200,80,220,0);background:rgba(200,80,220,0.3);} 30%{box-shadow:0 0 18px 6px rgba(200,80,220,0.65);border-color:rgba(200,80,220,0.9);} 100%{box-shadow:0 0 0 0 rgba(200,80,220,0);background:rgba(200,80,220,0);} }
+    @keyframes rc-fx-buff    { 0%{box-shadow:0 0 0 0 rgba(232,200,60,0);background:rgba(232,200,60,0.2);} 40%{box-shadow:0 0 14px 4px rgba(232,200,60,0.5);} 100%{box-shadow:0 0 0 0 rgba(232,200,60,0);background:rgba(232,200,60,0);} }
+    .rc-fx-damage { animation:rc-fx-damage 0.55s ease-out forwards; }
+    .rc-fx-heal   { animation:rc-fx-heal   0.55s ease-out forwards; }
+    .rc-fx-aoe    { animation:rc-fx-aoe    0.65s ease-out forwards; }
+    .rc-fx-buff   { animation:rc-fx-buff   0.55s ease-out forwards; }
     .rc-hp-track { height:8px; background:rgba(255,255,255,0.07); border-radius:4px; overflow:hidden; margin-top:6px; }
     .rc-hp-fill { height:100%; width:100%; background:rgba(60,200,100,0.7); border-radius:4px; transition:width 0.3s; }
     .rc-hp-fill.rc-hp-mid { background:rgba(232,160,32,0.8); }
@@ -1857,6 +1866,35 @@ function applyRecapTurn(turnIdx) {
         if (lbl) lbl.textContent = Math.max(0, Math.round(curHp / 9.10)) + ' / ' + Math.round(maxHp / 9.10);
         if (card) card.classList.toggle('rc-dead', curHp <= 0);
     });
+
+    // Ability effect flashes from ifEffects
+    if (turnIdx > 0 && turnIdx <= d.turns.length) {
+        var eft = d.turns[turnIdx - 1];
+        if (eft.ifEffects && eft.ifEffects.length) {
+            // Group targets by ability to detect AoE (≥2 distinct targets)
+            var abilityTargets = {};
+            eft.ifEffects.forEach(function(e) {
+                var k = e.ability || '';
+                if (!abilityTargets[k]) abilityTargets[k] = [];
+                var tid = String(e.targetFighterId || '');
+                if (abilityTargets[k].indexOf(tid) === -1) abilityTargets[k].push(tid);
+            });
+            var isAoe = Object.keys(abilityTargets).some(function(k){ return abilityTargets[k].length >= 2; });
+
+            eft.ifEffects.forEach(function(e) {
+                var tid = String(e.targetFighterId || '');
+                var card = tid ? document.getElementById('rc-card-' + tid) : null;
+                if (!card) return;
+                var isHeal  = e.change > 0;
+                var thiAoe  = isAoe && abilityTargets[e.ability || ''].length >= 2;
+                var fxClass = thiAoe ? 'rc-fx-aoe' : (isHeal ? 'rc-fx-heal' : 'rc-fx-damage');
+                // Force restart animation by removing, reflow, re-adding
+                card.classList.remove('rc-fx-damage', 'rc-fx-heal', 'rc-fx-aoe', 'rc-fx-buff');
+                void card.offsetWidth;
+                card.classList.add(fxClass);
+            });
+        }
+    }
 
     // Turn label
     var lbl = document.getElementById('rc-turn-label');
