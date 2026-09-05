@@ -1532,26 +1532,41 @@ function buildHpState(turnIdx) {
 
 function _renderIfEffects(effects) {
     if (!effects || (Array.isArray(effects) && !effects.length)) return '';
-    var items = Array.isArray(effects) ? effects : (typeof effects === 'object' ? [effects] : []);
-    var parts = items.map(function(eff) {
-        if (!eff || typeof eff !== 'object') return '<span style="color:#506070;font-size:0.82em;">' + String(eff) + '</span>';
-        var type   = eff.type || eff.effect_type || eff.name || '';
-        var val    = eff.value != null ? eff.value : (eff.damage != null ? eff.damage : (eff.heal != null ? eff.heal : null));
-        var valDisp = val != null ? Math.round(Number(val) / 9.10) : null;
-        var src    = eff.source_fighter_id || eff.source || eff.caster || '';
-        var tgt    = eff.target_fighter_id || eff.target || '';
-        var typeColor = /heal|regen|restore/i.test(type) ? '#60e090'
-                      : /thorn|poison|burn|bleed|dot/i.test(type) ? '#e06060'
-                      : /shield|barrier|block/i.test(type) ? '#60a0e0'
-                      : /buff|boost|enhance/i.test(type) ? '#e0c060'
-                      : '#a090b0';
-        var label = type ? '<span style="color:' + typeColor + ';text-transform:uppercase;letter-spacing:1px;font-size:0.78em;">' + type + '</span>' : '';
-        var valStr = valDisp != null ? ' <span style="color:#c0a060;font-size:0.82em;">' + (val < 0 ? '' : ((/heal|regen/i.test(type)) ? '+' : '')) + valDisp + '</span>' : '';
-        var tgtStr = tgt ? ' <span style="color:#405060;font-size:0.75em;">→' + tgt + '</span>' : '';
-        return label + valStr + tgtStr;
+    var items = Array.isArray(effects) ? effects : [effects];
+
+    // Group by ability name so AoE targets stay together
+    var groups = [], groupMap = {};
+    items.forEach(function(e) {
+        var key = e.ability || '?';
+        if (!groupMap[key]) { groupMap[key] = {ability: key, source: e.sourceClassname || '', entries: []}; groups.push(groupMap[key]); }
+        groupMap[key].entries.push(e);
     });
-    return '<div style="padding:2px 10px 4px 56px;font-size:0.82em;display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid rgba(255,255,255,0.015);">'
-        + parts.join(' <span style="color:#303840;">·</span> ')
+
+    function _rarityColor(str) {
+        var m = (str || '').match(/\[(\w+)\]$/);
+        if (!m) return '#8090a0';
+        return {common:'#8090a0', uncommon:'#60c060', rare:'#6090e0', epic:'#c060e0', legendary:'#e09020', mythical:'#e04080'}[m[1].toLowerCase()] || '#8090a0';
+    }
+    function _abName(str) { return (str || '').replace(/\s*\[\w+\]$/, ''); }
+
+    var parts = groups.map(function(g) {
+        var color  = _rarityColor(g.ability);
+        var srcEm  = g.source ? _recapClsEmoji(g.source) : '⚔';
+        var tgtStr = g.entries.map(function(e) {
+            var em  = e.targetClassname ? _recapClsEmoji(e.targetClassname) : '⚔';
+            var chg = Math.round(e.change / 9.10);
+            var cc  = e.change > 0 ? '#60e090' : '#e06060';
+            return em + '&thinsp;<span style="color:' + cc + ';">' + (e.change > 0 ? '+' : '') + chg + '</span>';
+        }).join(' <span style="color:#353e50;">·</span> ');
+        return '<span style="white-space:nowrap;">'
+             + '<span style="color:' + color + ';font-size:0.78em;text-transform:uppercase;letter-spacing:0.5px;">' + srcEm + '&thinsp;' + _abName(g.ability) + '</span>'
+             + ' <span style="color:#405060;">→</span> '
+             + '<span style="font-size:0.88em;">' + tgtStr + '</span>'
+             + '</span>';
+    });
+
+    return '<div style="padding:1px 10px 4px 56px;font-size:0.85em;display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:#7080a0;">'
+        + parts.join(' <span style="color:#2a3040;padding:0 3px;">|</span> ')
         + '</div>';
 }
 
